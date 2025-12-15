@@ -86,22 +86,22 @@ class PositionedText extends StatelessWidget {
 class ScreenContainer extends StatelessWidget {
   final Color backgroundColor;
   final List<Widget> children;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
 
   const ScreenContainer({
     super.key,
     required this.backgroundColor,
     required this.children,
-    this.width = 412,
-    this.height = 917,
+    this.width,
+    this.height,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
+      width: width ?? double.infinity,
+      height: height ?? double.infinity,
       decoration: BoxDecoration(color: backgroundColor),
       child: Stack(children: children),
     );

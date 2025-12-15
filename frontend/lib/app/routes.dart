@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:antiflood/features/auth/screens/signup/signup_screen.dart';
-import 'package:antiflood/features/auth/screens/signin/account_creation_screen.dart';
+import 'package:antiflood/features/auth/screens/signin/signin_screen.dart';
+import 'package:antiflood/features/auth/screens/signup/account_creation_screen.dart';
 
 class AppRoutes {
   static const String signUp = '/signup';

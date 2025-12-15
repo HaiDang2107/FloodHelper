@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/common_widgets.dart';
 
@@ -16,11 +17,22 @@ class StartedScreen extends StatelessWidget {
     return ScreenContainer(
       backgroundColor: const Color(0xFFC8D9F8),
       children: [
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 150,
+          child: Center(
+            child: SvgPicture.asset(
+              'lib/assets/man_under_rain.svg',
+              height: 300,
+            ),
+          ),
+        ),
         PositionedText(
-          text: 'AntiFlood',
-          left: 86,
+          text: 'FloodHelper',
+          left: 31,
           top: 571,
-          width: 239,
+          width: 350,
           fontSize: 48,
           color: const Color(0xFF0F62FE),
           fontWeight: FontWeight.w700,

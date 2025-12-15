@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '_account_creation_loading_screen.dart';
 import '_account_form_screen.dart';
+import '_send_code_screen.dart';
 import '_account_creation_success_screen.dart';
 
 class AccountCreationScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _AccountCreationScreenState extends State<AccountCreationScreen> {
   final TextEditingController nationController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController codeController = TextEditingController();
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _AccountCreationScreenState extends State<AccountCreationScreen> {
     nationController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    codeController.dispose();
     super.dispose();
   }
 
@@ -79,13 +82,44 @@ class _AccountCreationScreenState extends State<AccountCreationScreen> {
     print('Village: ${villageController.text}');
     print('District: ${districtController.text}');
     print('Province: ${provinceController.text}');
-    print('Nation: ${nationController.text}');
     print('Email: ${emailController.text}');
     print('Password: ${passwordController.text}');
 
-    // Move to success screen
+    // Move to send code screen
     _pageController.animateToPage(
       2,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _handleCodeSubmit() {
+    // Validate code
+    if (codeController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the verification code')),
+      );
+      return;
+    }
+
+    // Move to success screen
+    _pageController.animateToPage(
+      3,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _handleSendAgain() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('We sent again')),
+    );
+  }
+
+  void _handleBackFromCode() {
+    // Go back to form screen
+    _pageController.animateToPage(
+      1,
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
@@ -125,6 +159,13 @@ class _AccountCreationScreenState extends State<AccountCreationScreen> {
             passwordController: passwordController,
             onSubmit: _handleFormSubmit,
             onBack: _handleBackFromForm,
+          ),
+          // Send Code Screen
+          SendCodeScreen(
+            codeController: codeController,
+            onSubmit: _handleCodeSubmit,
+            onSendAgain: _handleSendAgain,
+            onBack: _handleBackFromCode,
           ),
           // Success screen
           AccountCreationSuccessScreen(

@@ -8,6 +8,7 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final double width;
   final double borderRadius;
+  final double verticalPadding;
 
   const CustomTextField({
     super.key,
@@ -17,13 +18,14 @@ class CustomTextField extends StatelessWidget {
     this.obscureText = false,
     this.width = 223,
     this.borderRadius = 10,
+    this.verticalPadding = 10,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 15, vertical: verticalPadding),
       decoration: ShapeDecoration(
         color: Colors.white,
         shape: RoundedRectangleBorder(

@@ -34,7 +34,7 @@ class AccountFormScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F62FE),
+      backgroundColor: const Color(0xFFFFDF71), // Yellow background
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -48,7 +48,7 @@ class AccountFormScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: const Color(0xFF0F62FE), // Blue text
                 ),
               ),
               const SizedBox(height: 16),
@@ -117,8 +117,8 @@ class AccountFormScreen extends StatelessWidget {
               // Submit Button
               CustomButton(
                 text: 'Submit',
-                backgroundColor: const Color(0xFFFFDF71),
-                textColor: const Color(0xFF0F62FE),
+                backgroundColor: const Color(0xFF0F62FE), // Blue button
+                textColor: Colors.white,
                 onPressed: onSubmit,
               ),
               const SizedBox(height: 16),
@@ -130,7 +130,7 @@ class AccountFormScreen extends StatelessWidget {
                   'back',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF0F62FE), // Blue text
                     fontSize: 12,
                     fontFamily: 'Anonymous Pro',
                     fontWeight: FontWeight.w400,
