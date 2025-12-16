@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../common/widgets/user_avatar.dart';
-import '../../../../common/constants/user_state.dart';
+import '../../../../common/models/friend_model.dart';
 
 class ModificationWidget extends StatefulWidget {
   const ModificationWidget({super.key});
@@ -12,31 +12,29 @@ class ModificationWidget extends StatefulWidget {
 class _ModificationWidgetState extends State<ModificationWidget> {
   bool _isModifying = false;
 
-  // Mock data
-  final List<Map<String, dynamic>> _seeMeUsers = [
-    {'id': 1, 'name': 'Alice', 'avatar': 'https://i.pravatar.cc/150?img=1', 'status': UserStatus.online},
-    {'id': 2, 'name': 'Bob', 'avatar': 'https://i.pravatar.cc/150?img=2', 'status': UserStatus.offline},
-    {'id': 3, 'name': 'Charlie', 'avatar': 'https://i.pravatar.cc/150?img=3', 'status': UserStatus.online},
-    {'id': 4, 'name': 'Diana', 'avatar': 'https://i.pravatar.cc/150?img=4', 'status': UserStatus.unknown},
-  ];
+  // Use first 6 friends for "See Me", rest for "Freeze"
+  late List<FriendModel> _seeMeUsers;
+  late List<FriendModel> _freezeUsers;
 
-  final List<Map<String, dynamic>> _freezeUsers = [
-    {'id': 5, 'name': 'Eve', 'avatar': 'https://i.pravatar.cc/150?img=5', 'status': UserStatus.offline},
-    {'id': 6, 'name': 'Frank', 'avatar': 'https://i.pravatar.cc/150?img=6', 'status': UserStatus.online},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _seeMeUsers = mockFriends.take(6).toList();
+    _freezeUsers = mockFriends.skip(6).toList();
+  }
 
-  void _moveToFreeze(int id) {
+  void _moveToFreeze(String id) {
     setState(() {
-      final user = _seeMeUsers.firstWhere((user) => user['id'] == id);
-      _seeMeUsers.removeWhere((user) => user['id'] == id);
+      final user = _seeMeUsers.firstWhere((user) => user.id == id);
+      _seeMeUsers.removeWhere((user) => user.id == id);
       _freezeUsers.add(user);
     });
   }
 
-  void _moveToSeeMe(int id) {
+  void _moveToSeeMe(String id) {
     setState(() {
-      final user = _freezeUsers.firstWhere((user) => user['id'] == id);
-      _freezeUsers.removeWhere((user) => user['id'] == id);
+      final user = _freezeUsers.firstWhere((user) => user.id == id);
+      _freezeUsers.removeWhere((user) => user.id == id);
       _seeMeUsers.add(user);
     });
   }
@@ -98,9 +96,9 @@ class _ModificationWidgetState extends State<ModificationWidget> {
 
   Widget _buildSection({
     required String title,
-    required List<Map<String, dynamic>> users,
+    required List<FriendModel> users,
     required Color iconColor,
-    required Function(int) onRemove,
+    required Function(String) onRemove,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,18 +124,18 @@ class _ModificationWidgetState extends State<ModificationWidget> {
                 child: Column(
                   children: [
                     UserAvatar(
-                      imageUrl: user['avatar'],
-                      status: user['status'],
+                      imageUrl: user.avatarUrl,
+                      status: user.status,
                       size: 60,
                       topRightIcon: _isModifying ? Icons.remove : null,
                       topRightIconBackgroundColor: iconColor,
-                      onTopRightIconTap: () => onRemove(user['id']),
+                      onTopRightIconTap: () => onRemove(user.id),
                     ),
                     const SizedBox(height: 4),
                     SizedBox(
                       width: 60,
                       child: Text(
-                        user['name'],
+                        user.name,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 12,

@@ -10,6 +10,7 @@ import '../widgets/home_expandable_fab.dart';
 import '../widgets/user_pin.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../../common/constants/user_state.dart';
+import '../../../common/models/friend_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -73,6 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _moveCameraToFriend(LatLng location) {
+    _mapController.move(location, 17.0);
+  }
+
   void _showBottomSheet(String title, Widget content) {
     showModalBottomSheet(
       context: context,
@@ -113,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (_currentPosition != null)
                 MarkerLayer(
                   markers: [
+                    // Current user marker
                     Marker(
                       point: _currentPosition!,
                       width: 60, // fixed
@@ -124,6 +130,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 60,
                         imageUrl: 'https://i.pravatar.cc/300',
                         color: UserStatus.online.color,
+                      ),
+                    ),
+                    // Friend markers
+                    ...mockFriends.map(
+                      (friend) => Marker(
+                        point: LatLng(
+                          friend.location.latitude,
+                          friend.location.longitude,
+                        ),
+                        width: 60,
+                        height: 81,
+                        alignment: Alignment.topCenter,
+                        rotate: true,
+                        child: UserLocationPin(
+                          size: 60,
+                          imageUrl: friend.avatarUrl,
+                          color: friend.status.color,
+                        ),
                       ),
                     ),
                   ],
@@ -183,6 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTakePicture: _takePicture,
                   onGetCurrentLocation: _getCurrentLocation,
                   onShowBottomSheet: _showBottomSheet,
+                  onLocateFriend: _moveCameraToFriend,
                 ),
               ),
             ),
