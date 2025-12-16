@@ -36,6 +36,7 @@ class HomeMapOptionsSheet extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
             ),
