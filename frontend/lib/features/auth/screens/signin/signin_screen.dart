@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/signin_service.dart';
 import '_started_screen.dart';
 import '_signin_form_screen.dart';
 
@@ -17,6 +18,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final SignInService _signInService = SignInService();
   late bool _showForm;
 
   @override
@@ -45,9 +47,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     Navigator.of(context).pushNamed('/account-creation');
   }
 
-  void _handleSignIn() {
-    // TODO: Navigate to login screen
-    Navigator.of(context).pushNamed('/home');
+  Future<void> _handleSignIn() async {
+    // Call service to handle sign in logic
+    final success = await _signInService.signIn(
+      emailController.text,
+      passwordController.text,
+    );
+
+    if (success && mounted) {
+      Navigator.of(context).pushNamed('/home');
+    }
   }
 
   void _handleBack() {

@@ -11,7 +11,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
-        useMaterial3: true,
       ),
       initialRoute: AppRoutes.signUp,
       onGenerateRoute: AppRoutes.generateRoute,

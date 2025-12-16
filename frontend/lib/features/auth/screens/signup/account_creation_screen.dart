@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/account_creation_service.dart';
 import '_account_creation_loading_screen.dart';
 import '_account_form_screen.dart';
 import '_send_code_screen.dart';
@@ -13,6 +14,7 @@ class AccountCreationScreen extends StatefulWidget {
 
 class _AccountCreationScreenState extends State<AccountCreationScreen> {
   late PageController _pageController;
+  final AccountCreationService _accountCreationService = AccountCreationService();
 
   // Controllers for form fields
   final TextEditingController firstNameController = TextEditingController();
@@ -58,46 +60,55 @@ class _AccountCreationScreenState extends State<AccountCreationScreen> {
     super.dispose();
   }
 
-  void _handleFormSubmit() {
+  Future<void> _handleFormSubmit() async {
     // Validate inputs
-    if (firstNameController.text.isEmpty ||
-        lastNameController.text.isEmpty ||
-        dateOfBirthController.text.isEmpty ||
-        villageController.text.isEmpty ||
-        districtController.text.isEmpty ||
-        provinceController.text.isEmpty ||
-        nationController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty) {
+    final validationError = _accountCreationService.validateForm(
+      firstName: firstNameController.text,
+      lastName: lastNameController.text,
+      dateOfBirth: dateOfBirthController.text,
+      village: villageController.text,
+      district: districtController.text,
+      province: provinceController.text,
+      nation: nationController.text,
+      email: emailController.text,
+      password: passwordController.text,
+    );
+
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        SnackBar(content: Text(validationError)),
       );
       return;
     }
 
-    // TODO: Implement actual account creation logic
-    print('First Name: ${firstNameController.text}');
-    print('Last Name: ${lastNameController.text}');
-    print('Date of Birth: ${dateOfBirthController.text}');
-    print('Village: ${villageController.text}');
-    print('District: ${districtController.text}');
-    print('Province: ${provinceController.text}');
-    print('Email: ${emailController.text}');
-    print('Password: ${passwordController.text}');
+    // Submit account details
+    await _accountCreationService.submitAccountDetails(
+      firstName: firstNameController.text,
+      lastName: lastNameController.text,
+      dateOfBirth: dateOfBirthController.text,
+      village: villageController.text,
+      district: districtController.text,
+      province: provinceController.text,
+      email: emailController.text,
+      password: passwordController.text,
+    );
 
     // Move to send code screen
-    _pageController.animateToPage(
-      2,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
+    if (mounted) {
+      _pageController.animateToPage(
+        2,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   void _handleCodeSubmit() {
     // Validate code
-    if (codeController.text.isEmpty) {
+    final validationError = _accountCreationService.validateCode(codeController.text);
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the verification code')),
+        SnackBar(content: Text(validationError)),
       );
       return;
     }

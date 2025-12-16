@@ -22,7 +22,7 @@ class AccountCreationLoadingScreen extends StatelessWidget {
         Positioned(
           left: 37,
           top: 290,
-          child: Container(
+          child: SizedBox(
             width: 338,
             height: 338,
             child: Stack(
