@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/account_creation_service.dart';
 import '_account_creation_loading_screen.dart';
 import '_account_form_screen.dart';
-import '_send_code_screen.dart';
-import '_account_creation_success_screen.dart';
+import '../_send_code_screen.dart';
+import '../_success_screen.dart';
 
 class AccountCreationScreen extends StatefulWidget {
   const AccountCreationScreen({super.key});
@@ -179,7 +179,9 @@ class _AccountCreationScreenState extends State<AccountCreationScreen> {
             onBack: _handleBackFromCode,
           ),
           // Success screen
-          AccountCreationSuccessScreen(
+          SuccessScreen(
+            message: 'Your account is created successfully',
+            buttonText: 'Sign up now',
             onContinue: _handleContinueFromSuccess,
           ),
         ],

@@ -10,6 +10,7 @@ class CustomButton extends StatelessWidget {
   final double fontSize;
   final double borderRadius;
   final EdgeInsets padding;
+  final Widget? icon;
 
   const CustomButton({
     super.key,
@@ -21,6 +22,7 @@ class CustomButton extends StatelessWidget {
     this.fontSize = 12,
     this.borderRadius = 25,
     this.padding = const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+    this.icon,
   });
 
   @override
@@ -40,6 +42,10 @@ class CustomButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (icon != null) ...[
+              icon!,
+              const SizedBox(width: 8),
+            ],
             Text(
               text,
               style: TextStyle(

@@ -100,19 +100,19 @@ class AccountFormScreen extends StatelessWidget {
                 controller: nationController,
                 hintText: 'Nation',
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
               CustomTextField(
                 controller: emailController,
                 hintText: 'Email',
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
               CustomTextField(
                 controller: passwordController,
                 hintText: 'Password',
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
               // Submit Button
               CustomButton(
@@ -127,7 +127,7 @@ class AccountFormScreen extends StatelessWidget {
               GestureDetector(
                 onTap: onBack,
                 child: Text(
-                  'back',
+                  'Back',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: const Color(0xFF0F62FE), // Blue text

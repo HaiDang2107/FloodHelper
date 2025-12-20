@@ -66,6 +66,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
   }
 
+  void _handleForgetPassword() {
+    Navigator.of(context).pushNamed('/forget-password');
+  }
+
   @override
   Widget build(BuildContext context) {
     // Hiển thị started hay signup form dựa trên trạng thái _showForm
@@ -78,6 +82,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               onSignUp: _handleSignUp,
               onSignIn: _handleSignIn,
               onBack: _handleBack, // Added back button handler
+              onForgetPassword: _handleForgetPassword,
             )
           : StartedScreen(
               onGetStarted: _handleGetStarted,

@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 
-class SendCodeScreen extends StatelessWidget {
-  final TextEditingController codeController;
+class EnterEmailScreen extends StatelessWidget {
+  final TextEditingController emailController;
   final VoidCallback onSubmit;
-  final VoidCallback onSendAgain;
   final VoidCallback onBack;
 
-  const SendCodeScreen({
+  const EnterEmailScreen({
     super.key,
-    required this.codeController,
+    required this.emailController,
     required this.onSubmit,
-    required this.onSendAgain,
     required this.onBack,
   });
 
@@ -28,10 +26,10 @@ class SendCodeScreen extends StatelessWidget {
           children: [
             // Instruction Text
             Text(
-              'We sent a verification code to your email. Please enter the code',
+              'Enter your email',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w400,
                 color: const Color(0xFF0F62FE), // Blue text
                 fontFamily: 'Anonymous Pro',
@@ -39,34 +37,20 @@ class SendCodeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Code Input and Submit Button
-            Row(
-              children: [
-                Expanded(
-                  child: CustomTextField(
-                    controller: codeController,
-                    hintText: 'Code',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                CustomButton(
-                  text: 'Submit',
-                  backgroundColor: const Color(0xFF0F62FE), // Blue button
-                  textColor: Colors.white,
-                  onPressed: onSubmit,
-                  width: 120,
-                ),
-              ],
+            // Email Input
+            CustomTextField(
+              controller: emailController,
+              hintText: 'Email address',
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
 
-            // Send Again Button
+            // Submit Button
             CustomButton(
-              text: 'Send again',
+              text: 'Submit',
               backgroundColor: const Color(0xFF0F62FE), // Blue button
               textColor: Colors.white,
-              onPressed: onSendAgain,
+              onPressed: onSubmit,
             ),
             const SizedBox(height: 32),
 
@@ -74,7 +58,7 @@ class SendCodeScreen extends StatelessWidget {
             GestureDetector(
               onTap: onBack,
               child: Text(
-                'back',
+                'Back',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: const Color(0xFF0F62FE), // Blue text

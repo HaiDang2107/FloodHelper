@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../widgets/custom_button.dart';
-import '../../widgets/common_widgets.dart';
+import '../widgets/custom_button.dart';
+import '../widgets/common_widgets.dart';
 
-/// Account creation success screen
-class AccountCreationSuccessScreen extends StatelessWidget {
+/// Generic success screen
+class SuccessScreen extends StatelessWidget {
   final VoidCallback onContinue;
+  final String message;
+  final String buttonText;
 
-  const AccountCreationSuccessScreen({
+  const SuccessScreen({
     super.key,
     required this.onContinue,
+    required this.message,
+    required this.buttonText,
   });
 
   @override
@@ -26,7 +30,7 @@ class AccountCreationSuccessScreen extends StatelessWidget {
         ),
         // Success message
         PositionedText(
-          text: 'Your account is created successfully',
+          text: message,
           left: 86,
           top: 398,
           width: 239,
@@ -38,7 +42,7 @@ class AccountCreationSuccessScreen extends StatelessWidget {
           left: 133,
           top: 453,
           child: CustomButton(
-            text: 'Sign up now',
+            text: buttonText,
             backgroundColor: Colors.white,
             textColor: const Color(0xFF0F62FE),
             onPressed: onContinue,

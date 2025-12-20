@@ -7,6 +7,7 @@ class CustomTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool obscureText;
   final double width;
+  final double? height;
   final double borderRadius;
   final double verticalPadding;
 
@@ -17,6 +18,7 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
     this.width = 223,
+    this.height = 50,
     this.borderRadius = 10,
     this.verticalPadding = 10,
   });
@@ -25,7 +27,9 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: verticalPadding),
+      height: height,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 15),
       decoration: ShapeDecoration(
         color: Colors.white,
         shape: RoundedRectangleBorder(
@@ -36,7 +40,10 @@ class CustomTextField extends StatelessWidget {
         controller: controller,
         keyboardType: keyboardType,
         obscureText: obscureText,
+        textAlignVertical: TextAlignVertical.center,
         decoration: InputDecoration(
+          isCollapsed: true,
+          contentPadding: EdgeInsets.symmetric(vertical: verticalPadding),
           hintText: hintText,
           hintStyle: TextStyle(
             color: const Color(0xFF8E8E8E),
