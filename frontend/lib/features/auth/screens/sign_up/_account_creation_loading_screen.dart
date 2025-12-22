@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../widgets/common_widgets.dart';
+import '../../widgets/circle.dart';
 
 /// Account creation loading screen
 class AccountCreationLoadingScreen extends StatelessWidget {

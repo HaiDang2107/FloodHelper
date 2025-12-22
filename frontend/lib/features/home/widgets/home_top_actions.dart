@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../charity_campaign/screens/existing_charity_screen.dart';
 import '../screens/_settings_sheet.dart';
 import '../screens/_add_friend_sheet.dart';
 import '../screens/_announcements_sheet.dart';
 
 class HomeTopActions extends StatelessWidget {
-  final Function(String, Widget) onShowBottomSheet;
+  final void Function(String, Widget, {Color? backgroundColor}) onShowBottomSheet;
   final VoidCallback onProfilePressed;
 
   const HomeTopActions({
@@ -25,6 +26,20 @@ class HomeTopActions extends StatelessWidget {
         _buildMapIcon(Icons.person_add, () => onShowBottomSheet('Add Friend', const AddFriendSheet())),
         const SizedBox(height: 8),
         _buildMapIcon(Icons.campaign, () => onShowBottomSheet('Announcements', const AnnouncementsSheet())),
+        const SizedBox(height: 8),
+        _buildMapIcon(Icons.medical_services, () {
+          // TODO: Implement Rescuer action
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Rescuer feature coming soon!')),
+          );
+        }),
+        const SizedBox(height: 8),
+        _buildMapIcon(Icons.volunteer_activism, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ExistingCharityScreen()),
+          );
+        }),
       ],
     );
   }

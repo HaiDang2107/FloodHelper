@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_button.dart';
-import '../widgets/common_widgets.dart';
+import '../widgets/circle.dart';
 
 /// Generic success screen
 class SuccessScreen extends StatelessWidget {

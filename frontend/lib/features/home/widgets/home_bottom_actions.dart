@@ -6,7 +6,7 @@ import '../screens/_messages_sheet.dart';
 class HomeBottomActions extends StatelessWidget {
   final VoidCallback onTakePicture;
   final VoidCallback onGetCurrentLocation;
-  final Function(String, Widget) onShowBottomSheet;
+  final void Function(String, Widget, {Color? backgroundColor}) onShowBottomSheet;
   final Function(LatLng) onLocateFriend;
 
   const HomeBottomActions({

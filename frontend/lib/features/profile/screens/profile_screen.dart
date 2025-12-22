@@ -15,19 +15,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
 
   // Controllers
+  // Basic Info
+  final TextEditingController _userIdController = TextEditingController(text: 'USER123456');
   final TextEditingController _firstNameController = TextEditingController(text: 'Hai');
   final TextEditingController _lastNameController = TextEditingController(text: 'Dang');
+  final TextEditingController _nicknameController = TextEditingController(text: 'DangDev');
+  final TextEditingController _genderController = TextEditingController(text: 'Male');
   final TextEditingController _emailController = TextEditingController(text: 'haidang@example.com');
+  
+  // Additional Info
+  final TextEditingController _jobPositionController = TextEditingController(text: 'Software Engineer');
   final TextEditingController _phoneController = TextEditingController(text: '0123456789');
-  final TextEditingController _addressController = TextEditingController(text: 'Hanoi, Vietnam');
+  final TextEditingController _placeOfOriginController = TextEditingController(text: 'Hanoi, Vietnam');
+  final TextEditingController _placeOfResidenceController = TextEditingController(text: 'Hanoi, Vietnam');
+  final TextEditingController _dateOfIssueController = TextEditingController(text: '01/01/2020');
+  final TextEditingController _dateOfExpiryController = TextEditingController(text: '01/01/2030');
 
   @override
   void dispose() {
+    _userIdController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _nicknameController.dispose();
+    _genderController.dispose();
     _emailController.dispose();
+    _jobPositionController.dispose();
     _phoneController.dispose();
-    _addressController.dispose();
+    _placeOfOriginController.dispose();
+    _placeOfResidenceController.dispose();
+    _dateOfIssueController.dispose();
+    _dateOfExpiryController.dispose();
     super.dispose();
   }
 
@@ -70,9 +87,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.grey[100],
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -94,11 +122,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
             ProfileInfo(
               isEditing: _isEditing,
+              userIdController: _userIdController,
               firstNameController: _firstNameController,
               lastNameController: _lastNameController,
+              nicknameController: _nicknameController,
+              genderController: _genderController,
               emailController: _emailController,
+              jobPositionController: _jobPositionController,
               phoneController: _phoneController,
-              addressController: _addressController,
+              placeOfOriginController: _placeOfOriginController,
+              placeOfResidenceController: _placeOfResidenceController,
+              dateOfIssueController: _dateOfIssueController,
+              dateOfExpiryController: _dateOfExpiryController,
             ),
             const SizedBox(height: 24),
             const Divider(),

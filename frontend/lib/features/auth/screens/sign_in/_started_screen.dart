@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/custom_button.dart';
-import '../../widgets/common_widgets.dart';
+import '../../widgets/circle.dart';
 
 /// Introduction screen for sign up
 class StartedScreen extends StatelessWidget {

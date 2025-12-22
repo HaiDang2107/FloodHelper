@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/home_service.dart';
-import '../widgets/home_map_options_sheet.dart';
+import '../../../common/widgets/bottom_sheet.dart';
 import '../widgets/home_top_actions.dart';
 import '../widgets/home_bottom_actions.dart';
 import '../widgets/segmented_button.dart';
@@ -78,16 +78,17 @@ class _HomeScreenState extends State<HomeScreen> {
     _mapController.move(location, 17.0);
   }
 
-  void _showBottomSheet(String title, Widget content) {
+  void _showBottomSheet(String title, Widget content, {Color? backgroundColor}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return HomeMapOptionsSheet(title: title, child: content);
+        return CustomBottomSheet(
+          title: title,
+          child: content,
+          backgroundColor: backgroundColor,
+        );
       },
     );
   }
