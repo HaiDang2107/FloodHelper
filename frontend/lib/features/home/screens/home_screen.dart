@@ -6,11 +6,15 @@ import '../../../common/widgets/bottom_sheet.dart';
 import '../widgets/home_top_actions.dart';
 import '../widgets/home_bottom_actions.dart';
 import '../widgets/segmented_button.dart';
-import '../widgets/home_expandable_fab.dart';
+import '../widgets/home_map_actions_fab.dart';
 import '../widgets/user_pin.dart';
+import '../widgets/post_pin.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../../common/constants/user_state.dart';
 import '../../../common/models/friend_model.dart';
+import '../../../common/models/post_model.dart';
+import '_stranger_details_sheet.dart';
+import '_settings_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   LatLng? _currentPosition;
   bool _isLoading = true;
   MapType _selectedMapType = MapType.transport;
+  bool _isSosBroadcasting = false;
+  Map<String, dynamic>? _sosData;
+  bool _showStrangerLocation = true;
+  bool _showPostLocation = true;
 
   @override
   void initState() {
@@ -78,16 +86,64 @@ class _HomeScreenState extends State<HomeScreen> {
     _mapController.move(location, 17.0);
   }
 
+  void _handleSosBroadcast(Map<String, dynamic> data) {
+    setState(() {
+      _isSosBroadcasting = true;
+      _sosData = data;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Distress signal is now broadcasting'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _handleSosRevoke() {
+    setState(() {
+      _isSosBroadcasting = false;
+      _sosData = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Distress signal has been revoked'),
+        backgroundColor: Colors.grey,
+      ),
+    );
+  }
+
   void _showBottomSheet(String title, Widget content, {Color? backgroundColor}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return CustomBottomSheet(
-          title: title,
-          child: content,
-          backgroundColor: backgroundColor,
+        return StatefulBuilder( // biến một đoạn code giao diện đang tĩnh thành động ngay tại chỗ mà không cần tách class.
+          builder: (context, setModalState) {
+            return CustomBottomSheet(
+              title: title,
+              backgroundColor: backgroundColor,
+              child: title == 'Settings'
+                  ? SettingsSheet(
+                      showStrangerLocation: _showStrangerLocation, // truyền từ home cho setting
+                      showPostLocation: _showPostLocation,
+                      onShowStrangerLocationChanged: (value) {
+                        setState(() { // setState(): rebuild lại màn hình cha 
+                        // ~ this.setState() (do extend mà có)
+                          _showStrangerLocation = value; // đồng bộ trạng thái biến
+                        });
+                        setModalState(() {}); // Rebuild bottom sheet (tự vẽ lại chính nó)
+                      },
+                      onShowPostLocationChanged: (value) {
+                        setState(() {
+                          _showPostLocation = value;
+                        });
+                        setModalState(() {}); // Rebuild bottom sheet
+                      },
+                    )
+                  : content,
+            );
+          },
         );
       },
     );
@@ -131,10 +187,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 60,
                         imageUrl: 'https://i.pravatar.cc/300',
                         color: UserStatus.online.color,
+                        roles: const [],
                       ),
                     ),
                     // Friend markers
-                    ...mockFriends.map(
+                    ...mockFriends
+                        .where((friend) =>
+                            friend.isFriend || _showStrangerLocation)
+                        .map(
                       (friend) => Marker(
                         point: LatLng(
                           friend.location.latitude,
@@ -148,6 +208,44 @@ class _HomeScreenState extends State<HomeScreen> {
                           size: 60,
                           imageUrl: friend.avatarUrl,
                           color: friend.status.color,
+                          isSosState: friend.isSosState,
+                          roles: friend.roles,
+                          onTap: () {
+                            _showBottomSheet(
+                              friend.name,
+                              StrangerDetailsSheet(
+                                userId: friend.id,
+                                fullName: friend.name,
+                                dateOfBirth: friend.dateOfBirth,
+                                roles: friend.roles,
+                                isSosState: friend.isSosState,
+                                trappedCounts: friend.trappedCounts,
+                                childrenNumbers: friend.childrenNumbers,
+                                elderlyNumbers: friend.elderlyNumbers,
+                                hasFood: friend.hasFood,
+                                hasWater: friend.hasWater,
+                                other: friend.other,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    // Post markers
+                    if (_showPostLocation)
+                      ...mockPosts.map(
+                        (post) => Marker(
+                        point: post.location,
+                        width: 60,
+                        height: 81,
+                        alignment: Alignment.topCenter,
+                        rotate: true,
+                        child: PostLocationPin(
+                          size: 60,
+                          imageUrl: post.imageUrl,
+                          onTap: () {
+                            // TODO: Show post details
+                          },
                         ),
                       ),
                     ),
@@ -155,10 +253,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
-          Positioned(
-            left: 16.0,
-            top: MediaQuery.of(context).padding.top + 16.0,
-            child: HomeExpandableFab(mapType: _selectedMapType),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 100.0, right: 16.0),
+                child: HomeMapActionsFab(mapType: _selectedMapType),
+              ),
+            ),
           ),
           SafeArea(
             child: Align(
@@ -175,6 +277,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
+                  isSosBroadcasting: _isSosBroadcasting,
+                  sosData: _sosData,
+                  onSosBroadcast: _handleSosBroadcast,
+                  onSosRevoke: _handleSosRevoke,
                 ),
               ),
             ),

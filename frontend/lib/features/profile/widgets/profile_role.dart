@@ -16,7 +16,7 @@ class ProfileRole extends StatelessWidget {
             const SizedBox(height: 16),
             ListTile(
               title: const Text('Benefactor'),
-              leading: const Icon(Icons.volunteer_activism, color: Colors.orange),
+              leading: const Icon(Icons.volunteer_activism, color: Colors.green),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -26,7 +26,7 @@ class ProfileRole extends StatelessWidget {
             ),
             ListTile(
               title: const Text('Rescuer'),
-              leading: const Icon(Icons.medical_services, color: Colors.green),
+              leading: const Icon(Icons.health_and_safety, color: Colors.orange),
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(

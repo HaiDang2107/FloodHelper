@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'segmented_button.dart';
 
-class HomeExpandableFab extends StatefulWidget {
+class HomeMapActionsFab extends StatefulWidget {
   final MapType mapType;
 
-  const HomeExpandableFab({super.key, required this.mapType});
+  const HomeMapActionsFab({super.key, required this.mapType});
 
   @override
-  State<HomeExpandableFab> createState() => _HomeExpandableFabState();
+  State<HomeMapActionsFab> createState() => _HomeMapActionsFabState();
 }
 
-class _HomeExpandableFabState extends State<HomeExpandableFab>
+class _HomeMapActionsFabState extends State<HomeMapActionsFab>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;

@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 
 class DisplayWidget extends StatefulWidget {
-  const DisplayWidget({super.key});
+  final bool showStrangerLocation;
+  final bool showPostLocation;
+  final Function(bool) onShowStrangerLocationChanged;
+  final Function(bool) onShowPostLocationChanged;
+
+  const DisplayWidget({
+    super.key,
+    required this.showStrangerLocation,
+    required this.showPostLocation,
+    required this.onShowStrangerLocationChanged,
+    required this.onShowPostLocationChanged,
+  });
 
   @override
   State<DisplayWidget> createState() => _DisplayWidgetState();
 }
 
 class _DisplayWidgetState extends State<DisplayWidget> {
-  bool _showStrangerLocation = true;
-  bool _showPostLocation = true;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -32,28 +40,24 @@ class _DisplayWidgetState extends State<DisplayWidget> {
           ),
           const SizedBox(height: 12),
           CheckboxListTile(
-            value: _showStrangerLocation,
+            value: widget.showStrangerLocation,
             onChanged: (value) {
-              setState(() {
-                _showStrangerLocation = value ?? true;
-              });
+              widget.onShowStrangerLocationChanged(value ?? true);
             },
             title: const Text(
-              'Hiển thị vị trí của người lạ',
+              'Show stranger locations',
               style: TextStyle(color: Colors.black87),
             ),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
           ),
           CheckboxListTile(
-            value: _showPostLocation,
+            value: widget.showPostLocation,
             onChanged: (value) {
-              setState(() {
-                _showPostLocation = value ?? true;
-              });
+              widget.onShowPostLocationChanged(value ?? true);
             },
             title: const Text(
-              'Hiển thị vị trí bài post',
+              'Show post locations',
               style: TextStyle(color: Colors.black87),
             ),
             controlAffinity: ListTileControlAffinity.leading,

@@ -4,7 +4,18 @@ import '../widgets/_settings_sheet/location_widget.dart';
 import '../widgets/_settings_sheet/modification_widget.dart';
 
 class SettingsSheet extends StatefulWidget {
-  const SettingsSheet({super.key});
+  final bool showStrangerLocation;
+  final bool showPostLocation;
+  final Function(bool) onShowStrangerLocationChanged;
+  final Function(bool) onShowPostLocationChanged;
+
+  const SettingsSheet({
+    super.key,
+    required this.showStrangerLocation,
+    required this.showPostLocation,
+    required this.onShowStrangerLocationChanged,
+    required this.onShowPostLocationChanged,
+  });
 
   @override
   State<SettingsSheet> createState() => _SettingsSheetState();
@@ -21,7 +32,12 @@ class _SettingsSheetState extends State<SettingsSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const DisplayWidget(),
+            DisplayWidget(
+              showStrangerLocation: widget.showStrangerLocation,
+              showPostLocation: widget.showPostLocation,
+              onShowStrangerLocationChanged: widget.onShowStrangerLocationChanged,
+              onShowPostLocationChanged: widget.onShowPostLocationChanged,
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16.0),
