@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/signin_service.dart';
+import '../../services/auth_api_service.dart';
+import '../../services/auth_storage.dart';
 import '_started_screen.dart';
 import '_signin_form_screen.dart';
 
@@ -18,14 +20,17 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final SignInService _signInService = SignInService();
+  late final SignInService _signInService;
   late bool _showForm;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     // Lấy giá trị từ Widget cha truyền xuống để khởi tạo state
     _showForm = widget.showFormInitially;
+    // Initialize service
+    _signInService = SignInService(AuthApiService());
   }
 
   @override
@@ -48,14 +53,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _handleSignIn() async {
-    // Call service to handle sign in logic
-    final success = await _signInService.signIn(
-      emailController.text,
-      passwordController.text,
-    );
+    if (_isLoading) return; // Prevent multiple calls
 
-    if (success && mounted) {
-      Navigator.of(context).pushNamed('/home');
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Call service to handle sign in logic
+      final response = await _signInService.signIn(
+        emailController.text,
+        passwordController.text,
+      );
+
+      if (mounted) {
+        // Save authentication data
+        await AuthStorage.saveAuthData(response);
+
+        // Handle successful sign in
+        print('Sign in successful: $response');
+        Navigator.of(context).pushNamed('/home');
+      }
+    } catch (e) {
+      // Handle sign in error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign in failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -68,6 +99,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _handleForgetPassword() {
     Navigator.of(context).pushNamed('/forget-password');
+  }
+
+  // Logout method to clear authentication data
+  static Future<void> logout() async {
+    await AuthStorage.clearAuthData();
   }
 
   @override
@@ -83,6 +119,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               onSignIn: _handleSignIn,
               onBack: _handleBack, // Added back button handler
               onForgetPassword: _handleForgetPassword,
+              isLoading: _isLoading, // Pass loading state
             )
           : StartedScreen(
               onGetStarted: _handleGetStarted,

@@ -1,0 +1,37 @@
+// ==============================
+// 7. ADMIN ACTION MODULE
+// ==============================
+
+model RoleUpdatingRequest {
+  requestId   String    @id @default(uuid()) @db.Uuid @map("request_id")
+  createdBy   String    @db.Uuid @map("created_by")
+  type        String
+  state      String
+  note        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  responsedAt DateTime? @map("responsed_at")
+
+  user User @relation(fields: [createdBy], references: [userId])
+
+  @@map("RoleUpdatingRequest")
+}
+
+model PublicAnnouncement {
+  announcementId String @id @default(uuid()) @db.Uuid @map("announcement_id")
+  publisherId    String @map("publisher_id")
+  documentUrl    String? @map("document_url")
+  textContent    String? @map("text_content")
+
+  @@map("PublicAnnouncement")
+}
+
+
+model StateModification {
+  modificationId   String   @id @default(uuid()) @db.Uuid @map("deact_id")
+  accountId String   @map("account_id")
+  modifyBy   String   @map("modify_by")
+  newState String
+  modifyAt   DateTime @default(now()) @map("modify_at")
+
+  @@map("StateModification")
+}

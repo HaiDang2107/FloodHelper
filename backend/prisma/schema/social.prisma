@@ -1,0 +1,77 @@
+// ==============================
+// 2. SOCIAL NETWORK MODULE
+// ==============================
+
+model Post {
+  postId    String   @id @default(uuid()) @db.Uuid @map("post_id")
+  createdBy String   @db.Uuid @map("created_by")
+  caption   String?
+  imageUrl  String?  @map("image_url")
+  longitude Decimal? @db.Decimal(10, 7)
+  latitude  Decimal? @db.Decimal(10, 7)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [createdBy], references: [userId])
+  likes    Like[]
+  comments Comment[]
+
+  @@map("Post")
+}
+
+model Like {
+  postId    String   @db.Uuid @map("post_id")
+  createdBy String   @db.Uuid @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [postId], references: [postId])
+  user User @relation(fields: [createdBy], references: [userId])
+
+  @@id([postId, createdBy]) // Composite Key
+  @@map("Like")
+}
+
+model Comment {
+  commentedBy String   @db.Uuid @map("commented_by")
+  postId      String   @db.Uuid @map("post_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  textContent String?  @map("text_content")
+  imageUrl    String?  @map("image_url")
+
+  user User @relation(fields: [commentedBy], references: [userId])
+  post Post @relation(fields: [postId], references: [postId])
+
+  @@id([commentedBy, postId]) // Composite Key theo ERD, nhưng thường comment nên có ID riêng
+  @@map("Comment")
+}
+
+model Friendship {
+  userId       String   @db.Uuid @map("user_id")
+  friendId       String   @db.Uuid @map("friend_id")
+  friendMapMode Boolean  @default(false) @map("friend_map_mode")
+  lastLongitude Decimal? @map("last_longitude") @db.Decimal(10, 7)
+  lastLatitude  Decimal? @map("last_latitude") @db.Decimal(10, 7)
+  lastDataAt    DateTime @default(now()) @map("last_data_at")
+
+  user User @relation("Friendship_User", fields: [userId], references: [userId])
+  friend User @relation("Friendship_Friend", fields: [friendId], references: [userId])
+
+  // <Đối tượng tham chiếu> <data type> <tham chiếu từ trường nào đến trường nào>
+
+  @@id([userId, friendId])
+  @@map("Friendship")
+}
+
+model FriendMakingRequest {
+  requestId   String   @id @default(uuid()) @db.Uuid @map("request_id")
+  createdBy   String   @db.Uuid @map("created_by") // Người gửi
+  sentTo      String   @db.Uuid @map("sent_to")    // Người nhận
+  state      String
+  note        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  responsedAt DateTime? @map("responsed_at")
+
+  sender   User @relation("FriendRequestSender", fields: [createdBy], references: [userId])
+  receiver User @relation("FriendRequestReceiver", fields: [sentTo], references: [userId])
+
+  @@map("FriendMakingRequest")
+}

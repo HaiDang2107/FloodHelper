@@ -1,0 +1,46 @@
+// ==============================
+// 5. CHAT MODULE
+// ==============================
+
+model ChatRoom {
+  roomId      String   @id @default(uuid()) @db.Uuid @map("room_id")
+  createdBy   String?  @db.Uuid @map("created_by") // Nullable
+  memberCount Int      @default(0) @map("member_count")
+
+  creator  User?        @relation(fields: [createdBy], references: [userId])
+  messages Message[]
+  members  RoomMember[]
+
+  @@map("ChatRoom")
+}
+
+model Message {
+  messageId   String   @id @default(uuid()) @db.Uuid @map("message_id")
+  roomId      String   @db.Uuid @map("room_id")
+  sentBy      String   @db.Uuid @map("sent_by")
+  type        String
+  textContent String?  @map("text_content") @db.Text
+  imageUrl    String?  @map("image_url")
+  sentAt      DateTime @default(now()) @map("sent_at")
+  unsentAt    DateTime? @map("unsent_at") // message recall
+
+  chatRoom ChatRoom @relation(fields: [roomId], references: [roomId])
+  sender   User     @relation(fields: [sentBy], references: [userId])
+
+  @@map("Message")
+}
+
+model RoomMember {
+  roomId   String   @db.Uuid @map("room_id")
+  memberId String   @db.Uuid @map("member_id")
+  role     String
+  nickname String?
+  enterAt  DateTime @default(now()) @map("enter_at")
+  leaveAt  DateTime? @map("leave_at")
+
+  chatRoom ChatRoom @relation(fields: [roomId], references: [roomId])
+  user     User     @relation(fields: [memberId], references: [userId])
+
+  @@id([roomId, memberId])
+  @@map("RoomMember")
+}

@@ -15,6 +15,8 @@ import '../../../common/models/friend_model.dart';
 import '../../../common/models/post_model.dart';
 import '_stranger_details_sheet.dart';
 import '_settings_sheet.dart';
+import '_post_content_screen.dart';
+import '_post_content_bottom_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -244,7 +246,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           size: 60,
                           imageUrl: post.imageUrl,
                           onTap: () {
-                            // TODO: Show post details
+                            _showBottomSheet(
+                              'Post',
+                              PostContentScreen(post: post),
+                            );
                           },
                         ),
                       ),

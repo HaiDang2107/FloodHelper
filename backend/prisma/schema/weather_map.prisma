@@ -1,0 +1,14 @@
+// ==============================
+// 6. WEATHER MAP MODULE
+// ==============================
+
+model WeatherMap {
+  longitude     Decimal  @db.Decimal(10, 7)
+  latitude      Decimal  @db.Decimal(10, 7)
+  timestamp     DateTime
+  precipitation Float?
+  temperature   Float?
+
+  @@id([longitude, latitude, timestamp])
+  @@map("WeatherMap")
+}

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: floodhelper_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - floodhelper_network
+
+  # Uncomment this section when you want to run the NestJS app in Docker
+  # app:
+  #   build: .
+  #   container_name: floodhelper_app
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: floodhelper
+  #     DB_USER: floodhelper_user
+  #     DB_PASSWORD: floodhelper_password
+  #     DB_SCHEMA: public
+  #     JWT_SECRET: your-jwt-secret-key
+  #     AT_SECRET: your-access-token-secret
+  #     RT_SECRET: your-refresh-token-secret
+  #     PASSWORD_RESET_JWT_SECRET: your-password-reset-secret
+  #     AT_EXPIRES_IN: 15m
+  #     RT_EXPIRES_IN: 7d
+  #     PASSWORD_RESET_EXPIRES_IN: 10m
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - floodhelper_network
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+
+volumes:
+  postgres_data:
+
+networks:
+  floodhelper_network:
+    driver: bridge

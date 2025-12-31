@@ -1,0 +1,80 @@
+// ==============================
+// 3. CHARITY MODULE
+// ==============================
+
+model CharityCampaign {
+  campaignId           String    @id @default(uuid()) @db.Uuid @map("campaign_id")
+  organizedBy          String    @db.Uuid @map("organized_by")
+  campaignName         String    @map("campaign_name")
+  purpose              String    @db.Text
+  destination          String
+  charityObject        String    @map("charity_object")
+  state                String
+  startDonationAt  DateTime? @map("start_donation_at")
+  finishDonationAt DateTime? @map("finish_donation_at")
+  startDistributionAt  DateTime? @map("start_distribution_at")
+  finishDistributionAt DateTime? @map("finish_distribution_at")
+  bankStatementFileUrl String?   @map("bank_statement_file_url")
+  
+  // Note: ERD có field 'created_by' trùng 'organized_by', tôi gom lại
+  createdAt            DateTime  @default(now()) @map("created_at") 
+
+  organizer    User          @relation(fields: [organizedBy], references: [userId])
+  transactions Transaction[]
+  bankAccounts BankAccount[]
+  supplies     Supply[]
+
+  @@map("CharityCampaign")
+}
+
+model Transaction {
+  transactionId  String   @id @default(uuid()) @db.Uuid @map("transaction_id")
+  campaignId     String   @db.Uuid @map("campaign_id")
+  transferType   String   @map("transfer_type") // IN / OUT
+  donateAt       DateTime @map("donate_at")
+  transferBy     String?  @map("transfer_by")
+  transferAmount Decimal  @map("transfer_amount") @db.Decimal(15, 2)
+  message        String?
+
+  campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
+
+  @@map("Transaction")
+}
+
+model BankAccount {
+  bankAccountId     String @id @default(uuid()) @db.Uuid @map("bank_account_id")
+  campaignId        String @db.Uuid @map("campaign_id")
+  bankName          String @map("bank_name")
+  bankAccountName   String @map("bank_account_name")
+  bankAccountNumber String @map("bank_account_number")
+  balance           Decimal @default(0)
+
+  campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
+
+  @@map("BankAccount")
+}
+
+model Supply {
+  supplyId       String   @id @default(uuid()) @db.Uuid @map("supply_id")
+  campaignId     String   @db.Uuid @map("campaign_id")
+  supplyName     String   @map("supply_name")
+  unitPrice      Decimal? @map("unit_price")
+  quantity       Int
+  price          Decimal
+  boughtAt       DateTime @map("bought_at")
+  supplyImageUrl String?  @map("supply_image_url")
+  invoiceImageUrl String? @map("invoice_image_url")
+
+  campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
+
+  @@map("Supply")
+}
+
+model AnnouncementFromBenefactor {
+  announcementId String @id @default(uuid()) @db.Uuid @map("announcement_id")
+  campaignId     String @db.Uuid @map("campaign_id")
+  textContent    String? @map("text_content")
+  imageUrl       String? @map("image_url")
+  
+  @@map("AnnouncementFromBenefactor")
+}

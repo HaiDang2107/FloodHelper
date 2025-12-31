@@ -83,6 +83,50 @@ Check out a few resources that may come in handy when working with NestJS:
 - To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
 - Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 
+## Database Seeding
+
+This project includes comprehensive seed data for development and testing. The seed script populates the database with realistic sample data representing a flood emergency scenario.
+
+### Quick Start
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment file and configure database
+cp .env.example .env
+
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# Seed the database
+npm run db:seed
+```
+
+### What Gets Seeded
+
+- **5 Users** with different roles (User, Rescuer, etc.)
+- **3 Accounts** linked to users
+- **3 Friendships** with map sharing settings
+- **5 Posts** with flood-related content and locations
+- **4 Likes** and **3 Comments** on posts
+- **2 Charity Campaigns** (active and completed)
+- **2 Transactions** (donations)
+- **2 SOS Signals** (emergency distress calls)
+- **2 Chat Rooms** with sample messages
+
+### View Seeded Data
+
+```bash
+# Open Prisma Studio to browse data
+npx prisma studio
+```
+
+For detailed information, see [prisma/README.md](./prisma/README.md).
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).

@@ -1,0 +1,105 @@
+// ==============================
+// 1. AUTH & USER MODULE
+// ==============================
+
+model User {
+  userId           String    @id @default(uuid()) @db.Uuid @map("user_id")
+  name             String    @db.VarChar(255)
+  displayName      String?   @map("display_name")
+  dob              DateTime? @db.Date
+  village          String?
+  district         String?
+  country          String?
+  role             String[]  @default(["GUEST"]) // Array of roles, can have multiple
+  curLongitude     Decimal?  @map("cur_longitude") @db.Decimal(10, 7)
+  curLatitude      Decimal?  @map("cur_latitude") @db.Decimal(10, 7)
+  publicMapMode    Boolean   @default(false) @map("public_map_mode")
+  avatarUrl        String?   @map("avatar_url")
+  citizenId        String?   @map("citizen_id")
+  phoneNumber      String    @unique @map("phone_number")
+  citizenIdCardImg String?   @map("citizen_id_card_img")
+  jobPosition      String?   @map("job_position")
+
+  // Relations
+  account              Account?
+  posts                Post[]
+  campaigns            CharityCampaign[]
+  signals              Signal[]
+  sentMessages         Message[]
+  createdChatRooms     ChatRoom[]
+  likes                Like[]
+  comments             Comment[]
+  roomMemberships      RoomMember[]
+  roleRequests         RoleUpdatingRequest[]
+  friendRequestsSent   FriendMakingRequest[] @relation("FriendRequestSender")
+  friendRequestsRcved  FriendMakingRequest[] @relation("FriendRequestReceiver")
+  
+  // Quan hệ bạn bè (Self-relation many-to-many explicit)
+  friendshipsInitiated Friendship[] @relation("Friendship_User") // Phải nêu rõ relation nếu có 2 tham chiếu đến cùng 1 bảng
+  friendshipsReceived  Friendship[] @relation("Friendship_Friend")
+
+  @@map("User")
+}
+
+model Account {
+  accountId                String   @id @default(uuid()) @db.Uuid @map("account_id")
+  userId                   String   @unique @db.Uuid @map("user_id") // Unique vì 1 User có 1 Account
+  providerId               String?  @db.Uuid @map("provider_id") // Nullable nếu không dùng provider
+  createdByAccountId       String?  @db.Uuid @map("created_by")
+  username                 String   @unique
+  password                 String
+  state                   String   @default("ACTIVE")
+  createdAt                DateTime @default(now()) @map("created_at")
+  refreshTokenFromProvider String?  @map("refresh_token_from_provider")
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [userId])
+  provider  Provider? @relation(fields: [providerId], references: [providerId])
+  sessions  Session[]
+  
+  // Self-relation: Ai tạo tài khoản này
+  creator   Account?  @relation("AccountCreator", fields: [createdByAccountId], references: [accountId])
+  created   Account[] @relation("AccountCreator")
+
+  // Verification codes
+  verificationCodes VerificationCode[]
+
+  @@map("Account")
+}
+
+model Session {
+  sessionId    String   @id @default(uuid()) @db.Uuid @map("session_id")
+  accountId    String   @db.Uuid @map("account_id")
+  deviceId     String?  @map("device_id")
+  refreshToken String   @map("refresh_token")
+  role         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  expireAt     DateTime @map("expire_at")
+
+  account Account @relation(fields: [accountId], references: [accountId])
+
+  @@map("Session")
+}
+
+model Provider {
+  providerId   String  @id @default(uuid()) @db.Uuid @map("provider_id")
+  providerName String  @map("provider_name")
+  refreshToken String? @map("refresh_token")
+
+  accounts Account[]
+
+  @@map("Provider")
+}
+
+model VerificationCode {
+  verificationId String   @id @default(uuid()) @db.Uuid @map("verification_id")
+  accountId       String   @db.Uuid @map("account_id")
+  code            String   @unique // Unique để tránh duplicate codes
+  type            String   // PASSWORD_RESET, EMAIL_VERIFICATION, ACCOUNT_CREATION, etc.
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  account Account @relation(fields: [accountId], references: [accountId])
+
+  @@map("VerificationCode")
+}

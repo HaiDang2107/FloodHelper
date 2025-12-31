@@ -50,7 +50,10 @@ class CustomBottomSheet extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
-                  child: child,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [child],
+                  ),
                 ),
               ),
             ],

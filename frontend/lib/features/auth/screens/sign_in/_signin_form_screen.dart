@@ -11,6 +11,7 @@ class SignUpFormScreen extends StatelessWidget {
   final VoidCallback onSignIn;
   final VoidCallback onBack;
   final VoidCallback onForgetPassword; // Added onForgetPassword callback
+  final bool isLoading;
 
   const SignUpFormScreen({
     super.key,
@@ -20,6 +21,7 @@ class SignUpFormScreen extends StatelessWidget {
     required this.onSignIn,
     required this.onBack,
     required this.onForgetPassword, // Added onForgetPassword parameter
+    this.isLoading = false,
   });
 
   @override
@@ -93,11 +95,21 @@ class SignUpFormScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         CustomButton(
-                          text: 'Sign in',
-                          backgroundColor: const Color(0xFFFFDF71),
+                          text: isLoading ? 'Signing in...' : 'Sign in',
+                          backgroundColor: isLoading ? Colors.grey : const Color(0xFFFFDF71),
                           textColor: const Color(0xFF0F62FE),
-                          onPressed: onSignIn,
+                          onPressed: isLoading ? () {} : onSignIn,
                           width: 120,
+                          icon: isLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0F62FE)),
+                                  ),
+                                )
+                              : null,
                         ),
                       ],
                     ),
