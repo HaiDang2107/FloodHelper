@@ -494,31 +494,7 @@ async function main() {
 
   console.log('✅ Created messages');
 
-  // 12. Create Verification Codes
-  const verificationCodes = await Promise.all([
-    prisma.verificationCode.create({
-      data: {
-        verificationId: randomUUID(),
-        accountId: accounts[0].accountId,
-        code: '123456',
-        type: 'PASSWORD_RESET',
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
-        createdAt: new Date('2023-10-16T10:00:00Z'),
-      },
-    }),
-    prisma.verificationCode.create({
-      data: {
-        verificationId: randomUUID(),
-        accountId: accounts[3].accountId,
-        code: '789012',
-        type: 'ACCOUNT_CREATION',
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
-        createdAt: new Date('2023-10-16T11:00:00Z'),
-      },
-    }),
-  ]);
-
-  console.log('✅ Created verification codes');
+  // Verification codes creation removed from seed (managed dynamically in application)
 
   console.log('🎉 Seed completed successfully!');
   console.log(`📊 Summary:
@@ -533,7 +509,6 @@ async function main() {
   - ${signals.length} signals
   - ${chatRooms.length} chat rooms
   - ${messages.length} messages
-  - ${verificationCodes.length} verification codes
   `);
 }
 

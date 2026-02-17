@@ -17,7 +17,45 @@ services:
     networks:
       - floodhelper_network
 
+  redis:
+    image: redis:alpine
+    container_name: floodhelper_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - floodhelper_network
+
   # Uncomment this section when you want to run the NestJS app in Docker
+  # app:
+  #   build: .
+  #   container_name: floodhelper_app
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: floodhelper
+  #     DB_USER: floodhelper_user
+  #     DB_PASSWORD: floodhelper_password
+  #     DB_SCHEMA: public
+  #     JWT_SECRET: your-jwt-secret-key
+  #     AT_SECRET: your-access-token-secret
+  #     RT_SECRET: your-refresh-token-secret
+  #     PASSWORD_RESET_JWT_SECRET: your-password-reset-secret
+  #     AT_EXPIRES_IN: 15m
+  #     RT_EXPIRES_IN: 7d
+  #     PASSWORD_RESET_EXPIRES_IN: 10m
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - floodhelper_network
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
   # app:
   #   build: .
   #   container_name: floodhelper_app
@@ -48,6 +86,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   floodhelper_network:

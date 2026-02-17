@@ -1,6 +1,7 @@
 
 import {
   Injectable,
+  Inject,
   UnauthorizedException,
   ConflictException,
   NotFoundException,
@@ -8,8 +9,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { AccountState } from '../common/accountState.enum';
-import { VerificationType } from '../common/verificationType.enum';
+import { AccountState } from '../common/enum/accountState.enum';
+import { Purpose } from '../common/enum/purpose.enum';
+import { MailerService } from '@nestjs-modules/mailer';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+import { CachedOtp, JwtPayload } from './interfaces';
 import {
   SignupDto,
   SigninDto,
@@ -23,6 +28,7 @@ import {
   SignoutResponseDto,
   GoogleSigninResponseDto,
   ForgotPasswordResponseDto,
+  VerifyCodeResponseDto,
   ResetPasswordResponseDto,
   RefreshTokenResponseDto,
   VerifyCodeDto,
@@ -33,11 +39,16 @@ import {
 export class AuthService {
   private prisma: PrismaClient;
 
-  constructor(private jwtService: JwtService) {
+  constructor(
+    private jwtService: JwtService,
+    private mailerService: MailerService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {
     this.prisma = new PrismaClient();
+
   }
 
-  async signUp(registerDto: SignupDto): Promise<{ message: string }> {
+  async signUp(registerDto: SignupDto): Promise<{ success: boolean; message: string }> {
     const { username, password, name, phoneNumber, ...rest } = registerDto;
 
     const existingAccount = await this.prisma.account.findUnique({
@@ -52,13 +63,8 @@ export class AuthService {
         throw new ConflictException('Account already exists');
       }
       if (existingAccount.state === AccountState.INACTIVE) {
-        // Resend verification for existing inactive account
-        await this.createAndSendVerificationCode(
-          existingAccount,
-          VerificationType.ACCOUNT_CREATION,
-        );
         throw new ConflictException(
-          'Account is not activated. Verification code has been sent again.',
+          'Account is not activated.',
         );
       }
     }
@@ -89,59 +95,88 @@ export class AuthService {
     });
 
     await this.createAndSendVerificationCode(
-      user.account,
-      VerificationType.ACCOUNT_CREATION,
+      user.account?.username,
+      Purpose.CREATE_ACCOUNT,
     );
 
     return {
+      success: true,
       message:
         'Registration successful. Please check your email to activate your account.',
     };
   }
 
-  async verifyCode(verifyCodeDto: VerifyCodeDto): Promise<{ message: string }> {
-    const { username, code } = verifyCodeDto;
+  async createAndSendVerificationCode(
+    account: any,
+    type: Purpose,
+  ): Promise<void> {
+    const code = this.generateVerificationCode();
 
-    const verificationCode = await this.prisma.verificationCode.findFirst({
-      where: {
-        account: {
-          username,
-        },
-        code,
-        type: VerificationType.ACCOUNT_CREATION,
-      },
+    const payload: CachedOtp = {
+      code: code,
+      type: type,
+    };
+
+    await this.cacheManager.set(`otp_${account}`, payload, parseInt(process.env.TTL_OTP || '300000'));
+
+    await this.mailerService.sendMail({
+      to: account,
+      subject: 'Mã xác thực',
+      html: `<h1>Mã OTP của bạn là: ${code}</h1><p>Hết hạn sau 5 phút.</p>`,
     });
+  }
 
-    if (!verificationCode) {
+  async verifyCode(verifyCodeDto: VerifyCodeDto): Promise<VerifyCodeResponseDto> {
+    const { username, type, code } = verifyCodeDto;
+
+    // Get verification code from Redis
+    const storedPayload = await this.cacheManager.get<CachedOtp>(`otp_${username}`);
+
+    if (!storedPayload || storedPayload.code !== code || storedPayload.type !== type) {
       throw new NotFoundException('Invalid verification code.');
     }
 
-    if (new Date() > verificationCode.expiresAt) {
-      // Consider deleting the expired code
-      await this.prisma.verificationCode.delete({
-        where: { verificationId: verificationCode.verificationId },
-      });
-      throw new UnauthorizedException('Verification code has expired.');
+    await this.cacheManager.del(`otp_${username}`);
+
+    const account = await this.prisma.account.findUnique({
+      where: { username },
+      include: { user: { select: { role: true } } },
+    });
+
+    if (!account) {
+      throw new NotFoundException('Account not found.');
     }
 
-    // Activate account and delete the code
-    await this.prisma.$transaction([
-      this.prisma.account.update({
-        where: { accountId: verificationCode.accountId },
-        data: { state: AccountState.ACTIVE },
-      }),
-      this.prisma.verificationCode.delete({
-        where: { verificationId: verificationCode.verificationId },
-      }),
-    ]);
+    if (type === Purpose.CREATE_ACCOUNT) {
+      if (account.state !== AccountState.INACTIVE) {
+        throw new ConflictException('Account is already activated or banned.');
+      }
 
-    return { message: 'Account verification successful.' };
+      // Activate account
+      await this.prisma.account.update({
+        where: { accountId: account.accountId },
+        data: { state: AccountState.ACTIVE },
+      });
+
+      return {
+        success: true,
+        message: 'Account verification successful.'
+      };
+    } else {
+      const role = account.user.role;
+
+      return {
+        success: true,
+        resetToken: (await this.generateTokens(account.accountId, username, '', role, type)).accessToken,
+        message: 'Password reset verification successful.'
+      };
+    }
   }
 
   async resendVerificationCode(
     resendDto: ResendVerificationCodeDto,
-  ): Promise<{ message: string }> {
-    const { username } = resendDto;
+  ): Promise<{ success: boolean; message: string }> {
+    const { username, type } = resendDto;
     const account = await this.prisma.account.findUnique({
       where: { username },
     });
@@ -150,43 +185,26 @@ export class AuthService {
       throw new NotFoundException('Account does not exist.');
     }
 
-    if (account.state !== AccountState.INACTIVE) {
-      throw new ConflictException('Account is already activated or banned.');
+    // if (account.state !== AccountState.INACTIVE) {
+    //   throw new ConflictException('Account is already activated or banned.');
+    // }
+
+    if (type === Purpose.CREATE_ACCOUNT) {
+      // For account creation, account must be INACTIVE
+      if (account.state !== AccountState.INACTIVE) {
+        throw new ConflictException('Account is already activated or banned.');
+      }
+    } else if (type === Purpose.RESET_PASSWORD) {
+      // For password reset, account must be ACTIVE
+      this.validateAccountState(account);
     }
 
     await this.createAndSendVerificationCode(
-      account,
-      VerificationType.ACCOUNT_CREATION,
+      account.username,
+      type,
     );
 
-    return { message: 'Verification code has been sent again.' };
-  }
-
-  private async createAndSendVerificationCode(
-    account,
-    type: VerificationType,
-  ) {
-    // const code = this.generateVerificationCode();
-    // const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    // // Delete old codes of the same type
-    // await this.prisma.verificationCode.deleteMany({
-    //   where: {
-    //     accountId: account.accountId,
-    //     type,
-    //   }
-    // })
-
-    // await this.prisma.verificationCode.create({
-    //   data: {
-    //     accountId: account.accountId,
-    //     code,
-    //     type,
-    //     expiresAt,
-    //   },
-    // });
-
-    // await this.sendEmail(account.username, 'Account Verification Code', code);
+    return { success: true, message: 'Verification code has been sent again.' };
   }
 
   private generateVerificationCode(length = 6): string {
@@ -214,7 +232,7 @@ export class AuthService {
     });
 
     if (!account) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('User not found!');
     }
 
     const isPasswordMatching = await bcrypt.compare(password, account.password);
@@ -222,11 +240,15 @@ export class AuthService {
       throw new UnauthorizedException('Incorrect password.');
     }
 
+    // Validate account state before allowing login
+    this.validateAccountState(account);
+
     const tokens = await this.generateTokens(
       account.accountId,
       username,
+      deviceId,
       account.user.role,
-      'normal-service',
+      Purpose.CREATE_ACCOUNT,
     );
     await this.updateRefreshToken(
       account.accountId,
@@ -263,26 +285,34 @@ export class AuthService {
   private async generateTokens(
     accountId: string,
     username: string,
+    deviceId: string,
     roles: string[],
-    purpose: 'normal-service' | 'reset-password' = 'normal-service',
+    purpose: Purpose
   ) {
-    const payload = {
+    const payload: JwtPayload = {
       sub: accountId,
       username,
+      deviceId,
       roles,
-      purpose,
+      purpose: purpose,
     };
 
+    let refreshToken = '';
+
+    if (purpose === Purpose.USE_OTHER_SERVICES) {
+      const rtExpiresIn = process.env.RT_EXPIRES_IN || '7d';
+
+      refreshToken = this.jwtService.sign(payload as any, {
+        secret: process.env.RT_SECRET || 'rt-secret',
+        expiresIn: rtExpiresIn,
+      } as any);
+    }
+
     const atExpiresIn = process.env.AT_EXPIRES_IN || '15m';
-    const rtExpiresIn = process.env.RT_EXPIRES_IN || '7d';
 
     const accessToken = this.jwtService.sign(payload as any, {
-      secret: process.env.AT_SECRET || 'at-secret',
+      secret: process.env.JWT_SECRET || 'jwt-secret',
       expiresIn: atExpiresIn,
-    } as any);
-    const refreshToken = this.jwtService.sign(payload as any, {
-      secret: process.env.RT_SECRET || 'rt-secret',
-      expiresIn: rtExpiresIn,
     } as any);
 
     return {
@@ -313,7 +343,7 @@ export class AuthService {
   private async updateRefreshToken(
     accountId: string,
     refreshToken: string,
-    deviceId: string | undefined,
+    deviceId: string,
     role: string[],
   ) {
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -329,50 +359,142 @@ export class AuthService {
   }
 
   async logout(logoutDto: SignoutDto, user: any): Promise<SignoutResponseDto> {
+    const { logoutAll } = logoutDto;
+    let deletedSessions;
+
+    if (logoutAll) {
+      // Delete all sessions for this account
+      deletedSessions = await this.prisma.session.deleteMany({
+        where: {
+          accountId: user.accountId,
+        },
+      });
+    } else {
+      // Delete only the session for this specific device
+      deletedSessions = await this.prisma.session.deleteMany({
+        where: {
+          accountId: user.accountId,
+          deviceId: user.deviceId,
+        },
+      });
+    }
+
     return {
       success: true,
       message: 'Logout successful',
       data: {
-        loggedOutSessions: 1,
+        loggedOutSessions: deletedSessions.count,
       },
     };
   }
 
-  async initiateGoogleLogin(): Promise<string> {
-    // TODO: Implement Google OAuth initiation
-    return 'https://accounts.google.com/oauth/authorize?...';
-  }
+  // async initiateGoogleLogin(): Promise<string> {
+  //   // This method is not needed with Passport strategy
+  //   // The redirect is handled by GoogleAuthGuard
+  //   return 'Use GET /auth/google to initiate Google OAuth flow';
+  // }
 
   async handleGoogleCallback(
-    googleCallbackDto: GoogleCallbackDto,
+    googleUser: any,
+    deviceId?: string,
   ): Promise<GoogleSigninResponseDto> {
+    const { googleId, email, firstName, lastName, picture } = googleUser;
+
+    // Check if user exists by email or googleId
+    let accountWithUser = await this.prisma.account.findFirst({
+      where: {
+        OR: [
+          { username: email },
+          { providerId: googleId },
+        ],
+      },
+      include: { user: true },
+    });
+
+    let isNewUser = false;
+
+    if (!accountWithUser) {
+      // Create new user with Google account
+      isNewUser = true;
+      const newUser = await this.prisma.user.create({
+        data: {
+          name: `${firstName} ${lastName}`,
+          displayName: `${firstName} ${lastName}`,
+          phoneNumber: email, // Using email as phoneNumber placeholder
+          avatarUrl: picture,
+          account: {
+            create: {
+              username: email,
+              password: '', // No password for OAuth users
+              state: AccountState.ACTIVE,
+            },
+          },
+        },
+        include: {
+          account: true,
+        },
+      });
+      
+      // Re-fetch to get proper structure
+      accountWithUser = await this.prisma.account.findUnique({
+        where: { accountId: newUser.account!.accountId },
+        include: { user: true },
+      });
+    }
+
+    if (!accountWithUser) {
+      throw new UnauthorizedException('Failed to create or retrieve account');
+    }
+
+    if (accountWithUser.state !== AccountState.ACTIVE) {
+      throw new UnauthorizedException('Account is not active');
+    }
+
+    // Generate tokens
+    const tokens = await this.generateTokens(
+      accountWithUser.accountId,
+      accountWithUser.username,
+      deviceId || 'google-oauth',
+      accountWithUser.user.role,
+      Purpose.USE_OTHER_SERVICES,
+    );
+
+    // Update refresh token in session
+    await this.updateRefreshToken(
+      accountWithUser.accountId,
+      tokens.refreshToken,
+      deviceId || 'google-oauth',
+      accountWithUser.user.role,
+    );
+
+    const user = accountWithUser.user;
     return {
       success: true,
       message: 'Google login successful',
       data: {
         user: {
-          userId: 'temp-user-id',
-          name: 'Google User',
-          phoneNumber: '+84901234567',
-          role: ['GUEST'],
+          userId: user.userId,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
         },
         tokens: {
-          accessToken: 'temp-access-token',
-          refreshToken: 'temp-refresh-token',
-          expiresIn: 900,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresIn: tokens.accessTokenExpiresIn,
         },
         session: {
-          sessionId: 'temp-session-id',
-          expireAt: new Date(Date.now() + 15 * 60 * 1000),
+          sessionId: 'google-session',
+          expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
-        isNewUser: true,
+        isNewUser,
       },
     };
   }
 
   async forgotPassword(
     forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<{ message: string }> {
+  ): Promise<{ success: boolean; message: string }> {
     const { username } = forgotPasswordDto;
     const account = await this.prisma.account.findUnique({
       where: { username },
@@ -385,69 +507,22 @@ export class AuthService {
     this.validateAccountState(account);
 
     await this.createAndSendVerificationCode(
-      account,
-      VerificationType.PASSWORD_RESET,
+      account.username,
+      Purpose.RESET_PASSWORD,
     );
 
     return {
+      success: true,
       message: 'Password reset request has been sent. Please check your email.',
     };
   }
 
-  async verifyPasswordReset(
-    verifyDto: VerifyCodeDto,
-  ): Promise<{ resetToken: string }> {
-    const { username, code } = verifyDto;
-    const verificationCode = await this.prisma.verificationCode.findFirst({
-      where: {
-        account: { username },
-        code,
-        type: VerificationType.PASSWORD_RESET,
-      },
-    });
-
-    if (!verificationCode) {
-      throw new NotFoundException('Invalid verification code.');
-    }
-
-    if (new Date() > verificationCode.expiresAt) {
-      await this.prisma.verificationCode.delete({
-        where: { verificationId: verificationCode.verificationId },
-      });
-      throw new UnauthorizedException('Verification code has expired.');
-    }
-
-    const account = await this.prisma.account.findUnique({
-      where: { accountId: verificationCode.accountId }
-    });
-
-    if (!account) {
-        throw new UnauthorizedException('User not found');
-    }
-
-    // Delete code and generate password-reset JWT
-    await this.prisma.verificationCode.delete({
-      where: { verificationId: verificationCode.verificationId },
-    });
-
-    const payload = {
-      sub: account.accountId,
-      username: account.username,
-      purpose: 'reset-password' as const,
-    };
-
-    const resetToken = this.jwtService.sign(payload as any, {
-      secret: process.env.AT_SECRET || 'at-secret',
-      expiresIn: process.env.AT_EXPIRES_IN || '15m',
-    } as any);
-
-    return { resetToken };
-  }
+  // verifyPasswordReset removed - use verifyCode() with Purpose.RESET_PASSWORD instead
 
   async resetPassword(
     resetPasswordDto: ResetPasswordDto,
     user: { accountId: string },
-  ): Promise<{ message: string }> {
+  ): Promise<{ success: boolean; message: string }> {
     const { newPassword } = resetPasswordDto;
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -456,7 +531,7 @@ export class AuthService {
       data: { password: hashedPassword },
     });
 
-    return { message: 'Password has been reset successfully.' };
+    return { success: true, message: 'Password has been reset successfully.' };
   }
 
   async refreshToken(
@@ -496,18 +571,10 @@ export class AuthService {
       const newTokens = await this.generateTokens(
         session.account.accountId,
         session.account.username,
+        session.deviceId || '',
         session.account.user.role,
-        'normal-service',
+        Purpose.REFRESH_TOKEN,
       );
-
-      // Update session with new refresh token and expiration
-      await this.prisma.session.update({
-        where: { sessionId: session.sessionId },
-        data: {
-          refreshToken: await bcrypt.hash(newTokens.refreshToken, 10),
-          expireAt: new Date(Date.now() + this.convertToSeconds(process.env.RT_EXPIRES_IN || '7d') * 1000),
-        },
-      });
 
       return {
         success: true,
@@ -515,7 +582,6 @@ export class AuthService {
         data: {
           tokens: {
             accessToken: newTokens.accessToken,
-            refreshToken: newTokens.refreshToken,
             expiresIn: newTokens.accessTokenExpiresIn,
           },
         },

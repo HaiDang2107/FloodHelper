@@ -7,7 +7,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:antiflood/app/app.dart';
+import 'package:antiflood/app.dart';
 
 void main() {
   testWidgets('Sign up screen renders', (WidgetTester tester) async {

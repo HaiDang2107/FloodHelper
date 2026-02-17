@@ -87,6 +87,12 @@ export class ForgotPasswordResponseDto {
   };
 }
 
+export class VerifyCodeResponseDto {
+  success: boolean;
+  resetToken?: string;
+  message: string;
+}
+
 export class ResetPasswordResponseDto {
   success: boolean;
   message: string;
@@ -98,7 +104,6 @@ export class RefreshTokenResponseDto {
   data: {
     tokens: {
       accessToken: string;
-      refreshToken: string;
       expiresIn: number;
     };
   };

@@ -48,7 +48,7 @@ model Account {
   createdByAccountId       String?  @db.Uuid @map("created_by")
   username                 String   @unique
   password                 String
-  state                   String   @default("ACTIVE")
+  state                   String   @default("INACTIVE")
   createdAt                DateTime @default(now()) @map("created_at")
   refreshTokenFromProvider String?  @map("refresh_token_from_provider")
 
@@ -60,9 +60,6 @@ model Account {
   // Self-relation: Ai tạo tài khoản này
   creator   Account?  @relation("AccountCreator", fields: [createdByAccountId], references: [accountId])
   created   Account[] @relation("AccountCreator")
-
-  // Verification codes
-  verificationCodes VerificationCode[]
 
   @@map("Account")
 }
@@ -89,17 +86,4 @@ model Provider {
   accounts Account[]
 
   @@map("Provider")
-}
-
-model VerificationCode {
-  verificationId String   @id @default(uuid()) @db.Uuid @map("verification_id")
-  accountId       String   @db.Uuid @map("account_id")
-  code            String   @unique // Unique để tránh duplicate codes
-  type            String   // PASSWORD_RESET, EMAIL_VERIFICATION, ACCOUNT_CREATION, etc.
-  expiresAt       DateTime @map("expires_at")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  account Account @relation(fields: [accountId], references: [accountId])
-
-  @@map("VerificationCode")
 }

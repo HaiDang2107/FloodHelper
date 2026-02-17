@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Get, UseGuards, Res, Delete } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Body, Get, UseGuards, Res, Delete, Req, Query } from '@nestjs/common';
+import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import {
   SignupDto,
@@ -16,6 +17,7 @@ import {
   SignoutResponseDto,
   GoogleSigninResponseDto,
   ForgotPasswordResponseDto,
+  VerifyCodeResponseDto,
   ResetPasswordResponseDto,
   RefreshTokenResponseDto,
   VerifyCodeDto,
@@ -26,87 +28,107 @@ import {
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-  @Post('register')
-  async signUp(@Body() registerDto: SignupDto): Promise<{ message: string }> {
+  @Post('signup')
+  async signUp(@Body() registerDto: SignupDto): Promise<{ success: boolean; message: string }> {
     return this.authService.signUp(registerDto);
   }
 
-  @Post('register/verify')
-  async verifyCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<{ message: string }> {
+  @Post('verify')
+  async verifyCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<VerifyCodeResponseDto> {
     return this.authService.verifyCode(verifyCodeDto);
   }
 
-  @Post('register/resend-code')
+  @Post('resend-code')
   async resendVerificationCode(
     @Body() resendDto: ResendVerificationCodeDto,
-  ): Promise<{ message: string }> {
+  ): Promise<{ success: boolean; message: string }> {
     return this.authService.resendVerificationCode(resendDto);
   }
 
-  @Post('session')
+  @Post('signin')
   async signIn(
     @Body() signinDto: SigninDto,
     @Res({ passthrough: true }) response: Response,
+    // @Res: Can thiệp vào Response (set header, ...) bởi vì bình thường, NestJS gửi response tự động
+    // passthrough: Báo cho NestJS vẫn gửi response tự động sau khi can thiệp xong
+    // Vì refresh token được cho vào cookie ==> xóa refresh_token trong body
   ): Promise<SigninResponseDto> {
     const result = await this.authService.signin(signinDto);
     response.cookie('refresh_token', result.data.tokens.refreshToken, {
       httpOnly: true,
+      path: 'auth/token/refresh',
     });
     delete result.data.tokens.refreshToken;
     return result;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete('session')
+  @Delete('signout')
   async signOut(
-    @Body() logoutDto: SignoutDto,
     @CurrentUser() user,
+    @Res({ passthrough: true }) response: Response,
+    @Query('logoutAll') logoutAll?: boolean,
   ): Promise<SignoutResponseDto> {
-    return this.authService.logout(logoutDto, user);
+    const result = await this.authService.logout({ logoutAll }, user);
+    response.clearCookie('refresh_token', { path: 'auth/token/refresh' });
+    return result;
   }
 
-  @Get('google')
-  async googleLogin(): Promise<string> {
-    // TODO: Implement Google OAuth initiation
-    return this.authService.initiateGoogleLogin();
-  }
+  // @Get('google')
+  // @UseGuards(GoogleAuthGuard)
+  // async googleLogin(): Promise<void> {
+  //   // Initiates Google OAuth flow - redirects to Google
+  //   // No response needed as guard handles redirect
+  // }
 
-  @Post('google/callback')
-  async googleCallback(
-    @Body() googleCallbackDto: GoogleCallbackDto,
-  ): Promise<GoogleSigninResponseDto> {
-    // TODO: Implement Google OAuth callback
-    return this.authService.handleGoogleCallback(googleCallbackDto);
-  }
+  // @Get('google/callback')
+  // @UseGuards(GoogleAuthGuard)
+  // async googleCallback(
+  //   @Req() req: Request,
+  //   @Res({ passthrough: true }) response: Response,
+  // ): Promise<GoogleSigninResponseDto> {
+  //   const googleUser = req.user;
+  //   const result = await this.authService.handleGoogleCallback(googleUser);
+    
+  //   // Set refresh token in cookie
+  //   response.cookie('refresh_token', result.data.tokens.refreshToken, {
+  //     httpOnly: true,
+  //     path: 'auth/token/refresh',
+  //   });
+    
+  //   // Remove refresh token from response body
+  //   result.data.tokens.refreshToken = undefined as any;
+    
+  //   return result;
+  // }
 
   @Post('password/forgot')
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<{ message: string }> {
+  ): Promise<{ success: boolean; message: string }> {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  @Post('password/verify')
-  async verifyPasswordReset(
-    @Body() verifyDto: VerifyCodeDto,
-  ): Promise<{ resetToken: string }> {
-    return this.authService.verifyPasswordReset(verifyDto);
-  }
+  // @Post('password/verify')
+  // async verifyPasswordReset(
+  //   @Body() verifyDto: VerifyCodeDto,
+  // ): Promise<{ resetToken: string }> {
+  //   return this.authService.verifyPasswordReset(verifyDto);
+  // }
 
   @UseGuards(JwtAuthGuard)
   @Post('password/reset')
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
     @CurrentUser() user: { accountId: string },
-  ): Promise<{ message: string }> {
+  ): Promise<{ success: boolean; message: string }> {
     return this.authService.resetPassword(resetPasswordDto, user);
   }
 
-  @Post('session/refresh')
+  @Post('token/refresh')
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
   ): Promise<RefreshTokenResponseDto> {
-    // TODO: Implement token refresh logic
     return this.authService.refreshToken(refreshTokenDto);
   }
 }

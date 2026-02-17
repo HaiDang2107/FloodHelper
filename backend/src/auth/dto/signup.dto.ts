@@ -12,6 +12,7 @@ export class SignupDto {
   @MaxLength(255)
   displayName?: string;
 
+  @IsOptional()
   @IsPhoneNumber('VN') // Assuming Vietnamese phone numbers
   phoneNumber: string;
 

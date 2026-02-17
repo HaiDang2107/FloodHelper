@@ -28,6 +28,9 @@ This guide explains how to run the FloodHelper backend using Docker and Docker C
    DB_PASSWORD="floodhelper_password"
    DB_SCHEMA="public"
 
+   REDIS_HOST="localhost"
+   REDIS_PORT=6379
+
    JWT_SECRET="your-jwt-secret-key-here"
    AT_SECRET="your-access-token-secret-here"
    RT_SECRET="your-refresh-token-secret-here"
@@ -37,25 +40,28 @@ This guide explains how to run the FloodHelper backend using Docker and Docker C
    RT_EXPIRES_IN="7d"
    PASSWORD_RESET_EXPIRES_IN="10m"
    ```
-   PASSWORD_RESET_EXPIRES_IN="10m"
-   ```
 
 4. **Start PostgreSQL database:**
    ```bash
    docker-compose up -d postgres
    ```
 
-5. **Run Prisma migrations:**
+5. **Start Redis database:**
+   ```bash
+   docker-compose up -d redis
+   ```
+
+6. **Run Prisma migrations:**
    ```bash
    npx prisma migrate dev
    ```
 
-6. **Seed the database (optional):**
+7. **Seed the database (optional):**
    ```bash
    npx prisma db seed
    ```
 
-7. **Start the application locally:**
+8. **Start the application locally:**
    ```bash
    npm run start:dev
    ```
@@ -70,6 +76,11 @@ docker-compose up -d
 ### Start only PostgreSQL:
 ```bash
 docker-compose up -d postgres
+```
+
+### Start only Redis:
+```bash
+docker-compose up -d redis
 ```
 
 ### Stop all services:
@@ -96,12 +107,22 @@ docker-compose up --build -f
 - **Password:** `${DB_PASSWORD}` (default: floodhelper_password)
 - **Schema:** `${DB_SCHEMA}` (default: public)
 
+## Redis Access
+
+- **Host:** `${REDIS_HOST}` (default: localhost)
+- **Port:** `${REDIS_PORT}` (default: 6379)
+
 ## Troubleshooting
 
 ### Database Connection Issues
 1. Ensure PostgreSQL container is running: `docker-compose ps`
 2. Check logs: `docker-compose logs postgres`
 3. Verify DATABASE_URL in `.env` file
+
+### Redis Connection Issues
+1. Ensure Redis container is running: `docker-compose ps`
+2. Check logs: `docker-compose logs redis`
+3. Verify REDIS_HOST and REDIS_PORT in `.env` file
 
 ### Prisma Issues
 1. Reset database: `npx prisma migrate reset`

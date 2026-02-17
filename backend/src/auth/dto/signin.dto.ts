@@ -8,7 +8,6 @@ export class SigninDto {
   @MinLength(6)
   password: string;
 
-  @IsOptional()
   @IsString()
-  deviceId?: string;
+  deviceId: string;
 }
