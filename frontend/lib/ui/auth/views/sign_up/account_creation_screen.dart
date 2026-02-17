@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../view_models/account_creation.dart';
+import '../../widgets/account_not_activated_dialog.dart';
 import '_account_creation_loading_screen.dart';
 import '_account_form_screen.dart';
-import '../forget_password/_enter_email_screen.dart';
 import '../_send_code_screen.dart';
 import '../_success_screen.dart';
 
@@ -31,6 +31,22 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
     // Watch state for reactive updates (isLoading, errorMessage)
     ref.watch(accountCreationViewModelProvider);
     final viewModel = ref.read(accountCreationViewModelProvider.notifier);
+
+    // Listen for showActivationDialog state changes
+    ref.listen<AccountCreationState>(
+      accountCreationViewModelProvider,
+      (previous, next) async {
+        if (next.showActivationDialog && !(previous?.showActivationDialog ?? false)) {
+          // Show dialog when flag becomes true
+          final result = await AccountNotActivatedDialog.show(context);
+          if (result == true) {
+            viewModel.handleActivateAccount(context);
+          } else {
+            viewModel.clearActivationDialogFlag();
+          }
+        }
+      },
+    );
 
     return Scaffold(
       body: PageView(

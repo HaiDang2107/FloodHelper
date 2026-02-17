@@ -8,19 +8,23 @@ part 'account_creation.g.dart';
 class AccountCreationState {
   final bool isLoading;
   final String? errorMessage;
+  final bool showActivationDialog;
 
   const AccountCreationState({
     this.isLoading = false,
     this.errorMessage,
+    this.showActivationDialog = false,
   });
 
   AccountCreationState copyWith({
     bool? isLoading,
     String? errorMessage,
+    bool? showActivationDialog,
   }) {
     return AccountCreationState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
+      showActivationDialog: showActivationDialog ?? this.showActivationDialog,
     );
   }
 }
@@ -118,51 +122,27 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
     );
   }
 
-  /// Show dialog for account not activated
-  void _showAccountNotActivatedDialog(BuildContext context) {
-    showDialog(
+  /// Reset activation dialog flag (called by View after handling dialog)
+  void clearActivationDialogFlag() {
+    state = state.copyWith(showActivationDialog: false);
+  }
+
+  /// Called when user confirms activation in dialog
+  Future<void> handleActivateAccount(BuildContext context) async {
+    clearActivationDialogFlag();
+    
+    // Store username and resend verification code
+    _currentUsername = usernameController.text;
+    
+    // Call handleResendCode to send OTP again
+    await handleResendCode(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Account Not Activated'),
-          content: const Text(
-            'Your account exists but has not been activated yet. '
-            'Please verify your account using the activation code sent to your email.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                
-                // Store username and resend verification code
-                _currentUsername = usernameController.text;
-                
-                // Call handleResendCode to send OTP again
-                await handleResendCode(
-                  context: context,
-                  username: _currentUsername,
-                  verificationType: VerificationType.signup,
-                );
-                
-                // Navigate to send code screen
-                _goToPage(2);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F62FE),
-              ),
-              child: const Text('Activate Account'),
-            ),
-          ],
-        );
-      },
+      username: _currentUsername,
+      verificationType: VerificationType.signup,
     );
+    
+    // Navigate to send code screen
+    _goToPage(2);
   }
 
   /// Auto advance to form screen (called after loading screen)
@@ -256,7 +236,8 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
       if (context.mounted) {
         // Check if error is "Account is not activated"
         if (errorMessage.contains('Account is not activated')) {
-          _showAccountNotActivatedDialog(context);
+          // Notify View to show dialog via state
+          state = state.copyWith(showActivationDialog: true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(errorMessage)),

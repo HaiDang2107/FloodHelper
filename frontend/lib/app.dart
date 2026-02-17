@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
       ),
-      initialRoute: AppRoutes.signUp,
+      initialRoute: AppRoutes.signIn,
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

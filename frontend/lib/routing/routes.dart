@@ -5,7 +5,7 @@ import 'package:antiflood/ui/auth/views/forget_password/forget_password_screen.d
 import 'package:antiflood/ui/home/screens/home_screen.dart';
 
 class AppRoutes {
-  static const String signUp = '/signup';
+  static const String signIn = '/signin';
   static const String accountCreation = '/account-creation';
   static const String forgetPassword = '/forget-password';
   static const String home = '/home';
@@ -13,8 +13,8 @@ class AppRoutes {
   // Hiển thị manh hình dựa trên tên route
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case signUp:
-        return MaterialPageRoute(builder: (_) => const SignUpScreen());
+      case signIn:
+        return MaterialPageRoute(builder: (_) => const SignInScreen());
       case accountCreation:
         return MaterialPageRoute(
           builder: (_) => const AccountCreationScreen(),
@@ -29,7 +29,7 @@ class AppRoutes {
         );
       default:
         return MaterialPageRoute(
-          builder: (_) => const SignUpScreen(showFormInitially: true),
+          builder: (_) => const SignInScreen(showFormInitially: true),
         );
     }
   }
