@@ -6,10 +6,12 @@ import '../../widgets/circle.dart';
 /// Introduction screen for sign up
 class StartedScreen extends StatelessWidget {
   final VoidCallback onGetStarted;
+  final bool isLoading;
 
   const StartedScreen({
     super.key,
     required this.onGetStarted,
+    this.isLoading = false,
   });
 
   @override
@@ -40,12 +42,22 @@ class StartedScreen extends StatelessWidget {
         Positioned(
           left: 55,
           top: 673,
-          child: CustomButton(
-            text: 'Get started',
-            backgroundColor: const Color(0xFF0F62FE),
-            textColor: Colors.white,
-            onPressed: onGetStarted,
-          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 300,
+                  height: 56,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF0F62FE),
+                    ),
+                  ),
+                )
+              : CustomButton(
+                  text: 'Get started',
+                  backgroundColor: const Color(0xFF0F62FE),
+                  textColor: Colors.white,
+                  onPressed: onGetStarted,
+                ),
         ),
       ],
     );

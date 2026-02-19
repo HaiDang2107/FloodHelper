@@ -45,7 +45,8 @@ class ForgetPasswordScreen extends ConsumerWidget {
             buttonText: 'Continue',
             onContinue: () {
               // Navigate back to sign in (pop until the first route)
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              // Navigator.of(context).popUntil((route) => route.isFirst);
+              Navigator.of(context).pop();
             },
           ),
         ],

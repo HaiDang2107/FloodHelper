@@ -1,6 +1,7 @@
 import '../models/auth_dto.dart';
 import '../services/auth_service.dart';
 import '../services/auth_local_storage.dart';
+import '../services/api_client.dart';
 import '../../domain/models/user.dart';
 import '../../domain/models/auth_session.dart';
 
@@ -160,11 +161,9 @@ class AuthRepository {
   // ==================== Token Management ====================
 
   /// Refresh access token
-  /// Note: refresh_token is automatically sent via HTTP-only cookie
+  /// Note: refresh_token is automatically sent via HTTP-only cookie by Dio CookieManager
   Future<void> refreshToken() async {
-    // No need to get refresh token from storage - it's sent via cookie
-    final request = RefreshTokenRequestDto(refreshToken: ''); // Empty string, backend uses cookie
-    final response = await _authService.refreshToken(request);
+    final response = await _authService.refreshToken();
 
     if (!response.success || response.data == null) {
       throw Exception(response.message);
@@ -180,6 +179,67 @@ class AuthRepository {
 
     // Update API client
     _authService.setAuthToken(data.tokens.accessToken);
+  }
+
+  /// Try auto login using stored refresh token (in cookie)
+  /// Returns AuthSession if successful, null otherwise
+  Future<AuthSession?> tryAutoLogin() async {
+    try {
+      // Debug: Print cookies before calling refresh
+      await ApiClient().debugPrintCookies(Uri.parse('http://192.168.88.106:3000/'));
+      
+      // Call refresh token endpoint - Dio CookieManager will automatically send refresh_token cookie
+      final response = await _authService.refreshToken();
+
+      print('🔄 [tryAutoLogin] Response: success=${response.success}, message=${response.message}');
+
+      if (!response.success || response.data == null) {
+        return null;
+      }
+
+      final data = response.data!;
+      
+      // Check if we have user data (required for auto login)
+      if (data.user == null || data.session == null) {
+        return null;
+      }
+
+      // Save auth data to local storage
+      await AuthLocalStorage.saveAuthData(
+        accessToken: data.tokens.accessToken,
+        expiresIn: data.tokens.expiresIn,
+        sessionId: data.session!.sessionId,
+        userData: {
+          'userId': data.user!.userId,
+          'name': data.user!.name,
+          'displayName': data.user!.displayName,
+          'phoneNumber': data.user!.phoneNumber,
+          'role': data.user!.role,
+          'avatarUrl': data.user!.avatarUrl,
+        },
+      );
+
+      // Set auth token for API client
+      _authService.setAuthToken(data.tokens.accessToken);
+
+      // Create and return auth session
+      return AuthSession(
+        user: User(
+          id: data.user!.userId,
+          name: data.user!.name,
+          displayName: data.user!.displayName,
+          phoneNumber: data.user!.phoneNumber,
+          roles: [UserRole.fromString(data.user!.role)],
+          avatarUrl: data.user!.avatarUrl,
+        ),
+        accessToken: data.tokens.accessToken,
+        sessionId: data.session!.sessionId,
+        expiresAt: DateTime.now().add(Duration(seconds: data.tokens.expiresIn)),
+      );
+    } catch (e) {
+      // Auto login failed - user needs to sign in manually
+      return null;
+    }
   }
 
   // ==================== Session Management ====================

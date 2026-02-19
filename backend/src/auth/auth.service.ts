@@ -248,7 +248,7 @@ export class AuthService {
       username,
       deviceId,
       account.user.role,
-      Purpose.CREATE_ACCOUNT,
+      Purpose.SIGN_IN,
     );
     await this.updateRefreshToken(
       account.accountId,
@@ -299,7 +299,7 @@ export class AuthService {
 
     let refreshToken = '';
 
-    if (purpose === Purpose.USE_OTHER_SERVICES) {
+    if (purpose === Purpose.REFRESH_TOKEN || purpose === Purpose.SIGN_IN) {
       const rtExpiresIn = process.env.RT_EXPIRES_IN || '7d';
 
       refreshToken = this.jwtService.sign(payload as any, {
@@ -341,22 +341,39 @@ export class AuthService {
   }
 
   private async updateRefreshToken(
-    accountId: string,
-    refreshToken: string,
-    deviceId: string,
-    role: string[],
-  ) {
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    await this.prisma.session.create({
-      data: {
-        accountId,
-        refreshToken: hashedRefreshToken,
-        deviceId,
-        role: role.join(','), // Store roles as a comma-separated string
-        expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+  accountId: string,
+  refreshToken: string,
+  deviceId: string,
+  role: string[],
+) {
+  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+  const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const roleString = role.join(',');
+
+  await this.prisma.session.upsert({
+    // Điều kiện để xác định bản ghi (dựa trên unique constraint vừa tạo)
+    where: {
+      accountId_deviceId: {
+        accountId: accountId,
+        deviceId: deviceId,
       },
-    });
-  }
+    },
+    // Nếu tìm thấy -> Update
+    update: {
+      refreshToken: hashedRefreshToken,
+      expireAt: expireAt,
+      role: roleString,
+    },
+    // Nếu không tìm thấy -> Create
+    create: {
+      accountId: accountId,
+      deviceId: deviceId,
+      refreshToken: hashedRefreshToken,
+      expireAt: expireAt,
+      role: roleString,
+    },
+  });
+}
 
   async logout(logoutDto: SignoutDto, user: any): Promise<SignoutResponseDto> {
     const { logoutAll } = logoutDto;
@@ -538,15 +555,17 @@ export class AuthService {
     refreshTokenDto: RefreshTokenDto,
   ): Promise<RefreshTokenResponseDto> {
     try {
-      // Verify refresh token
+      // Verify refresh token JWT signature and extract payload
       const payload = this.jwtService.verify(refreshTokenDto.refreshToken, {
         secret: process.env.RT_SECRET || 'rt-secret',
       });
 
-      // Find session by refresh token
+      // Find session by accountId + deviceId (unique per device)
+      // This is more efficient than findMany + loop
       const session = await this.prisma.session.findFirst({
         where: {
-          refreshToken: await bcrypt.hash(refreshTokenDto.refreshToken, 10),
+          accountId: payload.accountId,
+          deviceId: payload.deviceId, // Each device has unique session
           expireAt: {
             gt: new Date(),
           },
@@ -559,15 +578,23 @@ export class AuthService {
       });
 
       if (!session) {
-        throw new UnauthorizedException('Invalid or expired refresh token');
+        return {
+          success: false,
+          message: 'Session not found or expired',
+          data: null,
+        };
       }
 
       // Check if account is still active
       if (session.account.state !== 'ACTIVE') {
-        throw new UnauthorizedException('Account is not active');
+        return {
+          success: false,
+          message: 'Account is not active',
+          data: null,
+        };
       }
 
-      // Generate new tokens
+      // Generate new tokens (including new refresh token for rotation)
       const newTokens = await this.generateTokens(
         session.account.accountId,
         session.account.username,
@@ -576,21 +603,45 @@ export class AuthService {
         Purpose.REFRESH_TOKEN,
       );
 
+      // Update refresh token in database (token rotation)
+      await this.updateRefreshToken(
+        session.account.accountId,
+        newTokens.refreshToken,
+        session.deviceId || '',
+        session.account.user.role,
+      );
+
+      const user = session.account.user;
+
       return {
         success: true,
         message: 'Token refreshed successfully',
         data: {
           tokens: {
             accessToken: newTokens.accessToken,
+            refreshToken: newTokens.refreshToken,
             expiresIn: newTokens.accessTokenExpiresIn,
+          },
+          user: {
+            userId: user.userId,
+            name: user.name,
+            displayName: user.displayName,
+            phoneNumber: user.phoneNumber,
+            role: user.role[0] || 'NORMAL_USER', // Take first role from array
+            avatarUrl: user.avatarUrl,
+          },
+          session: {
+            sessionId: session.sessionId,
+            deviceId: session.deviceId || '',
           },
         },
       };
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new UnauthorizedException('Invalid refresh token');
+      return {
+        success: false,
+        message: 'Invalid refresh token',
+        data: null,
+      };
     }
   }
 }

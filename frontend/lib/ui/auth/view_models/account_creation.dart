@@ -152,31 +152,31 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
     });
   }
 
-  /// Reset the view model state (called when screen is revisited)
-  void resetState() {
-    // Reset page controller to first page
-    if (pageController.hasClients) {
-      pageController.jumpToPage(0);
-    }
+  // // / Reset the view model state (called when screen is revisited)
+  // void resetState() {
+  //   // Reset page controller to first page
+  //   if (pageController.hasClients) {
+  //     pageController.jumpToPage(0);
+  //   }
     
-    // Clear all text controllers
-    firstNameController.clear();
-    lastNameController.clear();
-    phoneNumberController.clear();
-    dateOfBirthController.clear();
-    villageController.clear();
-    districtController.clear();
-    countryController.clear();
-    usernameController.clear();
-    passwordController.clear();
-    codeController.clear();
-    emailController.clear();
+  //   // Clear all text controllers
+  //   firstNameController.clear();
+  //   lastNameController.clear();
+  //   phoneNumberController.clear();
+  //   dateOfBirthController.clear();
+  //   villageController.clear();
+  //   districtController.clear();
+  //   countryController.clear();
+  //   usernameController.clear();
+  //   passwordController.clear();
+  //   codeController.clear();
+  //   emailController.clear();
     
-    // Reset state
-    _currentUsername = '';
-    selectedDate = null;
-    clearError();
-  }
+  //   // Reset state
+  //   _currentUsername = '';
+  //   selectedDate = null;
+  //   clearError();
+  // }
 
   /// Handle form submission
   Future<void> handleFormSubmit(BuildContext context) async {
@@ -276,14 +276,17 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
 
   /// Go back from form screen to sign in
   void handleBackFromForm(BuildContext context) {
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    // Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    Navigator.of(context).pop();
   }
 
   /// Handle continue from success screen
   void handleContinueFromSuccess(BuildContext context) {
     // resetState();
     // Navigator.of(context).pushNamed('/');
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Xóa ngăn xếp until ...
+    // Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false); // Xóa ngăn xếp until ...
+    // Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pop();
   }
 
   /// Handle email submit from email screen

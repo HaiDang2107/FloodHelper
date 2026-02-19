@@ -43,10 +43,11 @@ class SignInScreen extends ConsumerWidget {
         children: [
           // Page 0: Started screen
           StartedScreen(
-            onGetStarted: viewModel.goToFormScreen,
+            onGetStarted: () => viewModel.handleGetStarted(context),
+            isLoading: state.isLoading,
           ),
           // Page 1: Sign in form
-          SignUpFormScreen(
+          SignInFormScreen(
             emailController: viewModel.emailController,
             passwordController: viewModel.passwordController,
             onSignUp: () => viewModel.handleSignUp(context),

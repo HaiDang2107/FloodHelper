@@ -799,7 +799,7 @@ class _ResendCodeProviderElement extends AutoDisposeFutureProviderElement<void>
 }
 
 String _$authSessionNotifierHash() =>
-    r'2ae425e339d220368746bf7e48e4b6864c2ca93d';
+    r'6ff492b037f2f21c6855c2f5587ad3ba1bf0859d';
 
 /// Provider for current auth session
 ///

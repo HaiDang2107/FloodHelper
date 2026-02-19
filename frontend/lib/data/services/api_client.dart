@@ -2,12 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 /// Base API client with Dio configuration
 class ApiClient {
   static ApiClient? _instance;
   late final Dio _dio;
-  late final CookieJar _cookieJar;
+  CookieJar? _cookieJar;
+  bool _initialized = false;
 
   // Base URL for the API
   static const String _baseUrl = 'http://192.168.88.106:3000'; // Android emulator localhost
@@ -15,9 +18,6 @@ class ApiClient {
   // static const String _baseUrl = 'https://your-production-api.com'; // Production
 
   ApiClient._internal() {
-    // Initialize cookie jar for managing cookies (including refresh_token)
-    _cookieJar = CookieJar();
-    
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 30),
@@ -27,9 +27,6 @@ class ApiClient {
         'Accept': 'application/json',
       },
     ));
-
-    // Add cookie manager to handle cookies automatically
-    _dio.interceptors.add(CookieManager(_cookieJar));
     
     // Add logging interceptor
     _dio.interceptors.add(_LoggingInterceptor());
@@ -40,7 +37,40 @@ class ApiClient {
     return _instance!;
   }
 
+  /// Initialize persistent cookie jar (call this at app startup)
+  Future<void> init() async {
+    if (_initialized) return; // Prevent double initialization
+    
+    // Use PersistCookieJar to save cookies to disk
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    final String appDocPath = appDocDir.path;
+    _cookieJar = PersistCookieJar(
+      storage: FileStorage('$appDocPath/.cookies/'),
+    );
+    
+    // Add cookie manager to handle cookies automatically
+    _dio.interceptors.add(CookieManager(_cookieJar!));
+    
+    _initialized = true;
+  }
+
   Dio get dio => _dio;
+  
+  /// Debug: Print all stored cookies for a URI
+  Future<void> debugPrintCookies(Uri uri) async {
+    if (_cookieJar == null) {
+      print('🍪 [DEBUG] CookieJar not initialized');
+      return;
+    }
+    final cookies = await _cookieJar!.loadForRequest(uri);
+    print('🍪 [DEBUG] Cookies for $uri:');
+    for (final cookie in cookies) {
+      print('  - ${cookie.name}: ${cookie.value.substring(0, 20)}...');
+    }
+    if (cookies.isEmpty) {
+      print('  - (no cookies)');
+    }
+  }
 
   /// Set authorization token
   void setAuthToken(String token) {
@@ -54,7 +84,7 @@ class ApiClient {
 
   /// Clear all cookies (including refresh_token)
   void clearCookies() {
-    _cookieJar.deleteAll();
+    _cookieJar?.deleteAll();
   }
 
   /// GET request

@@ -56,7 +56,8 @@ export class AuthController {
     const result = await this.authService.signin(signinDto);
     response.cookie('refresh_token', result.data.tokens.refreshToken, {
       httpOnly: true,
-      path: 'auth/token/refresh',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     delete result.data.tokens.refreshToken;
     return result;
@@ -70,7 +71,7 @@ export class AuthController {
     @Query('logoutAll') logoutAll?: boolean,
   ): Promise<SignoutResponseDto> {
     const result = await this.authService.logout({ logoutAll }, user);
-    response.clearCookie('refresh_token', { path: 'auth/token/refresh' });
+    response.clearCookie('refresh_token', { path: '/' });
     return result;
   }
 
@@ -127,8 +128,33 @@ export class AuthController {
 
   @Post('token/refresh')
   async refreshToken(
-    @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
   ): Promise<RefreshTokenResponseDto> {
-    return this.authService.refreshToken(refreshTokenDto);
+    // Get refresh token from cookie
+    const refreshToken = request.cookies?.refresh_token;
+    
+    if (!refreshToken) {
+      return {
+        success: false,
+        message: 'No refresh token provided',
+        data: null,
+      };
+    }
+
+    const result = await this.authService.refreshToken({ refreshToken });
+    
+    // If successful, set new refresh token cookie
+    if (result.success && result.data?.tokens?.refreshToken) {
+      response.cookie('refresh_token', result.data.tokens.refreshToken, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      // Remove refresh token from response body
+      delete result.data.tokens.refreshToken;
+    }
+    
+    return result;
   }
 }

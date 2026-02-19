@@ -83,7 +83,39 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
     }
   }
 
-  /// Navigate from loading screen to form (tap to continue)
+  /// Handle "Get Started" button tap - try auto login first
+  Future<void> handleGetStarted(BuildContext context) async {
+    if (state.isLoading) return;
+
+    setLoading(true);
+
+    try {
+      // Try auto login using refresh token from cookie
+      final authSession = await ref.read(authRepositoryProvider).tryAutoLogin();
+
+      if (authSession != null) {
+        // Auto login successful - update auth state and navigate to home
+        ref.read(authSessionNotifierProvider.notifier).setSession(authSession);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Welcome back!')),
+          );
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        }
+      } else {
+        // No valid refresh token - go to sign in form
+        _goToPage(1);
+      }
+    } catch (e) {
+      // Auto login failed - go to sign in form
+      _goToPage(1);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /// Navigate from loading screen to form (tap to continue) - legacy method
   void goToFormScreen() {
     _goToPage(1);
   }

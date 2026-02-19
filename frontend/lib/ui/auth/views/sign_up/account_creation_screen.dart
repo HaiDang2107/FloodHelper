@@ -4,6 +4,7 @@ import '../../view_models/account_creation.dart';
 import '../../widgets/account_not_activated_dialog.dart';
 import '_account_creation_loading_screen.dart';
 import '_account_form_screen.dart';
+import '../forget_password/_enter_email_screen.dart';
 import '../_send_code_screen.dart';
 import '../_success_screen.dart';
 
@@ -21,7 +22,7 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
     // Reset state and auto-advance to form screen after 2 seconds
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = ref.read(accountCreationViewModelProvider.notifier);
-      viewModel.resetState();
+      // viewModel.resetState();
       viewModel.autoAdvanceToForm();
     });
   }
@@ -29,7 +30,7 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
   @override
   Widget build(BuildContext context) {
     // Watch state for reactive updates (isLoading, errorMessage)
-    ref.watch(accountCreationViewModelProvider);
+    final state = ref.watch(accountCreationViewModelProvider);
     final viewModel = ref.read(accountCreationViewModelProvider.notifier);
 
     // Listen for showActivationDialog state changes

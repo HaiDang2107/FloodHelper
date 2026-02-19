@@ -52,6 +52,11 @@ class AuthSessionNotifier extends _$AuthSessionNotifier {
     }
   }
 
+  /// Set session directly (used for auto login)
+  void setSession(AuthSession session) {
+    state = AsyncValue.data(session);
+  }
+
   /// Sign out
   Future<void> signOut({bool logoutAll = false}) async {
     try {

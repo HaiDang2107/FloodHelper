@@ -101,12 +101,25 @@ export class ResetPasswordResponseDto {
 export class RefreshTokenResponseDto {
   success: boolean;
   message: string;
-  data: {
+  data?: {
     tokens: {
       accessToken: string;
+      refreshToken?: string; // Optional - will be removed before sending to client
       expiresIn: number;
     };
-  };
+    user?: {
+      userId: string;
+      name: string;
+      displayName: string | null;
+      phoneNumber: string;
+      role: string;
+      avatarUrl: string | null;
+    };
+    session?: {
+      sessionId: string;
+      deviceId: string;
+    };
+  } | null;
 }
 
 export class ErrorResponseDto {

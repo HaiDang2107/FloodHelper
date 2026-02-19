@@ -317,15 +317,71 @@ class SignoutDataDto {
   }
 }
 
-/// Refresh token response data
+/// Refresh token response data (for auto login)
 class RefreshTokenDataDto {
   final TokensResponseDto tokens;
+  final RefreshUserDto? user;
+  final RefreshSessionDto? session;
 
-  RefreshTokenDataDto({required this.tokens});
+  RefreshTokenDataDto({
+    required this.tokens,
+    this.user,
+    this.session,
+  });
 
   factory RefreshTokenDataDto.fromJson(Map<String, dynamic> json) {
     return RefreshTokenDataDto(
       tokens: TokensResponseDto.fromJson(json['tokens'] ?? {}),
+      user: json['user'] != null ? RefreshUserDto.fromJson(json['user']) : null,
+      session: json['session'] != null ? RefreshSessionDto.fromJson(json['session']) : null,
+    );
+  }
+}
+
+/// User data in refresh token response (role is single string)
+class RefreshUserDto {
+  final String userId;
+  final String name;
+  final String? displayName;
+  final String? phoneNumber;
+  final String role; // Single string from refresh endpoint
+  final String? avatarUrl;
+
+  RefreshUserDto({
+    required this.userId,
+    required this.name,
+    this.displayName,
+    this.phoneNumber,
+    required this.role,
+    this.avatarUrl,
+  });
+
+  factory RefreshUserDto.fromJson(Map<String, dynamic> json) {
+    return RefreshUserDto(
+      userId: json['userId'] ?? '',
+      name: json['name'] ?? '',
+      displayName: json['displayName'],
+      phoneNumber: json['phoneNumber'],
+      role: json['role'] ?? 'NORMAL_USER',
+      avatarUrl: json['avatarUrl'],
+    );
+  }
+}
+
+/// Session data in refresh token response
+class RefreshSessionDto {
+  final String sessionId;
+  final String deviceId;
+
+  RefreshSessionDto({
+    required this.sessionId,
+    required this.deviceId,
+  });
+
+  factory RefreshSessionDto.fromJson(Map<String, dynamic> json) {
+    return RefreshSessionDto(
+      sessionId: json['sessionId'] ?? '',
+      deviceId: json['deviceId'] ?? '',
     );
   }
 }

@@ -74,7 +74,8 @@ model Session {
   expireAt     DateTime @map("expire_at")
 
   account Account @relation(fields: [accountId], references: [accountId])
-
+  
+  @@unique([accountId, deviceId], name: "accountId_deviceId")
   @@map("Session")
 }
 

@@ -121,13 +121,12 @@ class AuthService {
     }
   }
 
-  /// Refresh token
-  Future<ApiResponse<RefreshTokenDataDto>> refreshToken(
-      RefreshTokenRequestDto request) async {
+  /// Refresh token - uses cookie automatically via Dio CookieManager
+  Future<ApiResponse<RefreshTokenDataDto>> refreshToken() async {
     try {
+      // No body needed - refresh_token is sent via cookie automatically
       final response = await _apiClient.post(
         '/auth/token/refresh',
-        data: request.toJson(),
       );
 
       return ApiResponse<RefreshTokenDataDto>.fromJson(

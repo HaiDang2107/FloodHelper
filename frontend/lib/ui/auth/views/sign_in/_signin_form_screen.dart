@@ -4,7 +4,7 @@ import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 
 /// Sign up form screen
-class SignUpFormScreen extends StatelessWidget {
+class SignInFormScreen extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final VoidCallback onSignUp;
@@ -13,7 +13,7 @@ class SignUpFormScreen extends StatelessWidget {
   final VoidCallback onForgetPassword; // Added onForgetPassword callback
   final bool isLoading;
 
-  const SignUpFormScreen({
+  const SignInFormScreen({
     super.key,
     required this.emailController,
     required this.passwordController,
