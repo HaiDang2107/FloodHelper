@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/_announcements_sheet/announcement_item.dart';
-import '../widgets/_announcements_sheet/announcement_detail_dialog.dart';
+import '../../widgets/_announcements_sheet/announcement_item.dart';
+import '../../widgets/_announcements_sheet/announcement_detail_dialog.dart';
 
 enum AnnouncementSource { daily, authority, app }
 

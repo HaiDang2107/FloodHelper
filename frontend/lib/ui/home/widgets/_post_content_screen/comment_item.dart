@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/common/models/post_model.dart';
+import '../../../../data/models/post_model.dart';
 
 class CommentItem extends StatelessWidget {
-  final PostComment comment;
+  final CommentModel comment;
 
   const CommentItem({
     super.key,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:antiflood/ui/auth/views/sign_in/signin_screen.dart';
 import 'package:antiflood/ui/auth/views/sign_up/account_creation_screen.dart';
 import 'package:antiflood/ui/auth/views/forget_password/forget_password_screen.dart';
-import 'package:antiflood/ui/home/screens/home_screen.dart';
+import 'package:antiflood/ui/home/views/home_screen.dart';
 
 class AppRoutes {
   static const String signIn = '/signin';

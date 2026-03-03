@@ -6,12 +6,16 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { FriendModule } from './friend/friend.module';
+import { FirebaseModule } from './firebase/firebase.module';
 import { LoggingMiddleware } from './common/logging.middleware';
 
 @Module({
   imports: [
     UserModule, 
     AuthModule,
+    FriendModule,
+    FirebaseModule,
     CacheModule.register({
       isGlobal: true, // Để dùng ở mọi nơi không cần import lại
       store: redisStore,

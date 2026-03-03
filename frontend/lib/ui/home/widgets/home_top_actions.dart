@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../charity_campaign/screens/existing_charity_screen.dart';
-import '../screens/_add_friend_sheet.dart';
-import '../screens/_announcements_sheet.dart';
-import '../screens/_distress_signal_sheet.dart';
+import '../views/friends/_add_friend_sheet.dart';
+import '../views/announcements/_announcements_sheet.dart';
+import '../views/distress_signal/_distress_signal_sheet.dart';
 
 class HomeTopActions extends StatefulWidget {
   final void Function(String, Widget, {Color? backgroundColor})
@@ -139,7 +139,7 @@ class _HomeTopActionsState extends State<HomeTopActions>
           ...List.generate(_buttons.length, (i) {
             final buttonData = _buttons[i];
             final animation = CurvedAnimation(
-              parent: _controller,
+              parent: _controller, // truyền controller vào từng nút
               curve: Interval(
                 (i * 0.1),
                 (0.6 + i * 0.1).clamp(0.0, 1.0),

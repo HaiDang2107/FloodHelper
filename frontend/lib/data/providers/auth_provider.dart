@@ -12,6 +12,8 @@ import '../../domain/models/auth_session.dart';
 part 'auth_provider.g.dart';
 
 /// Provider for AuthRepository
+// state là thuộc tính lớp cha
+// AsyncValue: giúp hiển thị trạng thái lớp 
 @riverpod
 AuthRepository authRepository(Ref ref) {
   return AuthRepository();
@@ -28,7 +30,7 @@ class AuthSessionNotifier extends _$AuthSessionNotifier {
   /// Initialize - check for existing session
   Future<AuthSession?> _init() async {
     final authRepository = ref.watch(authRepositoryProvider);
-    return await authRepository.getCurrentSession();
+    return await authRepository.getCurrentSession(); // trả về session thông qua một hàm trong AuthRepository
   }
 
   /// Sign in

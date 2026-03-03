@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import '../screens/_search_friend_sheet.dart';
-import '../screens/_messages_sheet.dart';
+import '../views/friends/_search_friend_sheet.dart';
+import '../views/messages/_messages_sheet.dart';
 
 class HomeBottomActions extends StatelessWidget {
   final VoidCallback onTakePicture;

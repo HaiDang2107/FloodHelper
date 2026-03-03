@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../view_models/friend_view_model.dart';
 
-class AddFriendWidget extends StatefulWidget {
+class AddFriendWidget extends ConsumerStatefulWidget {
   const AddFriendWidget({super.key});
 
   @override
-  State<AddFriendWidget> createState() => _AddFriendWidgetState();
+  ConsumerState<AddFriendWidget> createState() => _AddFriendWidgetState();
 }
 
-class _AddFriendWidgetState extends State<AddFriendWidget> {
+class _AddFriendWidgetState extends ConsumerState<AddFriendWidget> {
   bool _showIdField = false;
   final TextEditingController _idController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -38,21 +40,46 @@ class _AddFriendWidgetState extends State<AddFriendWidget> {
     });
   }
 
-  void _submitId() {
-    if (_idController.text.trim().isEmpty) {
+  Future<void> _submitId() async {
+    final id = _idController.text.trim();
+    if (id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a FloodHelper ID')),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Sending request to: ${_idController.text}')),
-    );
-    // TODO: Send friend request
+
+    final viewModel = ref.read(friendViewModelProvider.notifier);
+    final success = await viewModel.sendFriendRequest(id);
+
+    if (mounted) {
+      if (success) {
+        _idController.clear();
+        setState(() {
+          _showIdField = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Friend request sent successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        final state = ref.read(friendViewModelProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.errorMessage ?? 'Failed to send friend request'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(friendViewModelProvider);
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -107,13 +134,22 @@ class _AddFriendWidgetState extends State<AddFriendWidget> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _submitId,
+                  onPressed: state.isSending ? null : _submitId,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F62FE),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
-                  child: const Text('Send'),
+                  child: state.isSending
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Send'),
                 ),
               ],
             ),

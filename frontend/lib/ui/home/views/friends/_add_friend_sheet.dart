@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/_add_friend_sheet/add_friend_widget.dart';
-import '../widgets/_add_friend_sheet/pending_widget.dart';
+import '../../widgets/_add_friend_sheet/add_friend_widget.dart';
+import '../../widgets/_add_friend_sheet/pending_widget.dart';
 
 class AddFriendSheet extends StatelessWidget {
   const AddFriendSheet({super.key});

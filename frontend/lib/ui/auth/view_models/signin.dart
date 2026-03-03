@@ -97,6 +97,14 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
         // Auto login successful - update auth state and navigate to home
         ref.read(authSessionNotifierProvider.notifier).setSession(authSession);
         
+        // Register FCM token immediately after auto login
+        try {
+          await FirebaseMessagingService().registerToken();
+        } catch (fcmError) {
+          // Don't block user if FCM registration fails
+          debugPrint('⚠️ FCM registration failed: $fcmError');
+        }
+        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Welcome back!')),
@@ -166,6 +174,14 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
         username: username,
         password: password,
       );
+
+      // Register FCM token immediately after successful login
+      try {
+        await FirebaseMessagingService().registerToken();
+      } catch (fcmError) {
+        // Don't block user if FCM registration fails
+        debugPrint('⚠️ FCM registration failed: $fcmError');
+      }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -4,7 +4,6 @@ import '../../view_models/account_creation.dart';
 import '../../widgets/account_not_activated_dialog.dart';
 import '_account_creation_loading_screen.dart';
 import '_account_form_screen.dart';
-import '../forget_password/_enter_email_screen.dart';
 import '../_send_code_screen.dart';
 import '../_success_screen.dart';
 
@@ -29,7 +28,6 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch state for reactive updates (isLoading, errorMessage)
     final state = ref.watch(accountCreationViewModelProvider);
     final viewModel = ref.read(accountCreationViewModelProvider.notifier);
 
@@ -50,42 +48,54 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
     );
 
     return Scaffold(
-      body: PageView(
-        controller: viewModel.pageController,
-        physics: const NeverScrollableScrollPhysics(),
+      body: Stack(
         children: [
-          // Loading screen
-          const AccountCreationLoadingScreen(),
-          // Form screen
-          AccountFormScreen(
-            firstNameController: viewModel.firstNameController,
-            lastNameController: viewModel.lastNameController,
-            phoneNumberController: viewModel.phoneNumberController,
-            dateOfBirthController: viewModel.dateOfBirthController,
-            villageController: viewModel.villageController,
-            districtController: viewModel.districtController,
-            countryController: viewModel.countryController,
-            usernameController: viewModel.usernameController,
-            passwordController: viewModel.passwordController,
-            onSubmit: () => viewModel.handleFormSubmit(context),
-            onBack: () => viewModel.handleBackFromForm(context),
-            onDatePickerTap: () => viewModel.selectDateOfBirth(context),
+          // 1. PageView luôn tồn tại dưới nền, không bao giờ bị xóa
+          PageView(
+            controller: viewModel.pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              // Loading screen
+              const AccountCreationLoadingScreen(),
+              // Form screen
+              AccountFormScreen(
+                firstNameController: viewModel.firstNameController,
+                lastNameController: viewModel.lastNameController,
+                phoneNumberController: viewModel.phoneNumberController,
+                dateOfBirthController: viewModel.dateOfBirthController,
+                villageController: viewModel.villageController,
+                districtController: viewModel.districtController,
+                countryController: viewModel.countryController,
+                usernameController: viewModel.usernameController,
+                passwordController: viewModel.passwordController,
+                onSubmit: () => viewModel.handleFormSubmit(context),
+                onBack: () => viewModel.handleBackFromForm(context),
+                onDatePickerTap: () => viewModel.selectDateOfBirth(context),
+              ),
+              // Send Code Screen
+              SendCodeScreen(
+                codeController: viewModel.codeController,
+                onSubmit: () => viewModel.handleCodeSubmitAction(context),
+                onSendAgain: () => viewModel.handleSendAgain(context),
+                onBack: viewModel.handleBackFromCode,
+              ),
+              // Success screen
+              SuccessScreen(
+                message: 'Your account is created successfully',
+                buttonText: 'Sign in now',
+                onContinue: () => viewModel.handleContinueFromSuccess(context),
+              ),
+            ],
           ),
 
-          // Send Code Screen
-          SendCodeScreen(
-            codeController: viewModel.codeController,
-            onSubmit: () => viewModel.handleCodeSubmitAction(context),
-            onSendAgain: () => viewModel.handleSendAgain(context),
-            onBack: viewModel.handleBackFromCode,
-          ),
-          // Success screen
-          SuccessScreen(
-            message: 'Your account is created successfully',
-            buttonText: 'Sign in now',
-            onContinue: () => viewModel.handleContinueFromSuccess(context),
-          ),
-          // Email verification screen (for existing inactive accounts)
+          // 2. Lớp Loading phủ lên trên cùng khi state.isLoading == true
+          if (state.isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
         ],
       ),
     );

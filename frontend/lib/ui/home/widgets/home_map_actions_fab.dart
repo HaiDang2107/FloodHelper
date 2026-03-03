@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'segmented_button.dart';
+import '../view_models/home_view_model.dart';
 
 class HomeMapActionsFab extends StatefulWidget {
   final MapType mapType;

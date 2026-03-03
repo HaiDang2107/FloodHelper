@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/_distress_signal_sheet/distress_signal_form.dart';
-import '../widgets/_distress_signal_sheet/distress_signal_view.dart';
+import '../../widgets/_distress_signal_sheet/distress_signal_form.dart';
+import '../../widgets/_distress_signal_sheet/distress_signal_view.dart';
 
 class DistressSignalSheet extends StatefulWidget {
   final bool isBroadcasting;

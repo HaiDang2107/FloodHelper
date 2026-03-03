@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "809425891688",
+    "project_id": "floodhelper-374c0",
+    "storage_bucket": "floodhelper-374c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:809425891688:android:47d08944284c7939a5a6dd",
+        "android_client_info": {
+          "package_name": "com.example.antiflood"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPxiAAq68u5voQx7i8gSAnT5jkDxM2uAs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

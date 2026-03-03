@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-enum MapType { transport, weather }
+import '../view_models/home_view_model.dart';
 
 class HomeMapTypeSwitch extends StatelessWidget {
   final MapType selectedMapType;

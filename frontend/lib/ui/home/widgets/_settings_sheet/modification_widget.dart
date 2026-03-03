@@ -1,26 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/common/widgets/user_avatar.dart';
-import '../../../core/common/models/friend_model.dart';
+import '../../../core/common/constants/user_state.dart';
+import '../../../../data/models/user_model.dart';
+import '../../view_models/home_view_model.dart';
 
-class ModificationWidget extends StatefulWidget {
+class ModificationWidget extends ConsumerStatefulWidget {
   const ModificationWidget({super.key});
 
   @override
-  State<ModificationWidget> createState() => _ModificationWidgetState();
+  ConsumerState<ModificationWidget> createState() => _ModificationWidgetState();
 }
 
-class _ModificationWidgetState extends State<ModificationWidget> {
+class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
   bool _isModifying = false;
 
   // Use first 6 friends for "See Me", rest for "Freeze"
-  late List<FriendModel> _seeMeUsers;
-  late List<FriendModel> _freezeUsers;
+  late List<UserModel> _seeMeUsers;
+  late List<UserModel> _freezeUsers;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _seeMeUsers = mockFriends.take(6).toList();
-    _freezeUsers = mockFriends.skip(6).toList();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final state = ref.read(homeViewModelProvider);
+      _seeMeUsers = state.friends.take(6).toList();
+      _freezeUsers = state.friends.skip(6).toList();
+      _initialized = true;
+    }
+  }
+
+  UserStatus _parseStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'online':
+        return UserStatus.online;
+      case 'offline':
+        return UserStatus.offline;
+      default:
+        return UserStatus.unknown;
+    }
   }
 
   void _moveToFreeze(String id) {
@@ -96,7 +115,7 @@ class _ModificationWidgetState extends State<ModificationWidget> {
 
   Widget _buildSection({
     required String title,
-    required List<FriendModel> users,
+    required List<UserModel> users,
     required Color iconColor,
     required Function(String) onRemove,
   }) {
@@ -125,7 +144,7 @@ class _ModificationWidgetState extends State<ModificationWidget> {
                   children: [
                     UserAvatar(
                       imageUrl: user.avatarUrl,
-                      status: user.status,
+                      status: _parseStatus(user.status),
                       size: 60,
                       topRightIcon: _isModifying ? Icons.remove : null,
                       topRightIconBackgroundColor: iconColor,

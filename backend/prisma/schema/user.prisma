@@ -16,9 +16,11 @@ model User {
   publicMapMode    Boolean   @default(false) @map("public_map_mode")
   avatarUrl        String?   @map("avatar_url")
   citizenId        String?   @map("citizen_id")
+  gender           String?   @db.VarChar(20)
   phoneNumber      String    @unique @map("phone_number")
   citizenIdCardImg String?   @map("citizen_id_card_img")
   jobPosition      String?   @map("job_position")
+  fcmToken         String?   @map("fcm_token")
 
   // Relations
   account              Account?

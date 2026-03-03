@@ -301,7 +301,7 @@ class AuthRepository {
       roles: (map['role'] as List<dynamic>?)
               ?.map((r) => UserRole.fromString(r.toString()))
               .toList() ??
-          [UserRole.user],
+          [UserRole.normalUser],
       avatarUrl: map['avatarUrl'],
     );
   }

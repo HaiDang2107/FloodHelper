@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../../domain/models/models.dart';
 import 'role_request.dart';
 
 class ProfileRole extends StatelessWidget {
-  const ProfileRole({super.key});
+  final List<UserRole> roles;
+
+  const ProfileRole({
+    super.key,
+    this.roles = const [],
+  });
 
   void _showAddRoleDialog(BuildContext context) {
     showDialog(
@@ -115,14 +121,18 @@ class ProfileRole extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final roleDisplay = roles.isEmpty 
+        ? 'Normal User' 
+        : roles.map((r) => r.displayName).join(', ');
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(context, 'Role Management'),
         const SizedBox(height: 16),
-        const Text(
-          'Current Role: Normal User',
-          style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black87),
+        Text(
+          'Current Role: $roleDisplay',
+          style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black87),
         ),
         const SizedBox(height: 16),
         Row(

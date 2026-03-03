@@ -13,7 +13,9 @@ class ApiClient {
   bool _initialized = false;
 
   // Base URL for the API
-  static const String _baseUrl = 'http://192.168.88.106:3000'; // Android emulator localhost
+  // static const String _baseUrl = 'http://192.168.88.106:3000'; // Android emulator localhost
+  // static const String _baseUrl = 'http://192.168.1.164:3000'; 
+  static const String _baseUrl = 'http://192.168.1.161:3000'; 
   // static const String _baseUrl = 'http://localhost:3000'; // iOS simulator / Web
   // static const String _baseUrl = 'https://your-production-api.com'; // Production
 

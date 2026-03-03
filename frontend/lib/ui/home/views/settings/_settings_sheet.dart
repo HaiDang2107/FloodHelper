@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/_settings_sheet/display_widget.dart';
-import '../widgets/_settings_sheet/location_widget.dart';
-import '../widgets/_settings_sheet/modification_widget.dart';
+import '../../widgets/_settings_sheet/display_widget.dart';
+import '../../widgets/_settings_sheet/location_widget.dart';
+import '../../widgets/_settings_sheet/modification_widget.dart';
 
 class SettingsSheet extends StatefulWidget {
   final bool showStrangerLocation;

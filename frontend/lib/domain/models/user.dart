@@ -30,8 +30,11 @@ class User {
   /// Check if user is authority
   bool get isAuthority => hasRole(UserRole.authority);
 
-  /// Check if user is charity
-  bool get isCharity => hasRole(UserRole.charity);
+  /// Check if user is benefactor
+  bool get isBenefactor => hasRole(UserRole.benefactor);
+
+  /// Check if user is rescuer
+  bool get isRescuer => hasRole(UserRole.rescuer);
 
   User copyWith({
     String? id,
@@ -66,25 +69,62 @@ class User {
   int get hashCode => id.hashCode;
 }
 
-/// User roles enum
+/// User roles enum - matches backend UserRole enum
 enum UserRole {
-  user,
   admin,
   authority,
-  charity;
+  normalUser,
+  benefactor,
+  rescuer;
 
   static UserRole fromString(String value) {
-    switch (value.toLowerCase()) {
-      case 'admin':
+    switch (value.toUpperCase()) {
+      case 'ADMIN':
         return UserRole.admin;
-      case 'authority':
+      case 'AUTHORITY':
         return UserRole.authority;
-      case 'charity':
-        return UserRole.charity;
+      case 'NORMAL USER':
+      case 'NORMAL_USER':
+        return UserRole.normalUser;
+      case 'BENEFACTOR':
+        return UserRole.benefactor;
+      case 'RESCUER':
+        return UserRole.rescuer;
       default:
-        return UserRole.user;
+        return UserRole.normalUser; // Default to normal user
     }
   }
 
-  String toJson() => name.toUpperCase();
+  String get displayName {
+    switch (this) {
+      case UserRole.admin:
+        return 'Administrator';
+      case UserRole.authority:
+        return 'Authority';
+      case UserRole.normalUser:
+        return 'User';
+      case UserRole.benefactor:
+        return 'Benefactor';
+      case UserRole.rescuer:
+        return 'Rescuer';
+    }
+  }
+
+  /// Convert to backend format
+  String toBackendString() {
+    switch (this) {
+      case UserRole.admin:
+        return 'ADMIN';
+      case UserRole.authority:
+        return 'AUTHORITY';
+      case UserRole.normalUser:
+        return 'NORMAL USER';
+      case UserRole.benefactor:
+        return 'BENEFACTOR';
+      case UserRole.rescuer:
+        return 'RESCUER';
+    }
+  }
+
+  String toJson() => toBackendString();
 }

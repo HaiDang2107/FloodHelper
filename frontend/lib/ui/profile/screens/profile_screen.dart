@@ -1,35 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../domain/models/user_profile.dart';
+import '../view_models/profile_view_model.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_info.dart';
 import '../widgets/profile_role.dart';
 import '../widgets/profile_action_button.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isEditing = false;
-
-  // Controllers
-  // Basic Info
-  final TextEditingController _userIdController = TextEditingController(text: 'USER123456');
-  final TextEditingController _firstNameController = TextEditingController(text: 'Hai');
-  final TextEditingController _lastNameController = TextEditingController(text: 'Dang');
-  final TextEditingController _nicknameController = TextEditingController(text: 'DangDev');
-  final TextEditingController _genderController = TextEditingController(text: 'Male');
-  final TextEditingController _emailController = TextEditingController(text: 'haidang@example.com');
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  // Controllers - initialized in initState based on profile data
+  late final TextEditingController _userIdController;
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _nicknameController;
+  Gender? _selectedGender;
+  late final TextEditingController _emailController;
+  late final TextEditingController _jobPositionController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _placeOfOriginController;
+  late final TextEditingController _placeOfResidenceController;
+  late final TextEditingController _dateOfIssueController;
+  late final TextEditingController _dateOfExpiryController;
   
-  // Additional Info
-  final TextEditingController _jobPositionController = TextEditingController(text: 'Software Engineer');
-  final TextEditingController _phoneController = TextEditingController(text: '0123456789');
-  final TextEditingController _placeOfOriginController = TextEditingController(text: 'Hanoi, Vietnam');
-  final TextEditingController _placeOfResidenceController = TextEditingController(text: 'Hanoi, Vietnam');
-  final TextEditingController _dateOfIssueController = TextEditingController(text: '01/01/2020');
-  final TextEditingController _dateOfExpiryController = TextEditingController(text: '01/01/2030');
+  bool _controllersInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with empty values first
+    _userIdController = TextEditingController();
+    _firstNameController = TextEditingController();
+    _lastNameController = TextEditingController();
+    _nicknameController = TextEditingController();
+    _emailController = TextEditingController();
+    _jobPositionController = TextEditingController();
+    _phoneController = TextEditingController();
+    _placeOfOriginController = TextEditingController();
+    _placeOfResidenceController = TextEditingController();
+    _dateOfIssueController = TextEditingController();
+    _dateOfExpiryController = TextEditingController();
+  }
 
   @override
   void dispose() {
@@ -37,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _nicknameController.dispose();
-    _genderController.dispose();
     _emailController.dispose();
     _jobPositionController.dispose();
     _phoneController.dispose();
@@ -48,15 +65,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  void _toggleEdit() {
-    setState(() {
-      _isEditing = !_isEditing;
-    });
-    if (!_isEditing) {
-      // Save logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
+  /// Update controllers when profile data is loaded (using domain model)
+  void _updateControllersFromProfile(ProfileState profileState) {
+    final profile = profileState.profile;
+    if (profile == null) return;
+    
+    // Only update if not already initialized or if profile changed
+    if (!_controllersInitialized) {
+      _userIdController.text = profile.userId;
+      _firstNameController.text = profile.name;
+      _lastNameController.text = ''; // Backend doesn't have lastName, using name
+      _nicknameController.text = profile.displayName ?? '';
+      _selectedGender = profile.gender;
+      _emailController.text = profile.accountState?.username ?? '';
+      _jobPositionController.text = profile.jobPosition ?? '';
+      _phoneController.text = profile.phoneNumber;
+      _placeOfOriginController.text = profile.address?.village ?? '';
+      _placeOfResidenceController.text = profile.fullAddress;
+      _dateOfIssueController.text = ''; // Backend doesn't have this field
+      _dateOfExpiryController.text = ''; // Backend doesn't have this field
+      _controllersInitialized = true;
+    }
+  }
+
+  Future<void> _toggleEdit() async {
+    final viewModel = ref.read(profileViewModelProvider.notifier);
+    final state = ref.read(profileViewModelProvider);
+    
+    if (state.isEditing) {
+      // Save profile
+      final success = await viewModel.updateProfile(
+        displayName: _nicknameController.text,
+        gender: _selectedGender?.toBackendString(),
+        village: _placeOfOriginController.text,
+        jobPosition: _jobPositionController.text,
       );
+      
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+      }
+    } else {
+      viewModel.toggleEditMode();
     }
   }
 
@@ -86,6 +137,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileViewModelProvider);
+    
+    // Update controllers when profile loads
+    _updateControllersFromProfile(profileState);
+    
+    // Show error messages
+    ref.listen<ProfileState>(profileViewModelProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
+        ref.read(profileViewModelProvider.notifier).clearError();
+      }
+      if (next.successMessage != null && next.successMessage != previous?.successMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.successMessage!)),
+        );
+        ref.read(profileViewModelProvider.notifier).clearSuccess();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -102,61 +177,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ProfileHeader(
-              isEditing: _isEditing,
-              onEditPressed: _toggleEdit,
-              onMyQRPressed: () {},
-              onAvatarTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Change avatar feature coming soon!')),
-                );
-              },
+      body: profileState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ProfileHeader(
+                    isEditing: profileState.isEditing,
+                    onEditPressed: profileState.isSaving ? null : _toggleEdit,
+                    onMyQRPressed: () {},
+                    onAvatarTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Change avatar feature coming soon!')),
+                      );
+                    },
+                    avatarUrl: profileState.profile?.avatarUrl,
+                    displayName: profileState.profile?.effectiveDisplayName ?? 'User',
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 24),
+                  ProfileInfo(
+                    isEditing: profileState.isEditing,
+                    userIdController: _userIdController,
+                    firstNameController: _firstNameController,
+                    lastNameController: _lastNameController,
+                    nicknameController: _nicknameController,
+                    selectedGender: _selectedGender,
+                    onGenderChanged: (gender) {
+                      setState(() => _selectedGender = gender);
+                    },
+                    emailController: _emailController,
+                    jobPositionController: _jobPositionController,
+                    phoneController: _phoneController,
+                    placeOfOriginController: _placeOfOriginController,
+                    placeOfResidenceController: _placeOfResidenceController,
+                    dateOfIssueController: _dateOfIssueController,
+                    dateOfExpiryController: _dateOfExpiryController,
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 24),
+                  ProfileRole(
+                    roles: profileState.profile?.roles ?? [],
+                  ),
+                  const SizedBox(height: 32),
+                  ProfileActionButton(
+                    text: 'Change Password',
+                    onPressed: () {},
+                    backgroundColor: Colors.grey[200],
+                    textColor: Colors.black,
+                  ),
+                  const SizedBox(height: 16),
+                  ProfileActionButton(
+                    text: 'Sign Out',
+                    onPressed: _handleSignOut,
+                    backgroundColor: Colors.red[50],
+                    textColor: Colors.red,
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 24),
-            ProfileInfo(
-              isEditing: _isEditing,
-              userIdController: _userIdController,
-              firstNameController: _firstNameController,
-              lastNameController: _lastNameController,
-              nicknameController: _nicknameController,
-              genderController: _genderController,
-              emailController: _emailController,
-              jobPositionController: _jobPositionController,
-              phoneController: _phoneController,
-              placeOfOriginController: _placeOfOriginController,
-              placeOfResidenceController: _placeOfResidenceController,
-              dateOfIssueController: _dateOfIssueController,
-              dateOfExpiryController: _dateOfExpiryController,
-            ),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 24),
-            const ProfileRole(),
-            const SizedBox(height: 32),
-            ProfileActionButton(
-              text: 'Change Password',
-              onPressed: () {},
-              backgroundColor: Colors.grey[200],
-              textColor: Colors.black,
-            ),
-            const SizedBox(height: 16),
-            ProfileActionButton(
-              text: 'Sign Out',
-              onPressed: _handleSignOut,
-              backgroundColor: Colors.red[50],
-              textColor: Colors.red,
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
     );
   }
 }

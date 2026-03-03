@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:antiflood/ui/core/common/models/friend_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:antiflood/ui/home/widgets/_search_friend_sheet/friend_search_item.dart';
 import 'package:latlong2/latlong.dart';
+import '../../view_models/home_view_model.dart';
 
-class SearchFriendSheet extends StatelessWidget {
+class SearchFriendSheet extends ConsumerWidget {
   final Function(LatLng) onLocateFriend;
 
   const SearchFriendSheet({
@@ -12,21 +13,24 @@ class SearchFriendSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(homeViewModelProvider);
+    final friends = state.friends;
+    
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: mockFriends.length,
+      itemCount: friends.length,
       separatorBuilder: (context, index) => Divider(
         height: 1,
         color: Colors.grey[200],
         indent: 76,
       ),
       itemBuilder: (context, index) {
-        final friend = mockFriends[index];
+        final friend = friends[index];
         return FriendSearchItem(
-          friend: friend,
+          user: friend,
           onLocateTap: () {
             Navigator.pop(context);
             onLocateFriend(friend.location);

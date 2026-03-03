@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../domain/models/user_profile.dart';
 
 class ProfileInfo extends StatelessWidget {
   final bool isEditing;
@@ -7,7 +8,8 @@ class ProfileInfo extends StatelessWidget {
   final TextEditingController firstNameController;
   final TextEditingController lastNameController;
   final TextEditingController nicknameController;
-  final TextEditingController genderController;
+  final Gender? selectedGender;
+  final ValueChanged<Gender?>? onGenderChanged;
   final TextEditingController emailController;
   
   // Additional Info
@@ -25,7 +27,8 @@ class ProfileInfo extends StatelessWidget {
     required this.firstNameController,
     required this.lastNameController,
     required this.nicknameController,
-    required this.genderController,
+    required this.selectedGender,
+    required this.onGenderChanged,
     required this.emailController,
     required this.jobPositionController,
     required this.phoneController,
@@ -75,11 +78,7 @@ class ProfileInfo extends StatelessWidget {
           enabled: isEditing,
         ),
         const SizedBox(height: 16),
-        _buildTextField(
-          controller: genderController,
-          label: 'Gender',
-          enabled: isEditing,
-        ),
+        _buildGenderField(),
         const SizedBox(height: 16),
         _buildTextField(
           controller: emailController,
@@ -162,6 +161,55 @@ class ProfileInfo extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildGenderField() {
+    if (!isEditing) {
+      // Read-only display
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Gender',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              selectedGender?.displayName ?? 'Not set',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: selectedGender != null ? Colors.black87 : Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Divider(color: Colors.grey[200]),
+          ],
+        ),
+      );
+    }
+
+    // Editable dropdown
+    return DropdownButtonFormField<Gender>(
+      initialValue: selectedGender,
+      decoration: const InputDecoration(
+        labelText: 'Gender',
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      ),
+      items: Gender.values.map((gender) {
+        return DropdownMenuItem<Gender>(
+          value: gender,
+          child: Text(gender.displayName),
+        );
+      }).toList(),
+      onChanged: onGenderChanged,
     );
   }
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class StrangerDetailsSheet extends StatelessWidget {
   final String userId;
   final String fullName;
-  final DateTime dateOfBirth;
+  final DateTime? dateOfBirth;
   final List<String> roles;
   final bool isSosState;
   final int? trappedCounts;
@@ -17,7 +17,7 @@ class StrangerDetailsSheet extends StatelessWidget {
     super.key,
     required this.userId,
     required this.fullName,
-    required this.dateOfBirth,
+    this.dateOfBirth,
     required this.roles,
     this.isSosState = false,
     this.trappedCounts,
@@ -28,7 +28,8 @@ class StrangerDetailsSheet extends StatelessWidget {
     this.other,
   });
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Unknown';
     return '${date.day}/${date.month}/${date.year}';
   }
 
