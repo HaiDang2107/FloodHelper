@@ -4,6 +4,7 @@ import '../../../domain/models/models.dart';
 import '../../../data/mappers/domain_mappers.dart';
 import '../../../data/models/profile_model.dart' show UpdateProfileDto;
 import '../../../data/providers/repository_providers.dart';
+import '../../../data/providers/auth_provider.dart';
 import '../../../data/repositories/profile_repository.dart';
 
 part 'profile_view_model.g.dart';
@@ -185,5 +186,21 @@ class ProfileViewModel extends _$ProfileViewModel {
   /// Clear success message
   void clearSuccess() {
     state = state.copyWith(clearSuccess: true);
+  }
+
+  /// Sign out user
+  /// Clears all auth data and calls backend logout
+  Future<void> signOut({bool logoutAll = false}) async {
+    try {
+      // Call sign out through auth provider
+      await ref.read(authSessionNotifierProvider.notifier).signOut(
+        logoutAll: logoutAll,
+      );
+      
+      // Clear profile state
+      state = const ProfileState();
+    } catch (e) {
+      throw Exception('Failed to sign out: ${e.toString()}');
+    }
   }
 }

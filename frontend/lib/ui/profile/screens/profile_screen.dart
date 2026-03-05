@@ -111,28 +111,61 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _handleSignOut() {
-    showDialog(
+  Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sign Out'),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              // Navigate to login screen and remove all previous routes
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            },
+            onPressed: () => Navigator.pop(context, true),
             child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+
+    if (confirmed != true || !mounted) return;
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Call sign out through provider
+      await ref.read(profileViewModelProvider.notifier).signOut();
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Navigate to login screen and remove all previous routes
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to sign out: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
