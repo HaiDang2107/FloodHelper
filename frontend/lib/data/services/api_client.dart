@@ -4,6 +4,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import '../config/app_config.dart';
 
 /// Base API client with Dio configuration
 class ApiClient {
@@ -12,12 +13,8 @@ class ApiClient {
   CookieJar? _cookieJar;
   bool _initialized = false;
 
-  // Base URL for the API
-  // static const String _baseUrl = 'http://192.168.88.106:3000'; // Android emulator localhost
-  static const String _baseUrl = 'http://192.168.1.164:3000'; 
-  // static const String _baseUrl = 'http://192.168.1.161:3000'; 
-  // static const String _baseUrl = 'http://localhost:3000'; // iOS simulator / Web
-  // static const String _baseUrl = 'https://your-production-api.com'; // Production
+  // Base URL from centralized config
+  static const String _baseUrl = AppConfig.apiBaseUrl;
 
   ApiClient._internal() {
     _dio = Dio(BaseOptions(

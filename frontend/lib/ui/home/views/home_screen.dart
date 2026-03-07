@@ -10,14 +10,12 @@ import '../widgets/home_bottom_actions.dart';
 import '../widgets/segmented_button.dart';
 import '../widgets/home_map_actions_fab.dart';
 import '../widgets/user_pin.dart';
-import '../widgets/post_pin.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
 import '../../core/common/constants/user_state.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../../data/services/firebase_messaging_service.dart';
+import '../../../data/providers/auth_provider.dart';
 import 'settings/_settings_sheet.dart';
-import 'stranger/_stranger_details_sheet.dart';
-import 'post/_post_content_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -187,69 +185,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       rotate: true,
                       child: UserLocationPin(
                         size: 60,
-                        imageUrl: 'https://i.pravatar.cc/300',
+                        imageUrl: ref.watch(currentUserProvider)?.avatarUrl ?? '',
                         color: UserStatus.online.color,
                         roles: const [],
                       ),
                     ),
-                    // Friend markers (combining friends and nearby users)
-                    ...[...state.friends, ...state.nearbyUsers]
-                        .where((user) => user.isFriend || state.showStrangerLocation)
-                        .map(
-                      (user) => Marker(
-                        point: user.location,
-                        width: 60,
-                        height: 81,
-                        alignment: Alignment.topCenter,
-                        rotate: true,
-                        child: UserLocationPin(
-                          size: 60,
-                          imageUrl: user.avatarUrl,
-                          color: user.statusColor,
-                          isSosState: user.isSosState,
-                          roles: user.roles,
-                          onTap: () {
-                            _showBottomSheet(
-                              user.name,
-                              StrangerDetailsSheet(
-                                userId: user.id,
-                                fullName: user.name,
-                                dateOfBirth: user.dateOfBirth,
-                                roles: user.roles,
-                                isSosState: user.isSosState,
-                                trappedCounts: user.trappedCounts,
-                                childrenNumbers: user.childrenNumbers,
-                                elderlyNumbers: user.elderlyNumbers,
-                                hasFood: user.hasFood,
-                                hasWater: user.hasWater,
-                                other: user.other,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    // Post markers
-                    if (state.showPostLocation)
-                      ...state.posts.map(
-                        (post) => Marker(
-                          point: post.location,
-                          width: 60,
-                          height: 81,
-                          alignment: Alignment.topCenter,
-                          rotate: true,
-                          child: PostLocationPin(
-                            size: 60,
-                            imageUrl: post.imageUrl,
-                            onTap: () {
-                              _showBottomSheet(
-                                'Post',
-                                PostContentSheet(postModel: post),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                    // TODO: Add real friend/nearby user markers here
+                    // TODO: Add real post markers here
                   ],
                 ),
             ],
@@ -315,7 +257,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: HomeBottomActions(
                   onTakePicture: _takePicture,
-                  onGetCurrentLocation: viewModel.getCurrentLocation,
+                  onGetCurrentLocation: viewModel.recenterMap,
                   onShowBottomSheet: _showBottomSheet,
                   onLocateFriend: viewModel.moveCameraToLocation,
                 ),

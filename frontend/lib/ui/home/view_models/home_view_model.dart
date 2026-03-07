@@ -1,5 +1,6 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -7,6 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/repositories/repositories.dart';
+import '../../../data/services/location_tracking_service.dart';
 
 part 'home_view_model.g.dart';
 
@@ -83,11 +85,15 @@ class HomeState {
 class HomeViewModel extends _$HomeViewModel {
   final MapController mapController = MapController();
   final ImagePicker _imagePicker = ImagePicker();
+  final LocationTrackingService _locationTrackingService = LocationTrackingService();
 
   // Repositories
   late final UserRepository _userRepository;
   late final PostRepository _postRepository;
   late final AnnouncementRepository _announcementRepository;
+
+  // Location stream subscription
+  StreamSubscription<LocationUpdate>? _locationSubscription;
 
   @override
   HomeState build() {
@@ -97,16 +103,60 @@ class HomeViewModel extends _$HomeViewModel {
     _announcementRepository = ref.read(announcementRepositoryProvider);
 
     ref.onDispose(() {
-      // MapController doesn't need dispose
+      _locationSubscription?.cancel();
+      _locationTrackingService.dispose();
     });
-    
-    // Auto-fetch location and data on build
-    Future.microtask(() {
-      getCurrentLocation();
-      loadInitialData();
-    });
-    
+
+    // Auto-start location tracking
+    Future.microtask(() => _startTracking());
+
     return const HomeState();
+  }
+
+  /// Start location tracking via the background service
+  Future<void> _startTracking() async {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser?.id == null) return;
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      // Start the service (gets initial position + connects MQTT + starts timer)
+      final initialUpdate = await _locationTrackingService.start(currentUser!.id);
+
+      // Update UI with initial position
+      final initialLatLng = LatLng(
+        initialUpdate.latitude,
+        initialUpdate.longitude,
+      );
+      state = state.copyWith(
+        currentPosition: initialLatLng,
+        isLoading: false,
+      );
+      mapController.move(initialLatLng, 15.0);
+
+      // Listen to subsequent location updates from the service
+      _locationSubscription = _locationTrackingService.locationStream.listen(
+        (update) {
+          state = state.copyWith(
+            currentPosition: LatLng(update.latitude, update.longitude),
+          );
+        },
+        onError: (error) {
+          if (kDebugMode) {
+            print('📍 Location stream error: $error');
+          }
+          state = state.copyWith(
+            errorMessage: 'Location tracking error: $error',
+          );
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
   }
 
   // ==================== Data Loading ====================
@@ -172,45 +222,10 @@ class HomeViewModel extends _$HomeViewModel {
 
   // ==================== Location ====================
 
-  Future<void> getCurrentLocation() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-    
-    try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
-
-      // Check for permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied');
-        }
-      }
-
-      // if (permission == LocationPermission.deniedForever) {
-      //   throw Exception(
-      //       'Location permissions are permanently denied, we cannot request permissions.');
-      // }
-
-      // Get current position
-      final position = await Geolocator.getCurrentPosition();
-      final latLng = LatLng(position.latitude, position.longitude);
-      
-      state = state.copyWith(
-        currentPosition: latLng,
-        isLoading: false,
-      );
-      
-      mapController.move(latLng, 15.0);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      );
+  /// Re-center map to current position (called from UI button)
+  void recenterMap() {
+    if (state.currentPosition != null) {
+      mapController.move(state.currentPosition!, 15.0);
     }
   }
 
