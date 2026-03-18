@@ -1,93 +1,72 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15
-    container_name: floodhelper_postgres
     restart: unless-stopped
+    # Chỉ giữ lại các biến thực sự cần cho DB để tránh lộ secret
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
+      POSTGRES_DB: ${DB_NAME:-floodhelper}
+      POSTGRES_USER: ${DB_USER:-floodhelper_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-floodhelper_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-floodhelper_user} -d ${DB_NAME:-floodhelper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        reservations:
+          memory: 256M # Khắc phục cảnh báo missing memory
     networks:
       - floodhelper_network
 
   redis:
     image: redis:alpine
-    container_name: floodhelper_redis
     restart: unless-stopped
-    ports:
-      - "${REDIS_PORT}:6379"
-    volumes:
-      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        reservations:
+          memory: 128M
     networks:
       - floodhelper_network
 
-  # Uncomment this section when you want to run the NestJS app in Docker
-  # app:
-  #   build: .
-  #   container_name: floodhelper_app
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_NAME: floodhelper
-  #     DB_USER: floodhelper_user
-  #     DB_PASSWORD: floodhelper_password
-  #     DB_SCHEMA: public
-  #     JWT_SECRET: your-jwt-secret-key
-  #     AT_SECRET: your-access-token-secret
-  #     RT_SECRET: your-refresh-token-secret
-  #     PASSWORD_RESET_JWT_SECRET: your-password-reset-secret
-  #     AT_EXPIRES_IN: 15m
-  #     RT_EXPIRES_IN: 7d
-  #     PASSWORD_RESET_EXPIRES_IN: 10m
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - floodhelper_network
-  #   volumes:
-  #     - .:/app
-  #     - /app/node_modules
-  # app:
-  #   build: .
-  #   container_name: floodhelper_app
-  #   restart: unless-stopped
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     DB_NAME: floodhelper
-  #     DB_USER: floodhelper_user
-  #     DB_PASSWORD: floodhelper_password
-  #     DB_SCHEMA: public
-  #     JWT_SECRET: your-jwt-secret-key
-  #     AT_SECRET: your-access-token-secret
-  #     RT_SECRET: your-refresh-token-secret
-  #     PASSWORD_RESET_JWT_SECRET: your-password-reset-secret
-  #     AT_EXPIRES_IN: 15m
-  #     RT_EXPIRES_IN: 7d
-  #     PASSWORD_RESET_EXPIRES_IN: 10m
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - floodhelper_network
-  #   volumes:
-  #     - .:/app
-  #     - /app/node_modules
-
-volumes:
-  postgres_data:
-  redis_data:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file:
+      - .env
+    environment:
+      PORT: ${PORT:-3000}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATABASE_URL: postgresql://${DB_USER:-floodhelper_user}:${DB_PASSWORD:-floodhelper_password}@postgres:5432/${DB_NAME:-floodhelper}?schema=${DB_SCHEMA:-public}
+    healthcheck:
+      # Thêm healthcheck để Defang biết khi nào app sẵn sàng
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT:-3000}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          memory: 512M
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - floodhelper_network
 
 networks:
   floodhelper_network:
-    driver: bridge

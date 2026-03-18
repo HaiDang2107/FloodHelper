@@ -236,6 +236,9 @@ class HomeViewModel extends _$HomeViewModel {
     // Update state when friend location arrives
     _friendLocationSubscription = _mqttService.friendLocationStream.listen(
       (update) {
+        if (kDebugMode) {
+          print('✅ [UI] NHẬN ĐƯỢC VỊ TRÍ BẠN BÈ: ${update.friendId} -> ${update.latitude}, ${update.longitude}');
+        }
         final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
         updatedLocations[update.friendId] = LatLng(update.latitude, update.longitude);
         state = state.copyWith(friendLocations: updatedLocations);

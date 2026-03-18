@@ -31,7 +31,7 @@ Future<void> onStart(ServiceInstance service) async { // service được hệ t
   service.on('setUserId').listen((event) async {
     userId = event?['userId'] as String?;
     if (userId != null && !mqttConnected) {
-      mqttConnected = await mqttService.connect(userId!);
+      mqttConnected = await mqttService.connect('${userId!}_bg');
       if (kDebugMode) {
         print('📡 [BG] MQTT connected for $userId: $mqttConnected');
       }
