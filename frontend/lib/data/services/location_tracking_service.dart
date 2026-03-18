@@ -161,6 +161,13 @@ class LocationTrackingService {
   /// Configure the background service.
   /// Must be called **once** before [start], typically in `main()`.
   Future<void> initialize() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      if (kDebugMode) {
+        print('📍 Background service initialization skipped (non-Android runtime)');
+      }
+      return;
+    }
+
     // Create Android notification channel (silent, low importance)
     const channel = AndroidNotificationChannel(
       _kNotificationChannelId,

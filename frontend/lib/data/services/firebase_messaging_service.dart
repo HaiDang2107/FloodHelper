@@ -1,10 +1,23 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'api_client.dart';
+import '../../firebase_options.dart';
 
 /// Background message handler - must be a top-level function
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (!DefaultFirebaseOptions.isSupportedPlatform) return;
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+
   if (kDebugMode) {
     print('🔔 [BG] Message received: ${message.messageId}');
     print('🔔 [BG] Data: ${message.data}');
@@ -22,6 +35,10 @@ class FirebaseMessagingService {
 
   /// Initialize Firebase Messaging and request permissions
   Future<String?> initialize() async {
+    if (!DefaultFirebaseOptions.isSupportedPlatform) {
+      return null;
+    }
+
     // Request permission (required for iOS, optional for Android 13+)
     final settings = await _messaging.requestPermission(
       alert: true,
@@ -72,6 +89,8 @@ class FirebaseMessagingService {
 
   /// Register FCM token with the backend (call after login)
   Future<void> registerToken() async {
+    if (!DefaultFirebaseOptions.isSupportedPlatform) return;
+
     final token = await _messaging.getToken();
     if (token != null) {
       await _sendTokenToServer(token);
