@@ -1,5 +1,5 @@
-/// Mappers for converting between data models and domain entities
-/// This keeps the data layer concerns separate from domain layer
+// Mappers for converting between data models and domain entities
+// This keeps the data layer concerns separate from domain layer
 
 import '../../domain/models/models.dart';
 import '../models/profile_model.dart' as data;
@@ -27,7 +27,7 @@ extension ProfileModelMapper on data.ProfileModel {
       location: (longitude != null && latitude != null)
           ? Location(latitude: latitude!, longitude: longitude!)
           : null,
-      publicMapMode: publicMapMode,
+      visibilityMode: visibilityMode,
       jobPosition: jobPosition,
       citizenInfo: CitizenInfo(
         citizenId: citizenId,
@@ -56,7 +56,7 @@ extension UserProfileToDataMapper on UserProfile {
       country: address?.country,
       curLongitude: location?.longitude,
       curLatitude: location?.latitude,
-      publicMapMode: publicMapMode,
+      visibilityMode: visibilityMode,
       avatarUrl: avatarUrl,
       citizenId: citizenInfo?.citizenId,
       citizenIdCardImg: citizenInfo?.citizenIdCardImg,

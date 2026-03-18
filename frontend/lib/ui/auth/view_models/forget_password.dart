@@ -55,10 +55,12 @@ class ForgetPasswordViewModel extends _$ForgetPasswordViewModel
     state = state.copyWith(isLoading: value);
   }
 
+  @override
   void setError(String? message) {
     state = state.copyWith(errorMessage: message);
   }
 
+  @override
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }

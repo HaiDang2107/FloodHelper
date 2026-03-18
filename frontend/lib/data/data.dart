@@ -1,5 +1,5 @@
-/// Data Layer barrel file
-/// Export all data layer components
+// Data Layer barrel file
+// Export all data layer components
 
 export 'models/models.dart';
 export 'mappers/mappers.dart';

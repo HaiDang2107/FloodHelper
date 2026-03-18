@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
-import { IsOptional, IsString, IsDateString, IsBoolean, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsDateString, IsBoolean, IsNumber, IsIn } from 'class-validator';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
@@ -36,8 +36,9 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   curLatitude?: number;
 
   @IsOptional()
-  @IsBoolean()
-  publicMapMode?: boolean;
+  @IsString()
+  @IsIn(['PUBLIC', 'JUST_FRIEND', 'NO_ONE'])
+  visibilityMode?: string;
 
   @IsOptional()
   @IsString()

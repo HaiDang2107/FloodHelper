@@ -11,7 +11,7 @@ import {
 import { FriendService } from './friend.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { SendFriendRequestDto } from './dto';
+import { SendFriendRequestDto, UpdateMapModeDto } from './dto';
 
 @Controller('friend')
 @UseGuards(JwtAuthGuard)
@@ -143,6 +143,43 @@ export class FriendController {
     return {
       success: true,
       message: 'FCM token updated successfully',
+    };
+  }
+
+  /**
+   * GET /friend/list
+   * Get all friends with map mode status
+   */
+  @Get('list')
+  async getFriends(@CurrentUser() user: any) {
+    const friends = await this.friendService.getFriends(user.userId);
+
+    return {
+      success: true,
+      message: 'Friends retrieved successfully',
+      data: friends,
+    };
+  }
+
+  /**
+   * PATCH /friend/map-mode
+   * Batch-update friendMapMode for multiple friends
+   */
+  @Patch('map-mode')
+  async updateFriendMapModes(
+    @CurrentUser() user: any,
+    @Body() dto: UpdateMapModeDto,
+  ) {
+    const result = await this.friendService.updateFriendMapModes(
+      user.userId,
+      dto.friendIds,
+      dto.mapMode,
+    );
+
+    return {
+      success: true,
+      message: 'Friend map modes updated',
+      data: result,
     };
   }
 }

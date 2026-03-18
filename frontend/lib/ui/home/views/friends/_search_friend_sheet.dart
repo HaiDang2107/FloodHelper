@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:antiflood/ui/home/widgets/_search_friend_sheet/friend_search_item.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../../data/models/user_model.dart';
 import '../../view_models/home_view_model.dart';
 
 class SearchFriendSheet extends ConsumerWidget {
@@ -15,7 +16,17 @@ class SearchFriendSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(homeViewModelProvider);
-    final friends = state.friends;
+    // Convert FriendModel to UserModel for UI compatibility
+    final friends = state.friendsWithMapMode.map((f) => UserModel(
+      id: f.userId,
+      name: f.name,
+      displayName: f.displayName,
+      avatarUrl: f.avatarUrl ?? '',
+      status: 'online', 
+      latitude: 0, // Location will be from state.friendLocations if available
+      longitude: 0,
+      isFriend: true,
+    )).toList();
     
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),

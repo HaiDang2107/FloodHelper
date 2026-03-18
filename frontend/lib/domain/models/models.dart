@@ -1,5 +1,5 @@
-/// Domain models barrel file
-/// Export all domain entities and value objects
+// Domain models barrel file
+// Export all domain entities and value objects
 
 export 'user.dart';
 export 'user_profile.dart';

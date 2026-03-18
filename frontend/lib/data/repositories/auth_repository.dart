@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../models/auth_dto.dart';
 import '../services/auth_service.dart';
 import '../services/auth_local_storage.dart';
@@ -10,8 +11,8 @@ import '../../domain/models/auth_session.dart';
 class AuthRepository {
   final AuthService _authService;
 
-  AuthRepository({AuthService? authService})
-      : _authService = authService ?? AuthService();
+  AuthRepository({required AuthService authService})
+      : _authService = authService;
 
   // ==================== Authentication ====================
 
@@ -191,7 +192,9 @@ class AuthRepository {
       // Call refresh token endpoint - Dio CookieManager will automatically send refresh_token cookie
       final response = await _authService.refreshToken();
 
-      print('🔄 [tryAutoLogin] Response: success=${response.success}, message=${response.message}');
+      if (kDebugMode) {
+        print('🔄 [tryAutoLogin] Response: success=${response.success}, message=${response.message}');
+      }
 
       if (!response.success || response.data == null) {
         return null;

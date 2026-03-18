@@ -2,12 +2,23 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 
 import '../repositories/repositories.dart';
+import 'service_providers.dart';
 
 part 'repository_providers.g.dart';
 
 /// Configuration for switching between mock and real data
 /// Set to false when connecting to real backend
 const bool useMockData = false;
+
+// =============================================================================
+// REPOSITORY PROVIDERS
+// =============================================================================
+
+/// Provider for AuthRepository
+@riverpod
+AuthRepository authRepository(Ref ref) {
+  return AuthRepository(authService: ref.read(authServiceProvider));
+}
 
 /// Provider for UserRepository
 /// Automatically switches between mock and real implementation
@@ -16,9 +27,10 @@ UserRepository userRepository(Ref ref) {
   if (useMockData) {
     return MockUserRepository();
   }
-  // TODO: Return real implementation when backend is ready
-  // return RealUserRepository(ref.read(dioProvider));
-  return MockUserRepository();
+  return RealUserRepository(
+    userService: ref.read(userServiceProvider),
+    friendService: ref.read(friendServiceProvider),
+  );
 }
 
 /// Provider for PostRepository
@@ -52,11 +64,15 @@ ProfileRepository profileRepository(Ref ref) {
   if (useMockData) {
     return MockProfileRepository();
   }
-  return RealProfileRepository();
+  return RealProfileRepository(
+    profileService: ref.read(profileServiceProvider),
+  );
 }
 
 /// Provider for FriendRepository
 @riverpod
 FriendRepository friendRepository(Ref ref) {
-  return RealFriendRepository();
+  return RealFriendRepository(
+    friendService: ref.read(friendServiceProvider),
+  );
 }

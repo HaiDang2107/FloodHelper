@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'api_client.dart';
 import '../models/friend_request_model.dart';
+import '../models/friend_model.dart';
 
 /// Service for friend API calls
 class FriendService {
@@ -18,7 +19,7 @@ class FriendService {
         '/friend/request',
         data: {
           'receiverId': receiverId,
-          if (note != null) 'note': note,
+          if (note case final String n) 'note': n,
         },
       );
 
@@ -101,6 +102,41 @@ class FriendService {
       await _apiClient.patch(
         '/friend/fcm-token',
         data: {'fcmToken': fcmToken},
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  /// Get all friends with map mode status
+  Future<List<FriendModel>> getFriends() async {
+    try {
+      final response = await _apiClient.get('/friend/list');
+      final data = response.data;
+
+      if (data['success'] == true && data['data'] != null) {
+        return (data['data'] as List)
+            .map((json) => FriendModel.fromJson(json))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  /// Batch-update friendMapMode for multiple friends
+  Future<void> updateFriendMapModes({
+    required List<String> friendIds,
+    required bool mapMode,
+  }) async {
+    try {
+      await _apiClient.patch(
+        '/friend/map-mode',
+        data: {
+          'friendIds': friendIds,
+          'mapMode': mapMode,
+        },
       );
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);

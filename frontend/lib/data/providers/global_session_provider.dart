@@ -4,24 +4,17 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 
-import '../models/auth_dto.dart';
-import '../repositories/auth_repository.dart';
 import '../../domain/models/user.dart';
 import '../../domain/models/auth_session.dart';
+import 'repository_providers.dart';
+import 'service_providers.dart';
 
-part 'auth_provider.g.dart';
-
-/// Provider for AuthRepository
-// state là thuộc tính lớp cha
-// AsyncValue: giúp hiển thị trạng thái lớp 
-@riverpod
-AuthRepository authRepository(Ref ref) {
-  return AuthRepository();
-}
+part 'global_session_provider.g.dart';
 
 /// Provider for current auth session
-@riverpod
-class AuthSessionNotifier extends _$AuthSessionNotifier {
+/// Manages authentication state (login, logout, refresh)
+@Riverpod(keepAlive: true)
+class GlobalSessionManager extends _$GlobalSessionManager {
   @override
   FutureOr<AuthSession?> build() async {
     return await _init();
@@ -62,6 +55,11 @@ class AuthSessionNotifier extends _$AuthSessionNotifier {
   /// Sign out
   Future<void> signOut({bool logoutAll = false}) async {
     try {
+      // 1. Stop background location tracking & MQTT
+      await ref.read(locationTrackingServiceProvider).stop();
+      ref.read(mqttServiceProvider).disconnect();
+
+      // 2. Call backend logout
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signOut(logoutAll: logoutAll);
     } finally {
@@ -104,77 +102,13 @@ class AuthSessionNotifier extends _$AuthSessionNotifier {
 /// Provider for checking if user is authenticated
 @riverpod
 bool isAuthenticated(Ref ref) {
-  final session = ref.watch(authSessionNotifierProvider);
+  final session = ref.watch(globalSessionManagerProvider);
   return session.valueOrNull != null;
 }
 
 /// Provider for current user
 @riverpod
 User? currentUser(Ref ref) {
-  final session = ref.watch(authSessionNotifierProvider);
+  final session = ref.watch(globalSessionManagerProvider);
   return session.valueOrNull?.user;
-}
-
-/// Sign up a new user
-@riverpod
-Future<String> signUp(Ref ref, {
-  required String fullName,
-  required String phoneNumber,
-  required String username,
-  required String password,
-  String? displayName,
-  String? dob,
-  String? village,
-  String? district,
-  String? country,
-}) async {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return await authRepository.signUp(
-    name: fullName,
-    phoneNumber: phoneNumber,
-    username: username,
-    password: password,
-    displayName: displayName,
-    dob: dob,
-    village: village,
-    district: district,
-    country: country,
-  );
-}
-
-/// Verify code
-@riverpod
-Future<VerifyCodeResponseDto> verifyCode(Ref ref, {
-  required String username,
-  required String code,
-  required VerificationType type,
-}) async {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return await authRepository.verifyCode(
-    username: username,
-    code: code,
-    type: type,
-  );
-}
-
-/// Forgot password - send reset code
-@riverpod
-Future<void> forgotPassword(Ref ref, {
-  required String username,
-}) async {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return await authRepository.forgotPassword(username: username);
-}
-
-/// Resend verification code
-@riverpod
-Future<void> resendCode(Ref ref, {
-  required String username,
-  required VerificationType type,
-}) async {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return await authRepository.resendCode(
-    username: username,
-    type: type,
-  );
 }

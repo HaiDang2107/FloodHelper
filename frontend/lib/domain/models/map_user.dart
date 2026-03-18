@@ -1,6 +1,6 @@
-/// Domain entity for displaying other users on map (Friends/Strangers)
-/// Represents users shown on the home map with their status
-/// Clean domain model - no JSON serialization logic
+// Domain entity for displaying other users on map (Friends/Strangers)
+// Represents users shown on the home map with their status
+// Clean domain model - no JSON serialization logic
 
 import 'user_profile.dart';
 

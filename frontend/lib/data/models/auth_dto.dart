@@ -1,5 +1,5 @@
-/// Data Transfer Objects for Authentication API
-/// These classes represent the request/response format for API communication
+// Data Transfer Objects for Authentication API
+// These classes represent the request/response format for API communication
 
 // ==================== REQUEST DTOs ====================
 

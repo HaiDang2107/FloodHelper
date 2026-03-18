@@ -171,7 +171,7 @@ class _AddFriendWidgetState extends ConsumerState<AddFriendWidget> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF0F62FE).withOpacity(0.1) : Colors.white,
+          color: isActive ? const Color(0xFF0F62FE).withValues(alpha: 0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isActive ? const Color(0xFF0F62FE) : Colors.grey[300]!,

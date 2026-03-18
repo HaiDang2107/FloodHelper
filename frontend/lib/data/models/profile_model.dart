@@ -11,7 +11,7 @@ class ProfileModel {
   final List<String> roles;
   final double? longitude;
   final double? latitude;
-  final bool publicMapMode;
+  final String visibilityMode; // PUBLIC | JUST_FRIEND | NO_ONE
   final String? avatarUrl;
   final String? citizenId;
   final String phoneNumber;
@@ -31,7 +31,7 @@ class ProfileModel {
     this.roles = const [],
     this.longitude,
     this.latitude,
-    this.publicMapMode = false,
+    this.visibilityMode = 'PUBLIC',
     this.avatarUrl,
     this.citizenId,
     required this.phoneNumber,
@@ -62,7 +62,7 @@ class ProfileModel {
       roles: List<String>.from(json['roles'] ?? []),
       longitude: json['longitude']?.toDouble(),
       latitude: json['latitude']?.toDouble(),
-      publicMapMode: json['publicMapMode'] ?? false,
+      visibilityMode: json['visibilityMode'] ?? 'PUBLIC',
       avatarUrl: json['avatarUrl'],
       citizenId: json['citizenId'],
       phoneNumber: json['phoneNumber'] ?? '',
@@ -87,7 +87,7 @@ class ProfileModel {
       'roles': roles,
       'longitude': longitude,
       'latitude': latitude,
-      'publicMapMode': publicMapMode,
+      'visibilityMode': visibilityMode,
       'avatarUrl': avatarUrl,
       'citizenId': citizenId,
       'phoneNumber': phoneNumber,
@@ -109,7 +109,7 @@ class ProfileModel {
     List<String>? roles,
     double? longitude,
     double? latitude,
-    bool? publicMapMode,
+    String? visibilityMode,
     String? avatarUrl,
     String? citizenId,
     String? phoneNumber,
@@ -129,7 +129,7 @@ class ProfileModel {
       roles: roles ?? this.roles,
       longitude: longitude ?? this.longitude,
       latitude: latitude ?? this.latitude,
-      publicMapMode: publicMapMode ?? this.publicMapMode,
+      visibilityMode: visibilityMode ?? this.visibilityMode,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       citizenId: citizenId ?? this.citizenId,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -181,7 +181,7 @@ class UpdateProfileDto {
   final String? country;
   final double? curLongitude;
   final double? curLatitude;
-  final bool? publicMapMode;
+  final String? visibilityMode;
   final String? avatarUrl;
   final String? citizenId;
   final String? citizenIdCardImg;
@@ -196,7 +196,7 @@ class UpdateProfileDto {
     this.country,
     this.curLongitude,
     this.curLatitude,
-    this.publicMapMode,
+    this.visibilityMode,
     this.avatarUrl,
     this.citizenId,
     this.citizenIdCardImg,
@@ -213,7 +213,7 @@ class UpdateProfileDto {
     if (country != null) map['country'] = country;
     if (curLongitude != null) map['curLongitude'] = curLongitude;
     if (curLatitude != null) map['curLatitude'] = curLatitude;
-    if (publicMapMode != null) map['publicMapMode'] = publicMapMode;
+    if (visibilityMode != null) map['visibilityMode'] = visibilityMode;
     if (avatarUrl != null) map['avatarUrl'] = avatarUrl;
     if (citizenId != null) map['citizenId'] = citizenId;
     if (citizenIdCardImg != null) map['citizenIdCardImg'] = citizenIdCardImg;

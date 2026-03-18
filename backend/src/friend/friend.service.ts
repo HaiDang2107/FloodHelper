@@ -233,7 +233,7 @@ export class FriendService {
       throw new BadRequestException('This request is no longer pending');
     }
 
-    // Update request state and create friendship in a transaction
+    // Update request state and create TWO friendship records (bidirectional) with default map mode = true
     const [updatedRequest] = await this.prisma.$transaction([
       this.prisma.friendMakingRequest.update({
         where: { requestId },
@@ -246,6 +246,14 @@ export class FriendService {
         data: {
           userId: request.createdBy,
           friendId: request.sentTo,
+          friendMapMode: true,
+        },
+      }),
+      this.prisma.friendship.create({
+        data: {
+          userId: request.sentTo,
+          friendId: request.createdBy,
+          friendMapMode: true,
         },
       }),
     ]);
@@ -330,5 +338,48 @@ export class FriendService {
       where: { userId },
       data: { fcmToken },
     });
+  }
+
+  /**
+   * Get all friends of a user with map mode status.
+   * friendMapMode reflects whether current user wants to see this friend on map.
+   */
+  async getFriends(userId: string) {
+    const friendships = await this.prisma.friendship.findMany({
+      where: { userId },
+      include: {
+        friend: {
+          select: {
+            userId: true,
+            name: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return friendships.map((f) => ({
+      userId: f.friend.userId,
+      name: f.friend.name,
+      displayName: f.friend.displayName,
+      avatarUrl: f.friend.avatarUrl,
+      friendMapMode: f.friendMapMode,
+    }));
+  }
+
+  /**
+   * Batch-update friendMapMode for multiple friends.
+   */
+  async updateFriendMapModes(userId: string, friendIds: string[], mapMode: boolean) {
+    const result = await this.prisma.friendship.updateMany({
+      where: {
+        userId,
+        friendId: { in: friendIds },
+      },
+      data: { friendMapMode: mapMode },
+    });
+
+    return { updated: result.count };
   }
 }

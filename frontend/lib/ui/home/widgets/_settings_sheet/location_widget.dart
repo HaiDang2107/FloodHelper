@@ -4,22 +4,35 @@ enum LocationVisibility { public, justFriends, noOne }
 
 class LocationWidget extends StatefulWidget {
   final Function(LocationVisibility) onVisibilityChanged;
+  final LocationVisibility initialVisibility;
 
-  const LocationWidget({super.key, required this.onVisibilityChanged});
+  const LocationWidget({
+    super.key,
+    required this.onVisibilityChanged,
+    this.initialVisibility = LocationVisibility.justFriends,
+  });
 
   @override
   State<LocationWidget> createState() => _LocationWidgetState();
 }
 
 class _LocationWidgetState extends State<LocationWidget> {
-  LocationVisibility _selectedVisibility = LocationVisibility.public;
-  LocationVisibility _initialVisibility = LocationVisibility.public;
+  late LocationVisibility _selectedVisibility;
+  late LocationVisibility _initialVisibility;
   bool get _hasChanges => _selectedVisibility != _initialVisibility;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedVisibility = widget.initialVisibility;
+    _initialVisibility = widget.initialVisibility;
+  }
 
   void _saveChanges() {
     setState(() {
       _initialVisibility = _selectedVisibility;
     });
+    widget.onVisibilityChanged(_selectedVisibility);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Location visibility saved!')));
@@ -60,59 +73,50 @@ class _LocationWidgetState extends State<LocationWidget> {
           ],
         ),
         const SizedBox(height: 12),
-        RadioListTile<LocationVisibility>(
-          value: LocationVisibility.public,
+        RadioGroup<LocationVisibility>(
           groupValue: _selectedVisibility,
-          activeColor: const Color(0xFF0F62FE),
           onChanged: (value) {
-            setState(() {
-              _selectedVisibility = value!;
-            });
-            widget.onVisibilityChanged(value!);
+            if (value == null) return;
+            setState(() => _selectedVisibility = value);
+            widget.onVisibilityChanged(value);
           },
-          title: const Text('Public', style: TextStyle(color: Colors.black87)),
-          subtitle: const Text(
-            'Everyone can see your location',
-            style: TextStyle(color: Colors.black54),
+          child: Column(
+            children: [
+              RadioListTile<LocationVisibility>(
+                value: LocationVisibility.public,
+                activeColor: const Color(0xFF0F62FE),
+                title: const Text('Public', style: TextStyle(color: Colors.black87)),
+                subtitle: const Text(
+                  'Everyone can see your location',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+              RadioListTile<LocationVisibility>(
+                value: LocationVisibility.justFriends,
+                activeColor: const Color(0xFF0F62FE),
+                title: const Text(
+                  'Just Friends',
+                  style: TextStyle(color: Colors.black87),
+                ),
+                subtitle: const Text(
+                  'Only selected friends can see',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+              RadioListTile<LocationVisibility>(
+                value: LocationVisibility.noOne,
+                activeColor: const Color(0xFF0F62FE),
+                title: const Text('No One', style: TextStyle(color: Colors.black87)),
+                subtitle: const Text(
+                  'Your location is hidden',
+                  style: TextStyle(color: Colors.black54),
+                ),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
           ),
-          contentPadding: EdgeInsets.zero,
-        ),
-        RadioListTile<LocationVisibility>(
-          value: LocationVisibility.justFriends,
-          groupValue: _selectedVisibility,
-          activeColor: const Color(0xFF0F62FE),
-          onChanged: (value) {
-            setState(() {
-              _selectedVisibility = value!;
-            });
-            widget.onVisibilityChanged(value!);
-          },
-          title: const Text(
-            'Just Friends',
-            style: TextStyle(color: Colors.black87),
-          ),
-          subtitle: const Text(
-            'Only selected friends can see',
-            style: TextStyle(color: Colors.black54),
-          ),
-          contentPadding: EdgeInsets.zero,
-        ),
-        RadioListTile<LocationVisibility>(
-          value: LocationVisibility.noOne,
-          groupValue: _selectedVisibility,
-          activeColor: const Color(0xFF0F62FE),
-          onChanged: (value) {
-            setState(() {
-              _selectedVisibility = value!;
-            });
-            widget.onVisibilityChanged(value!);
-          },
-          title: const Text('No One', style: TextStyle(color: Colors.black87)),
-          subtitle: const Text(
-            'Your location is hidden',
-            style: TextStyle(color: Colors.black54),
-          ),
-          contentPadding: EdgeInsets.zero,
         ),
       ],
     );

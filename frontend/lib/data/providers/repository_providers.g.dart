@@ -6,7 +6,26 @@ part of 'repository_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userRepositoryHash() => r'20869ee983623f06ef8f337e04f7766e5777d422';
+String _$authRepositoryHash() => r'72cea58052982d40db0839ddeb3f6dd89872f6d2';
+
+/// Provider for AuthRepository
+///
+/// Copied from [authRepository].
+@ProviderFor(authRepository)
+final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
+  authRepository,
+  name: r'authRepositoryProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$authRepositoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
+String _$userRepositoryHash() => r'fe3106f7a2310f07627b7a69643b27526aa922a2';
 
 /// Provider for UserRepository
 /// Automatically switches between mock and real implementation
@@ -69,7 +88,7 @@ final announcementRepositoryProvider =
 // ignore: unused_element
 typedef AnnouncementRepositoryRef =
     AutoDisposeProviderRef<AnnouncementRepository>;
-String _$profileRepositoryHash() => r'2d41e912bd7bd40ccb284b7083786747b1515f0d';
+String _$profileRepositoryHash() => r'd59412412a238678f53f8b542118e3b5e37a1d58';
 
 /// Provider for ProfileRepository
 /// Automatically switches between mock and real implementation
@@ -90,7 +109,7 @@ final profileRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ProfileRepositoryRef = AutoDisposeProviderRef<ProfileRepository>;
-String _$friendRepositoryHash() => r'b341221199055b0df18a3285c27c4fa96fd0bece';
+String _$friendRepositoryHash() => r'1e8abafd6337090488e83f906af74dfae78e8e14';
 
 /// Provider for FriendRepository
 ///

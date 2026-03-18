@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import { IsNumber } from 'class-validator';
 
 export class UpdateLocationDto {
   @IsNumber()
@@ -6,8 +6,4 @@ export class UpdateLocationDto {
 
   @IsNumber()
   curLatitude: number;
-
-  @IsOptional()
-  @IsBoolean()
-  publicMapMode?: boolean;
 }

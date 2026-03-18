@@ -6,8 +6,8 @@ import '../profile_repository.dart';
 class RealProfileRepository implements ProfileRepository {
   final ProfileService _profileService;
 
-  RealProfileRepository({ProfileService? profileService}) 
-      : _profileService = profileService ?? ProfileService();
+  RealProfileRepository({required ProfileService profileService}) 
+      : _profileService = profileService;
 
   @override
   Future<ProfileModel> getProfile() async {
@@ -23,12 +23,10 @@ class RealProfileRepository implements ProfileRepository {
   Future<void> updateLocation({
     required double longitude,
     required double latitude,
-    bool? publicMapMode,
   }) async {
     return await _profileService.updateLocation(
       longitude: longitude,
       latitude: latitude,
-      publicMapMode: publicMapMode,
     );
   }
 

@@ -25,14 +25,25 @@ Future<void> onStart(ServiceInstance service) async { // service được hệ t
   final mqttService = MqttService();
   String? userId;
   bool mqttConnected = false;
+  List<String> allowedFriends = [];
 
-  // Listen for userId sent from UI isolate
+  // Listen for userId sent from UI isolate (lắng nghe kênh setUserId)
   service.on('setUserId').listen((event) async {
     userId = event?['userId'] as String?;
     if (userId != null && !mqttConnected) {
       mqttConnected = await mqttService.connect(userId!);
       if (kDebugMode) {
         print('📡 [BG] MQTT connected for $userId: $mqttConnected');
+      }
+    }
+  });
+
+  // Listen for allowed friends list from UI isolate
+  service.on('setAllowedFriends').listen((event) {
+    if (event != null && event['friendIds'] != null) {
+      allowedFriends = List<String>.from(event['friendIds']);
+      if (kDebugMode) {
+        print('📡 [BG] Allowed friends updated: $allowedFriends');
       }
     }
   });
@@ -56,16 +67,15 @@ Future<void> onStart(ServiceInstance service) async { // service được hệ t
           ),
         );
 
-        // 1. Publish to MQTT
+        // 1. Publish to MQTT with new topic convention
         if (mqttConnected) {
           final payload = jsonEncode({
-            'userId': userId,
-            'latitude': position.latitude,
-            'longitude': position.longitude,
-            'timestamp': DateTime.now().toIso8601String(),
+            'lat': position.latitude,
+            'lng': position.longitude,
+            'allowed_friends': allowedFriends,
           });
           mqttService.publishRaw(
-            topic: '${AppConfig.mqttLocationTopicPrefix}/$userId',
+            topic: '$userId/${AppConfig.mqttCurrentLocationSuffix}',
             payload: payload,
           );
         }
@@ -137,24 +147,14 @@ class LocationUpdate {
 /// The actual GPS polling + MQTT publishing runs in a **separate isolate**
 /// via [onStart], surviving screen-off and app backgrounding.
 ///
-/// **Singleton pattern** — ensures only one instance exists across the app.
+/// **Provider:** Use `locationTrackingServiceProvider` from `service_providers.dart`
 class LocationTrackingService {
-  static LocationTrackingService? _instance;
   final FlutterBackgroundService _service = FlutterBackgroundService();
 
   final _locationController = StreamController<LocationUpdate>.broadcast();
   Stream<LocationUpdate> get locationStream => _locationController.stream;
 
-  StreamSubscription? _bgSubscription;
-
-  // Private constructor for singleton
-  LocationTrackingService._internal();
-
-  // Factory constructor returns the same instance
-  factory LocationTrackingService() {
-    _instance ??= LocationTrackingService._internal();
-    return _instance!;
-  }
+  StreamSubscription? _bgSubscription; // dùng để quản lý listener
 
   // -------------------- Initialization --------------------
 
@@ -178,7 +178,7 @@ class LocationTrackingService {
     await _service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
-        autoStart: false,
+        autoStart: false, // background service không tự động khởi động 
         isForegroundMode: true,
         foregroundServiceTypes: [AndroidForegroundType.location],
         notificationChannelId: _kNotificationChannelId,
@@ -196,7 +196,7 @@ class LocationTrackingService {
   // -------------------- Start / Stop --------------------
 
   /// Start the background service, get initial position, begin tracking.
-  Future<LocationUpdate> start(String userId) async {
+  Future<LocationUpdate> start(String userId, {List<String> allowedFriendIds = const []}) async {
     // 1. Check permissions
     await _ensureLocationPermission();
 
@@ -213,13 +213,18 @@ class LocationTrackingService {
     );
     _locationController.add(initialUpdate);
 
-    // 3. Start the background isolate
+    // 3. Start the background isolate (đánh thức hàm onStart())
     await _service.startService();
 
     // 4. Send userId so background isolate can connect MQTT
-    _service.invoke('setUserId', {'userId': userId});
+    _service.invoke('setUserId', {'userId': userId}); 
+
+    // 4b. Send initial allowed friends list
+    _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
 
     // 5. Listen for location updates coming back from background
+    // Khi gọi hàm .listen(...), ta đang ra lệnh cho hệ thống: "Hãy mở một luồng liên tục chạy ngầm trong RAM để nghe ngóng tin tức từ kênh onLocationUpdate
+    // lưu vào _bgSubscription để dễ quản lý (có thể hủy bất cứ lúc nào)
     _bgSubscription = _service.on('onLocationUpdate').listen((event) {
       if (event != null) {
         final update = LocationUpdate(
@@ -227,7 +232,7 @@ class LocationTrackingService {
           longitude: (event['longitude'] as num).toDouble(),
           timestamp: DateTime.now(),
         );
-        _locationController.add(update);
+        _locationController.add(update); // Ném dữ liệu vào stream
       }
     });
 
@@ -256,6 +261,12 @@ class LocationTrackingService {
   void dispose() {
     stop();
     _locationController.close();
+  }
+
+  /// Update the allowed friends list in the background isolate.
+  /// Called when user changes map mode settings.
+  void updateAllowedFriends(List<String> friendIds) {
+    _service.invoke('setAllowedFriends', {'friendIds': friendIds});
   }
 
   // -------------------- Private --------------------

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/_settings_sheet/display_widget.dart';
 import '../../widgets/_settings_sheet/location_widget.dart';
 import '../../widgets/_settings_sheet/modification_widget.dart';
+import '../../view_models/home_view_model.dart';
 
-class SettingsSheet extends StatefulWidget {
+class SettingsSheet extends ConsumerStatefulWidget {
   final bool showStrangerLocation;
   final bool showPostLocation;
   final Function(bool) onShowStrangerLocationChanged;
@@ -18,11 +20,40 @@ class SettingsSheet extends StatefulWidget {
   });
 
   @override
-  State<SettingsSheet> createState() => _SettingsSheetState();
+  ConsumerState<SettingsSheet> createState() => _SettingsSheetState();
 }
 
-class _SettingsSheetState extends State<SettingsSheet> {
-  LocationVisibility _locationVisibility = LocationVisibility.public;
+class _SettingsSheetState extends ConsumerState<SettingsSheet> {
+  late LocationVisibility _locationVisibility;
+
+  @override
+  void initState() {
+    super.initState();
+    final visibilityStr = ref.read(homeViewModelProvider).locationVisibility;
+    _locationVisibility = _fromString(visibilityStr);
+  }
+
+  LocationVisibility _fromString(String value) {
+    switch (value) {
+      case 'PUBLIC':
+        return LocationVisibility.public;
+      case 'NO_ONE':
+        return LocationVisibility.noOne;
+      default:
+        return LocationVisibility.justFriends;
+    }
+  }
+
+  String _toString(LocationVisibility v) {
+    switch (v) {
+      case LocationVisibility.public:
+        return 'PUBLIC';
+      case LocationVisibility.noOne:
+        return 'NO_ONE';
+      case LocationVisibility.justFriends:
+        return 'JUST_FRIEND';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +80,14 @@ class _SettingsSheetState extends State<SettingsSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   LocationWidget(
+                    initialVisibility: _locationVisibility,
                     onVisibilityChanged: (visibility) {
                       setState(() {
                         _locationVisibility = visibility;
                       });
+                      // Persist to backend
+                      ref.read(homeViewModelProvider.notifier)
+                          .updateLocationVisibility(_toString(visibility));
                     },
                   ),
                   if (_locationVisibility == LocationVisibility.justFriends) ...[

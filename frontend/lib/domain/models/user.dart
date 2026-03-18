@@ -1,5 +1,5 @@
-/// Domain model for User
-/// This represents the business entity used throughout the app
+// Domain model for User
+// This represents the business entity used throughout the app
 
 class User {
   final String id;

@@ -84,7 +84,9 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/assets/
+    - assets/images/
+    - assets/icons/
+    - assets/certs/emqxsl-ca.crt
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -120,5 +122,5 @@ flutter:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "lib/assets/man_under_rain.png"
+  image_path: "assets/images/man_under_rain.png"
   remove_alpha_ios: true

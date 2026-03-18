@@ -15,7 +15,7 @@ class CharityItem extends StatelessWidget {
   const CharityItem({super.key, required this.campaign, this.isOwner = false});
 
   void _showDetailsBottomSheet(BuildContext context) {
-    var _currentView = _SheetView.details;
+    var currentView = _SheetView.details;
 
     showModalBottomSheet(
       context: context,
@@ -44,7 +44,7 @@ class CharityItem extends StatelessWidget {
 
           Widget content;
 
-          switch (_currentView) {
+          switch (currentView) {
             case _SheetView.supplies:
               content = Column(
                 key: const ValueKey('supplies'),
@@ -52,7 +52,7 @@ class CharityItem extends StatelessWidget {
                 children: [
                   buildBackButton(
                     () =>
-                        setSheetState(() => _currentView = _SheetView.details),
+                        setSheetState(() => currentView = _SheetView.details),
                   ),
                   PurchasedSuppliesView(
                     supplies: campaign.purchasedSupplies,
@@ -68,7 +68,7 @@ class CharityItem extends StatelessWidget {
                 children: [
                   buildBackButton(
                     () =>
-                        setSheetState(() => _currentView = _SheetView.details),
+                        setSheetState(() => currentView = _SheetView.details),
                   ),
                   TransactionListView(
                     transactions: campaign.transactions,
@@ -83,9 +83,9 @@ class CharityItem extends StatelessWidget {
                 campaign: campaign,
                 isOwner: isOwner,
                 onPurchasedSupplies: () =>
-                    setSheetState(() => _currentView = _SheetView.supplies),
+                    setSheetState(() => currentView = _SheetView.supplies),
                 onTransaction: () =>
-                    setSheetState(() => _currentView = _SheetView.transactions),
+                    setSheetState(() => currentView = _SheetView.transactions),
               );
               break;
           }

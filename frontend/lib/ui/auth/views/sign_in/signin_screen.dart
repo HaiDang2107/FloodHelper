@@ -27,6 +27,7 @@ class SignInScreen extends ConsumerWidget {
         if (next.showActivationDialog && !(previous?.showActivationDialog ?? false)) {
           // Show dialog when flag becomes true
           final result = await AccountNotActivatedDialog.show(context);
+          if (!context.mounted) return;
           if (result == true) {
             viewModel.handleActivateAccount(context);
           } else {

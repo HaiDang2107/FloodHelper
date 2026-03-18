@@ -1,6 +1,6 @@
-/// Domain entity for Announcement
-/// Represents system/authority announcements displayed to users
-/// Clean domain model - no JSON serialization logic
+// Domain entity for Announcement
+// Represents system/authority announcements displayed to users
+// Clean domain model - no JSON serialization logic
 
 class Announcement {
   final String id;

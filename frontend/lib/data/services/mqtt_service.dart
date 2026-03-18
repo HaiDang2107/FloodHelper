@@ -2,30 +2,49 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import '../config/app_config.dart';
 
+/// Data class for friend location updates received via MQTT
+class FriendLocationUpdate {
+  final String friendId;
+  final double latitude;
+  final double longitude;
+
+  const FriendLocationUpdate({
+    required this.friendId,
+    required this.latitude,
+    required this.longitude,
+  });
+}
+
 /// Service for MQTT communication with EMQX Cloud broker
+/// Singleton managed by Riverpod (mqttServiceProvider with keepAlive: true)
 class MqttService {
-  static MqttService? _instance;
   MqttServerClient? _client;
   bool _isConnected = false;
+  bool _isConnecting = false;
 
-  MqttService._internal();
-
-  factory MqttService() {
-    _instance ??= MqttService._internal();
-    return _instance!;
-  }
+  MqttService();
 
   bool get isConnected => _isConnected;
 
   /// Connect to the MQTT broker
   Future<bool> connect(String userId) async {
     if (_isConnected && _client != null) {
-      return true;
+      return true; // Trả về true luốn nếu đã kết nối rồi
     }
+
+    if (_isConnecting) {
+      if (kDebugMode) {
+        print('📡 MQTT is connecting, skip duplicate connect request');
+      }
+      return false;
+    }
+
+    _isConnecting = true;
 
     final clientId = '${AppConfig.mqttClientIdPrefix}$userId';
 
@@ -35,8 +54,26 @@ class MqttService {
       AppConfig.mqttPort,
     );
 
+    _client!.setProtocolV311();
+
+  // Cấu hình bảo mật và chứng chỉ SSL
     _client!.secure = AppConfig.mqttUseSsl;
-    _client!.securityContext = SecurityContext.defaultContext;
+    if (AppConfig.mqttUseSsl) {
+      try {
+        final caData = await rootBundle.load('assets/certs/emqxsl-ca.crt'); // Nhớ bỏ chữ 'lib/' đi nhé!
+        final caBytes = caData.buffer.asUint8List();
+        final securityContext = SecurityContext(withTrustedRoots: true);
+        securityContext.setTrustedCertificatesBytes(caBytes);
+        _client!.securityContext = securityContext;
+      } catch (e) {
+        if (kDebugMode) print('📡 Lỗi load CA: $e');
+        _client!.securityContext = SecurityContext(withTrustedRoots: false);
+        _client!.onBadCertificate = (X509Certificate cert) => true;
+      }
+    } else {
+      _client!.securityContext = SecurityContext.defaultContext;
+    }
+
     _client!.keepAlivePeriod = 30;
     _client!.autoReconnect = true;
     _client!.resubscribeOnAutoReconnect = true;
@@ -48,11 +85,12 @@ class MqttService {
     _client!.onAutoReconnect = _onAutoReconnect;
     _client!.onAutoReconnected = _onAutoReconnected;
 
+    // Cấu hình gói tin connect
+
     final connMessage = MqttConnectMessage()
         .withClientIdentifier(clientId)
         .authenticateAs(AppConfig.mqttUsername, AppConfig.mqttPassword)
-        .startClean()
-        .withWillQos(MqttQos.atLeastOnce);
+        .startClean();
 
     _client!.connectionMessage = connMessage;
 
@@ -61,11 +99,13 @@ class MqttService {
 
       if (_client!.connectionStatus?.state == MqttConnectionState.connected) {
         _isConnected = true;
+        _isConnecting = false;
         if (kDebugMode) {
           print('📡 MQTT connected to ${AppConfig.mqttBrokerUrl}');
         }
         return true;
       } else {
+        _isConnecting = false;
         if (kDebugMode) {
           print('📡 MQTT connection failed: ${_client!.connectionStatus}');
         }
@@ -74,6 +114,7 @@ class MqttService {
         return false;
       }
     } catch (e) {
+      _isConnecting = false;
       if (kDebugMode) {
         print('📡 MQTT connection error: $e');
       }
@@ -83,11 +124,12 @@ class MqttService {
     }
   }
 
-  /// Publish user location to MQTT topic: location/<userId>
+  // MQTT topic: '{userId}/current-location'
   void publishLocation({
     required String userId,
     required double latitude,
     required double longitude,
+    List<String> allowedFriends = const [],
   }) {
     if (!_isConnected || _client == null) {
       if (kDebugMode) {
@@ -96,12 +138,11 @@ class MqttService {
       return;
     }
 
-    final topic = '${AppConfig.mqttLocationTopicPrefix}/$userId';
+    final topic = '$userId/${AppConfig.mqttCurrentLocationSuffix}';
     final payload = jsonEncode({
-      'userId': userId,
-      'latitude': latitude,
-      'longitude': longitude,
-      'timestamp': DateTime.now().toIso8601String(),
+      'lat': latitude,
+      'lng': longitude,
+      'allowed_friends': allowedFriends,
     });
 
     final builder = MqttClientPayloadBuilder();
@@ -149,12 +190,97 @@ class MqttService {
   void subscribeToLocation(String userId) {
     if (!_isConnected || _client == null) return;
 
-    final topic = '${AppConfig.mqttLocationTopicPrefix}/$userId';
+    final topic = '$userId/${AppConfig.mqttCurrentLocationSuffix}';
     _client!.subscribe(topic, MqttQos.atLeastOnce);
 
     if (kDebugMode) {
       print('📡 Subscribed to $topic');
     }
+  }
+
+  // ==================== Friend Location Subscription ====================
+
+  final _friendLocationController = StreamController<FriendLocationUpdate>.broadcast();
+
+  /// Stream of friend location updates parsed from MQTT messages.
+  Stream<FriendLocationUpdate> get friendLocationStream => _friendLocationController.stream;
+
+  StreamSubscription? _mqttSubscription;
+
+  // Topic: '{friendId}/to_{myUserId}/last-location'
+  void subscribeFriendLocation(String friendId, String myUserId) {
+    if (!_isConnected || _client == null) return;
+
+    final topic = '$friendId/to_$myUserId/${AppConfig.mqttLastLocationSuffix}';
+    _client!.subscribe(topic, MqttQos.atLeastOnce);
+
+    if (kDebugMode) {
+      print('📡 Subscribed to friend location: $topic');
+    }
+  }
+
+  /// Unsubscribe from a friend's last-location topic.
+  void unsubscribeFriendLocation(String friendId, String myUserId) {
+    if (!_isConnected || _client == null) return;
+
+    final topic = '$friendId/to_$myUserId/${AppConfig.mqttLastLocationSuffix}';
+    _client!.unsubscribe(topic);
+
+    if (kDebugMode) {
+      print('📡 Unsubscribed from friend location: $topic');
+    }
+  }
+
+  /// Start listening MQTT messages and parsing friend location updates.
+  /// Call once after connect. Parses topic to extract friendId.
+  void startListeningFriendLocations(String myUserId) {
+    _mqttSubscription?.cancel();
+    _mqttSubscription = _client?.updates?.listen((messages) {
+      for (final msg in messages) {
+        try {
+          final topic = msg.topic; // e.g. "<friendId>/to_<myId>/last-location"
+          final recMsg = msg.payload as MqttPublishMessage;
+          final payload = MqttPublishPayload.bytesToStringAsString(
+            recMsg.payload.message,
+          );
+
+          // Parse friendId from topic: "<friendId>/to_<myId>/last-location"
+          final suffix = '/to_$myUserId/${AppConfig.mqttLastLocationSuffix}';
+          if (!topic.endsWith(suffix)) continue;
+
+          final friendId = topic.substring(0, topic.length - suffix.length);
+          final data = jsonDecode(payload) as Map<String, dynamic>;
+
+          final update = FriendLocationUpdate(
+            friendId: friendId,
+            latitude: (data['lat'] as num).toDouble(),
+            longitude: (data['lng'] as num).toDouble(),
+          );
+
+          _friendLocationController.add(update);
+
+          if (kDebugMode) {
+            print('📡 Friend location received: $friendId → (${update.latitude}, ${update.longitude})');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('📡 Error parsing MQTT message: $e');
+          }
+        }
+      }
+    });
+  }
+
+  /// Stop listening and close the friend location stream.
+  void stopListeningFriendLocations() {
+    _mqttSubscription?.cancel();
+    _mqttSubscription = null;
+  }
+
+  /// Dispose MQTT friend location stream (call on service cleanup).
+  void disposeFriendLocationStream() {
+    stopListeningFriendLocations();
+    _friendLocationController.close();
   }
 
   /// Get stream of received messages
@@ -167,10 +293,18 @@ class MqttService {
     if (_client != null) {
       _client!.disconnect();
       _isConnected = false;
+      _isConnecting = false;
       if (kDebugMode) {
         print('📡 MQTT disconnected');
       }
     }
+  }
+
+  /// Dispose MQTT service (cleanup all resources)
+  void dispose() {
+    stopListeningFriendLocations();
+    disconnect();
+    _friendLocationController.close();
   }
 
   // ==================== Callbacks ====================
@@ -184,6 +318,7 @@ class MqttService {
 
   void _onDisconnected() {
     _isConnected = false;
+    _isConnecting = false;
     if (kDebugMode) {
       print('📡 MQTT: onDisconnected');
     }

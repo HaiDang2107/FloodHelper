@@ -1,5 +1,5 @@
-/// Domain model for Authentication Session
-/// Represents the current user's authentication state
+// Domain model for Authentication Session
+// Represents the current user's authentication state
 
 import 'user.dart';
 

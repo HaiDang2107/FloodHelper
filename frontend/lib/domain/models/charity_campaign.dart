@@ -1,6 +1,6 @@
-/// Domain entity for Charity Campaign
-/// Represents charity/relief campaigns displayed on charity screens
-/// Clean domain model - no JSON serialization logic
+// Domain entity for Charity Campaign
+// Represents charity/relief campaigns displayed on charity screens
+// Clean domain model - no JSON serialization logic
 
 class CharityCampaign {
   final String id;

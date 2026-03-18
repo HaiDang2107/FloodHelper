@@ -33,7 +33,7 @@ class SignInFormScreen extends StatelessWidget {
           Positioned(
             top: 0,
             right: 0,
-            child: SvgPicture.asset('lib/assets/sun.svg'),
+            child: SvgPicture.asset('assets/images/sun.svg'),
           ),
           Positioned(
             bottom: 0,
@@ -44,7 +44,7 @@ class SignInFormScreen extends StatelessWidget {
               transform: Matrix4.diagonal3Values(1.0, 0.5, 1.0),
               alignment: Alignment.bottomRight,
               child: SvgPicture.asset(
-                'lib/assets/wave.svg',
+                'assets/images/wave.svg',
                 fit: BoxFit.fitWidth,
               ),
             ),
@@ -59,7 +59,7 @@ class SignInFormScreen extends StatelessWidget {
                   children: [
                     const SizedBox(height: 80), // Push content down
 
-                    SvgPicture.asset('lib/assets/man_walk.svg', height: 200),
+                    SvgPicture.asset('assets/images/man_walk.svg', height: 200),
 
                     const SizedBox(height: 10),
                     // Title
@@ -122,7 +122,7 @@ class SignInFormScreen extends StatelessWidget {
                       textColor: Colors.black87,
                       onPressed: () {}, // Placeholder for Google Sign In
                       icon: SvgPicture.asset(
-                        'lib/assets/google-icon.svg',
+                        'assets/icons/google-icon.svg',
                         height: 24,
                       ),
                     ),

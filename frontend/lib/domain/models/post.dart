@@ -1,6 +1,6 @@
-/// Domain entity for Post
-/// Represents a flood-related post displayed on the map and feed
-/// Clean domain model - no JSON serialization logic
+// Domain entity for Post
+// Represents a flood-related post displayed on the map and feed
+// Clean domain model - no JSON serialization logic
 
 import 'user_profile.dart';
 

@@ -1,6 +1,6 @@
-/// Domain entity for User Profile
-/// This represents a complete user profile displayed on the profile screen
-/// Clean domain model - no JSON serialization logic
+// Domain entity for User Profile
+// This represents a complete user profile displayed on the profile screen
+// Clean domain model - no JSON serialization logic
 
 import 'user.dart';
 
@@ -49,7 +49,7 @@ class UserProfile {
   final String? avatarUrl;
   final Address? address;
   final Location? location;
-  final bool publicMapMode;
+  final String visibilityMode; // PUBLIC | JUST_FRIEND | NO_ONE
   final String? jobPosition;
   final CitizenInfo? citizenInfo;
   final AccountState? accountState;
@@ -65,7 +65,7 @@ class UserProfile {
     this.avatarUrl,
     this.address,
     this.location,
-    this.publicMapMode = false,
+    this.visibilityMode = 'PUBLIC',
     this.jobPosition,
     this.citizenInfo,
     this.accountState,
@@ -112,7 +112,7 @@ class UserProfile {
     String? avatarUrl,
     Address? address,
     Location? location,
-    bool? publicMapMode,
+    String? visibilityMode,
     String? jobPosition,
     CitizenInfo? citizenInfo,
     AccountState? accountState,
@@ -128,7 +128,7 @@ class UserProfile {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       address: address ?? this.address,
       location: location ?? this.location,
-      publicMapMode: publicMapMode ?? this.publicMapMode,
+      visibilityMode: visibilityMode ?? this.visibilityMode,
       jobPosition: jobPosition ?? this.jobPosition,
       citizenInfo: citizenInfo ?? this.citizenInfo,
       accountState: accountState ?? this.accountState,

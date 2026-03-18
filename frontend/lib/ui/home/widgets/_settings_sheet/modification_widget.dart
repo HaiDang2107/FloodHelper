@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/common/widgets/user_avatar.dart';
 import '../../../core/common/constants/user_state.dart';
-import '../../../../data/models/user_model.dart';
+import '../../../../data/models/friend_model.dart';
 import '../../view_models/home_view_model.dart';
 
 class ModificationWidget extends ConsumerStatefulWidget {
@@ -15,9 +15,8 @@ class ModificationWidget extends ConsumerStatefulWidget {
 class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
   bool _isModifying = false;
 
-  // Use first 6 friends for "See Me", rest for "Freeze"
-  late List<UserModel> _seeMeUsers;
-  late List<UserModel> _freezeUsers;
+  late List<FriendModel> _seeMeUsers;
+  late List<FriendModel> _freezeUsers;
   bool _initialized = false;
 
   @override
@@ -25,37 +24,44 @@ class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
     super.didChangeDependencies();
     if (!_initialized) {
       final state = ref.read(homeViewModelProvider);
-      _seeMeUsers = state.friends.take(6).toList();
-      _freezeUsers = state.friends.skip(6).toList();
+      // Split friends by friendMapMode
+      _seeMeUsers = state.friendsWithMapMode
+          .where((f) => f.friendMapMode)
+          .toList();
+      _freezeUsers = state.friendsWithMapMode
+          .where((f) => !f.friendMapMode)
+          .toList();
       _initialized = true;
-    }
-  }
-
-  UserStatus _parseStatus(String status) {
-    switch (status.toLowerCase()) {
-      case 'online':
-        return UserStatus.online;
-      case 'offline':
-        return UserStatus.offline;
-      default:
-        return UserStatus.unknown;
     }
   }
 
   void _moveToFreeze(String id) {
     setState(() {
-      final user = _seeMeUsers.firstWhere((user) => user.id == id);
-      _seeMeUsers.removeWhere((user) => user.id == id);
+      final user = _seeMeUsers.firstWhere((u) => u.userId == id);
+      _seeMeUsers.removeWhere((u) => u.userId == id);
       _freezeUsers.add(user);
     });
   }
 
   void _moveToSeeMe(String id) {
     setState(() {
-      final user = _freezeUsers.firstWhere((user) => user.id == id);
-      _freezeUsers.removeWhere((user) => user.id == id);
+      final user = _freezeUsers.firstWhere((u) => u.userId == id);
+      _freezeUsers.removeWhere((u) => u.userId == id);
       _seeMeUsers.add(user);
     });
+  }
+
+  void _onDone() {
+    setState(() {
+      _isModifying = false;
+    });
+    // Persist to backend via ViewModel
+    final seeMeIds = _seeMeUsers.map((u) => u.userId).toList();
+    final freezeIds = _freezeUsers.map((u) => u.userId).toList();
+    ref.read(homeViewModelProvider.notifier).updateFriendMapModes(
+      seeMeIds: seeMeIds,
+      freezeIds: freezeIds,
+    );
   }
 
   @override
@@ -75,11 +81,13 @@ class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
                 ),
               ),
               TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isModifying = !_isModifying;
-                  });
-                },
+                onPressed: _isModifying
+                    ? _onDone
+                    : () {
+                        setState(() {
+                          _isModifying = true;
+                        });
+                      },
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFF0F62FE),
                 ),
@@ -115,7 +123,7 @@ class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
 
   Widget _buildSection({
     required String title,
-    required List<UserModel> users,
+    required List<FriendModel> users,
     required Color iconColor,
     required Function(String) onRemove,
   }) {
@@ -133,41 +141,48 @@ class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
         const SizedBox(height: 12),
         SizedBox(
           height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 16.0),
-                child: Column(
-                  children: [
-                    UserAvatar(
-                      imageUrl: user.avatarUrl,
-                      status: _parseStatus(user.status),
-                      size: 60,
-                      topRightIcon: _isModifying ? Icons.remove : null,
-                      topRightIconBackgroundColor: iconColor,
-                      onTopRightIconTap: () => onRemove(user.id),
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      width: 60,
-                      child: Text(
-                        user.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+          child: users.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No friends in this group',
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: Column(
+                        children: [
+                          UserAvatar(
+                            imageUrl: user.avatarUrl,
+                            status: UserStatus.offline,
+                            size: 60,
+                            topRightIcon: _isModifying ? Icons.remove : null,
+                            topRightIconBackgroundColor: iconColor,
+                            onTopRightIconTap: () => onRemove(user.userId),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: 60,
+                            child: Text(
+                              user.effectiveDisplayName,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );

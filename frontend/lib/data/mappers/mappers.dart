@@ -1,2 +1,2 @@
-/// Barrel file for data mappers
+// Barrel file for data mappers
 export 'domain_mappers.dart';

@@ -12,7 +12,6 @@ abstract class ProfileRepository {
   Future<void> updateLocation({
     required double longitude,
     required double latitude,
-    bool? publicMapMode,
   });
   
   /// Get user by ID (public profile)

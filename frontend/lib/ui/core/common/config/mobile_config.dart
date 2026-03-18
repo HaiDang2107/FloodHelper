@@ -6,11 +6,11 @@ class MobileConfig {
   // For mobile testing, replace with your computer's LAN IP
   // Example: 'http://192.168.1.100:3000'
   // Leave as null for localhost development3000
-  static const String? mobileBaseUrl = 'http://10.177.173.50:3000';
+  static const String mobileBaseUrl = 'http://10.177.173.50:3000';
 
   // Helper method to get the correct base URL
   static String getBaseUrl() {
-    return mobileBaseUrl ?? 'http://localhost:3000';
+    return mobileBaseUrl;
   }
 }
 

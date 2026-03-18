@@ -7,8 +7,8 @@ import 'dart:io';
 import '../config/app_config.dart';
 
 /// Base API client with Dio configuration
+/// Singleton managed by Riverpod (apiClientProvider with keepAlive: true)
 class ApiClient {
-  static ApiClient? _instance;
   late final Dio _dio;
   CookieJar? _cookieJar;
   bool _initialized = false;
@@ -16,7 +16,7 @@ class ApiClient {
   // Base URL from centralized config
   static const String _baseUrl = AppConfig.apiBaseUrl;
 
-  ApiClient._internal() {
+  ApiClient() {
     _dio = Dio(BaseOptions(
       baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 30),
@@ -29,11 +29,6 @@ class ApiClient {
     
     // Add logging interceptor
     _dio.interceptors.add(_LoggingInterceptor());
-  }
-
-  factory ApiClient() {
-    _instance ??= ApiClient._internal();
-    return _instance!;
   }
 
   /// Initialize persistent cookie jar (call this at app startup)
@@ -58,16 +53,16 @@ class ApiClient {
   /// Debug: Print all stored cookies for a URI
   Future<void> debugPrintCookies(Uri uri) async {
     if (_cookieJar == null) {
-      print('🍪 [DEBUG] CookieJar not initialized');
+      if (kDebugMode) print('🍪 [DEBUG] CookieJar not initialized');
       return;
     }
     final cookies = await _cookieJar!.loadForRequest(uri);
-    print('🍪 [DEBUG] Cookies for $uri:');
-    for (final cookie in cookies) {
-      print('  - ${cookie.name}: ${cookie.value.substring(0, 20)}...');
-    }
-    if (cookies.isEmpty) {
-      print('  - (no cookies)');
+    if (kDebugMode) {
+      print('🍪 [DEBUG] Cookies for $uri:');
+      for (final cookie in cookies) {
+        print('  - ${cookie.name}: ${cookie.value.substring(0, 20)}...');
+      }
+      if (cookies.isEmpty) print('  - (no cookies)');
     }
   }
 

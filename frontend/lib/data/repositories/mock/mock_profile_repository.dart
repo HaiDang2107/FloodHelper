@@ -14,7 +14,7 @@ class MockProfileRepository implements ProfileRepository {
     roles: const ['USER'],
     longitude: 105.8542,
     latitude: 21.0285,
-    publicMapMode: true,
+    visibilityMode: 'PUBLIC',
     avatarUrl: 'https://i.pravatar.cc/300',
     citizenId: '001095012345',
     phoneNumber: '0912345678',
@@ -44,7 +44,7 @@ class MockProfileRepository implements ProfileRepository {
       country: dto.country ?? _currentProfile.country,
       longitude: dto.curLongitude ?? _currentProfile.longitude,
       latitude: dto.curLatitude ?? _currentProfile.latitude,
-      publicMapMode: dto.publicMapMode ?? _currentProfile.publicMapMode,
+      visibilityMode: dto.visibilityMode ?? _currentProfile.visibilityMode,
       avatarUrl: dto.avatarUrl ?? _currentProfile.avatarUrl,
       citizenId: dto.citizenId ?? _currentProfile.citizenId,
       citizenIdCardImg: dto.citizenIdCardImg ?? _currentProfile.citizenIdCardImg,
@@ -58,14 +58,12 @@ class MockProfileRepository implements ProfileRepository {
   Future<void> updateLocation({
     required double longitude,
     required double latitude,
-    bool? publicMapMode,
   }) async {
     await _simulateDelay();
     
     _currentProfile = _currentProfile.copyWith(
       longitude: longitude,
       latitude: latitude,
-      publicMapMode: publicMapMode ?? _currentProfile.publicMapMode,
     );
   }
 
@@ -85,7 +83,7 @@ class MockProfileRepository implements ProfileRepository {
       displayName: 'MockUser',
       roles: ['USER'],
       phoneNumber: '0987654321',
-      publicMapMode: false,
+      visibilityMode: 'JUST_FRIEND',
     );
   }
 

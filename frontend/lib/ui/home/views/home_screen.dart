@@ -13,8 +13,8 @@ import '../widgets/user_pin.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
 import '../../core/common/constants/user_state.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../../data/providers/providers.dart';
 import '../../../data/services/firebase_messaging_service.dart';
-import '../../../data/providers/auth_provider.dart';
 import 'settings/_settings_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -25,7 +25,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final FirebaseMessagingService _messagingService = FirebaseMessagingService();
+  late final FirebaseMessagingService _messagingService = ref.read(firebaseMessagingServiceProvider);
 
   @override
   void initState() {
@@ -62,8 +62,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         }
       } else if (data['type'] == 'FRIEND_REQUEST_ACCEPTED') {
-        // Friend request was accepted - reload friends
-        ref.read(homeViewModelProvider.notifier).loadFriends();
+        // Friend request was accepted - refresh danh sách friends
+        ref.read(homeViewModelProvider.notifier).refreshFriends();
         ref.read(friendViewModelProvider.notifier).loadRequests();
       }
     });
@@ -190,8 +190,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         roles: const [],
                       ),
                     ),
-                    // TODO: Add real friend/nearby user markers here
-                    // TODO: Add real post markers here
+                    // Friend location markers (from MQTT)
+                    ...state.friendLocations.entries.map((entry) {
+                      final friendId = entry.key;
+                      final latLng = entry.value;
+                      // Find friend info for display
+                      final friendInfo = state.friendsWithMapMode
+                          .where((f) => f.userId == friendId)
+                          .firstOrNull;
+                      return Marker(
+                        point: latLng,
+                        width: 60,
+                        height: 81,
+                        alignment: Alignment.topCenter,
+                        rotate: true,
+                        child: UserLocationPin(
+                          size: 60,
+                          imageUrl: friendInfo?.avatarUrl ?? '',
+                          color: const Color(0xFF0F62FE),
+                          roles: const [],
+                        ),
+                      );
+                    }),
                   ],
                 ),
             ],

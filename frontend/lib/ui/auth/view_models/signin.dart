@@ -62,10 +62,12 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
     state = state.copyWith(isLoading: value);
   }
 
+  @override
   void setError(String? message) {
     state = state.copyWith(errorMessage: message);
   }
 
+  @override
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }
@@ -95,11 +97,11 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
 
       if (authSession != null) {
         // Auto login successful - update auth state and navigate to home
-        ref.read(authSessionNotifierProvider.notifier).setSession(authSession);
+        ref.read(globalSessionManagerProvider.notifier).setSession(authSession);
         
         // Register FCM token immediately after auto login
         try {
-          await FirebaseMessagingService().registerToken();
+          await ref.read(firebaseMessagingServiceProvider).registerToken();
         } catch (fcmError) {
           // Don't block user if FCM registration fails
           debugPrint('⚠️ FCM registration failed: $fcmError');
@@ -170,14 +172,14 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
     setLoading(true);
 
     try {
-      await ref.read(authSessionNotifierProvider.notifier).signIn(
+      await ref.read(globalSessionManagerProvider.notifier).signIn(
         username: username,
         password: password,
       );
 
       // Register FCM token immediately after successful login
       try {
-        await FirebaseMessagingService().registerToken();
+        await ref.read(firebaseMessagingServiceProvider).registerToken();
       } catch (fcmError) {
         // Don't block user if FCM registration fails
         debugPrint('⚠️ FCM registration failed: $fcmError');
@@ -288,6 +290,6 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
 
   /// Logout - clear authentication data
   Future<void> logout() async {
-    await ref.read(authSessionNotifierProvider.notifier).signOut();
+    await ref.read(globalSessionManagerProvider.notifier).signOut();
   }
 }

@@ -1,3 +1,4 @@
 export * from './create-user.dto';
 export * from './update-user.dto';
 export * from './update-location.dto';
+export * from './update-visibility.dto';

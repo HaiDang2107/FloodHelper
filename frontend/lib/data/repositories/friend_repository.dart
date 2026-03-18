@@ -1,4 +1,5 @@
 import '../models/friend_request_model.dart';
+import '../models/friend_model.dart';
 
 /// Abstract repository for friend request operations
 abstract class FriendRepository {
@@ -25,4 +26,13 @@ abstract class FriendRepository {
 
   /// Update FCM token on the server
   Future<void> updateFcmToken(String fcmToken);
+
+  /// Get all friends with map mode status
+  Future<List<FriendModel>> getFriends();
+
+  /// Batch-update friendMapMode for multiple friends
+  Future<void> updateFriendMapModes({
+    required List<String> friendIds,
+    required bool mapMode,
+  });
 }

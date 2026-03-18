@@ -1,5 +1,5 @@
-/// Centralized app configuration
-/// All environment-specific settings in one place
+// Centralized app configuration
+// All environment-specific settings in one place
 
 class AppConfig {
   AppConfig._();
@@ -11,12 +11,16 @@ class AppConfig {
   static const String mqttPassword = 'haidang';
   static const bool mqttUseSsl = true;
 
-  /// MQTT topic for publishing user location
-  /// Usage: '${mqttLocationTopicPrefix}/<userId>'
-  static const String mqttLocationTopicPrefix = 'location';
+  // MQTT topic for publishing user location.
+  // Convention: '{userId}/current-location'
+  static const String mqttCurrentLocationSuffix = 'current-location';
+
+  // MQTT topic for receiving friend's last known location.
+  // Convention: '{friendId}/to_{myId}/last-location'
+  static const String mqttLastLocationSuffix = 'last-location';
 
   /// MQTT client ID prefix (will be appended with userId)
-  static const String mqttClientIdPrefix = 'floodhelper_';
+  static const String mqttClientIdPrefix = ''; // may be 'floodhelper_'
 
   // ==================== Location Tracking ====================
 

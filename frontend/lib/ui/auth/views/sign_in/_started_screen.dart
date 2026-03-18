@@ -25,7 +25,7 @@ class StartedScreen extends StatelessWidget {
           top: 150,
           child: Center(
             child: SvgPicture.asset(
-              'lib/assets/man_under_rain.svg',
+              'assets/images/man_under_rain.svg',
               height: 300,
             ),
           ),

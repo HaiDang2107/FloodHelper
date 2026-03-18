@@ -1,4 +1,5 @@
 import '../../models/friend_request_model.dart';
+import '../../models/friend_model.dart';
 import '../../services/friend_service.dart';
 import '../friend_repository.dart';
 
@@ -6,8 +7,8 @@ import '../friend_repository.dart';
 class RealFriendRepository implements FriendRepository {
   final FriendService _friendService;
 
-  RealFriendRepository({FriendService? friendService})
-      : _friendService = friendService ?? FriendService();
+  RealFriendRepository({required FriendService friendService})
+      : _friendService = friendService;
 
   @override
   Future<SendFriendRequestResponse> sendFriendRequest({
@@ -48,5 +49,21 @@ class RealFriendRepository implements FriendRepository {
   @override
   Future<void> updateFcmToken(String fcmToken) async {
     return await _friendService.updateFcmToken(fcmToken);
+  }
+
+  @override
+  Future<List<FriendModel>> getFriends() async {
+    return await _friendService.getFriends();
+  }
+
+  @override
+  Future<void> updateFriendMapModes({
+    required List<String> friendIds,
+    required bool mapMode,
+  }) async {
+    return await _friendService.updateFriendMapModes(
+      friendIds: friendIds,
+      mapMode: mapMode,
+    );
   }
 }

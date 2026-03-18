@@ -12,16 +12,13 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 /// Service for handling Firebase Cloud Messaging
+/// Singleton managed by Riverpod (firebaseMessagingServiceProvider with keepAlive: true)
 class FirebaseMessagingService {
-  static FirebaseMessagingService? _instance;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final ApiClient _apiClient;
 
-  FirebaseMessagingService._internal();
-
-  factory FirebaseMessagingService() {
-    _instance ??= FirebaseMessagingService._internal();
-    return _instance!;
-  }
+  FirebaseMessagingService({required ApiClient apiClient})
+      : _apiClient = apiClient;
 
   /// Initialize Firebase Messaging and request permissions
   Future<String?> initialize() async {
@@ -62,7 +59,7 @@ class FirebaseMessagingService {
   /// Send FCM token to the backend
   Future<void> _sendTokenToServer(String token) async {
     try {
-      await ApiClient().patch(
+      await _apiClient.patch(
         '/friend/fcm-token',
         data: {'fcmToken': token},
       );

@@ -47,7 +47,7 @@ model Comment {
 model Friendship {
   userId       String   @db.Uuid @map("user_id")
   friendId       String   @db.Uuid @map("friend_id")
-  friendMapMode Boolean  @default(false) @map("friend_map_mode")
+  friendMapMode Boolean  @default(true) @map("friend_map_mode")
   lastLongitude Decimal? @map("last_longitude") @db.Decimal(10, 7)
   lastLatitude  Decimal? @map("last_latitude") @db.Decimal(10, 7)
   lastDataAt    DateTime @default(now()) @map("last_data_at")

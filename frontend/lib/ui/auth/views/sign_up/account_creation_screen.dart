@@ -38,6 +38,7 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
         if (next.showActivationDialog && !(previous?.showActivationDialog ?? false)) {
           // Show dialog when flag becomes true
           final result = await AccountNotActivatedDialog.show(context);
+          if (!context.mounted) return;
           if (result == true) {
             viewModel.handleActivateAccount(context);
           } else {
@@ -91,7 +92,7 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
           // 2. Lớp Loading phủ lên trên cùng khi state.isLoading == true
           if (state.isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: const Center(
                 child: CircularProgressIndicator(),
               ),

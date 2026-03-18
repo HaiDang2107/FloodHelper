@@ -35,7 +35,6 @@ class ProfileService {
   Future<void> updateLocation({
     required double longitude,
     required double latitude,
-    bool? publicMapMode,
   }) async {
     try {
       await _apiClient.patch(
@@ -43,7 +42,6 @@ class ProfileService {
         data: {
           'curLongitude': longitude,
           'curLatitude': latitude,
-          if (publicMapMode != null) 'publicMapMode': publicMapMode,
         },
       );
     } on DioException catch (e) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../data/data.dart';
@@ -41,7 +42,7 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
   AccountCreationState build() {
     // Đăng ký hàm dọn dẹp khi Provider bị hủy
     ref.onDispose(() {
-      print('Disposing AccountCreationViewModel resources...'); // Log kiểm tra
+      if (kDebugMode) print('Disposing AccountCreationViewModel resources...');
       
       pageController.dispose();
       firstNameController.dispose();
@@ -89,10 +90,12 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
     state = state.copyWith(isLoading: value);
   }
 
+  @override
   void setError(String? message) {
     state = state.copyWith(errorMessage: message);
   }
 
+  @override
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }

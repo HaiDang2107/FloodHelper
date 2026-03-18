@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { CreateUserDto, UpdateUserDto, UpdateLocationDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UpdateLocationDto, UpdateVisibilityDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -48,7 +48,7 @@ export class UserService {
         role: true,
         curLongitude: true,
         curLatitude: true,
-        publicMapMode: true,
+        visibilityMode: true,
       },
     });
 
@@ -62,8 +62,9 @@ export class UserService {
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
       roles: user.role,
-      // Only include location if publicMapMode is true
-      ...(user.publicMapMode && {
+      visibilityMode: user.visibilityMode,
+      // Only include location if visibilityMode is PUBLIC
+      ...(user.visibilityMode === 'PUBLIC' && {
         longitude: user.curLongitude ? Number(user.curLongitude) : null,
         latitude: user.curLatitude ? Number(user.curLatitude) : null,
       }),
@@ -93,7 +94,7 @@ export class UserService {
         country: updateUserDto.country,
         curLongitude: updateUserDto.curLongitude,
         curLatitude: updateUserDto.curLatitude,
-        publicMapMode: updateUserDto.publicMapMode,
+        visibilityMode: updateUserDto.visibilityMode,
         avatarUrl: updateUserDto.avatarUrl,
         citizenId: updateUserDto.citizenId,
         citizenIdCardImg: updateUserDto.citizenIdCardImg,
@@ -130,7 +131,6 @@ export class UserService {
       data: {
         curLongitude: updateLocationDto.curLongitude,
         curLatitude: updateLocationDto.curLatitude,
-        publicMapMode: updateLocationDto.publicMapMode,
       },
     });
 
@@ -138,7 +138,6 @@ export class UserService {
       success: true,
       longitude: Number(updated.curLongitude),
       latitude: Number(updated.curLatitude),
-      publicMapMode: updated.publicMapMode,
     };
   }
 
@@ -187,10 +186,10 @@ export class UserService {
    * Get nearby users (users with publicMapMode enabled)
    */
   async findNearbyUsers(userId: string, longitude: number, latitude: number, radiusKm: number = 10) {
-    // Get users with public location enabled
+    // Get users with PUBLIC visibility
     const users = await this.prisma.user.findMany({
       where: {
-        publicMapMode: true,
+        visibilityMode: 'PUBLIC',
         userId: { not: userId }, // Exclude current user
         curLongitude: { not: null },
         curLatitude: { not: null },
@@ -245,7 +244,7 @@ export class UserService {
       roles: user.role,
       longitude: user.curLongitude ? Number(user.curLongitude) : null,
       latitude: user.curLatitude ? Number(user.curLatitude) : null,
-      publicMapMode: user.publicMapMode,
+      visibilityMode: user.visibilityMode,
       avatarUrl: user.avatarUrl,
       citizenId: user.citizenId,
       phoneNumber: user.phoneNumber,
@@ -276,6 +275,41 @@ export class UserService {
 
   private toRad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  /**
+   * Get user's current visibility mode.
+   */
+  async getVisibility(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { userId },
+      select: { visibilityMode: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return { visibility: user.visibilityMode };
+  }
+
+  /**
+   * Update user location visibility setting.
+   * Only updates the visibilityMode field in User table.
+   * Does NOT modify friendMapMode in Friendship table.
+   * - 'PUBLIC': everyone can see
+   * - 'JUST_FRIEND': only friends with friendMapMode=true can see
+   * - 'NO_ONE': nobody can see
+   */
+  async updateVisibility(userId: string, dto: UpdateVisibilityDto) {
+    await this.prisma.user.update({
+      where: { userId },
+      data: { visibilityMode: dto.visibility },
+    });
+
+    return {
+      visibility: dto.visibility,
+    };
   }
 }
 

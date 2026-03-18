@@ -13,7 +13,7 @@ model User {
   role             String[]  @default(["GUEST"]) // Array of roles, can have multiple
   curLongitude     Decimal?  @map("cur_longitude") @db.Decimal(10, 7)
   curLatitude      Decimal?  @map("cur_latitude") @db.Decimal(10, 7)
-  publicMapMode    Boolean   @default(false) @map("public_map_mode")
+  visibilityMode   String    @default("JUST_FRIEND") @map("visibility_mode") @db.VarChar(20) // PUBLIC | JUST_FRIEND | NO_ONE
   avatarUrl        String?   @map("avatar_url")
   citizenId        String?   @map("citizen_id")
   gender           String?   @db.VarChar(20)

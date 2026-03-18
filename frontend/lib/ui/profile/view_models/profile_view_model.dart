@@ -4,7 +4,7 @@ import '../../../domain/models/models.dart';
 import '../../../data/mappers/domain_mappers.dart';
 import '../../../data/models/profile_model.dart' show UpdateProfileDto;
 import '../../../data/providers/repository_providers.dart';
-import '../../../data/providers/auth_provider.dart';
+import '../../../data/providers/global_session_provider.dart';
 import '../../../data/repositories/profile_repository.dart';
 
 part 'profile_view_model.g.dart';
@@ -105,7 +105,7 @@ class ProfileViewModel extends _$ProfileViewModel {
     String? jobPosition,
     String? citizenId,
     String? avatarUrl,
-    bool? publicMapMode,
+    String? visibilityMode,
   }) async {
     if (state.profile == null) return false;
     
@@ -122,7 +122,7 @@ class ProfileViewModel extends _$ProfileViewModel {
         jobPosition: jobPosition,
         citizenId: citizenId,
         avatarUrl: avatarUrl,
-        publicMapMode: publicMapMode,
+        visibilityMode: visibilityMode,
       );
       
       final updatedProfileModel = await _profileRepository.updateProfile(dto);
@@ -150,13 +150,11 @@ class ProfileViewModel extends _$ProfileViewModel {
   Future<void> updateLocation({
     required double longitude,
     required double latitude,
-    bool? publicMapMode,
   }) async {
     try {
       await _profileRepository.updateLocation(
         longitude: longitude,
         latitude: latitude,
-        publicMapMode: publicMapMode,
       );
       
       // Update local domain state
@@ -167,7 +165,6 @@ class ProfileViewModel extends _$ProfileViewModel {
               latitude: latitude,
               longitude: longitude,
             ),
-            publicMapMode: publicMapMode ?? state.profile!.publicMapMode,
           ),
         );
       }
@@ -193,7 +190,7 @@ class ProfileViewModel extends _$ProfileViewModel {
   Future<void> signOut({bool logoutAll = false}) async {
     try {
       // Call sign out through auth provider
-      await ref.read(authSessionNotifierProvider.notifier).signOut(
+      await ref.read(globalSessionManagerProvider.notifier).signOut(
         logoutAll: logoutAll,
       );
       

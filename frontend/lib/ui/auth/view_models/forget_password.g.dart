@@ -7,7 +7,7 @@ part of 'forget_password.dart';
 // **************************************************************************
 
 String _$forgetPasswordViewModelHash() =>
-    r'01ce39fb8d00092c3c96eed74acc2c5e92656648';
+    r'263dc4f6fd22ff9cdb83577c01b5f52692f6f343';
 
 /// See also [ForgetPasswordViewModel].
 @ProviderFor(ForgetPasswordViewModel)
