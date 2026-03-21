@@ -72,10 +72,15 @@ Future<void> onStart(ServiceInstance service) async { // service được hệ t
           final payload = jsonEncode({
             'lat': position.latitude,
             'lng': position.longitude,
+            'user': userId,
             'allowed_friends': allowedFriends,
           });
+          if (kDebugMode) {
+            print(payload);
+            print(AppConfig.mqttCurrentLocationSuffix);
+          }
           mqttService.publishRaw(
-            topic: '$userId/${AppConfig.mqttCurrentLocationSuffix}',
+            topic: AppConfig.mqttCurrentLocationSuffix,
             payload: payload,
           );
         }

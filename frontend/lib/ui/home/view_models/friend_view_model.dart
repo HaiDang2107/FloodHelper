@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../data/models/friend_request_model.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/repositories/friend_repository.dart';
+import 'home_view_model.dart';
 
 part 'friend_view_model.g.dart';
 
@@ -124,6 +125,10 @@ class FriendViewModel extends _$FriendViewModel {
   /// Accept a received friend request
   Future<void> acceptFriendRequest(String requestId) async {
     try {
+      final acceptedRequest = state.receivedRequests.firstWhere(
+        (request) => request.requestId == requestId,
+      );
+
       await _friendRepository.acceptFriendRequest(requestId);
 
       // Remove from received list
@@ -135,6 +140,11 @@ class FriendViewModel extends _$FriendViewModel {
         receivedRequests: updatedReceived,
         successMessage: 'Friend request accepted!',
       );
+
+      // Sync map-related friend state in HomeViewModel
+      await ref
+          .read(homeViewModelProvider.notifier)
+          .syncAfterAcceptFriendRequest(acceptedRequest.user.userId);
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Failed to accept request: $e',

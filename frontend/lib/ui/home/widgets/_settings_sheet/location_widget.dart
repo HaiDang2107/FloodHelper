@@ -18,24 +18,11 @@ class LocationWidget extends StatefulWidget {
 
 class _LocationWidgetState extends State<LocationWidget> {
   late LocationVisibility _selectedVisibility;
-  late LocationVisibility _initialVisibility;
-  bool get _hasChanges => _selectedVisibility != _initialVisibility;
 
   @override
   void initState() {
     super.initState();
     _selectedVisibility = widget.initialVisibility;
-    _initialVisibility = widget.initialVisibility;
-  }
-
-  void _saveChanges() {
-    setState(() {
-      _initialVisibility = _selectedVisibility;
-    });
-    widget.onVisibilityChanged(_selectedVisibility);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Location visibility saved!')));
   }
 
   @override
@@ -54,22 +41,6 @@ class _LocationWidgetState extends State<LocationWidget> {
                 color: Colors.black87,
               ),
             ),
-            if (_hasChanges)
-              ElevatedButton(
-                onPressed: _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F62FE),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ),
           ],
         ),
         const SizedBox(height: 12),

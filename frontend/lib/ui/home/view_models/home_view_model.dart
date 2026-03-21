@@ -72,8 +72,8 @@ class HomeState {
     List<PostModel>? posts,
     List<AnnouncementModel>? announcements,
     int? unreadAnnouncementsCount,
-    Map<String, LatLng>? friendLocations,
-    List<FriendModel>? friendsWithMapMode,
+    Map<String, LatLng>? friendLocations, // Danh sách bạn bè cùng vị trí, phục vụ duy trì trạng thái UI.
+    List<FriendModel>? friendsWithMapMode, // Lưu danh sách bạn bè cũng map mode, chịu trách nhiệm duy trì danh sách bạn bè
     String? locationVisibility,
   }) {
     return HomeState(
@@ -520,44 +520,15 @@ class HomeViewModel extends _$HomeViewModel {
     }
   }
 
-  // ==================== Friend Requests ====================
+  // ==================== Friend Sync ====================
 
-  Future<void> sendFriendRequest(String userId) async {
-    try {
-      final success = await _userRepository.sendFriendRequest(userId);
-      if (success) {
-        await loadNearbyUsers(); // Refresh nearby users
-      } else {
-        state = state.copyWith(errorMessage: 'Failed to send friend request');
-      }
-    } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to send friend request: $e');
-    }
-  }
+  /// Sync map-related friend state after friend request is accepted.
+  Future<void> syncAfterAcceptFriendRequest(String friendUserId) async {
+    final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
+    updatedLocations.remove(friendUserId);
+    state = state.copyWith(friendLocations: updatedLocations);
 
-  Future<void> acceptFriendRequest(String userId) async {
-    try {
-      final success = await _userRepository.acceptFriendRequest(userId);
-      if (success) {
-        // 1. Unsubscribe MQTT topic of removed friend
-        final currentUser = ref.read(currentUserProvider);
-        if (currentUser != null) {
-          _mqttService.unsubscribeFriendLocation(userId, currentUser.id);
-        }
-
-        // 2. Remove from friendLocations state
-        final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
-        updatedLocations.remove(userId);
-        state = state.copyWith(friendLocations: updatedLocations);
-
-        // 3. Reload friends + sync + re-subscribe
-        await refreshFriends();// Refresh friends with map mode
-      } else {
-        state = state.copyWith(errorMessage: 'Failed to accept friend request');
-      }
-    } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to accept friend request: $e');
-    }
+    await refreshFriends();
   }
 
   Future<void> removeFriend(String userId) async {

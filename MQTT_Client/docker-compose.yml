@@ -1,0 +1,14 @@
+services:
+  floodhelper-mqtt-client:
+    build: .
+    container_name: floodhelper_api_worker
+    ports:
+      # Ánh xạ cổng 8000 của máy chủ vào cổng 8000 của container
+      - "8000:8000"
+    environment:
+      # Defang sẽ ưu tiên lấy giá trị từ hệ thống quản lý Secret của họ.
+      # Nếu chạy ở máy tính local, bạn có thể truyền thẳng biến môi trường vào đây
+      # hoặc tạo một file .env nằm cùng thư mục.
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+    restart: always # Tự động khởi động lại nếu server bị crash

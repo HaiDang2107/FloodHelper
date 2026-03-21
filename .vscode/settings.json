@@ -1,3 +1,5 @@
 {
-    "cmake.sourceDirectory": "/home/haidang/Desktop/FloodHelper/frontend/linux"
+    "cmake.sourceDirectory": "/home/haidang/Desktop/FloodHelper/frontend/linux",
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda"
 }

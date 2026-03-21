@@ -60,7 +60,7 @@ class MqttService {
     _client!.secure = AppConfig.mqttUseSsl;
     if (AppConfig.mqttUseSsl) {
       try {
-        final caData = await rootBundle.load('assets/certs/emqxsl-ca.crt'); // Nhớ bỏ chữ 'lib/' đi nhé!
+        final caData = await rootBundle.load('assets/certs/emqxsl-ca.crt');
         final caBytes = caData.buffer.asUint8List();
         final securityContext = SecurityContext(withTrustedRoots: true);
         securityContext.setTrustedCertificatesBytes(caBytes);
@@ -124,41 +124,6 @@ class MqttService {
     }
   }
 
-  // MQTT topic: '{userId}/current-location'
-  void publishLocation({
-    required String userId,
-    required double latitude,
-    required double longitude,
-    List<String> allowedFriends = const [],
-  }) {
-    if (!_isConnected || _client == null) {
-      if (kDebugMode) {
-        print('📡 MQTT not connected, cannot publish location');
-      }
-      return;
-    }
-
-    final topic = '$userId/${AppConfig.mqttCurrentLocationSuffix}';
-    final payload = jsonEncode({
-      'lat': latitude,
-      'lng': longitude,
-      'allowed_friends': allowedFriends,
-    });
-
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(payload);
-
-    _client!.publishMessage(
-      topic,
-      MqttQos.atLeastOnce,
-      builder.payload!,
-    );
-
-    if (kDebugMode) {
-      print('📡 Published location → $topic: ($latitude, $longitude)');
-    }
-  }
-
   /// Publish a pre-encoded payload to a topic
   /// Used by LocationTrackingService which encodes JSON in an isolate
   void publishRaw({
@@ -183,18 +148,6 @@ class MqttService {
 
     if (kDebugMode) {
       print('📡 Published → $topic');
-    }
-  }
-
-  /// Subscribe to a location topic (for receiving other users' locations)
-  void subscribeToLocation(String userId) {
-    if (!_isConnected || _client == null) return;
-
-    final topic = '$userId/${AppConfig.mqttCurrentLocationSuffix}';
-    _client!.subscribe(topic, MqttQos.atLeastOnce);
-
-    if (kDebugMode) {
-      print('📡 Subscribed to $topic');
     }
   }
 
