@@ -1,5 +1,5 @@
 services:
-  floodhelper-mqtt-client:
+  mqttclient:
     build: .
     container_name: floodhelper_api_worker
     ports:
