@@ -1,0 +1,312 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../../../data/models/authority/role_request.dart';
+import '../theme/authority_theme.dart';
+
+class RoleRequestDetail extends StatelessWidget {
+  const RoleRequestDetail({super.key, required this.request});
+
+  final RoleRequest? request;
+
+  @override
+  Widget build(BuildContext context) {
+    if (request == null) {
+      return _emptyState(context);
+    }
+
+    final currentRequest = request!;
+    final dateLabel = DateFormat('MMM d, yyyy • h:mm a')
+        .format(currentRequest.submittedAt);
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        key: ValueKey(request!.id),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE1E6F4)),
+        ),
+        child: ListView(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: AuthorityTheme.brandBlue.withValues(alpha: 0.12),
+                  child: Text(
+                    currentRequest.requesterName.isNotEmpty
+                        ? currentRequest.requesterName.substring(0, 1)
+                        : '?',
+                    style: const TextStyle(
+                      color: AuthorityTheme.brandBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        currentRequest.requesterName,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        currentRequest.requesterEmail,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: const Color(0xFF667085)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _StatusBadge(status: currentRequest.status),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _InfoRow(label: 'Requested role', value: currentRequest.requestedRole.label),
+            _InfoRow(label: 'Submitted', value: dateLabel),
+            _InfoRow(label: 'Phone', value: currentRequest.phone),
+            _InfoRow(label: 'Address', value: currentRequest.address),
+            _InfoRow(label: 'Identity number', value: currentRequest.idNumber),
+            const SizedBox(height: 16),
+            Text(
+              'Reviewer notes',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              currentRequest.notes,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: const Color(0xFF475467)),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'ID documents',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _ImageCard(
+                    label: 'Front side',
+                    imageUrl: currentRequest.frontImageUrl,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ImageCard(
+                    label: 'Back side',
+                    imageUrl: currentRequest.backImageUrl,
+                  ),
+                ),
+              ],
+            ),
+            if (currentRequest.status == RoleRequestStatus.pending) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        side: const BorderSide(color: Color(0xFFE1E6F4)),
+                      ),
+                      onPressed: () {},
+                      child: const Text('Reject request'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      child: const Text('Approve request'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE1E6F4)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 42,
+            color: AuthorityTheme.brandBlue.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Select a request to review',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Details and documents will appear on the right.',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: const Color(0xFF667085)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.status});
+
+  final RoleRequestStatus status;
+
+  Color _statusColor() {
+    switch (status) {
+      case RoleRequestStatus.pending:
+        return const Color(0xFFCC7A00);
+      case RoleRequestStatus.approved:
+        return const Color(0xFF157F3B);
+      case RoleRequestStatus.rejected:
+        return const Color(0xFFB42318);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _statusColor();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        status.label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: const Color(0xFF667085)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImageCard extends StatelessWidget {
+  const _ImageCard({required this.label, required this.imageUrl});
+
+  final String label;
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE1E6F4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: const Color(0xFF475467)),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: AspectRatio(
+              aspectRatio: 4 / 3,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

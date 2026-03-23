@@ -1,26 +1,26 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'friend_view_model.dart';
+part of 'authority_session_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$friendViewModelHash() => r'ed9287d07de11a247edf20d01822115463c035a6';
+String _$authoritySessionHash() => r'1aae8523d43785256a710447cbd54d68306b9336';
 
-/// See also [FriendViewModel].
-@ProviderFor(FriendViewModel)
-final friendViewModelProvider =
-    AutoDisposeNotifierProvider<FriendViewModel, FriendRequestState>.internal(
-      FriendViewModel.new,
-      name: r'friendViewModelProvider',
+/// See also [AuthoritySession].
+@ProviderFor(AuthoritySession)
+final authoritySessionProvider =
+    NotifierProvider<AuthoritySession, bool>.internal(
+      AuthoritySession.new,
+      name: r'authoritySessionProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$friendViewModelHash,
+          : _$authoritySessionHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$FriendViewModel = AutoDisposeNotifier<FriendRequestState>;
+typedef _$AuthoritySession = Notifier<bool>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

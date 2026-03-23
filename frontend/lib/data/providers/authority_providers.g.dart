@@ -1,26 +1,29 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'friend_view_model.dart';
+part of 'authority_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$friendViewModelHash() => r'ed9287d07de11a247edf20d01822115463c035a6';
+String _$authorityRepositoryHash() =>
+    r'b4a4c6f5a6db515d9bd998d243acc49e1b5d859b';
 
-/// See also [FriendViewModel].
-@ProviderFor(FriendViewModel)
-final friendViewModelProvider =
-    AutoDisposeNotifierProvider<FriendViewModel, FriendRequestState>.internal(
-      FriendViewModel.new,
-      name: r'friendViewModelProvider',
+/// See also [authorityRepository].
+@ProviderFor(authorityRepository)
+final authorityRepositoryProvider =
+    AutoDisposeProvider<AuthorityRepository>.internal(
+      authorityRepository,
+      name: r'authorityRepositoryProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$friendViewModelHash,
+          : _$authorityRepositoryHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$FriendViewModel = AutoDisposeNotifier<FriendRequestState>;
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AuthorityRepositoryRef = AutoDisposeProviderRef<AuthorityRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
