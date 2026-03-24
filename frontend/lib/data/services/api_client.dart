@@ -3,7 +3,6 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import '../config/app_config.dart';
 import 'auth_local_storage.dart';
 
@@ -37,18 +36,29 @@ class ApiClient {
   /// Initialize persistent cookie jar (call this at app startup)
   Future<void> init() async {
     if (_initialized) return; // Prevent double initialization
-    
-    // Use PersistCookieJar to save cookies to disk
-    final Directory appDocDir = await getApplicationDocumentsDirectory();
-    final String appDocPath = appDocDir.path;
-    _cookieJar = PersistCookieJar(
-      storage: FileStorage('$appDocPath/.cookies/'),
-    );
-    
-    // Add cookie manager to handle cookies automatically
-    _dio.interceptors.add(CookieManager(_cookieJar!));
-    
-    _initialized = true;
+
+    // dio_cookie_manager is not supported on web. Skip cookie manager setup.
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
+
+    try {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final appDocPath = appDocDir.path;
+      _cookieJar = PersistCookieJar(
+        storage: FileStorage('$appDocPath/.cookies/'),
+      );
+
+      _dio.interceptors.add(CookieManager(_cookieJar!));
+      _initialized = true;
+    } catch (e) {
+      // Do not block app startup because of cookie storage initialization.
+      if (kDebugMode) {
+        print('ApiClient.init failed: $e');
+      }
+      _initialized = true;
+    }
   }
 
   Dio get dio => _dio;
