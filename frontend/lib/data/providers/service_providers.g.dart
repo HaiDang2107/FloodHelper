@@ -102,6 +102,25 @@ final friendServiceProvider = AutoDisposeProvider<FriendService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FriendServiceRef = AutoDisposeProviderRef<FriendService>;
+String _$authorityServiceHash() => r'0ecdb57cb3edac1adcde45e9c34d0f8ae8dee32e';
+
+/// AuthorityService provider
+///
+/// Copied from [authorityService].
+@ProviderFor(authorityService)
+final authorityServiceProvider = AutoDisposeProvider<AuthorityService>.internal(
+  authorityService,
+  name: r'authorityServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$authorityServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AuthorityServiceRef = AutoDisposeProviderRef<AuthorityService>;
 String _$mqttServiceHash() => r'7515b490c05264ddb93f3ade8a50296583dea568';
 
 /// MqttService provider (keepAlive: true for persistent MQTT connection)

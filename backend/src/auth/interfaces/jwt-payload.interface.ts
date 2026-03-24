@@ -1,4 +1,4 @@
-import { Purpose } from '../../common/enum/purpose.enum'; 
+import { Purpose } from '../../common/enum/purpose.enum';
 
 export interface JwtPayload {
   sub: string; // accountId

@@ -1,15 +1,22 @@
-import { IsString, IsOptional, IsDateString, IsArray, IsBoolean, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsArray,
+  IsBoolean,
+  IsNumber,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
-  name: string;
+  fullname: string;
 
   @IsString()
   phoneNumber: string;
 
   @IsOptional()
   @IsString()
-  displayName?: string;
+  nickname?: string;
 
   @IsOptional()
   @IsDateString()
@@ -17,15 +24,19 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  village?: string;
+  placeOfOrigin?: string;
 
   @IsOptional()
   @IsString()
-  district?: string;
+  placeOfResidence?: string;
 
   @IsOptional()
-  @IsString()
-  country?: string;
+  @IsDateString()
+  dateOfIssue?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateOfExpire?: string;
 
   @IsOptional()
   @IsArray()

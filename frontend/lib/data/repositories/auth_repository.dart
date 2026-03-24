@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/auth_dto.dart';
+import '../models/profile_model.dart';
 import '../services/auth_service.dart';
 import '../services/auth_local_storage.dart';
 import '../services/api_client.dart';
@@ -37,52 +38,61 @@ class AuthRepository {
 
     final data = response.data!;
 
-    // Save auth data to local storage
-    // Note: refresh_token is managed by backend via HTTP-only cookies
-    await AuthLocalStorage.saveAuthData(
-      accessToken: data.tokens.accessToken,
-      expiresIn: data.tokens.expiresIn,
-      sessionId: data.session.sessionId,
-      userData: {
-        'userId': data.user.userId,
-        'name': data.user.name,
-        'displayName': data.user.displayName,
-        'phoneNumber': data.user.phoneNumber,
-        'role': data.user.role,
-        'avatarUrl': data.user.avatarUrl,
-      },
-    );
-
-    // Set auth token for API client
-    _authService.setAuthToken(data.tokens.accessToken);
+    await _persistSigninData(data, username: username);
 
     // Convert to domain model
+    return _createAuthSession(data);
+  }
+
+  /// Sign in authority account with role validation on backend
+  Future<AuthSession> signInAuthority({
+    required String username,
+    required String password,
+    required String deviceId,
+  }) async {
+    final request = SigninRequestDto(
+      username: username,
+      password: password,
+      deviceId: deviceId,
+    );
+
+    final response = await _authService.signInAuthority(request);
+
+    if (!response.success || response.data == null) {
+      throw Exception(response.message);
+    }
+
+    final data = response.data!;
+    await _persistSigninData(data, username: username);
+
     return _createAuthSession(data);
   }
 
   /// Sign up with user information
   /// Returns message on success (user needs to verify code)
   Future<String> signUp({
-    required String name,
+    required String fullname,
     required String phoneNumber,
     required String username,
     required String password,
-    String? displayName,
+    String? nickname,
     String? dob,
-    String? village,
-    String? district,
-    String? country,
+    String? placeOfOrigin,
+    String? placeOfResidence,
+    String? dateOfIssue,
+    String? dateOfExpire,
   }) async {
     final request = SignupRequestDto(
-      name: name,
+      fullname: fullname,
       phoneNumber: phoneNumber,
       username: username,
       password: password,
-      displayName: displayName,
+      nickname: nickname,
       dob: dob,
-      village: village,
-      district: district,
-      country: country,
+      placeOfOrigin: placeOfOrigin,
+      placeOfResidence: placeOfResidence,
+      dateOfIssue: dateOfIssue,
+      dateOfExpire: dateOfExpire,
     );
 
     final response = await _authService.signUp(request);
@@ -188,57 +198,16 @@ class AuthRepository {
     try {
       // Debug: Print cookies before calling refresh
       await ApiClient().debugPrintCookies(Uri.parse('http://192.168.88.106:3000/'));
-      
-      // Call refresh token endpoint - Dio CookieManager will automatically send refresh_token cookie
-      final response = await _authService.refreshToken();
+
+      // Reuse repository refresh flow to persist new access token + expiry.
+      await refreshToken();
 
       if (kDebugMode) {
-        print('🔄 [tryAutoLogin] Response: success=${response.success}, message=${response.message}');
+        print('🔄 [tryAutoLogin] Token refreshed and persisted successfully');
       }
 
-      if (!response.success || response.data == null) {
-        return null;
-      }
-
-      final data = response.data!;
-      
-      // Check if we have user data (required for auto login)
-      if (data.user == null || data.session == null) {
-        return null;
-      }
-
-      // Save auth data to local storage
-      await AuthLocalStorage.saveAuthData(
-        accessToken: data.tokens.accessToken,
-        expiresIn: data.tokens.expiresIn,
-        sessionId: data.session!.sessionId,
-        userData: {
-          'userId': data.user!.userId,
-          'name': data.user!.name,
-          'displayName': data.user!.displayName,
-          'phoneNumber': data.user!.phoneNumber,
-          'role': data.user!.role,
-          'avatarUrl': data.user!.avatarUrl,
-        },
-      );
-
-      // Set auth token for API client
-      _authService.setAuthToken(data.tokens.accessToken);
-
-      // Create and return auth session
-      return AuthSession(
-        user: User(
-          id: data.user!.userId,
-          name: data.user!.name,
-          displayName: data.user!.displayName,
-          phoneNumber: data.user!.phoneNumber,
-          roles: [UserRole.fromString(data.user!.role)],
-          avatarUrl: data.user!.avatarUrl,
-        ),
-        accessToken: data.tokens.accessToken,
-        sessionId: data.session!.sessionId,
-        expiresAt: DateTime.now().add(Duration(seconds: data.tokens.expiresIn)),
-      );
+      // Refresh endpoint only returns token data; user/session are restored from local storage.
+      return await getCurrentSession();
     } catch (e) {
       // Auto login failed - user needs to sign in manually
       return null;
@@ -277,7 +246,57 @@ class AuthRepository {
     return await AuthLocalStorage.isLoggedIn();
   }
 
+  /// Syncs user data stored in local auth session after profile updates.
+  Future<void> syncSessionUserFromProfile(ProfileModel profile) async {
+    final existingUserData = await AuthLocalStorage.getUserData() ?? <String, dynamic>{};
+
+    final updatedUserData = <String, dynamic>{
+      ...existingUserData,
+      'userId': profile.userId,
+      'fullname': profile.fullname,
+      'nickname': profile.nickname,
+      'phoneNumber': profile.phoneNumber,
+      'role': profile.roles,
+      'avatarUrl': profile.avatarUrl,
+    };
+
+    await AuthLocalStorage.saveUserData(updatedUserData);
+  }
+
   // ==================== Private Helpers ====================
+
+  Future<void> _persistSigninData(
+    SigninDataDto data, {
+    required String username,
+  }) async {
+    // refresh_token is managed by backend via HTTP-only cookies
+    await AuthLocalStorage.saveAuthData(
+      accessToken: data.tokens.accessToken,
+      expiresIn: data.tokens.expiresIn,
+      sessionId: data.session.sessionId,
+      userData: {
+        'userId': data.user.userId,
+        'fullname': data.user.name,
+        'nickname': data.user.displayName,
+        'phoneNumber': data.user.phoneNumber,
+        'role': data.user.role,
+        'avatarUrl': data.user.avatarUrl,
+        'username': username,
+        'gender': data.user.gender,
+        'dob': data.user.dob,
+        'placeOfOrigin': data.user.placeOfOrigin,
+        'placeOfResidence': data.user.placeOfResidence,
+        'dateOfIssue': data.user.dateOfIssue,
+        'dateOfExpire': data.user.dateOfExpire,
+        'citizenId': data.user.citizenId,
+        'citizenIdCardImg': data.user.citizenIdCardImg,
+        'jobPosition': data.user.jobPosition,
+        'visibilityMode': data.user.visibilityMode,
+      },
+    );
+
+    _authService.setAuthToken(data.tokens.accessToken);
+  }
 
   AuthSession _createAuthSession(SigninDataDto data) {
     return AuthSession(
@@ -298,8 +317,8 @@ class AuthRepository {
   User _userFromMap(Map<String, dynamic> map) {
     return User(
       id: map['userId'] ?? '',
-      name: map['name'] ?? '',
-      displayName: map['displayName'],
+      name: map['fullname'] ?? map['name'] ?? '',
+      displayName: map['nickname'] ?? map['displayName'],
       phoneNumber: map['phoneNumber'],
       roles: (map['role'] as List<dynamic>?)
               ?.map((r) => UserRole.fromString(r.toString()))

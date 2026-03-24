@@ -4,13 +4,9 @@ import '../../widgets/custom_text_field.dart';
 
 /// Account form screen with additional fields
 class AccountFormScreen extends StatelessWidget {
-  final TextEditingController firstNameController;
-  final TextEditingController lastNameController;
+  final TextEditingController fullNameController;
   final TextEditingController phoneNumberController;
   final TextEditingController dateOfBirthController;
-  final TextEditingController villageController;
-  final TextEditingController districtController;
-  final TextEditingController countryController;
   final TextEditingController usernameController;
   final TextEditingController passwordController;
   final VoidCallback onSubmit;
@@ -19,13 +15,9 @@ class AccountFormScreen extends StatelessWidget {
 
   const AccountFormScreen({
     super.key,
-    required this.firstNameController,
-    required this.lastNameController,
+    required this.fullNameController,
     required this.phoneNumberController,
     required this.dateOfBirthController,
-    required this.villageController,
-    required this.districtController,
-    required this.countryController,
     required this.usernameController,
     required this.passwordController,
     required this.onSubmit,
@@ -55,17 +47,10 @@ class AccountFormScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // First Name Field
+              // Full Name Field
               CustomTextField(
-                controller: firstNameController,
-                hintText: 'First Name',
-              ),
-              const SizedBox(height: 16),
-
-              // Last Name Field
-              CustomTextField(
-                controller: lastNameController,
-                hintText: 'Last Name',
+                controller: fullNameController,
+                hintText: 'Full Name',
               ),
               const SizedBox(height: 16),
 
@@ -92,27 +77,6 @@ class AccountFormScreen extends StatelessWidget {
                     suffixIcon: const Icon(Icons.calendar_today, color: Color(0xFF0F62FE)),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Village Field
-              CustomTextField(
-                controller: villageController,
-                hintText: 'Village (Optional)',
-              ),
-              const SizedBox(height: 16),
-
-              // District Field
-              CustomTextField(
-                controller: districtController,
-                hintText: 'District (Optional)',
-              ),
-              const SizedBox(height: 16),
-
-              // Country Field
-              CustomTextField(
-                controller: countryController,
-                hintText: 'Country (Optional)',
               ),
               const SizedBox(height: 16),
 

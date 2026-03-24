@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../config/app_config.dart';
+import 'auth_local_storage.dart';
 
 /// Base API client with Dio configuration
 /// Singleton managed by Riverpod (apiClientProvider with keepAlive: true)
@@ -12,6 +13,7 @@ class ApiClient {
   late final Dio _dio;
   CookieJar? _cookieJar;
   bool _initialized = false;
+  Future<String?>? _refreshFuture;
 
   // Base URL from centralized config
   static const String _baseUrl = AppConfig.apiBaseUrl;
@@ -29,6 +31,7 @@ class ApiClient {
     
     // Add logging interceptor
     _dio.interceptors.add(_LoggingInterceptor());
+    _dio.interceptors.add(_AuthRefreshInterceptor(this));
   }
 
   /// Initialize persistent cookie jar (call this at app startup)
@@ -79,6 +82,50 @@ class ApiClient {
   /// Clear all cookies (including refresh_token)
   void clearCookies() {
     _cookieJar?.deleteAll();
+  }
+
+  Future<String?> refreshAccessToken() {
+    _refreshFuture ??= _performRefreshAccessToken();
+    return _refreshFuture!.whenComplete(() => _refreshFuture = null);
+  }
+
+  Future<String?> _performRefreshAccessToken() async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>('/auth/token/refresh');
+      final body = response.data;
+
+      final success = body?['success'] == true;
+      if (!success) {
+        await _clearAuthStateOnRefreshFailure();
+        return null;
+      }
+
+      final tokenData = body?['data']?['tokens'] as Map<String, dynamic>?;
+      final accessToken = tokenData?['accessToken'] as String?;
+      final expiresIn = tokenData?['expiresIn'] as int?;
+
+      if (accessToken == null || accessToken.isEmpty || expiresIn == null) {
+        await _clearAuthStateOnRefreshFailure();
+        return null;
+      }
+
+      await AuthLocalStorage.saveAccessToken(accessToken);
+      await AuthLocalStorage.saveTokenExpiry(
+        DateTime.now().add(Duration(seconds: expiresIn)),
+      );
+      setAuthToken(accessToken);
+
+      return accessToken;
+    } on DioException {
+      await _clearAuthStateOnRefreshFailure();
+      return null;
+    }
+  }
+
+  Future<void> _clearAuthStateOnRefreshFailure() async {
+    clearAuthToken();
+    clearCookies();
+    await AuthLocalStorage.clearAuthData();
   }
 
   /// GET request
@@ -152,6 +199,82 @@ class ApiClient {
       queryParameters: queryParameters,
       options: options,
     );
+  }
+}
+
+class _AuthRefreshInterceptor extends QueuedInterceptor {
+  final ApiClient _apiClient;
+
+  _AuthRefreshInterceptor(this._apiClient);
+
+  @override
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    final statusCode = err.response?.statusCode;
+    final request = err.requestOptions;
+
+    if (statusCode != 401 || !_shouldTryRefresh(request)) {
+      handler.next(err);
+      return;
+    }
+
+    final newToken = await _apiClient.refreshAccessToken();
+    if (newToken == null) {
+      handler.next(err);
+      return;
+    }
+
+    try {
+      final retryHeaders = Map<String, dynamic>.from(request.headers);
+      retryHeaders['Authorization'] = 'Bearer $newToken';
+
+      final retryOptions = Options(
+        method: request.method,
+        headers: retryHeaders,
+        responseType: request.responseType,
+        contentType: request.contentType,
+        receiveDataWhenStatusError: request.receiveDataWhenStatusError,
+        followRedirects: request.followRedirects,
+        validateStatus: request.validateStatus,
+        receiveTimeout: request.receiveTimeout,
+        sendTimeout: request.sendTimeout,
+        extra: {
+          ...request.extra,
+          '_retryAfterRefresh': true,
+        },
+      );
+
+      final response = await _apiClient.dio.request<dynamic>(
+        request.path,
+        data: request.data,
+        queryParameters: request.queryParameters,
+        options: retryOptions,
+        cancelToken: request.cancelToken,
+        onReceiveProgress: request.onReceiveProgress,
+        onSendProgress: request.onSendProgress,
+      );
+
+      handler.resolve(response);
+    } on DioException catch (retryError) {
+      handler.next(retryError);
+    }
+  }
+
+  bool _shouldTryRefresh(RequestOptions request) {
+    if (request.extra['_retryAfterRefresh'] == true) {
+      return false;
+    }
+
+    const excludedPaths = {
+      '/auth/token/refresh',
+      '/auth/signin',
+      '/auth/authority/signin',
+      '/auth/signup',
+      '/auth/verify',
+      '/auth/resend-code',
+      '/auth/password/forgot',
+    };
+
+    return !excludedPaths.contains(request.path);
   }
 }
 

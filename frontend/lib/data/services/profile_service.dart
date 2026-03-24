@@ -62,4 +62,31 @@ class ProfileService {
       throw ApiException.fromDioError(e);
     }
   }
+
+  Future<void> createRoleRequest({required String type}) async {
+    try {
+      await _apiClient.post(
+        '/user/profile/role-requests',
+        data: {'type': type},
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<List<ProfileRoleRequestModel>> getMyRoleRequests() async {
+    try {
+      final response = await _apiClient.get('/user/profile/role-requests');
+      final body = response.data as Map<String, dynamic>?;
+      final data = body?['data'] as Map<String, dynamic>?;
+      final items = (data?['items'] as List<dynamic>? ?? const []);
+
+      return items
+          .whereType<Map<String, dynamic>>()
+          .map(ProfileRoleRequestModel.fromJson)
+          .toList();
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
 }

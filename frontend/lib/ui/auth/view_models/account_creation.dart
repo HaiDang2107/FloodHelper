@@ -45,13 +45,11 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
       if (kDebugMode) print('Disposing AccountCreationViewModel resources...');
       
       pageController.dispose();
-      firstNameController.dispose();
-      lastNameController.dispose();
+      fullNameController.dispose();
       phoneNumberController.dispose();
       dateOfBirthController.dispose();
-      villageController.dispose();
-      districtController.dispose();
-      countryController.dispose();
+      placeOfOriginController.dispose();
+      placeOfResidenceController.dispose();
       usernameController.dispose();
       passwordController.dispose();
       codeController.dispose();
@@ -64,13 +62,11 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
   final PageController pageController = PageController(initialPage: 0);
 
   // Controllers for form fields
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
   final TextEditingController phoneNumberController = TextEditingController();
   final TextEditingController dateOfBirthController = TextEditingController();
-  final TextEditingController villageController = TextEditingController();
-  final TextEditingController districtController = TextEditingController();
-  final TextEditingController countryController = TextEditingController();
+  final TextEditingController placeOfOriginController = TextEditingController();
+  final TextEditingController placeOfResidenceController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController codeController = TextEditingController();
@@ -186,8 +182,7 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
     clearError();
 
     // Validate inputs locally first
-    if (firstNameController.text.isEmpty ||
-        lastNameController.text.isEmpty ||
+    if (fullNameController.text.isEmpty ||
         phoneNumberController.text.isEmpty ||
         usernameController.text.isEmpty ||
         passwordController.text.isEmpty) {
@@ -217,14 +212,11 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
       
       // Submit account details
       await authRepository.signUp(
-        name: '${firstNameController.text} ${lastNameController.text}',
+        fullname: fullNameController.text,
         phoneNumber: phoneNumberController.text,
         username: usernameController.text,
         password: passwordController.text,
         dob: dateOfBirthController.text.isNotEmpty ? dateOfBirthController.text : null,
-        village: villageController.text.isNotEmpty ? villageController.text : null,
-        district: districtController.text.isNotEmpty ? districtController.text : null,
-        country: countryController.text.isNotEmpty ? countryController.text : null,
       );
 
       // Store username for verification

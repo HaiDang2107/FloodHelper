@@ -1,5 +1,5 @@
 import { IsString, MinLength } from 'class-validator';
-import { Purpose } from '../../common/enum/purpose.enum'; 
+import { Purpose } from '../../common/enum/purpose.enum';
 
 export class VerifyCodeDto {
   @IsString()

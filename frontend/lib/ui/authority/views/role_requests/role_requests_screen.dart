@@ -85,6 +85,31 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _FilterChip(
+                label: 'Pending',
+                isActive: state.statusFilter == RoleRequestStatus.pending,
+                onTap: () => viewModel.setStatusFilter(RoleRequestStatus.pending),
+              ),
+              _FilterChip(
+                label: 'Rejected',
+                isActive: state.statusFilter == RoleRequestStatus.rejected,
+                onTap: () => viewModel.setStatusFilter(RoleRequestStatus.rejected),
+              ),
+              _FilterChip(
+                label: 'Approved',
+                isActive: state.statusFilter == RoleRequestStatus.approved,
+                onTap: () => viewModel.setStatusFilter(RoleRequestStatus.approved),
+              ),
+              _FilterChip(
+                label: 'Clear status',
+                isActive: state.statusFilter == null,
+                onTap: () => viewModel.setStatusFilter(null),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           Expanded(
             child: LayoutBuilder(
@@ -103,6 +128,9 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
                           requests: state.requests,
                           selectedId: state.selectedId,
                           onSelect: viewModel.selectRequest,
+                          onReachEnd: viewModel.loadMore,
+                          isLoadingMore: state.isLoadingMore,
+                          endMessage: state.endMessage,
                         ),
                 );
 
@@ -114,6 +142,9 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
                       Expanded(
                         child: RoleRequestDetail(
                           request: state.selectedRequest,
+                          isSubmitting: state.isLoading,
+                          onApprove: () => viewModel.approveSelected(),
+                          onReject: () => viewModel.rejectSelected(),
                         ),
                       ),
                     ],
@@ -128,6 +159,9 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
                       flex: 5,
                       child: RoleRequestDetail(
                         request: state.selectedRequest,
+                        isSubmitting: state.isLoading,
+                        onApprove: () => viewModel.approveSelected(),
+                        onReject: () => viewModel.rejectSelected(),
                       ),
                     ),
                   ],
@@ -146,11 +180,17 @@ class _RoleRequestList extends StatelessWidget {
     required this.requests,
     required this.selectedId,
     required this.onSelect,
+    required this.onReachEnd,
+    required this.isLoadingMore,
+    this.endMessage,
   });
 
   final List<RoleRequest> requests;
   final String? selectedId;
   final ValueChanged<String> onSelect;
+  final Future<void> Function() onReachEnd;
+  final bool isLoadingMore;
+  final String? endMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -161,48 +201,81 @@ class _RoleRequestList extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      itemCount: sections.length,
-      itemBuilder: (context, index) {
-        final section = sections[index];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8, top: 12),
-              child: Text(
-                section.label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: const Color(0xFF475467),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-            ...section.items.asMap().entries.map((entry) {
-              final item = entry.value;
-              final position = entry.key.toDouble();
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 220 + (position * 70).toInt()),
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - value) * 8),
-                      child: child,
-                    ),
-                  );
-                },
-                child: RoleRequestCard(
-                  request: item,
-                  isSelected: item.id == selectedId,
-                  onTap: () => onSelect(item.id),
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification.metrics.pixels >=
+            notification.metrics.maxScrollExtent - 200) {
+          onReachEnd();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        itemCount: sections.length + 1,
+        itemBuilder: (context, index) {
+          if (index == sections.length) {
+            if (isLoadingMore) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (endMessage != null) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: Text(
+                    endMessage!,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: const Color(0xFF667085)),
+                  ),
                 ),
               );
-            }),
-          ],
-        );
-      },
+            }
+            return const SizedBox.shrink();
+          }
+
+          final section = sections[index];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8, top: 12),
+                child: Text(
+                  section.label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: const Color(0xFF475467),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              ...section.items.asMap().entries.map((entry) {
+                final item = entry.value;
+                final position = entry.key.toDouble();
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 220 + (position * 70).toInt()),
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - value) * 8),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: RoleRequestCard(
+                    request: item,
+                    isSelected: item.id == selectedId,
+                    onTap: () => onSelect(item.id),
+                  ),
+                );
+              }),
+            ],
+          );
+        },
+      ),
     );
   }
 }

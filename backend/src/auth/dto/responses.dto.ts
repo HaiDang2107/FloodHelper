@@ -32,15 +32,20 @@ export class SigninResponseDto {
       phoneNumber: string;
       role: string[];
       avatarUrl?: string | null;
+      gender?: string | null;
+      dob?: Date | null;
+      placeOfOrigin?: string | null;
+      placeOfResidence?: string | null;
+      dateOfIssue?: Date | null;
+      dateOfExpire?: Date | null;
+      citizenId?: string | null;
+      citizenIdCardImg?: string | null;
+      jobPosition?: string | null;
     };
     tokens: {
       accessToken: string;
       refreshToken?: string;
       expiresIn: number;
-    };
-    session: {
-      sessionId: string;
-      expireAt: Date;
     };
   };
 }
@@ -104,20 +109,8 @@ export class RefreshTokenResponseDto {
   data?: {
     tokens: {
       accessToken: string;
-      refreshToken?: string; // Optional - will be removed before sending to client
+      refreshToken?: string;
       expiresIn: number;
-    };
-    user?: {
-      userId: string;
-      name: string;
-      displayName: string | null;
-      phoneNumber: string;
-      role: string;
-      avatarUrl: string | null;
-    };
-    session?: {
-      sessionId: string;
-      deviceId: string;
     };
   } | null;
 }

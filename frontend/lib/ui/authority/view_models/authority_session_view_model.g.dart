@@ -6,7 +6,7 @@ part of 'authority_session_view_model.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authoritySessionHash() => r'1aae8523d43785256a710447cbd54d68306b9336';
+String _$authoritySessionHash() => r'86a6cb6c97d82400f393c9963290c671270aa60d';
 
 /// See also [AuthoritySession].
 @ProviderFor(AuthoritySession)

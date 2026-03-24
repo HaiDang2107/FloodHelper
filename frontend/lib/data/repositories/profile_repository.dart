@@ -16,4 +16,10 @@ abstract class ProfileRepository {
   
   /// Get user by ID (public profile)
   Future<ProfileModel?> getUserById(String userId);
+
+  /// Create role request for current user (BENEFACTOR or RESCUER)
+  Future<void> createRoleRequest({required String type});
+
+  /// Get current user's submitted role requests
+  Future<List<ProfileRoleRequestModel>> getMyRoleRequests();
 }

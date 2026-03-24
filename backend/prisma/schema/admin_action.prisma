@@ -2,16 +2,29 @@
 // 7. ADMIN ACTION MODULE
 // ==============================
 
+enum RoleRequestType {
+  BENEFACTOR
+  RESCUER
+}
+
+enum RoleRequestState {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model RoleUpdatingRequest {
   requestId   String    @id @default(uuid()) @db.Uuid @map("request_id")
   createdBy   String    @db.Uuid @map("created_by")
-  type        String
-  state      String
+  checkBy     String?   @db.Uuid @map("check_by")
+  type        RoleRequestType
+  state       RoleRequestState @default(PENDING)
   note        String?
   createdAt   DateTime  @default(now()) @map("created_at")
   responsedAt DateTime? @map("responsed_at")
 
-  user User @relation(fields: [createdBy], references: [userId])
+  user      User  @relation("RoleRequestCreator", fields: [createdBy], references: [userId])
+  authority User? @relation("RoleRequestChecker", fields: [checkBy], references: [userId])
 
   @@map("RoleUpdatingRequest")
 }

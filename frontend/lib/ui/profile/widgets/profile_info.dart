@@ -5,37 +5,45 @@ class ProfileInfo extends StatelessWidget {
   final bool isEditing;
   // Basic Info
   final TextEditingController userIdController;
-  final TextEditingController firstNameController;
-  final TextEditingController lastNameController;
+  final TextEditingController fullNameController;
   final TextEditingController nicknameController;
   final Gender? selectedGender;
   final ValueChanged<Gender?>? onGenderChanged;
   final TextEditingController emailController;
+  final TextEditingController dobController;
   
   // Additional Info
   final TextEditingController jobPositionController;
   final TextEditingController phoneController;
   final TextEditingController placeOfOriginController;
   final TextEditingController placeOfResidenceController;
+  final TextEditingController citizenIdController;
   final TextEditingController dateOfIssueController;
   final TextEditingController dateOfExpiryController;
+  final VoidCallback? onDobTap;
+  final VoidCallback? onDateOfIssueTap;
+  final VoidCallback? onDateOfExpiryTap;
 
   const ProfileInfo({
     super.key,
     required this.isEditing,
     required this.userIdController,
-    required this.firstNameController,
-    required this.lastNameController,
+    required this.fullNameController,
     required this.nicknameController,
     required this.selectedGender,
     required this.onGenderChanged,
     required this.emailController,
+    required this.dobController,
     required this.jobPositionController,
     required this.phoneController,
     required this.placeOfOriginController,
     required this.placeOfResidenceController,
+    required this.citizenIdController,
     required this.dateOfIssueController,
     required this.dateOfExpiryController,
+    this.onDobTap,
+    this.onDateOfIssueTap,
+    this.onDateOfExpiryTap,
   });
 
   @override
@@ -52,24 +60,10 @@ class ProfileInfo extends StatelessWidget {
           enabled: false, // User ID usually not editable
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildTextField(
-                controller: firstNameController,
-                label: 'First Name',
-                enabled: isEditing,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildTextField(
-                controller: lastNameController,
-                label: 'Last Name',
-                enabled: isEditing,
-              ),
-            ),
-          ],
+        _buildTextField(
+          controller: fullNameController,
+          label: 'Full Name',
+          enabled: isEditing,
         ),
         const SizedBox(height: 16),
         _buildTextField(
@@ -83,7 +77,18 @@ class ProfileInfo extends StatelessWidget {
         _buildTextField(
           controller: emailController,
           label: 'Email',
+          enabled: false,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: dobController,
+          label: 'Date of Birth',
           enabled: isEditing,
+          readOnly: isEditing,
+          onTap: onDobTap,
+          suffixIcon: isEditing
+              ? const Icon(Icons.calendar_today, size: 18)
+              : null,
         ),
 
         const SizedBox(height: 32),
@@ -114,6 +119,12 @@ class ProfileInfo extends StatelessWidget {
         _buildTextField(
           controller: placeOfResidenceController,
           label: 'Place of Residence',
+          enabled: isEditing,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: citizenIdController,
+          label: 'Citizen ID',
           enabled: isEditing,
         ),
         const SizedBox(height: 16),
@@ -148,6 +159,11 @@ class ProfileInfo extends StatelessWidget {
                 controller: dateOfIssueController,
                 label: 'Date of Issue',
                 enabled: isEditing,
+                readOnly: isEditing,
+                onTap: onDateOfIssueTap,
+                suffixIcon: isEditing
+                    ? const Icon(Icons.calendar_today, size: 18)
+                    : null,
               ),
             ),
             const SizedBox(width: 16),
@@ -156,6 +172,11 @@ class ProfileInfo extends StatelessWidget {
                 controller: dateOfExpiryController,
                 label: 'Date of Expiry',
                 enabled: isEditing,
+                readOnly: isEditing,
+                onTap: onDateOfExpiryTap,
+                suffixIcon: isEditing
+                    ? const Icon(Icons.calendar_today, size: 18)
+                    : null,
               ),
             ),
           ],
@@ -268,6 +289,9 @@ class ProfileInfo extends StatelessWidget {
     required TextEditingController controller,
     required String label,
     required bool enabled,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    Widget? suffixIcon,
   }) {
     if (!enabled) {
       return Padding(
@@ -300,10 +324,13 @@ class ProfileInfo extends StatelessWidget {
 
     return TextField(
       controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        suffixIcon: suffixIcon,
       ),
     );
   }

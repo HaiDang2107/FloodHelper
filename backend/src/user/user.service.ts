@@ -1,6 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { CreateUserDto, UpdateUserDto, UpdateLocationDto, UpdateVisibilityDto } from './dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateLocationDto,
+  UpdateVisibilityDto,
+} from './dto';
 
 @Injectable()
 export class UserService {
@@ -42,8 +51,8 @@ export class UserService {
       where: { userId },
       select: {
         userId: true,
-        name: true,
-        displayName: true,
+        fullname: true,
+        nickname: true,
         avatarUrl: true,
         role: true,
         curLongitude: true,
@@ -58,8 +67,10 @@ export class UserService {
 
     return {
       userId: user.userId,
-      name: user.name,
-      displayName: user.displayName,
+      name: user.fullname,
+      displayName: user.nickname,
+      fullname: user.fullname,
+      nickname: user.nickname,
       avatarUrl: user.avatarUrl,
       roles: user.role,
       visibilityMode: user.visibilityMode,
@@ -86,12 +97,18 @@ export class UserService {
     const updated = await this.prisma.user.update({
       where: { userId },
       data: {
-        displayName: updateUserDto.displayName,
+        fullname: updateUserDto.fullname,
+        nickname: updateUserDto.nickname,
         gender: updateUserDto.gender,
         dob: updateUserDto.dob ? new Date(updateUserDto.dob) : undefined,
-        village: updateUserDto.village,
-        district: updateUserDto.district,
-        country: updateUserDto.country,
+        placeOfOrigin: updateUserDto.placeOfOrigin,
+        placeOfResidence: updateUserDto.placeOfResidence,
+        dateOfIssue: updateUserDto.dateOfIssue
+          ? new Date(updateUserDto.dateOfIssue)
+          : undefined,
+        dateOfExpire: updateUserDto.dateOfExpire
+          ? new Date(updateUserDto.dateOfExpire)
+          : undefined,
         curLongitude: updateUserDto.curLongitude,
         curLatitude: updateUserDto.curLatitude,
         visibilityMode: updateUserDto.visibilityMode,
@@ -146,29 +163,31 @@ export class UserService {
    */
   async findAll(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-    
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         skip,
         take: limit,
         select: {
           userId: true,
-          name: true,
-          displayName: true,
+          fullname: true,
+          nickname: true,
           avatarUrl: true,
           role: true,
           phoneNumber: true,
         },
-        orderBy: { name: 'asc' },
+        orderBy: { fullname: 'asc' },
       }),
       this.prisma.user.count(),
     ]);
 
     return {
-      data: users.map(user => ({
+      data: users.map((user) => ({
         userId: user.userId,
-        name: user.name,
-        displayName: user.displayName,
+        name: user.fullname,
+        displayName: user.nickname,
+        fullname: user.fullname,
+        nickname: user.nickname,
         avatarUrl: user.avatarUrl,
         roles: user.role,
         phoneNumber: user.phoneNumber,
@@ -185,7 +204,12 @@ export class UserService {
   /**
    * Get nearby users (users with publicMapMode enabled)
    */
-  async findNearbyUsers(userId: string, longitude: number, latitude: number, radiusKm: number = 10) {
+  async findNearbyUsers(
+    userId: string,
+    longitude: number,
+    latitude: number,
+    radiusKm: number = 10,
+  ) {
     // Get users with PUBLIC visibility
     const users = await this.prisma.user.findMany({
       where: {
@@ -196,8 +220,8 @@ export class UserService {
       },
       select: {
         userId: true,
-        name: true,
-        displayName: true,
+        fullname: true,
+        nickname: true,
         avatarUrl: true,
         role: true,
         curLongitude: true,
@@ -206,7 +230,7 @@ export class UserService {
     });
 
     // Filter by distance (simple calculation - for production use PostGIS)
-    const nearbyUsers = users.filter(user => {
+    const nearbyUsers = users.filter((user) => {
       if (!user.curLongitude || !user.curLatitude) return false;
       const distance = this.calculateDistance(
         latitude,
@@ -217,10 +241,12 @@ export class UserService {
       return distance <= radiusKm;
     });
 
-    return nearbyUsers.map(user => ({
+    return nearbyUsers.map((user) => ({
       userId: user.userId,
-      name: user.name,
-      displayName: user.displayName,
+      name: user.fullname,
+      displayName: user.nickname,
+      fullname: user.fullname,
+      nickname: user.nickname,
       avatarUrl: user.avatarUrl,
       roles: user.role,
       longitude: Number(user.curLongitude),
@@ -234,13 +260,20 @@ export class UserService {
   private formatUserResponse(user: any) {
     return {
       userId: user.userId,
-      name: user.name,
-      displayName: user.displayName,
+      name: user.fullname,
+      displayName: user.nickname,
+      fullname: user.fullname,
+      nickname: user.nickname,
       gender: user.gender ?? null,
       dob: user.dob ? user.dob.toISOString().split('T')[0] : null,
-      village: user.village,
-      district: user.district,
-      country: user.country,
+      placeOfOrigin: user.placeOfOrigin,
+      placeOfResidence: user.placeOfResidence,
+      dateOfIssue: user.dateOfIssue
+        ? user.dateOfIssue.toISOString().split('T')[0]
+        : null,
+      dateOfExpire: user.dateOfExpire
+        ? user.dateOfExpire.toISOString().split('T')[0]
+        : null,
       roles: user.role,
       longitude: user.curLongitude ? Number(user.curLongitude) : null,
       latitude: user.curLatitude ? Number(user.curLatitude) : null,
@@ -250,25 +283,34 @@ export class UserService {
       phoneNumber: user.phoneNumber,
       citizenIdCardImg: user.citizenIdCardImg,
       jobPosition: user.jobPosition,
-      account: user.account ? {
-        username: user.account.username,
-        state: user.account.state,
-        createdAt: user.account.createdAt,
-      } : null,
+      account: user.account
+        ? {
+            username: user.account.username,
+            state: user.account.state,
+            createdAt: user.account.createdAt,
+          }
+        : null,
     };
   }
 
   /**
    * Calculate distance between two points using Haversine formula
    */
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
     const R = 6371; // Earth's radius in km
     const dLat = this.toRad(lat2 - lat1);
     const dLon = this.toRad(lon2 - lon1);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos(this.toRad(lat1)) *
+        Math.cos(this.toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -312,4 +354,3 @@ export class UserService {
     };
   }
 }
-

@@ -4,13 +4,14 @@
 
 model User {
   userId           String    @id @default(uuid()) @db.Uuid @map("user_id")
-  name             String    @db.VarChar(255)
-  displayName      String?   @map("display_name")
+  fullname         String    @db.VarChar(255)
+  nickname         String?   @db.VarChar(255)
   dob              DateTime? @db.Date
-  village          String?
-  district         String?
-  country          String?
-  role             String[]  @default(["GUEST"]) // Array of roles, can have multiple
+  placeOfOrigin    String?   @map("place_of_origin")
+  placeOfResidence String?   @map("place_of_residence")
+  dateOfIssue      DateTime? @map("date_of_issue") @db.Date
+  dateOfExpire     DateTime? @map("date_of_expire") @db.Date
+  role             String[]  @default(["NORMAL_USER"]) // Array of roles, can have multiple
   curLongitude     Decimal?  @map("cur_longitude") @db.Decimal(10, 7)
   curLatitude      Decimal?  @map("cur_latitude") @db.Decimal(10, 7)
   visibilityMode   String    @default("JUST_FRIEND") @map("visibility_mode") @db.VarChar(20) // PUBLIC | JUST_FRIEND | NO_ONE
@@ -32,7 +33,8 @@ model User {
   likes                Like[]
   comments             Comment[]
   roomMemberships      RoomMember[]
-  roleRequests         RoleUpdatingRequest[]
+  roleRequestsCreated  RoleUpdatingRequest[] @relation("RoleRequestCreator")
+  roleRequestsReceived RoleUpdatingRequest[] @relation("RoleRequestChecker")
   friendRequestsSent   FriendMakingRequest[] @relation("FriendRequestSender")
   friendRequestsRcved  FriendMakingRequest[] @relation("FriendRequestReceiver")
   

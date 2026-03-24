@@ -60,13 +60,9 @@ class _AccountCreationScreenState extends ConsumerState<AccountCreationScreen> {
               const AccountCreationLoadingScreen(),
               // Form screen
               AccountFormScreen(
-                firstNameController: viewModel.firstNameController,
-                lastNameController: viewModel.lastNameController,
+                fullNameController: viewModel.fullNameController,
                 phoneNumberController: viewModel.phoneNumberController,
                 dateOfBirthController: viewModel.dateOfBirthController,
-                villageController: viewModel.villageController,
-                districtController: viewModel.districtController,
-                countryController: viewModel.countryController,
                 usernameController: viewModel.usernameController,
                 passwordController: viewModel.passwordController,
                 onSubmit: () => viewModel.handleFormSubmit(context),

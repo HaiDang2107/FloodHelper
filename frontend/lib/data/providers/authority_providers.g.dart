@@ -7,7 +7,7 @@ part of 'authority_providers.dart';
 // **************************************************************************
 
 String _$authorityRepositoryHash() =>
-    r'b4a4c6f5a6db515d9bd998d243acc49e1b5d859b';
+    r'4a35172e5942dee10e4b231cfb55802ae2efa012';
 
 /// See also [authorityRepository].
 @ProviderFor(authorityRepository)

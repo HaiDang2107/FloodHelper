@@ -39,10 +39,12 @@ async function bootstrap() {
 
   if (lanIPs.length > 0) {
     console.log('\n🌐 LAN Addresses (use these for mobile testing):');
-    lanIPs.forEach(ip => {
+    lanIPs.forEach((ip) => {
       console.log(`   http://${ip}:${port}`);
     });
-    console.log('\n📱 Update your frontend API base URL to one of these addresses');
+    console.log(
+      '\n📱 Update your frontend API base URL to one of these addresses',
+    );
   } else {
     console.log('\n⚠️  No LAN IP addresses found');
   }

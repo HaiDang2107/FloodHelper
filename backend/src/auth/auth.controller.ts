@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, UseGuards, Res, Delete, Req, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Res,
+  Delete,
+  Req,
+  Query,
+} from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -26,15 +36,19 @@ import {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
-  async signUp(@Body() registerDto: SignupDto): Promise<{ success: boolean; message: string }> {
+  async signUp(
+    @Body() registerDto: SignupDto,
+  ): Promise<{ success: boolean; message: string }> {
     return this.authService.signUp(registerDto);
   }
 
   @Post('verify')
-  async verifyCode(@Body() verifyCodeDto: VerifyCodeDto): Promise<VerifyCodeResponseDto> {
+  async verifyCode(
+    @Body() verifyCodeDto: VerifyCodeDto,
+  ): Promise<VerifyCodeResponseDto> {
     return this.authService.verifyCode(verifyCodeDto);
   }
 
@@ -56,8 +70,23 @@ export class AuthController {
     const result = await this.authService.signin(signinDto);
     response.cookie('refresh_token', result.data.tokens.refreshToken, {
       httpOnly: true,
-      path: '/',
+      path: '/auth/token/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    delete result.data.tokens.refreshToken;
+    return result;
+  }
+
+  @Post('authority/signin')
+  async signInAuthority(
+    @Body() signinDto: SigninDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<SigninResponseDto> {
+    const result = await this.authService.signinAuthority(signinDto);
+    response.cookie('refresh_token', result.data.tokens.refreshToken, {
+      httpOnly: true,
+      path: '/auth/token/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     delete result.data.tokens.refreshToken;
     return result;
@@ -71,7 +100,7 @@ export class AuthController {
     @Query('logoutAll') logoutAll?: boolean,
   ): Promise<SignoutResponseDto> {
     const result = await this.authService.logout({ logoutAll }, user);
-    response.clearCookie('refresh_token', { path: '/' });
+    response.clearCookie('refresh_token', { path: '/auth/token/refresh' });
     return result;
   }
 
@@ -90,16 +119,16 @@ export class AuthController {
   // ): Promise<GoogleSigninResponseDto> {
   //   const googleUser = req.user;
   //   const result = await this.authService.handleGoogleCallback(googleUser);
-    
+
   //   // Set refresh token in cookie
   //   response.cookie('refresh_token', result.data.tokens.refreshToken, {
   //     httpOnly: true,
   //     path: 'auth/token/refresh',
   //   });
-    
+
   //   // Remove refresh token from response body
   //   result.data.tokens.refreshToken = undefined as any;
-    
+
   //   return result;
   // }
 
@@ -129,11 +158,10 @@ export class AuthController {
   @Post('token/refresh')
   async refreshToken(
     @Req() request: Request,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<RefreshTokenResponseDto> {
     // Get refresh token from cookie
     const refreshToken = request.cookies?.refresh_token;
-    
+
     if (!refreshToken) {
       return {
         success: false,
@@ -142,19 +170,6 @@ export class AuthController {
       };
     }
 
-    const result = await this.authService.refreshToken({ refreshToken });
-    
-    // If successful, set new refresh token cookie
-    if (result.success && result.data?.tokens?.refreshToken) {
-      response.cookie('refresh_token', result.data.tokens.refreshToken, {
-        httpOnly: true,
-        path: '/',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-      // Remove refresh token from response body
-      delete result.data.tokens.refreshToken;
-    }
-    
-    return result;
+    return this.authService.refreshToken({ refreshToken });
   }
 }

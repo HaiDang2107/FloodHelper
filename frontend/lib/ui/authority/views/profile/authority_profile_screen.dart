@@ -49,8 +49,12 @@ class _AuthorityProfileScreenState
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage:
-                          NetworkImage(state.profile!.avatarUrl),
+                      backgroundImage: state.profile!.avatarUrl.isNotEmpty
+                        ? NetworkImage(state.profile!.avatarUrl)
+                        : null,
+                      child: state.profile!.avatarUrl.isEmpty
+                        ? const Icon(Icons.person)
+                        : null,
                     ),
                     const SizedBox(width: 24),
                     Expanded(
@@ -78,8 +82,56 @@ class _AuthorityProfileScreenState
                             value: state.profile!.email,
                           ),
                           _ProfileRow(
+                            label: 'Nickname',
+                            value: state.profile!.nickname ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Phone',
+                            value: state.profile!.phoneNumber ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Gender',
+                            value: state.profile!.gender ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Date of Birth',
+                            value: state.profile!.dob ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Place of Origin',
+                            value: state.profile!.placeOfOrigin ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Place of Residence',
+                            value: state.profile!.placeOfResidence ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Citizen ID',
+                            value: state.profile!.citizenId ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Date of Issue',
+                            value: state.profile!.dateOfIssue ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Date of Expire',
+                            value: state.profile!.dateOfExpire ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Job Position',
+                            value: state.profile!.jobPosition ?? '-',
+                          ),
+                          _ProfileRow(
+                            label: 'Role',
+                            value: state.profile!.roleTitle,
+                          ),
+                          _ProfileRow(
+                            label: 'User ID',
+                            value: state.profile!.userId,
+                          ),
+                          _ProfileRow(
                             label: 'Department',
-                            value: state.profile!.department,
+                            value: state.profile!.placeOfResidence ?? '-',
                           ),
                         ],
                       ),

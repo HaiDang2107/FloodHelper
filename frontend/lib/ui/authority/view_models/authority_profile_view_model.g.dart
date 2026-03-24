@@ -7,7 +7,7 @@ part of 'authority_profile_view_model.dart';
 // **************************************************************************
 
 String _$authorityProfileViewModelHash() =>
-    r'd9ad4feef9f526baf02b754f1f5af1a522317474';
+    r'7c02ee5253539aef0f722b52037c47fcd3adef3e';
 
 /// See also [AuthorityProfileViewModel].
 @ProviderFor(AuthorityProfileViewModel)

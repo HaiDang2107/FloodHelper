@@ -1,13 +1,14 @@
 /// Profile model for user profile data
 class ProfileModel {
   final String userId;
-  final String name;
-  final String? displayName;
+  final String fullname;
+  final String? nickname;
   final String? gender;
   final String? dob; // Date of birth in 'YYYY-MM-DD' format
-  final String? village;
-  final String? district;
-  final String? country;
+  final String? placeOfOrigin;
+  final String? placeOfResidence;
+  final String? dateOfIssue;
+  final String? dateOfExpire;
   final List<String> roles;
   final double? longitude;
   final double? latitude;
@@ -21,13 +22,14 @@ class ProfileModel {
 
   const ProfileModel({
     required this.userId,
-    required this.name,
-    this.displayName,
+    required this.fullname,
+    this.nickname,
     this.gender,
     this.dob,
-    this.village,
-    this.district,
-    this.country,
+    this.placeOfOrigin,
+    this.placeOfResidence,
+    this.dateOfIssue,
+    this.dateOfExpire,
     this.roles = const [],
     this.longitude,
     this.latitude,
@@ -42,23 +44,23 @@ class ProfileModel {
 
   /// Full address from village, district, country
   String get fullAddress {
-    final parts = [village, district, country].where((p) => p != null && p.isNotEmpty);
-    return parts.join(', ');
+    return placeOfResidence ?? '';
   }
 
   /// Get display name or fallback to name
-  String get displayNameOrName => displayName ?? name;
+  String get displayNameOrName => nickname ?? fullname;
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
       userId: json['userId'] ?? '',
-      name: json['name'] ?? '',
-      displayName: json['displayName'],
+      fullname: json['fullname'] ?? json['name'] ?? '',
+      nickname: json['nickname'] ?? json['displayName'],
       gender: json['gender'],
       dob: json['dob'],
-      village: json['village'],
-      district: json['district'],
-      country: json['country'],
+      placeOfOrigin: json['placeOfOrigin'] ?? json['village'],
+      placeOfResidence: json['placeOfResidence'] ?? json['district'] ?? json['country'],
+      dateOfIssue: json['dateOfIssue'],
+      dateOfExpire: json['dateOfExpire'],
       roles: List<String>.from(json['roles'] ?? []),
       longitude: json['longitude']?.toDouble(),
       latitude: json['latitude']?.toDouble(),
@@ -77,13 +79,14 @@ class ProfileModel {
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
-      'name': name,
-      'displayName': displayName,
+      'fullname': fullname,
+      'nickname': nickname,
       'gender': gender,
       'dob': dob,
-      'village': village,
-      'district': district,
-      'country': country,
+      'placeOfOrigin': placeOfOrigin,
+      'placeOfResidence': placeOfResidence,
+      'dateOfIssue': dateOfIssue,
+      'dateOfExpire': dateOfExpire,
       'roles': roles,
       'longitude': longitude,
       'latitude': latitude,
@@ -99,13 +102,14 @@ class ProfileModel {
 
   ProfileModel copyWith({
     String? userId,
-    String? name,
-    String? displayName,
+    String? fullname,
+    String? nickname,
     String? gender,
     String? dob,
-    String? village,
-    String? district,
-    String? country,
+    String? placeOfOrigin,
+    String? placeOfResidence,
+    String? dateOfIssue,
+    String? dateOfExpire,
     List<String>? roles,
     double? longitude,
     double? latitude,
@@ -119,13 +123,14 @@ class ProfileModel {
   }) {
     return ProfileModel(
       userId: userId ?? this.userId,
-      name: name ?? this.name,
-      displayName: displayName ?? this.displayName,
+      fullname: fullname ?? this.fullname,
+      nickname: nickname ?? this.nickname,
       gender: gender ?? this.gender,
       dob: dob ?? this.dob,
-      village: village ?? this.village,
-      district: district ?? this.district,
-      country: country ?? this.country,
+      placeOfOrigin: placeOfOrigin ?? this.placeOfOrigin,
+      placeOfResidence: placeOfResidence ?? this.placeOfResidence,
+      dateOfIssue: dateOfIssue ?? this.dateOfIssue,
+      dateOfExpire: dateOfExpire ?? this.dateOfExpire,
       roles: roles ?? this.roles,
       longitude: longitude ?? this.longitude,
       latitude: latitude ?? this.latitude,
@@ -173,12 +178,14 @@ class AccountInfo {
 
 /// DTO for updating profile
 class UpdateProfileDto {
-  final String? displayName;
+  final String? fullname;
+  final String? nickname;
   final String? gender;
   final String? dob;
-  final String? village;
-  final String? district;
-  final String? country;
+  final String? placeOfOrigin;
+  final String? placeOfResidence;
+  final String? dateOfIssue;
+  final String? dateOfExpire;
   final double? curLongitude;
   final double? curLatitude;
   final String? visibilityMode;
@@ -188,12 +195,14 @@ class UpdateProfileDto {
   final String? jobPosition;
 
   const UpdateProfileDto({
-    this.displayName,
+    this.fullname,
+    this.nickname,
     this.gender,
     this.dob,
-    this.village,
-    this.district,
-    this.country,
+    this.placeOfOrigin,
+    this.placeOfResidence,
+    this.dateOfIssue,
+    this.dateOfExpire,
     this.curLongitude,
     this.curLatitude,
     this.visibilityMode,
@@ -205,12 +214,14 @@ class UpdateProfileDto {
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
-    if (displayName != null) map['displayName'] = displayName;
+    if (fullname != null) map['fullname'] = fullname;
+    if (nickname != null) map['nickname'] = nickname;
     if (gender != null) map['gender'] = gender;
     if (dob != null) map['dob'] = dob;
-    if (village != null) map['village'] = village;
-    if (district != null) map['district'] = district;
-    if (country != null) map['country'] = country;
+    if (placeOfOrigin != null) map['placeOfOrigin'] = placeOfOrigin;
+    if (placeOfResidence != null) map['placeOfResidence'] = placeOfResidence;
+    if (dateOfIssue != null) map['dateOfIssue'] = dateOfIssue;
+    if (dateOfExpire != null) map['dateOfExpire'] = dateOfExpire;
     if (curLongitude != null) map['curLongitude'] = curLongitude;
     if (curLatitude != null) map['curLatitude'] = curLatitude;
     if (visibilityMode != null) map['visibilityMode'] = visibilityMode;
@@ -219,5 +230,46 @@ class UpdateProfileDto {
     if (citizenIdCardImg != null) map['citizenIdCardImg'] = citizenIdCardImg;
     if (jobPosition != null) map['jobPosition'] = jobPosition;
     return map;
+  }
+}
+
+class ProfileRoleRequestModel {
+  final String requestId;
+  final String type;
+  final String state;
+  final String? note;
+  final DateTime createdAt;
+  final DateTime? responsedAt;
+  final String? authorityName;
+
+  const ProfileRoleRequestModel({
+    required this.requestId,
+    required this.type,
+    required this.state,
+    this.note,
+    required this.createdAt,
+    this.responsedAt,
+    this.authorityName,
+  });
+
+  factory ProfileRoleRequestModel.fromJson(Map<String, dynamic> json) {
+    final authority = json['authority'] as Map<String, dynamic>?;
+    final authorityName = authority == null
+        ? null
+        : (authority['nickname'] ?? authority['fullname'])?.toString();
+
+    return ProfileRoleRequestModel(
+      requestId: json['requestId']?.toString() ?? '',
+      type: json['type']?.toString() ?? 'BENEFACTOR',
+      state: json['state']?.toString() ?? 'PENDING',
+      note: json['note']?.toString(),
+      createdAt: DateTime.parse(
+        json['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
+      responsedAt: json['responsedAt'] != null
+          ? DateTime.tryParse(json['responsedAt'].toString())
+          : null,
+      authorityName: authorityName,
+    );
   }
 }

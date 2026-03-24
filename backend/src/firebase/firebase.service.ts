@@ -91,7 +91,9 @@ export class FirebaseService implements OnModuleInit {
         `Multicast sent: ${response.successCount} success, ${response.failureCount} failures`,
       );
     } catch (error) {
-      this.logger.error(`Failed to send multicast notification: ${error.message}`);
+      this.logger.error(
+        `Failed to send multicast notification: ${error.message}`,
+      );
     }
   }
 }

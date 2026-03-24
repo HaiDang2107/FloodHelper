@@ -7,7 +7,7 @@ part of 'role_requests_view_model.dart';
 // **************************************************************************
 
 String _$roleRequestsViewModelHash() =>
-    r'841ade196187e39897642129d6b7397d150d2abd';
+    r'fbf068056f46adfec3aa6f182b3bc80e2e8448ac';
 
 /// See also [RoleRequestsViewModel].
 @ProviderFor(RoleRequestsViewModel)

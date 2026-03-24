@@ -1,12 +1,12 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
   Query,
-  UseGuards, 
+  UseGuards,
   Request,
   ParseUUIDPipe,
 } from '@nestjs/common';
@@ -44,7 +44,10 @@ export class UserController {
    */
   @UseGuards(JwtAuthGuard)
   @Patch('location')
-  async updateLocation(@Request() req, @Body() updateLocationDto: UpdateLocationDto) {
+  async updateLocation(
+    @Request() req,
+    @Body() updateLocationDto: UpdateLocationDto,
+  ) {
     return this.userService.updateLocation(req.user.userId, updateLocationDto);
   }
 
@@ -89,11 +92,11 @@ export class UserController {
    */
   @UseGuards(JwtAuthGuard)
   @Patch('visibility')
-  async updateVisibility(
-    @Request() req,
-    @Body() dto: UpdateVisibilityDto,
-  ) {
-    const result = await this.userService.updateVisibility(req.user.userId, dto);
+  async updateVisibility(@Request() req, @Body() dto: UpdateVisibilityDto) {
+    const result = await this.userService.updateVisibility(
+      req.user.userId,
+      dto,
+    );
 
     return {
       success: true,
@@ -108,10 +111,7 @@ export class UserController {
    */
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.userService.findAll(
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 20,

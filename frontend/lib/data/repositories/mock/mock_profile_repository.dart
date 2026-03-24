@@ -3,15 +3,26 @@ import '../profile_repository.dart';
 
 /// Mock implementation of ProfileRepository for development/testing
 class MockProfileRepository implements ProfileRepository {
+  final List<ProfileRoleRequestModel> _requests = [
+    ProfileRoleRequestModel(
+      requestId: 'REQ-MOCK-001',
+      type: 'BENEFACTOR',
+      state: 'PENDING',
+      createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      authorityName: 'Authority A',
+    ),
+  ];
+
   ProfileModel _currentProfile = ProfileModel(
     userId: 'mock-user-123',
-    name: 'Nguyễn Văn An',
-    displayName: 'AnNguyen',
+    fullname: 'Nguyễn Văn An',
+    nickname: 'AnNguyen',
     dob: '1995-05-15',
-    village: 'Phường Cầu Giấy',
-    district: 'Quận Cầu Giấy',
-    country: 'Việt Nam',
-    roles: const ['USER'],
+    placeOfOrigin: 'Phường Cầu Giấy, Quận Cầu Giấy, Việt Nam',
+    placeOfResidence: 'Phường Cầu Giấy, Quận Cầu Giấy, Việt Nam',
+    dateOfIssue: '2020-01-01',
+    dateOfExpire: '2035-01-01',
+    roles: const ['NORMAL_USER'],
     longitude: 105.8542,
     latitude: 21.0285,
     visibilityMode: 'PUBLIC',
@@ -37,11 +48,13 @@ class MockProfileRepository implements ProfileRepository {
     await _simulateDelay();
     
     _currentProfile = _currentProfile.copyWith(
-      displayName: dto.displayName ?? _currentProfile.displayName,
+      fullname: dto.fullname ?? _currentProfile.fullname,
+      nickname: dto.nickname ?? _currentProfile.nickname,
       dob: dto.dob ?? _currentProfile.dob,
-      village: dto.village ?? _currentProfile.village,
-      district: dto.district ?? _currentProfile.district,
-      country: dto.country ?? _currentProfile.country,
+      placeOfOrigin: dto.placeOfOrigin ?? _currentProfile.placeOfOrigin,
+      placeOfResidence: dto.placeOfResidence ?? _currentProfile.placeOfResidence,
+      dateOfIssue: dto.dateOfIssue ?? _currentProfile.dateOfIssue,
+      dateOfExpire: dto.dateOfExpire ?? _currentProfile.dateOfExpire,
       longitude: dto.curLongitude ?? _currentProfile.longitude,
       latitude: dto.curLatitude ?? _currentProfile.latitude,
       visibilityMode: dto.visibilityMode ?? _currentProfile.visibilityMode,
@@ -79,12 +92,33 @@ class MockProfileRepository implements ProfileRepository {
     // Return a mock user for testing
     return ProfileModel(
       userId: userId,
-      name: 'Mock User',
-      displayName: 'MockUser',
-      roles: ['USER'],
+      fullname: 'Mock User',
+      nickname: 'MockUser',
+      roles: ['NORMAL_USER'],
       phoneNumber: '0987654321',
       visibilityMode: 'JUST_FRIEND',
     );
+  }
+
+  @override
+  Future<void> createRoleRequest({required String type}) async {
+    await _simulateDelay();
+    _requests.insert(
+      0,
+      ProfileRoleRequestModel(
+        requestId: 'REQ-MOCK-${DateTime.now().millisecondsSinceEpoch}',
+        type: type,
+        state: 'PENDING',
+        createdAt: DateTime.now(),
+        authorityName: 'Authority A',
+      ),
+    );
+  }
+
+  @override
+  Future<List<ProfileRoleRequestModel>> getMyRoleRequests() async {
+    await _simulateDelay();
+    return List<ProfileRoleRequestModel>.from(_requests);
   }
 
   Future<void> _simulateDelay() async {

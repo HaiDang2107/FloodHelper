@@ -35,7 +35,7 @@ class AuthorityProfileViewModel extends _$AuthorityProfileViewModel {
   Future<void> load() async {
     state = state.copyWith(isLoading: true);
     final repository = ref.read(authorityRepositoryProvider);
-    final profile = await repository.fetchProfile();
+    final profile = await repository.fetchProfileFromSession();
     state = state.copyWith(profile: profile, isLoading: false);
   }
 }

@@ -24,7 +24,9 @@ export class FriendService {
   async sendFriendRequest(senderId: string, receiverId: string, note?: string) {
     // Validate: cannot send request to yourself
     if (senderId === receiverId) {
-      throw new BadRequestException('You cannot send a friend request to yourself');
+      throw new BadRequestException(
+        'You cannot send a friend request to yourself',
+      );
     }
 
     // Validate: receiver exists
@@ -69,7 +71,9 @@ export class FriendService {
     });
 
     if (existingRequest) {
-      throw new ConflictException('A friend request already exists between you and this user');
+      throw new ConflictException(
+        'A friend request already exists between you and this user',
+      );
     }
 
     // Create the friend request
@@ -84,16 +88,16 @@ export class FriendService {
         sender: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
             avatarUrl: true,
           },
         },
         receiver: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
             avatarUrl: true,
             fcmToken: true,
           },
@@ -103,7 +107,8 @@ export class FriendService {
 
     // Send push notification to receiver
     if (friendRequest.receiver.fcmToken) {
-      const senderName = friendRequest.sender.displayName || friendRequest.sender.name;
+      const senderName =
+        friendRequest.sender.nickname || friendRequest.sender.fullname;
       await this.firebaseService.sendNotification(
         friendRequest.receiver.fcmToken,
         'New Friend Request',
@@ -127,8 +132,10 @@ export class FriendService {
       sender: friendRequest.sender,
       receiver: {
         userId: friendRequest.receiver.userId,
-        name: friendRequest.receiver.name,
-        displayName: friendRequest.receiver.displayName,
+        name: friendRequest.receiver.fullname,
+        displayName: friendRequest.receiver.nickname,
+        fullname: friendRequest.receiver.fullname,
+        nickname: friendRequest.receiver.nickname,
         avatarUrl: friendRequest.receiver.avatarUrl,
       },
     };
@@ -147,8 +154,8 @@ export class FriendService {
         receiver: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
             avatarUrl: true,
           },
         },
@@ -161,7 +168,14 @@ export class FriendService {
       state: r.state,
       note: r.note,
       createdAt: r.createdAt,
-      user: r.receiver,
+      user: {
+        userId: r.receiver.userId,
+        name: r.receiver.fullname,
+        displayName: r.receiver.nickname,
+        fullname: r.receiver.fullname,
+        nickname: r.receiver.nickname,
+        avatarUrl: r.receiver.avatarUrl,
+      },
     }));
   }
 
@@ -178,8 +192,8 @@ export class FriendService {
         sender: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
             avatarUrl: true,
           },
         },
@@ -192,7 +206,14 @@ export class FriendService {
       state: r.state,
       note: r.note,
       createdAt: r.createdAt,
-      user: r.sender,
+      user: {
+        userId: r.sender.userId,
+        name: r.sender.fullname,
+        displayName: r.sender.nickname,
+        fullname: r.sender.fullname,
+        nickname: r.sender.nickname,
+        avatarUrl: r.sender.avatarUrl,
+      },
     }));
   }
 
@@ -206,16 +227,16 @@ export class FriendService {
         sender: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
             fcmToken: true,
           },
         },
         receiver: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
           },
         },
       },
@@ -260,7 +281,8 @@ export class FriendService {
 
     // Send push notification to the sender
     if (request.sender.fcmToken) {
-      const accepterName = request.receiver.displayName || request.receiver.name;
+      const accepterName =
+        request.receiver.nickname || request.receiver.fullname;
       await this.firebaseService.sendNotification(
         request.sender.fcmToken,
         'Friend Request Accepted',
@@ -351,8 +373,8 @@ export class FriendService {
         friend: {
           select: {
             userId: true,
-            name: true,
-            displayName: true,
+            fullname: true,
+            nickname: true,
             avatarUrl: true,
           },
         },
@@ -361,8 +383,10 @@ export class FriendService {
 
     return friendships.map((f) => ({
       userId: f.friend.userId,
-      name: f.friend.name,
-      displayName: f.friend.displayName,
+      name: f.friend.fullname,
+      displayName: f.friend.nickname,
+      fullname: f.friend.fullname,
+      nickname: f.friend.nickname,
       avatarUrl: f.friend.avatarUrl,
       friendMapMode: f.friendMapMode,
     }));
@@ -371,7 +395,11 @@ export class FriendService {
   /**
    * Batch-update friendMapMode for multiple friends.
    */
-  async updateFriendMapModes(userId: string, friendIds: string[], mapMode: boolean) {
+  async updateFriendMapModes(
+    userId: string,
+    friendIds: string[],
+    mapMode: boolean,
+  ) {
     const result = await this.prisma.friendship.updateMany({
       where: {
         userId,

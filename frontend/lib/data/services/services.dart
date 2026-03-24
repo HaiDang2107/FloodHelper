@@ -1,5 +1,6 @@
 // Barrel file for data/services
 export 'api_client.dart';
+export 'authority_service.dart';
 export 'auth_service.dart';
 export 'auth_local_storage.dart';
 export 'firebase_messaging_service.dart';

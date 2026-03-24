@@ -147,34 +147,27 @@ class UserProfile {
 
 /// Value object for address information
 class Address {
-  final String? village;
-  final String? district;
-  final String? country;
+  final String? placeOfOrigin;
+  final String? placeOfResidence;
 
   const Address({
-    this.village,
-    this.district,
-    this.country,
+    this.placeOfOrigin,
+    this.placeOfResidence,
   });
 
   String get fullAddress {
-    final parts = [village, district, country]
-        .where((p) => p != null && p.isNotEmpty)
-        .toList();
-    return parts.join(', ');
+    return placeOfResidence ?? '';
   }
 
-  bool get isEmpty => village == null && district == null && country == null;
+  bool get isEmpty => placeOfOrigin == null && placeOfResidence == null;
 
   Address copyWith({
-    String? village,
-    String? district,
-    String? country,
+    String? placeOfOrigin,
+    String? placeOfResidence,
   }) {
     return Address(
-      village: village ?? this.village,
-      district: district ?? this.district,
-      country: country ?? this.country,
+      placeOfOrigin: placeOfOrigin ?? this.placeOfOrigin,
+      placeOfResidence: placeOfResidence ?? this.placeOfResidence,
     );
   }
 }
@@ -215,10 +208,14 @@ class Location {
 class CitizenInfo {
   final String? citizenId;
   final String? citizenIdCardImg;
+  final DateTime? dateOfIssue;
+  final DateTime? dateOfExpire;
 
   const CitizenInfo({
     this.citizenId,
     this.citizenIdCardImg,
+    this.dateOfIssue,
+    this.dateOfExpire,
   });
 
   bool get hasIdCard => citizenId != null && citizenId!.isNotEmpty;
@@ -226,10 +223,14 @@ class CitizenInfo {
   CitizenInfo copyWith({
     String? citizenId,
     String? citizenIdCardImg,
+    DateTime? dateOfIssue,
+    DateTime? dateOfExpire,
   }) {
     return CitizenInfo(
       citizenId: citizenId ?? this.citizenId,
       citizenIdCardImg: citizenIdCardImg ?? this.citizenIdCardImg,
+      dateOfIssue: dateOfIssue ?? this.dateOfIssue,
+      dateOfExpire: dateOfExpire ?? this.dateOfExpire,
     );
   }
 }

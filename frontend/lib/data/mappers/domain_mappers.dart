@@ -12,17 +12,16 @@ extension ProfileModelMapper on data.ProfileModel {
   UserProfile toDomain() {
     return UserProfile(
       userId: userId,
-      name: name,
-      displayName: displayName,
+      name: fullname,
+      displayName: nickname,
       gender: Gender.fromString(gender),
       dateOfBirth: dob != null ? DateTime.tryParse(dob!) : null,
       phoneNumber: phoneNumber,
       roles: roles.map((r) => UserRole.fromString(r)).toList(),
       avatarUrl: avatarUrl,
       address: Address(
-        village: village,
-        district: district,
-        country: country,
+        placeOfOrigin: placeOfOrigin,
+        placeOfResidence: placeOfResidence,
       ),
       location: (longitude != null && latitude != null)
           ? Location(latitude: latitude!, longitude: longitude!)
@@ -32,6 +31,8 @@ extension ProfileModelMapper on data.ProfileModel {
       citizenInfo: CitizenInfo(
         citizenId: citizenId,
         citizenIdCardImg: citizenIdCardImg,
+        dateOfIssue: dateOfIssue != null ? DateTime.tryParse(dateOfIssue!) : null,
+        dateOfExpire: dateOfExpire != null ? DateTime.tryParse(dateOfExpire!) : null,
       ),
       accountState: account != null
           ? AccountState(
@@ -48,12 +49,14 @@ extension ProfileModelMapper on data.ProfileModel {
 extension UserProfileToDataMapper on UserProfile {
   data.UpdateProfileDto toUpdateDto() {
     return data.UpdateProfileDto(
-      displayName: displayName,
+      fullname: name,
+      nickname: displayName,
       gender: gender?.toBackendString(),
       dob: dateOfBirth?.toIso8601String().split('T')[0],
-      village: address?.village,
-      district: address?.district,
-      country: address?.country,
+      placeOfOrigin: address?.placeOfOrigin,
+      placeOfResidence: address?.placeOfResidence,
+      dateOfIssue: citizenInfo?.dateOfIssue?.toIso8601String().split('T')[0],
+      dateOfExpire: citizenInfo?.dateOfExpire?.toIso8601String().split('T')[0],
       curLongitude: location?.longitude,
       curLatitude: location?.latitude,
       visibilityMode: visibilityMode,

@@ -34,4 +34,14 @@ class RealProfileRepository implements ProfileRepository {
   Future<ProfileModel?> getUserById(String userId) async {
     return await _profileService.getUserById(userId);
   }
+
+  @override
+  Future<void> createRoleRequest({required String type}) async {
+    await _profileService.createRoleRequest(type: type);
+  }
+
+  @override
+  Future<List<ProfileRoleRequestModel>> getMyRoleRequests() async {
+    return _profileService.getMyRoleRequests();
+  }
 }

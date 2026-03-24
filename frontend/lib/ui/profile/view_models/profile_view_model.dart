@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/models/models.dart';
 import '../../../data/mappers/domain_mappers.dart';
-import '../../../data/models/profile_model.dart' show UpdateProfileDto;
+import '../../../data/models/profile_model.dart' show ProfileRoleRequestModel, UpdateProfileDto;
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/global_session_provider.dart';
 import '../../../data/repositories/profile_repository.dart';
@@ -12,7 +12,9 @@ part 'profile_view_model.g.dart';
 /// State class for Profile screen using domain model
 class ProfileState {
   final UserProfile? profile;
+  final List<ProfileRoleRequestModel> roleRequests;
   final bool isLoading;
+  final bool isLoadingRoleRequests;
   final bool isSaving;
   final String? errorMessage;
   final String? successMessage;
@@ -20,7 +22,9 @@ class ProfileState {
 
   const ProfileState({
     this.profile,
+    this.roleRequests = const [],
     this.isLoading = false,
+    this.isLoadingRoleRequests = false,
     this.isSaving = false,
     this.errorMessage,
     this.successMessage,
@@ -29,7 +33,9 @@ class ProfileState {
 
   ProfileState copyWith({
     UserProfile? profile,
+    List<ProfileRoleRequestModel>? roleRequests,
     bool? isLoading,
+    bool? isLoadingRoleRequests,
     bool? isSaving,
     String? errorMessage,
     String? successMessage,
@@ -39,7 +45,9 @@ class ProfileState {
   }) {
     return ProfileState(
       profile: profile ?? this.profile,
+      roleRequests: roleRequests ?? this.roleRequests,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingRoleRequests: isLoadingRoleRequests ?? this.isLoadingRoleRequests,
       isSaving: isSaving ?? this.isSaving,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
@@ -57,9 +65,55 @@ class ProfileViewModel extends _$ProfileViewModel {
     _profileRepository = ref.read(profileRepositoryProvider);
     
     // Auto-load profile on build
-    Future.microtask(() => loadProfile());
+    Future.microtask(() async {
+      await loadProfile();
+      await loadRoleRequests();
+    });
     
     return const ProfileState(isLoading: true);
+  }
+
+  Future<void> loadRoleRequests() async {
+    state = state.copyWith(isLoadingRoleRequests: true, clearError: true);
+
+    try {
+      final requests = await _profileRepository.getMyRoleRequests();
+      state = state.copyWith(
+        roleRequests: requests,
+        isLoadingRoleRequests: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingRoleRequests: false,
+        errorMessage: 'Failed to load role requests: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<bool> submitRoleRequest(UserRole role) async {
+    final backendType = role == UserRole.benefactor ? 'BENEFACTOR' : 'RESCUER';
+
+    state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
+
+    try {
+      await _profileRepository.createRoleRequest(type: backendType);
+      await loadRoleRequests();
+      state = state.copyWith(
+        isSaving: false,
+        successMessage: 'Role request submitted successfully.',
+      );
+      return true;
+    } catch (e) {
+      final raw = e.toString().replaceAll('Exception: ', '');
+      final message = raw.contains('Profile is incomplete')
+          ? 'Please complete your personal information before sending a role request.'
+          : raw;
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: message,
+      );
+      return false;
+    }
   }
 
   /// Load current user's profile
@@ -96,12 +150,14 @@ class ProfileViewModel extends _$ProfileViewModel {
 
   /// Update profile using domain model
   Future<bool> updateProfile({
-    String? displayName,
+    String? fullname,
+    String? nickname,
     String? gender,
     String? dob,
-    String? village,
-    String? district,
-    String? country,
+    String? placeOfOrigin,
+    String? placeOfResidence,
+    String? dateOfIssue,
+    String? dateOfExpire,
     String? jobPosition,
     String? citizenId,
     String? avatarUrl,
@@ -113,12 +169,14 @@ class ProfileViewModel extends _$ProfileViewModel {
     
     try {
       final dto = UpdateProfileDto(
-        displayName: displayName,
+        fullname: fullname,
+        nickname: nickname,
         gender: gender,
         dob: dob,
-        village: village,
-        district: district,
-        country: country,
+        placeOfOrigin: placeOfOrigin,
+        placeOfResidence: placeOfResidence,
+        dateOfIssue: dateOfIssue,
+        dateOfExpire: dateOfExpire,
         jobPosition: jobPosition,
         citizenId: citizenId,
         avatarUrl: avatarUrl,
@@ -126,6 +184,14 @@ class ProfileViewModel extends _$ProfileViewModel {
       );
       
       final updatedProfileModel = await _profileRepository.updateProfile(dto);
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.syncSessionUserFromProfile(updatedProfileModel);
+
+      final refreshedSession = await authRepository.getCurrentSession(); // Sau khi đồng bộ session trong local storage ==> đẩy lại lên Global Session
+      if (refreshedSession != null) {
+        ref.read(globalSessionManagerProvider.notifier).setSession(refreshedSession);
+      }
+
       // Convert to domain model
       final updatedProfile = updatedProfileModel.toDomain();
       

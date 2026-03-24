@@ -5,9 +5,18 @@ import '../../../data/models/authority/role_request.dart';
 import '../theme/authority_theme.dart';
 
 class RoleRequestDetail extends StatelessWidget {
-  const RoleRequestDetail({super.key, required this.request});
+  const RoleRequestDetail({
+    super.key,
+    required this.request,
+    this.onApprove,
+    this.onReject,
+    this.isSubmitting = false,
+  });
 
   final RoleRequest? request;
+  final Future<void> Function()? onApprove;
+  final Future<void> Function()? onReject;
+  final bool isSubmitting;
 
   @override
   Widget build(BuildContext context) {
@@ -76,9 +85,16 @@ class RoleRequestDetail extends StatelessWidget {
             const SizedBox(height: 18),
             _InfoRow(label: 'Requested role', value: currentRequest.requestedRole.label),
             _InfoRow(label: 'Submitted', value: dateLabel),
+            _InfoRow(label: 'Nickname', value: currentRequest.nickname ?? '-'),
             _InfoRow(label: 'Phone', value: currentRequest.phone),
+            _InfoRow(label: 'Gender', value: currentRequest.gender ?? '-'),
+            _InfoRow(label: 'Date of birth', value: currentRequest.dob ?? '-'),
+            _InfoRow(label: 'Place of origin', value: currentRequest.placeOfOrigin ?? '-'),
             _InfoRow(label: 'Address', value: currentRequest.address),
             _InfoRow(label: 'Identity number', value: currentRequest.idNumber),
+            _InfoRow(label: 'Date of issue', value: currentRequest.dateOfIssue ?? '-'),
+            _InfoRow(label: 'Date of expire', value: currentRequest.dateOfExpire ?? '-'),
+            _InfoRow(label: 'Job position', value: currentRequest.jobPosition ?? '-'),
             const SizedBox(height: 16),
             Text(
               'Reviewer notes',
@@ -134,15 +150,36 @@ class RoleRequestDetail extends StatelessWidget {
                         ),
                         side: const BorderSide(color: Color(0xFFE1E6F4)),
                       ),
-                      onPressed: () {},
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (onReject != null) {
+                                await onReject!();
+                              }
+                            },
                       child: const Text('Reject request'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
-                      child: const Text('Approve request'),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (onApprove != null) {
+                                await onApprove!();
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Approve request'),
                     ),
                   ),
                 ],

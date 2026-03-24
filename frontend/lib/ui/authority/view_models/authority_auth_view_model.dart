@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../data/providers/authority_providers.dart';
+import '../../../data/providers/repository_providers.dart';
 import 'authority_session_view_model.dart';
 
 part 'authority_auth_view_model.g.dart';
@@ -55,19 +59,41 @@ class AuthorityAuthViewModel extends _$AuthorityAuthViewModel {
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
-    final repository = ref.read(authorityRepositoryProvider);
-    final ok = await repository.signIn(state.email, state.password);
 
-    if (ok) {
+    try {
+      final authRepository = ref.read(authRepositoryProvider);
+      final deviceId = await _getDeviceId();
+      await authRepository.signInAuthority(
+        username: state.email,
+        password: state.password,
+        deviceId: deviceId,
+      );
       ref.read(authoritySessionProvider.notifier).signIn();
-    } else {
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Invalid authority credentials.',
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
-      return;
+    }
+  }
+
+  Future<String> _getDeviceId() async {
+    if (kIsWeb) {
+      return 'web_device';
     }
 
-    state = state.copyWith(isLoading: false);
+    final deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.id;
+    }
+
+    if (Platform.isIOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      return iosInfo.identifierForVendor ?? 'unknown_ios';
+    }
+
+    return 'unknown_device';
   }
 }

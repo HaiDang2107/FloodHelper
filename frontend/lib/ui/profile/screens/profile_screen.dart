@@ -18,15 +18,16 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // Controllers - initialized in initState based on profile data
   late final TextEditingController _userIdController;
-  late final TextEditingController _firstNameController;
-  late final TextEditingController _lastNameController;
+  late final TextEditingController _fullNameController;
   late final TextEditingController _nicknameController;
   Gender? _selectedGender;
   late final TextEditingController _emailController;
+  late final TextEditingController _dobController;
   late final TextEditingController _jobPositionController;
   late final TextEditingController _phoneController;
   late final TextEditingController _placeOfOriginController;
   late final TextEditingController _placeOfResidenceController;
+  late final TextEditingController _citizenIdController;
   late final TextEditingController _dateOfIssueController;
   late final TextEditingController _dateOfExpiryController;
   
@@ -37,14 +38,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.initState();
     // Initialize controllers with empty values first
     _userIdController = TextEditingController();
-    _firstNameController = TextEditingController();
-    _lastNameController = TextEditingController();
+    _fullNameController = TextEditingController();
     _nicknameController = TextEditingController();
     _emailController = TextEditingController();
+    _dobController = TextEditingController();
     _jobPositionController = TextEditingController();
     _phoneController = TextEditingController();
     _placeOfOriginController = TextEditingController();
     _placeOfResidenceController = TextEditingController();
+    _citizenIdController = TextEditingController();
     _dateOfIssueController = TextEditingController();
     _dateOfExpiryController = TextEditingController();
   }
@@ -52,14 +54,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void dispose() {
     _userIdController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _fullNameController.dispose();
     _nicknameController.dispose();
     _emailController.dispose();
+    _dobController.dispose();
     _jobPositionController.dispose();
     _phoneController.dispose();
     _placeOfOriginController.dispose();
     _placeOfResidenceController.dispose();
+    _citizenIdController.dispose();
     _dateOfIssueController.dispose();
     _dateOfExpiryController.dispose();
     super.dispose();
@@ -73,18 +76,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // Only update if not already initialized or if profile changed
     if (!_controllersInitialized) {
       _userIdController.text = profile.userId;
-      _firstNameController.text = profile.name;
-      _lastNameController.text = ''; // Backend doesn't have lastName, using name
+      _fullNameController.text = profile.name;
       _nicknameController.text = profile.displayName ?? '';
       _selectedGender = profile.gender;
       _emailController.text = profile.accountState?.username ?? '';
+      _dobController.text = profile.dateOfBirth != null
+          ? profile.dateOfBirth!.toIso8601String().split('T')[0]
+          : '';
       _jobPositionController.text = profile.jobPosition ?? '';
       _phoneController.text = profile.phoneNumber;
-      _placeOfOriginController.text = profile.address?.village ?? '';
-      _placeOfResidenceController.text = profile.fullAddress;
-      _dateOfIssueController.text = ''; // Backend doesn't have this field
-      _dateOfExpiryController.text = ''; // Backend doesn't have this field
+      _placeOfOriginController.text = profile.address?.placeOfOrigin ?? '';
+      _placeOfResidenceController.text = profile.address?.placeOfResidence ?? '';
+      _citizenIdController.text = profile.citizenInfo?.citizenId ?? '';
+      _dateOfIssueController.text = profile.citizenInfo?.dateOfIssue != null
+          ? profile.citizenInfo!.dateOfIssue!.toIso8601String().split('T')[0]
+          : '';
+      _dateOfExpiryController.text = profile.citizenInfo?.dateOfExpire != null
+          ? profile.citizenInfo!.dateOfExpire!.toIso8601String().split('T')[0]
+          : '';
       _controllersInitialized = true;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  DateTime? _parseControllerDate(TextEditingController controller) {
+    final text = controller.text.trim();
+    if (text.isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(text);
+  }
+
+  Future<void> _pickDate({
+    required TextEditingController controller,
+    required DateTime firstDate,
+    required DateTime lastDate,
+  }) async {
+    final initialDate = _parseControllerDate(controller) ?? lastDate;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isBefore(firstDate)
+          ? firstDate
+          : (initialDate.isAfter(lastDate) ? lastDate : initialDate),
+      firstDate: firstDate,
+      lastDate: lastDate,
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        controller.text = _formatDate(picked);
+      });
     }
   }
 
@@ -95,16 +142,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (state.isEditing) {
       // Save profile
       final success = await viewModel.updateProfile(
-        displayName: _nicknameController.text,
+        fullname: _fullNameController.text,
+        nickname: _nicknameController.text,
         gender: _selectedGender?.toBackendString(),
-        village: _placeOfOriginController.text,
+        dob: _dobController.text.isNotEmpty ? _dobController.text : null,
+        placeOfOrigin: _placeOfOriginController.text,
+        placeOfResidence: _placeOfResidenceController.text,
+        dateOfIssue: _dateOfIssueController.text.isNotEmpty
+            ? _dateOfIssueController.text
+            : null,
+        dateOfExpire: _dateOfExpiryController.text.isNotEmpty
+            ? _dateOfExpiryController.text
+            : null,
+        citizenId: _citizenIdController.text,
         jobPosition: _jobPositionController.text,
       );
-      
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
-        );
+
+      if (!success) {
+        return;
       }
     } else {
       viewModel.toggleEditMode();
@@ -235,26 +290,56 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ProfileInfo(
                     isEditing: profileState.isEditing,
                     userIdController: _userIdController,
-                    firstNameController: _firstNameController,
-                    lastNameController: _lastNameController,
+                    fullNameController: _fullNameController,
                     nicknameController: _nicknameController,
                     selectedGender: _selectedGender,
                     onGenderChanged: (gender) {
                       setState(() => _selectedGender = gender);
                     },
                     emailController: _emailController,
+                    dobController: _dobController,
                     jobPositionController: _jobPositionController,
                     phoneController: _phoneController,
                     placeOfOriginController: _placeOfOriginController,
                     placeOfResidenceController: _placeOfResidenceController,
+                    citizenIdController: _citizenIdController,
                     dateOfIssueController: _dateOfIssueController,
                     dateOfExpiryController: _dateOfExpiryController,
+                    onDobTap: profileState.isEditing
+                      ? () => _pickDate(
+                          controller: _dobController,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        )
+                      : null,
+                    onDateOfIssueTap: profileState.isEditing
+                      ? () => _pickDate(
+                          controller: _dateOfIssueController,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        )
+                      : null,
+                    onDateOfExpiryTap: profileState.isEditing
+                      ? () => _pickDate(
+                          controller: _dateOfExpiryController,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
+                        )
+                      : null,
                   ),
                   const SizedBox(height: 24),
                   const Divider(),
                   const SizedBox(height: 24),
                   ProfileRole(
                     roles: profileState.profile?.roles ?? [],
+                    requests: profileState.roleRequests,
+                    isLoadingRequests: profileState.isLoadingRoleRequests,
+                    onAddRole: (role) async {
+                      await ref.read(profileViewModelProvider.notifier).submitRoleRequest(role);
+                    },
+                    onRefreshRequests: () async {
+                      await ref.read(profileViewModelProvider.notifier).loadRoleRequests();
+                    },
                   ),
                   const SizedBox(height: 32),
                   ProfileActionButton(

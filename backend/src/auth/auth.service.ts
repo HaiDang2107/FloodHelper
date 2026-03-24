@@ -1,4 +1,3 @@
-
 import {
   Injectable,
   Inject,
@@ -45,11 +44,12 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     this.prisma = new PrismaClient();
-
   }
 
-  async signUp(registerDto: SignupDto): Promise<{ success: boolean; message: string }> {
-    const { username, password, name, phoneNumber, ...rest } = registerDto;
+  async signUp(
+    registerDto: SignupDto,
+  ): Promise<{ success: boolean; message: string }> {
+    const { username, password, fullname, phoneNumber, ...rest } = registerDto;
 
     const existingAccount = await this.prisma.account.findUnique({
       where: { username },
@@ -63,9 +63,7 @@ export class AuthService {
         throw new ConflictException('Account already exists');
       }
       if (existingAccount.state === AccountState.INACTIVE) {
-        throw new ConflictException(
-          'Account is not activated.',
-        );
+        throw new ConflictException('Account is not activated.');
       }
     }
 
@@ -73,13 +71,16 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        name,
+        fullname,
         phoneNumber,
-        displayName: rest.displayName,
+        nickname: rest.nickname,
         dob: rest.dob ? new Date(rest.dob) : undefined,
-        village: rest.village,
-        district: rest.district,
-        country: rest.country,
+        placeOfOrigin: rest.placeOfOrigin,
+        placeOfResidence: rest.placeOfResidence,
+        dateOfIssue: rest.dateOfIssue ? new Date(rest.dateOfIssue) : undefined,
+        dateOfExpire: rest.dateOfExpire
+          ? new Date(rest.dateOfExpire)
+          : undefined,
         jobPosition: rest.jobPosition,
         account: {
           create: {
@@ -117,7 +118,11 @@ export class AuthService {
       type: type,
     };
 
-    await this.cacheManager.set(`otp_${account}`, payload, parseInt(process.env.TTL_OTP || '300000'));
+    await this.cacheManager.set(
+      `otp_${account}`,
+      payload,
+      parseInt(process.env.TTL_OTP || '300000'),
+    );
 
     await this.mailerService.sendMail({
       to: account,
@@ -126,13 +131,21 @@ export class AuthService {
     });
   }
 
-  async verifyCode(verifyCodeDto: VerifyCodeDto): Promise<VerifyCodeResponseDto> {
+  async verifyCode(
+    verifyCodeDto: VerifyCodeDto,
+  ): Promise<VerifyCodeResponseDto> {
     const { username, type, code } = verifyCodeDto;
 
     // Get verification code from Redis
-    const storedPayload = await this.cacheManager.get<CachedOtp>(`otp_${username}`);
+    const storedPayload = await this.cacheManager.get<CachedOtp>(
+      `otp_${username}`,
+    );
 
-    if (!storedPayload || storedPayload.code !== code || storedPayload.type !== type) {
+    if (
+      !storedPayload ||
+      storedPayload.code !== code ||
+      storedPayload.type !== type
+    ) {
       throw new NotFoundException('Invalid verification code.');
     }
 
@@ -160,15 +173,17 @@ export class AuthService {
 
       return {
         success: true,
-        message: 'Account verification successful.'
+        message: 'Account verification successful.',
       };
     } else {
       const role = account.user.role;
 
       return {
         success: true,
-        resetToken: (await this.generateTokens(account.accountId, username, '', role, type)).accessToken,
-        message: 'Password reset verification successful.'
+        resetToken: (
+          await this.generateTokens(account.accountId, username, '', role, type)
+        ).accessToken,
+        message: 'Password reset verification successful.',
       };
     }
   }
@@ -199,16 +214,15 @@ export class AuthService {
       this.validateAccountState(account);
     }
 
-    await this.createAndSendVerificationCode(
-      account.username,
-      type,
-    );
+    await this.createAndSendVerificationCode(account.username, type);
 
     return { success: true, message: 'Verification code has been sent again.' };
   }
 
   private generateVerificationCode(length = 6): string {
-    return Math.random().toString(10).substring(2, 2 + length);
+    return Math.random()
+      .toString(10)
+      .substring(2, 2 + length);
   }
 
   private validateAccountState(account: any): void {
@@ -224,6 +238,17 @@ export class AuthService {
   }
 
   async signin(signinDto: SigninDto): Promise<SigninResponseDto> {
+    return this.signinInternal(signinDto);
+  }
+
+  async signinAuthority(signinDto: SigninDto): Promise<SigninResponseDto> {
+    return this.signinInternal(signinDto, 'AUTHORITY');
+  }
+
+  private async signinInternal(
+    signinDto: SigninDto,
+    requiredRole?: string,
+  ): Promise<SigninResponseDto> {
     const { username, password, deviceId } = signinDto;
 
     const account = await this.prisma.account.findUnique({
@@ -242,6 +267,10 @@ export class AuthService {
 
     // Validate account state before allowing login
     this.validateAccountState(account);
+
+    if (requiredRole && !account.user.role.includes(requiredRole)) {
+      throw new UnauthorizedException('Insufficient role for this endpoint.');
+    }
 
     const tokens = await this.generateTokens(
       account.accountId,
@@ -264,19 +293,25 @@ export class AuthService {
       data: {
         user: {
           userId: user.userId,
-          name: user.name,
-          displayName: user.displayName,
+          name: user.fullname,
+          displayName: user.nickname,
           phoneNumber: user.phoneNumber,
           role: user.role,
+          avatarUrl: user.avatarUrl,
+          gender: user.gender,
+          dob: user.dob,
+          placeOfOrigin: user.placeOfOrigin,
+          placeOfResidence: user.placeOfResidence,
+          dateOfIssue: user.dateOfIssue,
+          dateOfExpire: user.dateOfExpire,
+          citizenId: user.citizenId,
+          citizenIdCardImg: user.citizenIdCardImg,
+          jobPosition: user.jobPosition,
         },
         tokens: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
           expiresIn: tokens.accessTokenExpiresIn,
-        },
-        session: {
-          sessionId: 'not-implemented', // This should be the created session id
-          expireAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         },
       },
     };
@@ -287,7 +322,7 @@ export class AuthService {
     username: string,
     deviceId: string,
     roles: string[],
-    purpose: Purpose
+    purpose: Purpose,
   ) {
     const payload: JwtPayload = {
       sub: accountId,
@@ -302,18 +337,24 @@ export class AuthService {
     if (purpose === Purpose.REFRESH_TOKEN || purpose === Purpose.SIGN_IN) {
       const rtExpiresIn = process.env.RT_EXPIRES_IN || '7d';
 
-      refreshToken = this.jwtService.sign(payload as any, {
-        secret: process.env.RT_SECRET || 'rt-secret',
-        expiresIn: rtExpiresIn,
-      } as any);
+      refreshToken = this.jwtService.sign(
+        payload as any,
+        {
+          secret: process.env.RT_SECRET || 'rt-secret',
+          expiresIn: rtExpiresIn,
+        } as any,
+      );
     }
 
     const atExpiresIn = process.env.AT_EXPIRES_IN || '15m';
 
-    const accessToken = this.jwtService.sign(payload as any, {
-      secret: process.env.JWT_SECRET || 'jwt-secret',
-      expiresIn: atExpiresIn,
-    } as any);
+    const accessToken = this.jwtService.sign(
+      payload as any,
+      {
+        secret: process.env.JWT_SECRET || 'jwt-secret',
+        expiresIn: atExpiresIn,
+      } as any,
+    );
 
     return {
       accessToken,
@@ -332,48 +373,53 @@ export class AuthService {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 60 * 60;
-      case 'd': return value * 60 * 60 * 24;
-      default: return 900;
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 60 * 60 * 24;
+      default:
+        return 900;
     }
   }
 
   private async updateRefreshToken(
-  accountId: string,
-  refreshToken: string,
-  deviceId: string,
-  role: string[],
-) {
-  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-  const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-  const roleString = role.join(',');
+    accountId: string,
+    refreshToken: string,
+    deviceId: string,
+    role: string[],
+  ) {
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const roleString = role.join(',');
 
-  await this.prisma.session.upsert({
-    // Điều kiện để xác định bản ghi (dựa trên unique constraint vừa tạo)
-    where: {
-      accountId_deviceId: {
+    await this.prisma.session.upsert({
+      // Điều kiện để xác định bản ghi (dựa trên unique constraint vừa tạo)
+      where: {
+        accountId_deviceId: {
+          accountId: accountId,
+          deviceId: deviceId,
+        },
+      },
+      // Nếu tìm thấy -> Update
+      update: {
+        refreshToken: hashedRefreshToken,
+        expireAt: expireAt,
+        role: roleString,
+      },
+      // Nếu không tìm thấy -> Create
+      create: {
         accountId: accountId,
         deviceId: deviceId,
+        refreshToken: hashedRefreshToken,
+        expireAt: expireAt,
+        role: roleString,
       },
-    },
-    // Nếu tìm thấy -> Update
-    update: {
-      refreshToken: hashedRefreshToken,
-      expireAt: expireAt,
-      role: roleString,
-    },
-    // Nếu không tìm thấy -> Create
-    create: {
-      accountId: accountId,
-      deviceId: deviceId,
-      refreshToken: hashedRefreshToken,
-      expireAt: expireAt,
-      role: roleString,
-    },
-  });
-}
+    });
+  }
 
   async logout(logoutDto: SignoutDto, user: any): Promise<SignoutResponseDto> {
     const { logoutAll } = logoutDto;
@@ -420,10 +466,7 @@ export class AuthService {
     // Check if user exists by email or googleId
     let accountWithUser = await this.prisma.account.findFirst({
       where: {
-        OR: [
-          { username: email },
-          { providerId: googleId },
-        ],
+        OR: [{ username: email }, { providerId: googleId }],
       },
       include: { user: true },
     });
@@ -435,8 +478,8 @@ export class AuthService {
       isNewUser = true;
       const newUser = await this.prisma.user.create({
         data: {
-          name: `${firstName} ${lastName}`,
-          displayName: `${firstName} ${lastName}`,
+          fullname: `${firstName} ${lastName}`,
+          nickname: `${firstName} ${lastName}`,
           phoneNumber: email, // Using email as phoneNumber placeholder
           avatarUrl: picture,
           account: {
@@ -451,7 +494,7 @@ export class AuthService {
           account: true,
         },
       });
-      
+
       // Re-fetch to get proper structure
       accountWithUser = await this.prisma.account.findUnique({
         where: { accountId: newUser.account!.accountId },
@@ -491,7 +534,7 @@ export class AuthService {
       data: {
         user: {
           userId: user.userId,
-          name: user.name,
+          name: user.fullname,
           phoneNumber: user.phoneNumber,
           role: user.role,
         },
@@ -564,7 +607,7 @@ export class AuthService {
       // This is more efficient than findMany + loop
       const session = await this.prisma.session.findFirst({
         where: {
-          accountId: payload.accountId,
+          accountId: payload.sub,
           deviceId: payload.deviceId, // Each device has unique session
           expireAt: {
             gt: new Date(),
@@ -585,6 +628,19 @@ export class AuthService {
         };
       }
 
+      const isRefreshTokenMatching = await bcrypt.compare(
+        refreshTokenDto.refreshToken,
+        session.refreshToken,
+      );
+
+      if (!isRefreshTokenMatching) {
+        return {
+          success: false,
+          message: 'Invalid refresh token',
+          data: null,
+        };
+      }
+
       // Check if account is still active
       if (session.account.state !== 'ACTIVE') {
         return {
@@ -594,24 +650,14 @@ export class AuthService {
         };
       }
 
-      // Generate new tokens (including new refresh token for rotation)
+      // Generate only a new access token, keep existing refresh token unchanged.
       const newTokens = await this.generateTokens(
         session.account.accountId,
         session.account.username,
         session.deviceId || '',
         session.account.user.role,
-        Purpose.REFRESH_TOKEN,
+        Purpose.USE_OTHER_SERVICES,
       );
-
-      // Update refresh token in database (token rotation)
-      await this.updateRefreshToken(
-        session.account.accountId,
-        newTokens.refreshToken,
-        session.deviceId || '',
-        session.account.user.role,
-      );
-
-      const user = session.account.user;
 
       return {
         success: true,
@@ -619,20 +665,7 @@ export class AuthService {
         data: {
           tokens: {
             accessToken: newTokens.accessToken,
-            refreshToken: newTokens.refreshToken,
             expiresIn: newTokens.accessTokenExpiresIn,
-          },
-          user: {
-            userId: user.userId,
-            name: user.name,
-            displayName: user.displayName,
-            phoneNumber: user.phoneNumber,
-            role: user.role[0] || 'NORMAL_USER', // Take first role from array
-            avatarUrl: user.avatarUrl,
-          },
-          session: {
-            sessionId: session.sessionId,
-            deviceId: session.deviceId || '',
           },
         },
       };

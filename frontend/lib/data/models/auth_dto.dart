@@ -24,38 +24,41 @@ class SigninRequestDto {
 
 /// Sign up request
 class SignupRequestDto {
-  final String name;
-  final String? displayName;
+  final String fullname;
+  final String? nickname;
   final String phoneNumber;
   final String? dob;
-  final String? village;
-  final String? district;
-  final String? country;
+  final String? placeOfOrigin;
+  final String? placeOfResidence;
+  final String? dateOfIssue;
+  final String? dateOfExpire;
   final String? jobPosition;
   final String username;
   final String password;
 
   SignupRequestDto({
-    required this.name,
-    this.displayName,
+    required this.fullname,
+    this.nickname,
     required this.phoneNumber,
     this.dob,
-    this.village,
-    this.district,
-    this.country,
+    this.placeOfOrigin,
+    this.placeOfResidence,
+    this.dateOfIssue,
+    this.dateOfExpire,
     this.jobPosition,
     required this.username,
     required this.password,
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        if (displayName != null) 'displayName': displayName,
+        'fullname': fullname,
+        if (nickname != null) 'nickname': nickname,
         'phoneNumber': phoneNumber,
         if (dob != null) 'dob': dob,
-        if (village != null) 'village': village,
-        if (district != null) 'district': district,
-        if (country != null) 'country': country,
+        if (placeOfOrigin != null) 'placeOfOrigin': placeOfOrigin,
+        if (placeOfResidence != null) 'placeOfResidence': placeOfResidence,
+        if (dateOfIssue != null) 'dateOfIssue': dateOfIssue,
+        if (dateOfExpire != null) 'dateOfExpire': dateOfExpire,
         if (jobPosition != null) 'jobPosition': jobPosition,
         'username': username,
         'password': password,
@@ -160,6 +163,16 @@ class UserResponseDto {
   final String? phoneNumber;
   final List<String> role;
   final String? avatarUrl;
+  final String? gender;
+  final String? dob;
+  final String? placeOfOrigin;
+  final String? placeOfResidence;
+  final String? dateOfIssue;
+  final String? dateOfExpire;
+  final String? citizenId;
+  final String? citizenIdCardImg;
+  final String? jobPosition;
+  final String? visibilityMode;
 
   UserResponseDto({
     required this.userId,
@@ -168,16 +181,36 @@ class UserResponseDto {
     this.phoneNumber,
     required this.role,
     this.avatarUrl,
+    this.gender,
+    this.dob,
+    this.placeOfOrigin,
+    this.placeOfResidence,
+    this.dateOfIssue,
+    this.dateOfExpire,
+    this.citizenId,
+    this.citizenIdCardImg,
+    this.jobPosition,
+    this.visibilityMode,
   });
 
   factory UserResponseDto.fromJson(Map<String, dynamic> json) {
     return UserResponseDto(
       userId: json['userId'] ?? '',
-      name: json['name'] ?? '',
-      displayName: json['displayName'],
+      name: json['fullname'] ?? json['name'] ?? '',
+      displayName: json['nickname'] ?? json['displayName'],
       phoneNumber: json['phoneNumber'],
       role: List<String>.from(json['role'] ?? []),
       avatarUrl: json['avatarUrl'],
+      gender: json['gender'],
+      dob: json['dob']?.toString(),
+      placeOfOrigin: json['placeOfOrigin'],
+      placeOfResidence: json['placeOfResidence'],
+      dateOfIssue: json['dateOfIssue']?.toString(),
+      dateOfExpire: json['dateOfExpire']?.toString(),
+      citizenId: json['citizenId'],
+      citizenIdCardImg: json['citizenIdCardImg'],
+      jobPosition: json['jobPosition'],
+      visibilityMode: json['visibilityMode'],
     );
   }
 }
@@ -359,8 +392,8 @@ class RefreshUserDto {
   factory RefreshUserDto.fromJson(Map<String, dynamic> json) {
     return RefreshUserDto(
       userId: json['userId'] ?? '',
-      name: json['name'] ?? '',
-      displayName: json['displayName'],
+      name: json['fullname'] ?? json['name'] ?? '',
+      displayName: json['nickname'] ?? json['displayName'],
       phoneNumber: json['phoneNumber'],
       role: json['role'] ?? 'NORMAL_USER',
       avatarUrl: json['avatarUrl'],

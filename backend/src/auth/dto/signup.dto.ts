@@ -1,16 +1,24 @@
-import { IsString, IsOptional, IsDateString, IsPhoneNumber, IsArray, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsPhoneNumber,
+  IsArray,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class SignupDto {
   // User information
   @IsString()
   @MinLength(2)
   @MaxLength(255)
-  name: string;
+  fullname: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  displayName?: string;
+  nickname?: string;
 
   @IsOptional()
   @IsPhoneNumber('VN') // Assuming Vietnamese phone numbers
@@ -22,15 +30,19 @@ export class SignupDto {
 
   @IsOptional()
   @IsString()
-  village?: string;
+  placeOfOrigin?: string;
 
   @IsOptional()
   @IsString()
-  district?: string;
+  placeOfResidence?: string;
 
   @IsOptional()
-  @IsString()
-  country?: string;
+  @IsDateString()
+  dateOfIssue?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateOfExpire?: string;
 
   @IsOptional()
   @IsString()

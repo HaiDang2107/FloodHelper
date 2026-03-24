@@ -7,7 +7,7 @@ part of 'authority_auth_view_model.dart';
 // **************************************************************************
 
 String _$authorityAuthViewModelHash() =>
-    r'2fcc6eaca1fe920d4e125ec4b9b79b1267200496';
+    r'e6678a20866072acf3439239bc60c034c09f5b54';
 
 /// See also [AuthorityAuthViewModel].
 @ProviderFor(AuthorityAuthViewModel)
