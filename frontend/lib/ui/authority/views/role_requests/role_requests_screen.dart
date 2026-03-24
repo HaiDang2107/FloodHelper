@@ -85,31 +85,6 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _FilterChip(
-                label: 'Pending',
-                isActive: state.statusFilter == RoleRequestStatus.pending,
-                onTap: () => viewModel.setStatusFilter(RoleRequestStatus.pending),
-              ),
-              _FilterChip(
-                label: 'Rejected',
-                isActive: state.statusFilter == RoleRequestStatus.rejected,
-                onTap: () => viewModel.setStatusFilter(RoleRequestStatus.rejected),
-              ),
-              _FilterChip(
-                label: 'Approved',
-                isActive: state.statusFilter == RoleRequestStatus.approved,
-                onTap: () => viewModel.setStatusFilter(RoleRequestStatus.approved),
-              ),
-              _FilterChip(
-                label: 'Clear status',
-                isActive: state.statusFilter == null,
-                onTap: () => viewModel.setStatusFilter(null),
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           Expanded(
             child: LayoutBuilder(
