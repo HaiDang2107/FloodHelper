@@ -1,53 +1,109 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../../../data/models/profile_model.dart';
 
 class RoleRequestItem extends StatelessWidget {
-  final String roleName;
-  final String status; // 'Pending', 'Approved', 'Rejected'
-  final String date;
+  final ProfileRoleRequestModel request;
 
   const RoleRequestItem({
     super.key,
-    required this.roleName,
-    required this.status,
-    required this.date,
+    required this.request,
   });
 
   Color _getStatusColor() {
-    switch (status.toLowerCase()) {
-      case 'approved':
+    switch (request.state.toUpperCase()) {
+      case 'APPROVED':
         return Colors.green;
-      case 'rejected':
+      case 'REJECTED':
         return Colors.red;
       default:
         return Colors.orange;
     }
   }
 
+  String _statusLabel() {
+    switch (request.state.toUpperCase()) {
+      case 'APPROVED':
+        return 'Approved';
+      case 'REJECTED':
+        return 'Rejected';
+      default:
+        return 'Pending';
+    }
+  }
+
+  String _roleLabel() {
+    switch (request.type.toUpperCase()) {
+      case 'RESCUER':
+        return 'Rescuer';
+      default:
+        return 'Benefactor';
+    }
+  }
+
+  IconData _roleIcon() {
+    switch (request.type.toUpperCase()) {
+      case 'RESCUER':
+        return Icons.shield;
+      default:
+        return Icons.volunteer_activism;
+    }
+  }
+
+  Color _roleIconColor() {
+    switch (request.type.toUpperCase()) {
+      case 'RESCUER':
+        return Colors.blue;
+      default:
+        return Colors.green;
+    }
+  }
+
+  String _formatDateTime(DateTime value) {
+    return DateFormat('yyyy-MM-dd HH:mm').format(value);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final statusLabel = _statusLabel();
+    final statusColor = _getStatusColor();
+    final showResponseInfo = request.state == 'APPROVED' || request.state == 'REJECTED';
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.blue.withValues(alpha: 0.1),
-          child: Icon(Icons.security, color: Colors.blue),
+          backgroundColor: _roleIconColor().withValues(alpha: 0.14),
+          child: Icon(_roleIcon(), color: _roleIconColor()),
         ),
         title: Text(
-          roleName,
+          _roleLabel(),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Requested on: $date'),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Requested at: ${_formatDateTime(request.createdAt)}'),
+            if (showResponseInfo)
+              Text(
+                'Responded at: ${request.responsedAt != null ? _formatDateTime(request.responsedAt!) : '-'}',
+              ),
+            if (showResponseInfo)
+              Text('Note: ${request.note?.trim().isNotEmpty == true ? request.note!.trim() : 'No note'}'),
+          ],
+        ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _getStatusColor().withValues(alpha: 0.1),
+            color: statusColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _getStatusColor()),
+            border: Border.all(color: statusColor),
           ),
           child: Text(
-            status,
+            statusLabel,
             style: TextStyle(
-              color: _getStatusColor(),
+              color: statusColor,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),

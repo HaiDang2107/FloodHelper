@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/authority/role_request.dart';
 import '../theme/authority_theme.dart';
 
-class RoleRequestDetail extends StatelessWidget {
+class RoleRequestDetail extends StatefulWidget {
   const RoleRequestDetail({
     super.key,
     required this.request,
@@ -14,24 +14,67 @@ class RoleRequestDetail extends StatelessWidget {
   });
 
   final RoleRequest? request;
-  final Future<void> Function()? onApprove;
-  final Future<void> Function()? onReject;
+  final Future<void> Function(String? note)? onApprove;
+  final Future<void> Function(String? note)? onReject;
   final bool isSubmitting;
 
   @override
+  State<RoleRequestDetail> createState() => _RoleRequestDetailState();
+}
+
+class _RoleRequestDetailState extends State<RoleRequestDetail> {
+  late final TextEditingController _noteController;
+  String? _lastRequestId;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+    _syncNoteFromRequest(force: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant RoleRequestDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncNoteFromRequest();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  void _syncNoteFromRequest({bool force = false}) {
+    final request = widget.request;
+    final requestId = request?.id;
+    if (!force && requestId == _lastRequestId) {
+      return;
+    }
+
+    _lastRequestId = requestId;
+    _noteController.text = request?.notes ?? '';
+  }
+
+  String? _currentNote() {
+    final trimmed = _noteController.text.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (request == null) {
+    if (widget.request == null) {
       return _emptyState(context);
     }
 
-    final currentRequest = request!;
+    final currentRequest = widget.request!;
     final dateLabel = DateFormat('MMM d, yyyy • h:mm a')
         .format(currentRequest.submittedAt);
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: Container(
-        key: ValueKey(request!.id),
+        key: ValueKey(widget.request!.id),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -95,22 +138,24 @@ class RoleRequestDetail extends StatelessWidget {
             _InfoRow(label: 'Date of issue', value: currentRequest.dateOfIssue ?? '-'),
             _InfoRow(label: 'Date of expire', value: currentRequest.dateOfExpire ?? '-'),
             _InfoRow(label: 'Job position', value: currentRequest.jobPosition ?? '-'),
-            const SizedBox(height: 16),
-            Text(
-              'Reviewer notes',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              currentRequest.notes,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: const Color(0xFF475467)),
-            ),
+            if (currentRequest.status != RoleRequestStatus.pending) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Reviewer notes',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                currentRequest.notes,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: const Color(0xFF475467)),
+              ),
+            ],
             const SizedBox(height: 16),
             Text(
               'ID documents',
@@ -139,6 +184,16 @@ class RoleRequestDetail extends StatelessWidget {
             ),
             if (currentRequest.status == RoleRequestStatus.pending) ...[
               const SizedBox(height: 20),
+              TextField(
+                controller: _noteController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Decision note (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -150,11 +205,11 @@ class RoleRequestDetail extends StatelessWidget {
                         ),
                         side: const BorderSide(color: Color(0xFFE1E6F4)),
                       ),
-                      onPressed: isSubmitting
+                      onPressed: widget.isSubmitting
                           ? null
                           : () async {
-                              if (onReject != null) {
-                                await onReject!();
+                              if (widget.onReject != null) {
+                                await widget.onReject!(_currentNote());
                               }
                             },
                       child: const Text('Reject request'),
@@ -163,14 +218,14 @@ class RoleRequestDetail extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: isSubmitting
+                      onPressed: widget.isSubmitting
                           ? null
                           : () async {
-                              if (onApprove != null) {
-                                await onApprove!();
+                              if (widget.onApprove != null) {
+                                await widget.onApprove!(_currentNote());
                               }
                             },
-                      child: isSubmitting
+                      child: widget.isSubmitting
                           ? const SizedBox(
                               width: 18,
                               height: 18,

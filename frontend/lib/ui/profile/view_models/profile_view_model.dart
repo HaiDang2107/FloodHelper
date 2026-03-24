@@ -90,6 +90,42 @@ class ProfileViewModel extends _$ProfileViewModel {
     }
   }
 
+  Future<List<ProfileRoleRequestModel>> refreshRoleManagementData() async {
+    state = state.copyWith(
+      isLoadingRoleRequests: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      final requests = await _profileRepository.getMyRoleRequests();
+      final profileModel = await _profileRepository.getProfile();
+      final updatedProfile = profileModel.toDomain();
+
+      final authRepository = ref.read(authRepositoryProvider);
+      await authRepository.syncSessionUserFromProfile(profileModel);
+
+      final refreshedSession = await authRepository.getCurrentSession();
+      if (refreshedSession != null) {
+        ref.read(globalSessionManagerProvider.notifier).setSession(refreshedSession);
+      }
+
+      state = state.copyWith(
+        roleRequests: requests,
+        profile: updatedProfile,
+        isLoadingRoleRequests: false,
+      );
+
+      return requests;
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingRoleRequests: false,
+        errorMessage: 'Failed to refresh role data: ${e.toString()}',
+      );
+      return state.roleRequests;
+    }
+  }
+
   Future<bool> submitRoleRequest(UserRole role) async {
     final backendType = role == UserRole.benefactor ? 'BENEFACTOR' : 'RESCUER';
 
@@ -97,7 +133,7 @@ class ProfileViewModel extends _$ProfileViewModel {
 
     try {
       await _profileRepository.createRoleRequest(type: backendType);
-      await loadRoleRequests();
+      await refreshRoleManagementData();
       state = state.copyWith(
         isSaving: false,
         successMessage: 'Role request submitted successfully.',

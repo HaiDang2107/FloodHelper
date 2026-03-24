@@ -118,8 +118,8 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
                         child: RoleRequestDetail(
                           request: state.selectedRequest,
                           isSubmitting: state.isLoading,
-                          onApprove: () => viewModel.approveSelected(),
-                          onReject: () => viewModel.rejectSelected(),
+                          onApprove: (note) => viewModel.approveSelected(note: note),
+                          onReject: (note) => viewModel.rejectSelected(note: note),
                         ),
                       ),
                     ],
@@ -135,8 +135,8 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
                       child: RoleRequestDetail(
                         request: state.selectedRequest,
                         isSubmitting: state.isLoading,
-                        onApprove: () => viewModel.approveSelected(),
-                        onReject: () => viewModel.rejectSelected(),
+                        onApprove: (note) => viewModel.approveSelected(note: note),
+                        onReject: (note) => viewModel.rejectSelected(note: note),
                       ),
                     ),
                   ],

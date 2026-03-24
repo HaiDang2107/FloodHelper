@@ -8,7 +8,7 @@ class ProfileRole extends StatelessWidget {
   final List<ProfileRoleRequestModel> requests;
   final bool isLoadingRequests;
   final Future<void> Function(UserRole role) onAddRole;
-  final Future<void> Function() onRefreshRequests;
+  final Future<List<ProfileRoleRequestModel>> Function() onRefreshRequests;
 
   const ProfileRole({
     super.key,
@@ -58,80 +58,75 @@ class ProfileRole extends StatelessWidget {
   }
 
   void _showSentRequestsSheet(BuildContext context) {
+    var sheetRequests = List<ProfileRoleRequestModel>.from(requests);
+    var sheetLoading = isLoadingRequests;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Row(
-              children: [
-                const Text(
-              'Sent Requests',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () async => onRefreshRequests(),
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Refresh',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (isLoadingRequests)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
-            else if (requests.isEmpty)
-              const Expanded(
-                child: Center(
-                  child: Text('No role requests submitted yet.'),
-                ),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) {
-                    final item = requests[index];
-                    return RoleRequestItem(
-                      roleName: _formatRoleType(item.type),
-                      status: _formatRequestState(item.state),
-                      date: item.createdAt.toIso8601String().split('T')[0],
-                    );
-                  },
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'Sent Requests',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () async {
+                      setSheetState(() {
+                        sheetLoading = true;
+                      });
+
+                      try {
+                        final refreshed = await onRefreshRequests();
+                        setSheetState(() {
+                          sheetRequests = refreshed;
+                          sheetLoading = false;
+                        });
+                      } catch (_) {
+                        setSheetState(() {
+                          sheetLoading = false;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh',
+                  ),
+                ],
               ),
-          ],
+              const SizedBox(height: 16),
+              if (sheetLoading)
+                const Expanded(child: Center(child: CircularProgressIndicator()))
+              else if (sheetRequests.isEmpty)
+                const Expanded(
+                  child: Center(
+                    child: Text('No role requests submitted yet.'),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: sheetRequests.length,
+                    itemBuilder: (context, index) {
+                      final item = sheetRequests[index];
+                      return RoleRequestItem(request: item);
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
-  }
-
-  String _formatRoleType(String type) {
-    switch (type) {
-      case 'RESCUER':
-        return 'Rescuer';
-      case 'BENEFACTOR':
-      default:
-        return 'Benefactor';
-    }
-  }
-
-  String _formatRequestState(String state) {
-    switch (state) {
-      case 'APPROVED':
-        return 'Approved';
-      case 'REJECTED':
-        return 'Rejected';
-      case 'PENDING':
-      default:
-        return 'Pending';
-    }
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {

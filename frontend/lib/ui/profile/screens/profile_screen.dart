@@ -337,9 +337,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     onAddRole: (role) async {
                       await ref.read(profileViewModelProvider.notifier).submitRoleRequest(role);
                     },
-                    onRefreshRequests: () async {
-                      await ref.read(profileViewModelProvider.notifier).loadRoleRequests();
-                    },
+                    onRefreshRequests: () => ref
+                        .read(profileViewModelProvider.notifier)
+                        .refreshRoleManagementData(),
                   ),
                   const SizedBox(height: 32),
                   ProfileActionButton(
