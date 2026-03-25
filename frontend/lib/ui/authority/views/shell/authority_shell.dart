@@ -10,7 +10,7 @@ import '../../../../routing/authority_router.dart';
 class AuthorityShell extends ConsumerStatefulWidget {
   const AuthorityShell({super.key, required this.child});
 
-  final Widget child;
+  final Widget child; // Dùng để truyền màn con vào
 
   @override
   ConsumerState<AuthorityShell> createState() => _AuthorityShellState();

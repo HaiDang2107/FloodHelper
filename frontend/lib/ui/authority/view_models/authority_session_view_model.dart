@@ -22,7 +22,7 @@ class AuthoritySession extends _$AuthoritySession {
   }
 
   void signIn() {
-    state = true;
+    state = true; // Khi state thay đổi, các wwidget đang watch sẽ tự rebuild
   }
 
   void signOut() {

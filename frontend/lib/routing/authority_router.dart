@@ -25,33 +25,39 @@ final authorityRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AuthorityRoutes.login,
     redirect: (context, state) {
       final bool loggedIn = isSignedIn;
-      final bool onLogin = state.uri.path == AuthorityRoutes.login;
+      final bool onLogin = state.uri.path == AuthorityRoutes.login; // Kiểm tra URL trên thanh địa chỉ có phải /authority/login không
 
       if (!loggedIn && !onLogin) {
+        // Chưa đăng nhập (!loggedIn) VÀ Đang cố vào một trang không phải Login (!onLogin)
+        // ==> ép quay lại trang login
         return AuthorityRoutes.login;
       }
       if (loggedIn && onLogin) {
-        return AuthorityRoutes.requests;
+        // Đã đăng nhập thành công (loggedIn) VÀ Vẫn đang ở trang Login (onLogin).
+        // ==> Tự động đẩy vào trang 
+        return AuthorityRoutes.profile;
       }
       return null;
     },
     routes: [
-      GoRoute(
+      GoRoute( // map một path với 1 màn hình đơn lẻ
         path: AuthorityRoutes.login,
         builder: (context, state) => const AuthorityLoginScreen(),
       ),
-      ShellRoute( // Route của shell
+      ShellRoute( // lớp bọc cho các route con
+        // Khi user đến một path nào đó trong danh sách routes này ==> render AuthorityShell
         builder: (context, state, child) {
-          return AuthorityShell(
+          return AuthorityShell( // Một khung giao diện chung (shell), bên trong là các màn con
             child: child,
+            // GoRouter tự động map path với màn hình, rồi tự truyền màn hình con vào biến child
           );
         },
-        routes: [
+        routes: [ // route cho ClipRRect
           GoRoute(
             path: AuthorityRoutes.requests,
             builder: (context, state) => RoleRequestsScreen(
               statusQuery: state.uri.queryParameters['status'],
-            ), // match ==> là đầu vào ứng với child.
+            ),
           ),
           GoRoute(
             path: AuthorityRoutes.profile,
