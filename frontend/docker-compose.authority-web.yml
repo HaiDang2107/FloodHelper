@@ -1,0 +1,12 @@
+services:
+  authority-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.authority
+      args:
+        API_BASE_URL: "https://floodhelper.onrender.com"
+    image: floodhelper-authority-web:latest
+    environment:
+      PORT: "8080"
+    ports:
+      - "8080:8080"
