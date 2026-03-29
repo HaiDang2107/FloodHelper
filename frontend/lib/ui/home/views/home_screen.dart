@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:latlong2/latlong.dart';
 import '../view_models/home_view_model.dart';
-import '../view_models/friend_view_model.dart';
 import '../widgets/home_top_actions.dart';
 import '../widgets/home_bottom_actions.dart';
 import '../widgets/segmented_button.dart';
@@ -13,6 +11,7 @@ import '../widgets/user_pin.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
 import '../../core/common/constants/user_state.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../charity_campaign/screens/existing_charity_screen.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/services/firebase_messaging_service.dart';
 import 'settings/_settings_sheet.dart';
@@ -30,112 +29,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _setupFirebaseMessaging();
-  }
-
-  Future<void> _setupFirebaseMessaging() async {
-    // Note: FCM token is registered in SignInViewModel after successful login
-    // Here we only setup message handlers
-
-    // Handle foreground messages
-    _messagingService.onForegroundMessage((RemoteMessage message) {
-      final data = message.data;
-      if (data['type'] == 'FRIEND_REQUEST') {
-        // A new friend request received - reload received requests
-        ref.read(friendViewModelProvider.notifier).loadRequests();
-
-        // Show a snackbar notification
-        if (mounted) {
-          final senderName = data['senderName'] ?? 'Someone';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$senderName sent you a friend request'),
-              backgroundColor: const Color(0xFF0F62FE),
-              action: SnackBarAction(
-                label: 'View',
-                textColor: Colors.white,
-                onPressed: () {
-                  // Could navigate to friend requests sheet
-                },
-              ),
-            ),
-          );
-        }
-      } else if (data['type'] == 'FRIEND_REQUEST_ACCEPTED') {
-        // Friend request was accepted - refresh danh sách friends
-        ref.read(homeViewModelProvider.notifier).refreshFriends();
-        ref.read(friendViewModelProvider.notifier).loadRequests();
-      }
-    });
-
-    // Handle notification taps
-    _messagingService.onMessageOpenedApp((RemoteMessage message) {
-      // Could navigate to friend requests screen
-    });
+    ref.read(homeViewModelProvider.notifier).setupFirebaseMessaging(_messagingService);
   }
 
   void _showBottomSheet(String title, Widget content, {Color? backgroundColor}) {
-    final viewModel = ref.read(homeViewModelProvider.notifier);
-    final state = ref.read(homeViewModelProvider);
-    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return CustomBottomSheet(
-              title: title,
-              backgroundColor: backgroundColor,
-              child: title == 'Settings'
-                  ? SettingsSheet(
-                      showStrangerLocation: state.showStrangerLocation,
-                      showPostLocation: state.showPostLocation,
-                      onShowStrangerLocationChanged: (value) {
-                        viewModel.setShowStrangerLocation(value);
-                        setModalState(() {});
-                      },
-                      onShowPostLocationChanged: (value) {
-                        viewModel.setShowPostLocation(value);
-                        setModalState(() {});
-                      },
-                    )
-                  : content,
-            );
-          },
+        return CustomBottomSheet(
+          title: title,
+          backgroundColor: backgroundColor,
+          child: title == 'Settings' ? const SettingsSheet() : content,
         );
       },
     );
-  }
-
-  void _handleSosBroadcast(Map<String, dynamic> data) {
-    ref.read(homeViewModelProvider.notifier).broadcastSos(data);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Distress signal is now broadcasting'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  void _handleSosRevoke() {
-    ref.read(homeViewModelProvider.notifier).revokeSos();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Distress signal has been revoked'),
-        backgroundColor: Colors.grey,
-      ),
-    );
-  }
-
-  Future<void> _takePicture() async {
-    final photo = await ref.read(homeViewModelProvider.notifier).takePicture();
-    if (photo != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Picture taken: ${photo.path}')),
-      );
-    }
   }
 
   @override
@@ -145,6 +54,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Listen for errors - must be inside build()
     ref.listen<HomeState>(homeViewModelProvider, (previous, next) {
+      if (next.uiEvent != null && next.uiEvent != previous?.uiEvent) {
+        final color = switch (next.uiEvent!.type) {
+          HomeUiEventType.success => Colors.green,
+          HomeUiEventType.error => Colors.red,
+          HomeUiEventType.info => const Color(0xFF0F62FE),
+        };
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.uiEvent!.message),
+            backgroundColor: color,
+          ),
+        );
+        viewModel.clearUiEvent();
+      }
+
       if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(next.errorMessage!)),
@@ -242,10 +166,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       MaterialPageRoute(builder: (context) => const ProfileScreen()),
                     );
                   },
+                  onRescuerPressed: () {
+                    viewModel.showInfoMessage('Rescuer feature coming soon!');
+                  },
+                  onCharityPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ExistingCharityScreen(),
+                      ),
+                    );
+                  },
                   isSosBroadcasting: state.isSosBroadcasting,
                   sosData: state.sosData,
-                  onSosBroadcast: _handleSosBroadcast,
-                  onSosRevoke: _handleSosRevoke,
+                  onSosBroadcast: viewModel.broadcastSos,
+                  onSosRevoke: viewModel.revokeSos,
                 ),
               ),
             ),
@@ -276,7 +211,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   right: 48.0,
                 ),
                 child: HomeBottomActions(
-                  onTakePicture: _takePicture,
+                  onTakePicture: viewModel.takePicture,
                   onGetCurrentLocation: viewModel.recenterMap,
                   onShowBottomSheet: _showBottomSheet,
                   onLocateFriend: viewModel.moveCameraToLocation,

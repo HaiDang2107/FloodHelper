@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../data/models/friend_request_model.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/repositories/friend_repository.dart';
-import 'home_view_model.dart';
 
 part 'friend_view_model.g.dart';
 
@@ -15,6 +14,7 @@ class FriendRequestState {
   final bool isSending;
   final String? errorMessage;
   final String? successMessage;
+  final String? acceptedFriendUserId;
 
   const FriendRequestState({
     this.sentRequests = const [],
@@ -23,6 +23,7 @@ class FriendRequestState {
     this.isSending = false,
     this.errorMessage,
     this.successMessage,
+    this.acceptedFriendUserId,
   });
 
   FriendRequestState copyWith({
@@ -32,8 +33,10 @@ class FriendRequestState {
     bool? isSending,
     String? errorMessage,
     String? successMessage,
+    String? acceptedFriendUserId,
     bool clearError = false,
     bool clearSuccess = false,
+    bool clearAcceptedFriendUserId = false,
   }) {
     return FriendRequestState(
       sentRequests: sentRequests ?? this.sentRequests,
@@ -43,6 +46,9 @@ class FriendRequestState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage:
           clearSuccess ? null : (successMessage ?? this.successMessage),
+      acceptedFriendUserId: clearAcceptedFriendUserId
+          ? null
+          : (acceptedFriendUserId ?? this.acceptedFriendUserId),
     );
   }
 }
@@ -139,12 +145,8 @@ class FriendViewModel extends _$FriendViewModel {
       state = state.copyWith(
         receivedRequests: updatedReceived,
         successMessage: 'Friend request accepted!',
+        acceptedFriendUserId: acceptedRequest.user.userId,
       );
-
-      // Sync map-related friend state in HomeViewModel
-      await ref
-          .read(homeViewModelProvider.notifier)
-          .syncAfterAcceptFriendRequest(acceptedRequest.user.userId);
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Failed to accept request: $e',
@@ -206,5 +208,9 @@ class FriendViewModel extends _$FriendViewModel {
   /// Clear success message
   void clearSuccess() {
     state = state.copyWith(clearSuccess: true);
+  }
+
+  void clearAcceptedFriendSyncEvent() {
+    state = state.copyWith(clearAcceptedFriendUserId: true);
   }
 }

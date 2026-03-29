@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,12 +9,26 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/repositories/repositories.dart';
+import '../../../data/services/firebase_messaging_service.dart';
 import '../../../data/services/location_tracking_service.dart';
 import '../../../data/services/mqtt_service.dart';
+import 'friend_view_model.dart';
 
 part 'home_view_model.g.dart';
 
 enum MapType { transport, weather }
+
+enum HomeUiEventType { info, success, error }
+
+class HomeUiEvent {
+  final HomeUiEventType type;
+  final String message;
+
+  const HomeUiEvent({
+    required this.type,
+    required this.message,
+  });
+}
 
 class HomeState {
   final LatLng? currentPosition;
@@ -24,6 +39,7 @@ class HomeState {
   final bool showStrangerLocation;
   final bool showPostLocation;
   final String? errorMessage;
+  final HomeUiEvent? uiEvent;
 
   // Data from repositories
   final List<UserModel> nearbyUsers;
@@ -49,6 +65,7 @@ class HomeState {
     this.showStrangerLocation = true,
     this.showPostLocation = true,
     this.errorMessage,
+    this.uiEvent,
     this.nearbyUsers = const [],
     this.posts = const [],
     this.announcements = const [],
@@ -67,7 +84,9 @@ class HomeState {
     bool? showStrangerLocation,
     bool? showPostLocation,
     String? errorMessage,
+    HomeUiEvent? uiEvent,
     bool clearSosData = false,
+    bool clearUiEvent = false,
     List<UserModel>? nearbyUsers,
     List<PostModel>? posts,
     List<AnnouncementModel>? announcements,
@@ -85,6 +104,7 @@ class HomeState {
       showStrangerLocation: showStrangerLocation ?? this.showStrangerLocation,
       showPostLocation: showPostLocation ?? this.showPostLocation,
       errorMessage: errorMessage,
+      uiEvent: clearUiEvent ? null : (uiEvent ?? this.uiEvent),
       nearbyUsers: nearbyUsers ?? this.nearbyUsers,
       posts: posts ?? this.posts,
       announcements: announcements ?? this.announcements,
@@ -116,6 +136,7 @@ class HomeViewModel extends _$HomeViewModel {
 
   // Friend location stream subscription
   StreamSubscription<FriendLocationUpdate>? _friendLocationSubscription;
+  bool _isMessagingSetup = false;
 
   @override
   HomeState build() {
@@ -132,11 +153,60 @@ class HomeViewModel extends _$HomeViewModel {
 
     });
 
+    ref.listen(friendViewModelProvider, (previous, next) {
+      final acceptedFriendId = next.acceptedFriendUserId;
+      if (acceptedFriendId == null ||
+          acceptedFriendId == previous?.acceptedFriendUserId) {
+        return;
+      }
+
+      unawaited(syncAfterAcceptFriendRequest(acceptedFriendId));
+      ref
+          .read(friendViewModelProvider.notifier)
+          .clearAcceptedFriendSyncEvent();
+    });
+
     // Auto-start location tracking
     Future.microtask(() => _startTracking());
 
     return const HomeState();
   }
+
+  void setupFirebaseMessaging(FirebaseMessagingService messagingService) {
+    if (_isMessagingSetup) {
+      return;
+    }
+
+    _isMessagingSetup = true;
+    messagingService.onForegroundMessage(_handleForegroundMessage);
+    messagingService.onMessageOpenedApp(_handleMessageOpenedApp);
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    final data = message.data;
+    switch (data['type']) {
+      case 'FRIEND_REQUEST':
+        unawaited(ref.read(friendViewModelProvider.notifier).loadRequests());
+        final senderName = (data['senderName'] ?? 'Someone').toString();
+        _emitUiEvent(
+          '$senderName sent you a friend request',
+          HomeUiEventType.info,
+        );
+        break;
+      case 'FRIEND_REQUEST_ACCEPTED':
+        unawaited(refreshFriends());
+        unawaited(ref.read(friendViewModelProvider.notifier).loadRequests());
+        _emitUiEvent(
+          'Your friend request was accepted',
+          HomeUiEventType.success,
+        );
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleMessageOpenedApp(RemoteMessage message) {}
 
   /// Start location tracking via the background service
   Future<void> _startTracking() async {
@@ -495,6 +565,10 @@ class HomeViewModel extends _$HomeViewModel {
           isSosBroadcasting: true,
           sosData: data,
         );
+        _emitUiEvent(
+          'Distress signal is now broadcasting',
+          HomeUiEventType.success,
+        );
       } else {
         state = state.copyWith(errorMessage: 'Failed to broadcast SOS');
       }
@@ -511,6 +585,10 @@ class HomeViewModel extends _$HomeViewModel {
         state = state.copyWith(
           isSosBroadcasting: false,
           clearSosData: true,
+        );
+        _emitUiEvent(
+          'Distress signal has been revoked',
+          HomeUiEventType.info,
         );
       } else {
         state = state.copyWith(errorMessage: 'Failed to revoke SOS');
@@ -597,16 +675,34 @@ class HomeViewModel extends _$HomeViewModel {
 
   // ==================== Camera ====================
 
-  Future<XFile?> takePicture() async {
+  Future<void> takePicture() async {
     try {
       final XFile? photo = await _imagePicker.pickImage(source: ImageSource.camera);
-      return photo;
+      if (photo != null) {
+        _emitUiEvent('Picture taken: ${photo.path}', HomeUiEventType.success);
+      }
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Error taking picture: $e',
       );
-      return null;
     }
+  }
+
+  void showInfoMessage(String message) {
+    _emitUiEvent(message, HomeUiEventType.info);
+  }
+
+  void clearUiEvent() {
+    state = state.copyWith(clearUiEvent: true);
+  }
+
+  void _emitUiEvent(String message, HomeUiEventType type) {
+    state = state.copyWith(
+      uiEvent: HomeUiEvent(
+        type: type,
+        message: message,
+      ),
+    );
   }
 
   // ==================== Error Handling ====================

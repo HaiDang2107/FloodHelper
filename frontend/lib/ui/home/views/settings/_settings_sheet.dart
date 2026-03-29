@@ -6,17 +6,8 @@ import '../../widgets/_settings_sheet/modification_widget.dart';
 import '../../view_models/home_view_model.dart';
 
 class SettingsSheet extends ConsumerStatefulWidget {
-  final bool showStrangerLocation;
-  final bool showPostLocation;
-  final Function(bool) onShowStrangerLocationChanged;
-  final Function(bool) onShowPostLocationChanged;
-
   const SettingsSheet({
     super.key,
-    required this.showStrangerLocation,
-    required this.showPostLocation,
-    required this.onShowStrangerLocationChanged,
-    required this.onShowPostLocationChanged,
   });
 
   @override
@@ -57,6 +48,9 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final homeState = ref.watch(homeViewModelProvider);
+    final viewModel = ref.read(homeViewModelProvider.notifier);
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -64,10 +58,10 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DisplayWidget(
-              showStrangerLocation: widget.showStrangerLocation,
-              showPostLocation: widget.showPostLocation,
-              onShowStrangerLocationChanged: widget.onShowStrangerLocationChanged,
-              onShowPostLocationChanged: widget.onShowPostLocationChanged,
+              showStrangerLocation: homeState.showStrangerLocation,
+              showPostLocation: homeState.showPostLocation,
+              onShowStrangerLocationChanged: viewModel.setShowStrangerLocation,
+              onShowPostLocationChanged: viewModel.setShowPostLocation,
             ),
             const SizedBox(height: 16),
             Container(
@@ -86,8 +80,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                         _locationVisibility = visibility;
                       });
                       // Persist to backend
-                      ref.read(homeViewModelProvider.notifier)
-                          .updateLocationVisibility(_toString(visibility));
+                      viewModel.updateLocationVisibility(_toString(visibility));
                     },
                   ),
                   if (_locationVisibility == LocationVisibility.justFriends) ...[

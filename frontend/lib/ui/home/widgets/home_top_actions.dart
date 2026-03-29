@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
-import '../../charity_campaign/screens/existing_charity_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../views/friends/_add_friend_sheet.dart';
 import '../views/announcements/_announcements_sheet.dart';
 import '../views/distress_signal/_distress_signal_sheet.dart';
+import '../../../../data/providers/global_session_provider.dart';
 
-class HomeTopActions extends StatefulWidget {
+typedef _ActionButtonData = ({
+  IconData icon,
+  VoidCallback onPressed,
+  bool isSpecial,
+});
+
+class HomeTopActions extends ConsumerStatefulWidget {
   final void Function(String, Widget, {Color? backgroundColor})
       onShowBottomSheet;
   final VoidCallback onProfilePressed;
+  final VoidCallback onRescuerPressed;
+  final VoidCallback onCharityPressed;
   final bool isSosBroadcasting;
   final Map<String, dynamic>? sosData;
   final Function(Map<String, dynamic>) onSosBroadcast;
@@ -17,6 +26,8 @@ class HomeTopActions extends StatefulWidget {
     super.key,
     required this.onShowBottomSheet,
     required this.onProfilePressed,
+    required this.onRescuerPressed,
+    required this.onCharityPressed,
     required this.isSosBroadcasting,
     this.sosData,
     required this.onSosBroadcast,
@@ -24,20 +35,13 @@ class HomeTopActions extends StatefulWidget {
   });
 
   @override
-  State<HomeTopActions> createState() => _HomeTopActionsState();
+  ConsumerState<HomeTopActions> createState() => _HomeTopActionsState();
 }
 
-class _HomeTopActionsState extends State<HomeTopActions>
+class _HomeTopActionsState extends ConsumerState<HomeTopActions>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late final AnimationController _controller;
-
-  late final List<
-      ({
-        IconData icon,
-        VoidCallback Function() onPressedBuilder,
-        bool isSpecial
-      })> _buttons;
 
   @override
   void initState() {
@@ -46,65 +50,6 @@ class _HomeTopActionsState extends State<HomeTopActions>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-
-    _buttons = [
-      (
-        icon: Icons.settings,
-        onPressedBuilder: () =>
-            () => widget.onShowBottomSheet('Settings', Container()),
-        isSpecial: false,
-      ),
-      (
-        icon: Icons.account_circle,
-        onPressedBuilder: () => widget.onProfilePressed,
-        isSpecial: false,
-      ),
-      (
-        icon: Icons.person_add,
-        onPressedBuilder: () =>
-            () => widget.onShowBottomSheet('Add Friend', const AddFriendSheet()),
-        isSpecial: false,
-      ),
-      (
-        icon: Icons.campaign,
-        onPressedBuilder: () => () => widget.onShowBottomSheet(
-            'Announcements', const AnnouncementsSheet()),
-        isSpecial: false,
-      ),
-      (
-        icon: Icons.health_and_safety,
-        onPressedBuilder: () => () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Rescuer feature coming soon!')),
-              );
-            },
-        isSpecial: false,
-      ),
-      (
-        icon: Icons.volunteer_activism,
-        onPressedBuilder: () => () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ExistingCharityScreen()),
-              );
-            },
-        isSpecial: false,
-      ),
-      (
-        icon: Icons.sos,
-        onPressedBuilder: () => () => widget.onShowBottomSheet(
-              'Distress Signal',
-              DistressSignalSheet(
-                isBroadcasting: widget.isSosBroadcasting,
-                currentSignalData: widget.sosData,
-                onBroadcast: widget.onSosBroadcast,
-                onRevoke: widget.onSosRevoke,
-              ),
-            ),
-        isSpecial: true,
-      ),
-    ];
   }
 
   @override
@@ -126,6 +71,57 @@ class _HomeTopActionsState extends State<HomeTopActions>
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(currentUserProvider);
+    final buttons = <_ActionButtonData>[
+      (
+        icon: Icons.settings,
+        onPressed: () => widget.onShowBottomSheet('Settings', Container()),
+        isSpecial: false,
+      ),
+      (
+        icon: Icons.account_circle,
+        onPressed: widget.onProfilePressed,
+        isSpecial: false,
+      ),
+      (
+        icon: Icons.person_add,
+        onPressed: () =>
+            widget.onShowBottomSheet('Add Friend', const AddFriendSheet()),
+        isSpecial: false,
+      ),
+      (
+        icon: Icons.campaign,
+        onPressed: () =>
+            widget.onShowBottomSheet('Announcements', const AnnouncementsSheet()),
+        isSpecial: false,
+      ),
+      if (currentUser?.isRescuer ?? false)
+        (
+          icon: Icons.shield,
+          onPressed: widget.onRescuerPressed,
+          isSpecial: false,
+        ),
+      if (currentUser?.isBenefactor ?? false)
+        (
+          icon: Icons.volunteer_activism,
+          onPressed: widget.onCharityPressed,
+          isSpecial: false,
+        ),
+      (
+        icon: Icons.sos,
+        onPressed: () => widget.onShowBottomSheet(
+              'Distress Signal',
+              DistressSignalSheet(
+                isBroadcasting: widget.isSosBroadcasting,
+                currentSignalData: widget.sosData,
+                onBroadcast: widget.onSosBroadcast,
+                onRevoke: widget.onSosRevoke,
+              ),
+            ),
+        isSpecial: true,
+      ),
+    ];
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -136,8 +132,8 @@ class _HomeTopActionsState extends State<HomeTopActions>
           isMain: true,
         ),
         if (_isExpanded || _controller.isAnimating)
-          ...List.generate(_buttons.length, (i) {
-            final buttonData = _buttons[i];
+          ...List.generate(buttons.length, (i) {
+            final buttonData = buttons[i];
             final animation = CurvedAnimation(
               parent: _controller, // truyền controller vào từng nút
               curve: Interval(
@@ -158,7 +154,7 @@ class _HomeTopActionsState extends State<HomeTopActions>
                   padding: EdgeInsets.only(top: i == 0 ? 8.0 : 0, bottom: 8.0),
                   child: _buildMapIcon(
                     buttonData.icon,
-                    buttonData.onPressedBuilder(),
+                    buttonData.onPressed,
                     isSos: buttonData.isSpecial,
                   ),
                 ),
