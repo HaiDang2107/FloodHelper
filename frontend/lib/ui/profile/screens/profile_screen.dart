@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../routing/routes.dart';
 import '../../../domain/models/user_profile.dart';
 import '../view_models/profile_view_model.dart';
 import '../widgets/profile_header.dart';
@@ -206,7 +207,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       Navigator.pop(context);
 
       // Navigate to login screen and remove all previous routes
-      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.signIn,
+          (route) => false,
+        );
     } catch (e) {
       if (!mounted) return;
 

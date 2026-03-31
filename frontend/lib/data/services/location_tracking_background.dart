@@ -109,6 +109,10 @@ Future<void> onStart(ServiceInstance service) async {
       }
       setupRescuerSubscription();
     }
+
+    if (userId != null) {
+      service.invoke('onUserIdBound', {'userId': userId});
+    }
   });
 
   service.on('setSoSStatus').listen((event) {

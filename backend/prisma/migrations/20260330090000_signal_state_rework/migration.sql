@@ -11,6 +11,10 @@ ALTER TABLE "Signal" RENAME COLUMN "has_elderly" TO "elderly_num";
 ALTER TABLE "Signal" RENAME COLUMN "deleted_at" TO "stopped_at";
 
 ALTER TABLE "Signal"
+  ALTER COLUMN "children_num" DROP DEFAULT,
+  ALTER COLUMN "elderly_num" DROP DEFAULT;
+
+ALTER TABLE "Signal"
   ALTER COLUMN "children_num" TYPE INTEGER USING CASE WHEN "children_num" THEN 1 ELSE 0 END,
   ALTER COLUMN "children_num" SET DEFAULT 0,
   ALTER COLUMN "children_num" SET NOT NULL,

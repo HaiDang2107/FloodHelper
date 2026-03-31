@@ -26,27 +26,30 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with WidgetsBindingObserver {
   late final FirebaseMessagingService _messagingService = ref.read(firebaseMessagingServiceProvider);
+  late final HomeViewModel _homeViewModel;
 
   @override
   void initState() {
     super.initState();
+    _homeViewModel = ref.read(homeViewModelProvider.notifier);
     // WidgetsBinding dùng để quản lý lifecycle của app
     // addObserver(this): _HomeScreenState đăng ký nhận callback từ WidgetsBindings
     WidgetsBinding.instance.addObserver(this); 
-    ref.read(homeViewModelProvider.notifier).setupFirebaseMessaging(_messagingService);
-    ref.read(homeViewModelProvider.notifier).setUiIsActive(true); // UI isolate is online.
+    _homeViewModel.setupFirebaseMessaging(_messagingService);
+    _homeViewModel.setUiIsActive(true); // UI isolate is online.
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) { // Kiểm soát trạng tháu UI
+    if (!mounted) return;
     final isActive = state == AppLifecycleState.resumed; // state == resumed ==> isActive = true
-    ref.read(homeViewModelProvider.notifier).setUiIsActive(isActive);
+    _homeViewModel.setUiIsActive(isActive);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); 
-    ref.read(homeViewModelProvider.notifier).setUiIsActive(false);
+    _homeViewModel.setUiIsActive(false);
     super.dispose();
   }
 

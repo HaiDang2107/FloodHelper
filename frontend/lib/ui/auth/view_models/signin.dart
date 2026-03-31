@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../routing/routes.dart';
 import '../../../data/data.dart';
 import 'code_verification.dart';
 
@@ -189,7 +190,10 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đăng nhập thành công')),
         );
-        Navigator.of(context).pushNamed('/home');
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.home,
+          (route) => false,
+        );
       }
     } catch (e) {
       final errorMessage = e.toString().replaceAll('Exception: ', '');

@@ -54,6 +54,46 @@ class LocationTrackingService {
   StreamSubscription? _bgSubscription; // dùng để quản lý listener
   StreamSubscription? _rescuerSubscription;
 
+  Future<void> _bindUserIdWithRetry(String userId) async {
+    final completer = Completer<void>();
+    StreamSubscription? ackSub;
+
+    ackSub = _service.on('onUserIdBound').listen((event) {
+      final boundUserId = (event?['userId'] ?? '').toString();
+      if (!completer.isCompleted && boundUserId == userId) {
+        completer.complete();
+      }
+    });
+
+    try {
+      for (var i = 0; i < 6; i++) {
+        _service.invoke('setUserId', {'userId': userId});
+
+        if (i == 0) {
+          // First send can race with isolate boot on some devices.
+          await Future.delayed(const Duration(milliseconds: 250));
+        } else {
+          await Future.delayed(const Duration(milliseconds: 400));
+        }
+
+        if (completer.isCompleted) {
+          break;
+        }
+      }
+
+      if (!completer.isCompleted) {
+        if (kDebugMode) {
+          print('📍 [UI] setUserId ACK timeout, continue with best effort');
+        }
+        return;
+      }
+
+      await completer.future;
+    } finally {
+      await ackSub.cancel();
+    }
+  }
+
   // -------------------- Initialization --------------------
 
   /// Configure the background service.
@@ -138,8 +178,8 @@ class LocationTrackingService {
     // 3. Start the background isolate (đánh thức hàm onStart())
     await _service.startService();
 
-    // 4. Send userId so background isolate can connect MQTT
-    _service.invoke('setUserId', {'userId': userId}); 
+    // 4. Send userId so background isolate can connect MQTT (with retry handshake)
+    await _bindUserIdWithRetry(userId);
 
     // 4b. Send initial allowed friends list
     _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
