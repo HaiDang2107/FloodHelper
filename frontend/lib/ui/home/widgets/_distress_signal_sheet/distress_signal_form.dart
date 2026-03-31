@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../domain/models/distress_signal_input.dart';
 
 class DistressSignalForm extends StatefulWidget {
-  final Function(Map<String, dynamic>) onSubmit;
+  final ValueChanged<DistressSignalInput> onSubmit;
 
   const DistressSignalForm({
     super.key,
@@ -32,14 +33,16 @@ class _DistressSignalFormState extends State<DistressSignalForm> {
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
-      widget.onSubmit({
-        'trappedCounts': int.tryParse(_trappedCountsController.text) ?? 0,
-        'childrenNumbers': int.tryParse(_childrenNumbersController.text) ?? 0,
-        'elderlyNumbers': int.tryParse(_elderlyNumbersController.text) ?? 0,
-        'hasFood': _hasFood,
-        'hasWater': _hasWater,
-        'other': _otherController.text,
-      });
+      widget.onSubmit(
+        DistressSignalInput(
+          trappedCounts: int.tryParse(_trappedCountsController.text) ?? 0,
+          childrenNumbers: int.tryParse(_childrenNumbersController.text) ?? 0,
+          elderlyNumbers: int.tryParse(_elderlyNumbersController.text) ?? 0,
+          hasFood: _hasFood,
+          hasWater: _hasWater,
+          other: _otherController.text,
+        ),
+      );
     }
   }
 

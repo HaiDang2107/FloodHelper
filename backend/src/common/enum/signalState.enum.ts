@@ -1,0 +1,5 @@
+export enum SignalState {
+  BROADCASTING = 'BROADCASTING',
+  HANDLED = 'HANDLED',
+  STOPPED = 'STOPPED',
+}

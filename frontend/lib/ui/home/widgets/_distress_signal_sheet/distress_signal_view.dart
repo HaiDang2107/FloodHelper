@@ -1,23 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../../../domain/models/distress_signal_input.dart';
 
 class DistressSignalView extends StatelessWidget {
-  final int trappedCounts;
-  final int childrenNumbers;
-  final int elderlyNumbers;
-  final bool hasFood;
-  final bool hasWater;
-  final String? other;
+  final DistressSignalInput data;
   final VoidCallback onEdit;
   final VoidCallback onRevoke;
 
   const DistressSignalView({
     super.key,
-    required this.trappedCounts,
-    required this.childrenNumbers,
-    required this.elderlyNumbers,
-    required this.hasFood,
-    required this.hasWater,
-    this.other,
+    required this.data,
     required this.onEdit,
     required this.onRevoke,
   });
@@ -105,28 +96,28 @@ class DistressSignalView extends StatelessWidget {
               const SizedBox(height: 16),
               _buildInfoRow(
                 'Trapped Counts:',
-                trappedCounts.toString(),
-                highlight: trappedCounts > 0,
+                data.trappedCounts.toString(),
+                highlight: data.trappedCounts > 0,
               ),
               _buildInfoRow(
                 'Children Numbers:',
-                childrenNumbers.toString(),
+                data.childrenNumbers.toString(),
               ),
               _buildInfoRow(
                 'Elderly Numbers:',
-                elderlyNumbers.toString(),
+                data.elderlyNumbers.toString(),
               ),
               _buildInfoRow(
                 'Has Food:',
-                hasFood ? 'Yes' : 'No',
-                highlight: !hasFood,
+                data.hasFood ? 'Yes' : 'No',
+                highlight: !data.hasFood,
               ),
               _buildInfoRow(
                 'Has Water:',
-                hasWater ? 'Yes' : 'No',
-                highlight: !hasWater,
+                data.hasWater ? 'Yes' : 'No',
+                highlight: !data.hasWater,
               ),
-              if (other != null && other!.isNotEmpty) ...[
+              if (data.other != null && data.other!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   'Other Information:',
@@ -146,7 +137,7 @@ class DistressSignalView extends StatelessWidget {
                     border: Border.all(color: Colors.grey[300]!),
                   ),
                   child: Text(
-                    other!,
+                    data.other!,
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.black87,

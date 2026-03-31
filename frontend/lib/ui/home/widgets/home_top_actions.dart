@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../views/friends/_add_friend_sheet.dart';
 import '../views/announcements/_announcements_sheet.dart';
 import '../views/distress_signal/_distress_signal_sheet.dart';
+import '../../../domain/models/distress_signal_input.dart';
 import '../../../../data/providers/global_session_provider.dart';
 
 typedef _ActionButtonData = ({
@@ -18,8 +19,8 @@ class HomeTopActions extends ConsumerStatefulWidget {
   final VoidCallback onRescuerPressed;
   final VoidCallback onCharityPressed;
   final bool isSosBroadcasting;
-  final Map<String, dynamic>? sosData;
-  final Function(Map<String, dynamic>) onSosBroadcast;
+  final DistressSignalInput? sosData;
+  final ValueChanged<DistressSignalInput> onSosBroadcast;
   final VoidCallback onSosRevoke;
 
   const HomeTopActions({

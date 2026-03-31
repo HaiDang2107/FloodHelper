@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -8,119 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../config/app_config.dart';
-import 'mqtt_service.dart';
-
-// ================================================================
-//  Top-level functions — these run in the BACKGROUND isolate
-// ================================================================
-
-const String _kNotificationChannelId = 'floodhelper_location';
-
-/// Entry point for the background isolate.
-/// Must be a **top-level** function (not a class method).
-@pragma('vm:entry-point')
-Future<void> onStart(ServiceInstance service) async { // service được hệ thống nhét từ ngoài
-  DartPluginRegistrant.ensureInitialized();
-
-  final mqttService = MqttService();
-  String? userId;
-  bool mqttConnected = false;
-  List<String> allowedFriends = [];
-
-  // Listen for userId sent from UI isolate (lắng nghe kênh setUserId)
-  service.on('setUserId').listen((event) async {
-    userId = event?['userId'] as String?;
-    if (userId != null && !mqttConnected) {
-      mqttConnected = await mqttService.connect('${userId!}_bg');
-      if (kDebugMode) {
-        print('📡 [BG] MQTT connected for $userId: $mqttConnected');
-      }
-    }
-  });
-
-  // Listen for allowed friends list from UI isolate
-  service.on('setAllowedFriends').listen((event) {
-    if (event != null && event['friendIds'] != null) {
-      allowedFriends = List<String>.from(event['friendIds']);
-      if (kDebugMode) {
-        print('📡 [BG] Allowed friends updated: $allowedFriends');
-      }
-    }
-  });
-
-  // Listen for stop command from UI isolate
-  service.on('stopService').listen((_) {
-    mqttService.disconnect();
-    service.stopSelf();
-  });
-
-  // Periodic GPS poll + MQTT publish
-  Timer.periodic(
-    Duration(seconds: AppConfig.locationPublishIntervalSeconds),
-    (_) async {
-      if (userId == null) return;
-
-      try {
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-          ),
-        );
-
-        // 1. Publish to MQTT with new topic convention
-        if (mqttConnected) {
-          final payload = jsonEncode({
-            'lat': position.latitude,
-            'lng': position.longitude,
-            'user': userId,
-            'allowed_friends': allowedFriends,
-          });
-          if (kDebugMode) {
-            print(payload);
-            print(AppConfig.mqttCurrentLocationSuffix);
-          }
-          mqttService.publishRaw(
-            topic: AppConfig.mqttCurrentLocationSuffix,
-            payload: payload,
-          );
-        }
-
-        // 2. Send location back to UI isolate (for map marker)
-        service.invoke('onLocationUpdate', {
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        });
-
-        // 3. Update sticky notification with coordinates
-        if (service is AndroidServiceInstance) {
-          service.setForegroundNotificationInfo(
-            title: AppConfig.notificationTitle,
-            content:
-                '${position.latitude.toStringAsFixed(5)}, '
-                '${position.longitude.toStringAsFixed(5)}',
-          );
-        }
-
-        if (kDebugMode) {
-          print(
-            '📍 [BG] (${position.latitude}, ${position.longitude})',
-          );
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('📍 [BG] Poll error: $e');
-        }
-      }
-    },
-  );
-}
-
-/// iOS background fetch handler (required by flutter_background_service).
-@pragma('vm:entry-point')
-Future<bool> onIosBackground(ServiceInstance service) async {
-  DartPluginRegistrant.ensureInitialized();
-  return true;
-}
+import '../../domain/models/rescuer_distress_alert.dart';
+import 'location_tracking_background.dart';
 
 // ================================================================
 //  LocationUpdate — data class for UI layer
@@ -159,7 +46,13 @@ class LocationTrackingService {
   final _locationController = StreamController<LocationUpdate>.broadcast();
   Stream<LocationUpdate> get locationStream => _locationController.stream;
 
+  final _victimLocationController =
+      StreamController<VictimAlert>.broadcast();
+  Stream<VictimAlert> get victimLocationStream =>
+      _victimLocationController.stream;
+
   StreamSubscription? _bgSubscription; // dùng để quản lý listener
+  StreamSubscription? _rescuerSubscription;
 
   // -------------------- Initialization --------------------
 
@@ -175,10 +68,19 @@ class LocationTrackingService {
 
     // Create Android notification channel (silent, low importance)
     const channel = AndroidNotificationChannel(
-      _kNotificationChannelId,
+      kLocationNotificationChannelId,
       AppConfig.notificationChannelName,
       description: 'Foreground service notification for location tracking',
       importance: Importance.low,
+    );
+
+    const distressAlertChannel = AndroidNotificationChannel(
+      kDistressAlertChannelId,
+      AppConfig.distressAlertChannelName,
+      description: 'Critical rescue alerts for rescuers',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
     );
 
     final flnPlugin = FlutterLocalNotificationsPlugin();
@@ -186,6 +88,10 @@ class LocationTrackingService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+    await flnPlugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(distressAlertChannel);
 
     await _service.configure(
       androidConfiguration: AndroidConfiguration(
@@ -193,7 +99,7 @@ class LocationTrackingService {
         autoStart: false, // background service không tự động khởi động 
         isForegroundMode: true,
         foregroundServiceTypes: [AndroidForegroundType.location],
-        notificationChannelId: _kNotificationChannelId,
+        notificationChannelId: kLocationNotificationChannelId,
         initialNotificationTitle: AppConfig.notificationTitle,
         initialNotificationContent: AppConfig.notificationContent,
       ),
@@ -208,7 +114,11 @@ class LocationTrackingService {
   // -------------------- Start / Stop --------------------
 
   /// Start the background service, get initial position, begin tracking.
-  Future<LocationUpdate> start(String userId, {List<String> allowedFriendIds = const []}) async {
+  Future<LocationUpdate> start(
+    String userId, {
+    List<String> allowedFriendIds = const [],
+    bool isRescuer = false,
+  }) async {
     // 1. Check permissions
     await _ensureLocationPermission();
 
@@ -234,6 +144,9 @@ class LocationTrackingService {
     // 4b. Send initial allowed friends list
     _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
 
+    // 4c. Send rescuer role flag to background isolate
+    _service.invoke('setRescuerMode', {'isRescuer': isRescuer});
+
     // 5. Listen for location updates coming back from background
     // Khi gọi hàm .listen(...), ta đang ra lệnh cho hệ thống: "Hãy mở một luồng liên tục chạy ngầm trong RAM để nghe ngóng tin tức từ kênh onLocationUpdate
     // lưu vào _bgSubscription để dễ quản lý (có thể hủy bất cứ lúc nào)
@@ -246,6 +159,23 @@ class LocationTrackingService {
         );
         _locationController.add(update); // Ném dữ liệu vào stream
       }
+    });
+
+    _rescuerSubscription = _service.on('onRescuerDistress').listen((event) {
+      if (event == null) return;
+
+      final userId = (event['userId'] ?? '').toString();
+      final lat = (event['lat'] as num?)?.toDouble();
+      final lng = (event['long'] as num?)?.toDouble();
+      if (userId.isEmpty || lat == null || lng == null) return;
+
+      _victimLocationController.add(
+        VictimAlert(
+          userId: userId,
+          latitude: lat,
+          longitude: lng,
+        ),
+      );
     });
 
     if (kDebugMode) {
@@ -262,6 +192,8 @@ class LocationTrackingService {
   Future<void> stop() async {
     _bgSubscription?.cancel();
     _bgSubscription = null;
+    _rescuerSubscription?.cancel();
+    _rescuerSubscription = null;
     _service.invoke('stopService');
 
     if (kDebugMode) {
@@ -273,12 +205,28 @@ class LocationTrackingService {
   void dispose() {
     stop();
     _locationController.close();
+    _victimLocationController.close();
   }
 
   /// Update the allowed friends list in the background isolate.
   /// Called when user changes map mode settings.
   void updateAllowedFriends(List<String> friendIds) {
     _service.invoke('setAllowedFriends', {'friendIds': friendIds});
+  }
+
+  /// Update SOS state in background isolate so current-location payload can include isSoS.
+  void setSosStatus(bool isSoS) {
+    _service.invoke('setSoSStatus', {'isSoS': isSoS});
+  }
+
+  /// Publish distress signal command through background isolate to MQTT topic `signal`.
+  void publishSignalCommand(Map<String, dynamic> commandPayload) {
+    _service.invoke('publishSignalCommand', commandPayload);
+  }
+
+  /// Tell background isolate whether UI isolate is currently active.
+  void setUiIsActive(bool isUiActive) {
+    _service.invoke('setUiIsActive', {'isUiActive': isUiActive});
   }
 
   // -------------------- Private --------------------

@@ -3,18 +3,28 @@
 // ==============================
 
 model Signal {
-  signalId     String    @id @default(uuid()) @db.Uuid @map("signal_id")
-  createdBy    String    @db.Uuid @map("created_by")
-  trappedCount Int       @default(0) @map("trapped_count")
-  hasChildren  Boolean   @default(false) @map("has_children")
-  hasElderly   Boolean   @default(false) @map("has_elderly")
-  hasFood      Boolean   @default(false) @map("has_food")
-  note         String?   @db.Text
-  createdAt    DateTime  @default(now()) @map("created_at")
-  handledAt    DateTime? @map("handled_at")
-  deletedAt    DateTime? @map("deleted_at")
+  signalId     String      @id @default(uuid()) @db.Uuid @map("signal_id")
+  createdBy    String      @db.Uuid @map("created_by")
+  handledBy    String?     @db.Uuid @map("handled_by")
+  trappedCount Int         @default(0) @map("trapped_count")
+  childrenNum  Int         @default(0) @map("children_num")
+  elderlyNum   Int         @default(0) @map("elderly_num")
+  hasFood      Boolean     @default(false) @map("has_food")
+  hasWater     Boolean     @default(false) @map("has_water")
+  state        SignalState @default(BROADCASTING)
+  note         String?     @db.Text
+  createdAt    DateTime    @default(now()) @map("created_at")
+  handledAt    DateTime?   @map("handled_at")
+  stoppedAt    DateTime?   @map("stopped_at")
 
-  user User @relation(fields: [createdBy], references: [userId])
+  user          User  @relation("SignalCreator", fields: [createdBy], references: [userId])
+  handledByUser User? @relation("SignalHandler", fields: [handledBy], references: [userId])
 
   @@map("Signal")
+}
+
+enum SignalState {
+  BROADCASTING
+  HANDLED
+  STOPPED
 }

@@ -129,6 +129,7 @@ class MqttService {
   void publishRaw({
     required String topic,
     required String payload,
+    MqttQos qos = MqttQos.atLeastOnce,
   }) {
     if (!_isConnected || _client == null) {
       if (kDebugMode) {
@@ -142,7 +143,7 @@ class MqttService {
 
     _client!.publishMessage(
       topic,
-      MqttQos.atLeastOnce,
+      qos,
       builder.payload!,
     );
 
@@ -162,10 +163,8 @@ class MqttService {
 
   // Topic: '{friendId}/to_{myUserId}/last-location'
   void subscribeFriendLocation(String friendId, String myUserId) {
-    if (!_isConnected || _client == null) return;
-
     final topic = '$friendId/to_$myUserId/${AppConfig.mqttLastLocationSuffix}';
-    _client!.subscribe(topic, MqttQos.atLeastOnce);
+    subscribeTopic(topic, qos: MqttQos.atLeastOnce);
 
     if (kDebugMode) {
       print('📡 Subscribed to friend location: $topic');
@@ -174,10 +173,8 @@ class MqttService {
 
   /// Unsubscribe from a friend's last-location topic.
   void unsubscribeFriendLocation(String friendId, String myUserId) {
-    if (!_isConnected || _client == null) return;
-
     final topic = '$friendId/to_$myUserId/${AppConfig.mqttLastLocationSuffix}';
-    _client!.unsubscribe(topic);
+    unsubscribeTopic(topic);
 
     if (kDebugMode) {
       print('📡 Unsubscribed from friend location: $topic');
@@ -239,6 +236,18 @@ class MqttService {
   /// Get stream of received messages
   Stream<List<MqttReceivedMessage<MqttMessage>>>? get messageStream {
     return _client?.updates;
+  }
+
+  /// Subscribe to any topic with configurable QoS.
+  void subscribeTopic(String topic, {MqttQos qos = MqttQos.atLeastOnce}) {
+    if (!_isConnected || _client == null) return;
+    _client!.subscribe(topic, qos);
+  }
+
+  /// Unsubscribe from any topic.
+  void unsubscribeTopic(String topic) {
+    if (!_isConnected || _client == null) return;
+    _client!.unsubscribe(topic);
   }
 
   /// Disconnect from broker

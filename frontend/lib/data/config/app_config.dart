@@ -19,6 +19,12 @@ class AppConfig {
   // Convention: '{friendId}/to_{myId}/last-location'
   static const String mqttLastLocationSuffix = 'last-location';
 
+  // MQTT topic for distress signal commands.
+  static const String mqttSignalTopic = 'signal';
+
+  // MQTT topic for rescuer distress stream.
+  static const String mqttRescuerCommonTopic = 'rescuer/common';
+
   /// MQTT client ID prefix (will be appended with userId)
   static const String mqttClientIdPrefix = ''; // may be 'floodhelper_'
 
@@ -36,6 +42,8 @@ class AppConfig {
   static const String notificationChannelName = 'Location Tracking';
   static const String notificationTitle = 'FloodHelper đang hoạt động';
   static const String notificationContent = 'Đang chia sẻ vị trí với đội cứu hộ...';
+  static const String distressAlertChannelId = 'floodhelper_distress_alert';
+  static const String distressAlertChannelName = 'Distress Alerts';
 
   // ==================== API ====================
   /// Base URL for the backend API

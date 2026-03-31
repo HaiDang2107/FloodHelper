@@ -23,13 +23,31 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   late final FirebaseMessagingService _messagingService = ref.read(firebaseMessagingServiceProvider);
 
   @override
   void initState() {
     super.initState();
+    // WidgetsBinding dùng để quản lý lifecycle của app
+    // addObserver(this): _HomeScreenState đăng ký nhận callback từ WidgetsBindings
+    WidgetsBinding.instance.addObserver(this); 
     ref.read(homeViewModelProvider.notifier).setupFirebaseMessaging(_messagingService);
+    ref.read(homeViewModelProvider.notifier).setUiIsActive(true); // UI isolate is online.
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) { // Kiểm soát trạng tháu UI
+    final isActive = state == AppLifecycleState.resumed; // state == resumed ==> isActive = true
+    ref.read(homeViewModelProvider.notifier).setUiIsActive(isActive);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this); 
+    ref.read(homeViewModelProvider.notifier).setUiIsActive(false);
+    super.dispose();
   }
 
   void _showBottomSheet(String title, Widget content, {Color? backgroundColor}) {
@@ -133,6 +151,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           imageUrl: friendInfo?.avatarUrl ?? '',
                           color: const Color(0xFF0F62FE),
                           roles: const [],
+                        ),
+                      );
+                    }),
+
+                    // Rescuer distress markers (from rescuer/common)
+                    ...state.victimLocations.entries.map((entry) {
+                      return Marker(
+                        point: entry.value,
+                        width: 60,
+                        height: 81,
+                        alignment: Alignment.topCenter,
+                        rotate: true,
+                        child: const UserLocationPin(
+                          size: 60,
+                          imageUrl: '',
+                          color: Colors.red,
+                          isSosState: true,
+                          roles: [],
                         ),
                       );
                     }),

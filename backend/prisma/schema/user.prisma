@@ -27,7 +27,8 @@ model User {
   account              Account?
   posts                Post[]
   campaigns            CharityCampaign[]
-  signals              Signal[]
+  signals              Signal[] @relation("SignalCreator")
+  handledSignals       Signal[] @relation("SignalHandler")
   sentMessages         Message[]
   createdChatRooms     ChatRoom[]
   likes                Like[]

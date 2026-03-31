@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../../../domain/models/distress_signal_input.dart';
 import '../../widgets/_distress_signal_sheet/distress_signal_form.dart';
 import '../../widgets/_distress_signal_sheet/distress_signal_view.dart';
 
 class DistressSignalSheet extends StatefulWidget {
   final bool isBroadcasting;
-  final Map<String, dynamic>? currentSignalData;
-  final Function(Map<String, dynamic>) onBroadcast;
+  final DistressSignalInput? currentSignalData;
+  final ValueChanged<DistressSignalInput> onBroadcast;
   final VoidCallback onRevoke;
 
   const DistressSignalSheet({
@@ -23,7 +24,7 @@ class DistressSignalSheet extends StatefulWidget {
 class _DistressSignalSheetState extends State<DistressSignalSheet> {
   bool _isEditing = false;
 
-  void _showBroadcastConfirmation(Map<String, dynamic> data) {
+  void _showBroadcastConfirmation(DistressSignalInput data) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -35,7 +36,7 @@ class _DistressSignalSheetState extends State<DistressSignalSheet> {
           ],
         ),
         content: const Text(
-          'If you broadcast a distress signal, your location will be made public.\n\nDo you want to continue?',
+          'If you broadcast a distress signal, you location will be seen by rescuer.\n\nDo you want to continue?',
           style: TextStyle(fontSize: 15),
         ),
         actions: [
@@ -96,13 +97,7 @@ class _DistressSignalSheetState extends State<DistressSignalSheet> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: widget.isBroadcasting && !_isEditing
           ? DistressSignalView(
-              trappedCounts: widget.currentSignalData!['trappedCounts'] ?? 0,
-              childrenNumbers:
-                  widget.currentSignalData!['childrenNumbers'] ?? 0,
-              elderlyNumbers: widget.currentSignalData!['elderlyNumbers'] ?? 0,
-              hasFood: widget.currentSignalData!['hasFood'] ?? false,
-              hasWater: widget.currentSignalData!['hasWater'] ?? false,
-              other: widget.currentSignalData!['other'],
+              data: widget.currentSignalData!,
               onEdit: () {
                 setState(() {
                   _isEditing = true;

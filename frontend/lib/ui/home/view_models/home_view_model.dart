@@ -12,6 +12,8 @@ import '../../../data/repositories/repositories.dart';
 import '../../../data/services/firebase_messaging_service.dart';
 import '../../../data/services/location_tracking_service.dart';
 import '../../../data/services/mqtt_service.dart';
+import '../../../domain/models/distress_signal_input.dart';
+import '../../../domain/models/rescuer_distress_alert.dart';
 import 'friend_view_model.dart';
 
 part 'home_view_model.g.dart';
@@ -35,7 +37,7 @@ class HomeState {
   final bool isLoading;
   final MapType selectedMapType;
   final bool isSosBroadcasting;
-  final Map<String, dynamic>? sosData;
+  final DistressSignalInput? sosData;
   final bool showStrangerLocation;
   final bool showPostLocation;
   final String? errorMessage;
@@ -49,6 +51,9 @@ class HomeState {
 
   // Friend locations received via MQTT
   final Map<String, LatLng> friendLocations;
+
+  // Victim locations for rescuers (received from rescuer/common)
+  final Map<String, LatLng> victimLocations;
 
   // Friends with map mode data (from backend)
   final List<FriendModel> friendsWithMapMode;
@@ -71,6 +76,7 @@ class HomeState {
     this.announcements = const [],
     this.unreadAnnouncementsCount = 0,
     this.friendLocations = const {},
+    this.victimLocations = const {},
     this.friendsWithMapMode = const [],
     this.locationVisibility = 'JUST_FRIEND',
   });
@@ -80,7 +86,7 @@ class HomeState {
     bool? isLoading,
     MapType? selectedMapType,
     bool? isSosBroadcasting,
-    Map<String, dynamic>? sosData,
+    DistressSignalInput? sosData,
     bool? showStrangerLocation,
     bool? showPostLocation,
     String? errorMessage,
@@ -92,6 +98,7 @@ class HomeState {
     List<AnnouncementModel>? announcements,
     int? unreadAnnouncementsCount,
     Map<String, LatLng>? friendLocations, // Danh sách bạn bè cùng vị trí, phục vụ duy trì trạng thái UI.
+    Map<String, LatLng>? victimLocations,
     List<FriendModel>? friendsWithMapMode, // Lưu danh sách bạn bè cũng map mode, chịu trách nhiệm duy trì danh sách bạn bè
     String? locationVisibility,
   }) {
@@ -110,6 +117,7 @@ class HomeState {
       announcements: announcements ?? this.announcements,
       unreadAnnouncementsCount: unreadAnnouncementsCount ?? this.unreadAnnouncementsCount,
       friendLocations: friendLocations ?? this.friendLocations,
+        victimLocations: victimLocations ?? this.victimLocations,
       friendsWithMapMode: friendsWithMapMode ?? this.friendsWithMapMode,
       locationVisibility: locationVisibility ?? this.locationVisibility,
     );
@@ -136,6 +144,7 @@ class HomeViewModel extends _$HomeViewModel {
 
   // Friend location stream subscription
   StreamSubscription<FriendLocationUpdate>? _friendLocationSubscription;
+  StreamSubscription<VictimAlert>? _victimLocationSubscription;
   bool _isMessagingSetup = false;
 
   @override
@@ -149,6 +158,7 @@ class HomeViewModel extends _$HomeViewModel {
     ref.onDispose(() {
       _locationSubscription?.cancel();
       _friendLocationSubscription?.cancel();
+      _victimLocationSubscription?.cancel();
       _mqttService.stopListeningFriendLocations();
 
     });
@@ -229,7 +239,11 @@ class HomeViewModel extends _$HomeViewModel {
       final initialUpdate = await _locationTrackingService.start(
         currentUser!.id,
         allowedFriendIds: allowedFriendIds,
+        isRescuer: currentUser.isRescuer,
       );
+
+      _locationTrackingService.setUiIsActive(true);
+      _locationTrackingService.setSosStatus(state.isSosBroadcasting);
 
       // 4. Update UI with initial position
       final initialLatLng = LatLng(
@@ -261,6 +275,13 @@ class HomeViewModel extends _$HomeViewModel {
 
       // 6. Setup MQTT subscriptions for friend locations (UI isolate)
       await _setupFriendSubscriptions(currentUser.id);
+
+      _victimLocationSubscription?.cancel();
+      _victimLocationSubscription = _locationTrackingService.victimLocationStream.listen((alert) {
+        final updated = Map<String, LatLng>.from(state.victimLocations);
+        updated[alert.userId] = LatLng(alert.latitude, alert.longitude);
+        state = state.copyWith(victimLocations: updated);
+      });
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -549,29 +570,43 @@ class HomeViewModel extends _$HomeViewModel {
 
   // ==================== SOS / Distress Signal ====================
 
-  Future<void> broadcastSos(Map<String, dynamic> data) async {
+  Future<void> broadcastSos(DistressSignalInput data) async {
     try {
-      final success = await _userRepository.broadcastSos(
-        trappedCounts: data['trappedCounts'] ?? 1,
-        childrenNumbers: data['childrenNumbers'] ?? 0,
-        elderlyNumbers: data['elderlyNumbers'] ?? 0,
-        hasFood: data['hasFood'] ?? false,
-        hasWater: data['hasWater'] ?? false,
-        other: data['other'],
-      );
-      
-      if (success) {
-        state = state.copyWith(
-          isSosBroadcasting: true,
-          sosData: data,
-        );
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null) {
+        state = state.copyWith(errorMessage: 'User session not found');
+        return;
+      }
+
+      final wasBroadcasting = state.isSosBroadcasting;
+
+      if (!wasBroadcasting) {
+        _locationTrackingService.publishSignalCommand({
+          'command': 'CREATE',
+          'created_by': currentUser.id,
+          'data': _toDistressCommandData(data),
+        });
         _emitUiEvent(
           'Distress signal is now broadcasting',
           HomeUiEventType.success,
         );
       } else {
-        state = state.copyWith(errorMessage: 'Failed to broadcast SOS');
+        _locationTrackingService.publishSignalCommand({
+          'command': 'UPDATE-INFO',
+          'updated_by': currentUser.id,
+          'data': _toDistressCommandData(data),
+        });
+        _emitUiEvent(
+          'Distress signal information updated',
+          HomeUiEventType.info,
+        );
       }
+
+      _locationTrackingService.setSosStatus(true);
+      state = state.copyWith(
+        isSosBroadcasting: true,
+        sosData: data,
+      );
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to broadcast SOS: $e');
     }
@@ -579,23 +614,45 @@ class HomeViewModel extends _$HomeViewModel {
 
   Future<void> revokeSos() async {
     try {
-      final success = await _userRepository.revokeSos();
-      
-      if (success) {
-        state = state.copyWith(
-          isSosBroadcasting: false,
-          clearSosData: true,
-        );
-        _emitUiEvent(
-          'Distress signal has been revoked',
-          HomeUiEventType.info,
-        );
-      } else {
-        state = state.copyWith(errorMessage: 'Failed to revoke SOS');
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null) {
+        state = state.copyWith(errorMessage: 'User session not found');
+        return;
       }
+
+      _locationTrackingService.publishSignalCommand({
+        'command': 'STOPPED',
+        'stopped_by': currentUser.id,
+        'data': <String, dynamic>{},
+      });
+      _locationTrackingService.setSosStatus(false);
+
+      state = state.copyWith(
+        isSosBroadcasting: false,
+        clearSosData: true,
+      );
+      _emitUiEvent(
+        'Distress signal has been revoked',
+        HomeUiEventType.info,
+      );
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to revoke SOS: $e');
     }
+  }
+
+  Map<String, dynamic> _toDistressCommandData(DistressSignalInput data) {
+    return {
+      'trappedCounts': data.trappedCounts,
+      'childrenNumbers': data.childrenNumbers,
+      'elderlyNumbers': data.elderlyNumbers,
+      'hasFood': data.hasFood,
+      'hasWater': data.hasWater,
+      'other': data.other,
+    };
+  }
+
+  void setUiIsActive(bool isUiActive) {
+    _locationTrackingService.setUiIsActive(isUiActive);
   }
 
   // ==================== Friend Sync ====================
