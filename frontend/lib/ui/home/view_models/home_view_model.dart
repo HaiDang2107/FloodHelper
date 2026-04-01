@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,126 +13,28 @@ import '../../../data/repositories/repositories.dart';
 import '../../../data/services/firebase_messaging_service.dart';
 import '../../../data/services/location_tracking_service.dart';
 import '../../../data/services/mqtt_service.dart';
+import '../../../data/services/signal_service.dart';
+import '../../../data/services/sos_local_storage.dart';
 import '../../../domain/models/distress_signal_input.dart';
 import '../../../domain/models/rescuer_distress_alert.dart';
 import 'friend_view_model.dart';
 
+part 'home_state.dart';
 part 'home_view_model.g.dart';
-
-enum MapType { transport, weather }
-
-enum HomeUiEventType { info, success, error }
-
-class HomeUiEvent {
-  final HomeUiEventType type;
-  final String message;
-
-  const HomeUiEvent({
-    required this.type,
-    required this.message,
-  });
-}
-
-class HomeState {
-  final LatLng? currentPosition;
-  final bool isLoading;
-  final MapType selectedMapType;
-  final bool isSosBroadcasting;
-  final DistressSignalInput? sosData;
-  final bool showStrangerLocation;
-  final bool showPostLocation;
-  final String? errorMessage;
-  final HomeUiEvent? uiEvent;
-
-  // Data from repositories
-  final List<UserModel> nearbyUsers;
-  final List<PostModel> posts;
-  final List<AnnouncementModel> announcements;
-  final int unreadAnnouncementsCount;
-
-  // Friend locations received via MQTT
-  final Map<String, LatLng> friendLocations;
-
-  // Victim locations for rescuers (received from rescuer/common)
-  final Map<String, LatLng> victimLocations;
-
-  // Friends with map mode data (from backend)
-  final List<FriendModel> friendsWithMapMode;
-
-  // Current location visibility setting
-  final String locationVisibility; // 'PUBLIC', 'JUST_FRIEND', 'NO_ONE'
-
-  const HomeState({
-    this.currentPosition,
-    this.isLoading = true,
-    this.selectedMapType = MapType.transport,
-    this.isSosBroadcasting = false,
-    this.sosData,
-    this.showStrangerLocation = true,
-    this.showPostLocation = true,
-    this.errorMessage,
-    this.uiEvent,
-    this.nearbyUsers = const [],
-    this.posts = const [],
-    this.announcements = const [],
-    this.unreadAnnouncementsCount = 0,
-    this.friendLocations = const {},
-    this.victimLocations = const {},
-    this.friendsWithMapMode = const [],
-    this.locationVisibility = 'JUST_FRIEND',
-  });
-
-  HomeState copyWith({
-    LatLng? currentPosition,
-    bool? isLoading,
-    MapType? selectedMapType,
-    bool? isSosBroadcasting,
-    DistressSignalInput? sosData,
-    bool? showStrangerLocation,
-    bool? showPostLocation,
-    String? errorMessage,
-    HomeUiEvent? uiEvent,
-    bool clearSosData = false,
-    bool clearUiEvent = false,
-    List<UserModel>? nearbyUsers,
-    List<PostModel>? posts,
-    List<AnnouncementModel>? announcements,
-    int? unreadAnnouncementsCount,
-    Map<String, LatLng>? friendLocations, // Danh sách bạn bè cùng vị trí, phục vụ duy trì trạng thái UI.
-    Map<String, LatLng>? victimLocations,
-    List<FriendModel>? friendsWithMapMode, // Lưu danh sách bạn bè cũng map mode, chịu trách nhiệm duy trì danh sách bạn bè
-    String? locationVisibility,
-  }) {
-    return HomeState(
-      currentPosition: currentPosition ?? this.currentPosition,
-      isLoading: isLoading ?? this.isLoading,
-      selectedMapType: selectedMapType ?? this.selectedMapType,
-      isSosBroadcasting: isSosBroadcasting ?? this.isSosBroadcasting,
-      sosData: clearSosData ? null : (sosData ?? this.sosData),
-      showStrangerLocation: showStrangerLocation ?? this.showStrangerLocation,
-      showPostLocation: showPostLocation ?? this.showPostLocation,
-      errorMessage: errorMessage,
-      uiEvent: clearUiEvent ? null : (uiEvent ?? this.uiEvent),
-      nearbyUsers: nearbyUsers ?? this.nearbyUsers,
-      posts: posts ?? this.posts,
-      announcements: announcements ?? this.announcements,
-      unreadAnnouncementsCount: unreadAnnouncementsCount ?? this.unreadAnnouncementsCount,
-      friendLocations: friendLocations ?? this.friendLocations,
-        victimLocations: victimLocations ?? this.victimLocations,
-      friendsWithMapMode: friendsWithMapMode ?? this.friendsWithMapMode,
-      locationVisibility: locationVisibility ?? this.locationVisibility,
-    );
-  }
-}
 
 @riverpod
 class HomeViewModel extends _$HomeViewModel {
   final MapController mapController = MapController();
   final ImagePicker _imagePicker = ImagePicker();
-  late final LocationTrackingService _locationTrackingService = ref.read(locationTrackingServiceProvider);
+  late final LocationTrackingService _locationTrackingService = ref.read(
+    locationTrackingServiceProvider,
+  );
 
   // MQTT service (UI isolate — for subscribing to friend locations)
   late final MqttService _mqttService = ref.read(mqttServiceProvider);
+  late final SignalService _signalService = SignalService(
+    apiClient: ref.read(apiClientProvider),
+  );
 
   // Repositories
   late final UserRepository _userRepository;
@@ -145,6 +48,9 @@ class HomeViewModel extends _$HomeViewModel {
   // Friend location stream subscription
   StreamSubscription<FriendLocationUpdate>? _friendLocationSubscription;
   StreamSubscription<VictimAlert>? _victimLocationSubscription;
+  StreamSubscription<VictimSignalEvent>? _victimStoppedSubscription;
+  StreamSubscription<VictimSignalEvent>? _victimHandledSubscription;
+  StreamSubscription<RescuerReplyEvent>? _rescuerReplySubscription;
   bool _isMessagingSetup = false;
 
   @override
@@ -159,8 +65,10 @@ class HomeViewModel extends _$HomeViewModel {
       _locationSubscription?.cancel();
       _friendLocationSubscription?.cancel();
       _victimLocationSubscription?.cancel();
+      _victimStoppedSubscription?.cancel();
+      _victimHandledSubscription?.cancel();
+      _rescuerReplySubscription?.cancel();
       _mqttService.stopListeningFriendLocations();
-
     });
 
     ref.listen(friendViewModelProvider, (previous, next) {
@@ -171,9 +79,7 @@ class HomeViewModel extends _$HomeViewModel {
       }
 
       unawaited(syncAfterAcceptFriendRequest(acceptedFriendId));
-      ref
-          .read(friendViewModelProvider.notifier)
-          .clearAcceptedFriendSyncEvent();
+      ref.read(friendViewModelProvider.notifier).clearAcceptedFriendSyncEvent();
     });
 
     // Auto-start location tracking
@@ -238,6 +144,7 @@ class HomeViewModel extends _$HomeViewModel {
       // 3. Start background service (GPS + MQTT publish) with allowed friends
       final initialUpdate = await _locationTrackingService.start(
         currentUser!.id,
+        fullname: currentUser.effectiveDisplayName,
         allowedFriendIds: allowedFriendIds,
         isRescuer: currentUser.isRescuer,
       );
@@ -250,10 +157,7 @@ class HomeViewModel extends _$HomeViewModel {
         initialUpdate.latitude,
         initialUpdate.longitude,
       );
-      state = state.copyWith(
-        currentPosition: initialLatLng,
-        isLoading: false,
-      );
+      state = state.copyWith(currentPosition: initialLatLng, isLoading: false);
       mapController.move(initialLatLng, 15.0);
 
       // 5. Listen to subsequent location updates from the service
@@ -277,11 +181,66 @@ class HomeViewModel extends _$HomeViewModel {
       await _setupFriendSubscriptions(currentUser.id);
 
       _victimLocationSubscription?.cancel();
-      _victimLocationSubscription = _locationTrackingService.victimLocationStream.listen((alert) {
-        final updated = Map<String, LatLng>.from(state.victimLocations);
-        updated[alert.userId] = LatLng(alert.latitude, alert.longitude);
-        state = state.copyWith(victimLocations: updated);
-      });
+      _victimLocationSubscription = _locationTrackingService
+          .victimLocationStream
+          .listen((alert) {
+            final updated = Map<String, LatLng>.from(state.victimLocations);
+            final names = Map<String, String>.from(state.victimFullnames);
+            updated[alert.userId] = LatLng(alert.latitude, alert.longitude);
+            final fullname = (alert.fullname ?? '').trim();
+            if (fullname.isNotEmpty) {
+              names[alert.userId] = fullname;
+            }
+            state = state.copyWith(
+              victimLocations: updated,
+              victimFullnames: names,
+            );
+          });
+
+      _victimStoppedSubscription?.cancel();
+      _victimStoppedSubscription = _locationTrackingService.victimStoppedStream
+          .listen((event) {
+            final updated = Map<String, LatLng>.from(state.victimLocations);
+            final names = Map<String, String>.from(state.victimFullnames);
+            updated.remove(event.userId);
+            names.remove(event.userId);
+            state = state.copyWith(
+              victimLocations: updated,
+              victimFullnames: names,
+            );
+            _clearSelectionIfHidden();
+          });
+
+      _victimHandledSubscription?.cancel();
+      _victimHandledSubscription = _locationTrackingService.victimHandledStream
+          .listen((event) {
+            final updated = Map<String, LatLng>.from(state.victimLocations);
+            final names = Map<String, String>.from(state.victimFullnames);
+            updated.remove(event.userId);
+            names.remove(event.userId);
+            state = state.copyWith(
+              victimLocations: updated,
+              victimFullnames: names,
+            );
+            _clearSelectionIfHidden();
+          });
+
+      _rescuerReplySubscription?.cancel();
+      _rescuerReplySubscription = _locationTrackingService.rescuerReplyStream
+          .listen((event) async {
+            state = state.copyWith(
+              isSosBroadcasting: false,
+              clearSosData: true,
+            );
+            _locationTrackingService.setSosStatus(false);
+            await SosLocalStorage.clearBroadcastingState(currentUser.id);
+            _emitUiEvent(
+              'Your distress signal is now handled by ${event.rescuerFullname}',
+              HomeUiEventType.success,
+            );
+          });
+
+      await _restoreSosState(currentUser.id);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -306,7 +265,9 @@ class HomeViewModel extends _$HomeViewModel {
   /// and listen for incoming friend location updates.
   Future<void> _setupFriendSubscriptions(String myUserId) async {
     // Connect MQTT on UI isolate (separate connection from background isolate)
-    final connected = await _mqttService.connect('${myUserId}_ui'); // mỗi thiết bị kết nối đến Broker phải có một cái tên (ID) duy nhất
+    final connected = await _mqttService.connect(
+      '${myUserId}_ui',
+    ); // mỗi thiết bị kết nối đến Broker phải có một cái tên (ID) duy nhất
     if (!connected) {
       if (kDebugMode) {
         print('📡 [UI] MQTT connect failed for friend subscriptions');
@@ -325,19 +286,26 @@ class HomeViewModel extends _$HomeViewModel {
     _mqttService.startListeningFriendLocations(myUserId);
 
     // Update state when friend location arrives
-    _friendLocationSubscription = _mqttService.friendLocationStream.listen(
-      (update) {
-        if (kDebugMode) {
-          print('✅ [UI] NHẬN ĐƯỢC VỊ TRÍ BẠN BÈ: ${update.friendId} -> ${update.latitude}, ${update.longitude}');
-        }
-        final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
-        updatedLocations[update.friendId] = LatLng(update.latitude, update.longitude);
-        state = state.copyWith(friendLocations: updatedLocations);
-      },
-    );
+    _friendLocationSubscription = _mqttService.friendLocationStream.listen((
+      update,
+    ) {
+      if (kDebugMode) {
+        print(
+          '✅ [UI] NHẬN ĐƯỢC VỊ TRÍ BẠN BÈ: ${update.friendId} -> ${update.latitude}, ${update.longitude}',
+        );
+      }
+      final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
+      updatedLocations[update.friendId] = LatLng(
+        update.latitude,
+        update.longitude,
+      );
+      state = state.copyWith(friendLocations: updatedLocations);
+    });
 
     if (kDebugMode) {
-      print('📡 [UI] Subscribed to ${allowedFriends.length} friend location topics');
+      print(
+        '📡 [UI] Subscribed to ${allowedFriends.length} friend location topics',
+      );
     }
   }
 
@@ -353,7 +321,7 @@ class HomeViewModel extends _$HomeViewModel {
 
   Future<void> loadNearbyUsers() async {
     if (state.currentPosition == null) return;
-    
+
     try {
       final users = await _userRepository.getNearbyUsers(
         latitude: state.currentPosition!.latitude,
@@ -396,14 +364,13 @@ class HomeViewModel extends _$HomeViewModel {
   Future<void> refreshFriends() async {
     await _loadFriendsWithMapMode();
     _syncAllowedFriends(); // Update allowed friends to background service
-    
+
     // Re-setup MQTT subscriptions
     final currentUser = ref.read(currentUserProvider);
     if (currentUser != null) {
       await _setupFriendSubscriptions(currentUser.id);
     }
   }
-
 
   // ==================== Location ====================
 
@@ -510,16 +477,22 @@ class HomeViewModel extends _$HomeViewModel {
           _mqttService.unsubscribeFriendLocation(friend.userId, currentUser.id);
         }
         // Re-subscribe allowed only
-        for (final friend in state.friendsWithMapMode.where((f) => f.friendMapMode)) {
+        for (final friend in state.friendsWithMapMode.where(
+          (f) => f.friendMapMode,
+        )) {
           _mqttService.subscribeFriendLocation(friend.userId, currentUser.id);
         }
       }
 
       if (kDebugMode) {
-        print('📍 Friend map modes updated: seeMe=${seeMeIds.length}, freeze=${freezeIds.length}');
+        print(
+          '📍 Friend map modes updated: seeMe=${seeMeIds.length}, freeze=${freezeIds.length}',
+        );
       }
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Failed to update friend map modes: $e');
+      state = state.copyWith(
+        errorMessage: 'Failed to update friend map modes: $e',
+      );
     }
   }
 
@@ -603,10 +576,8 @@ class HomeViewModel extends _$HomeViewModel {
       }
 
       _locationTrackingService.setSosStatus(true);
-      state = state.copyWith(
-        isSosBroadcasting: true,
-        sosData: data,
-      );
+      state = state.copyWith(isSosBroadcasting: true, sosData: data);
+      await SosLocalStorage.saveBroadcastingState(currentUser.id, data);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to broadcast SOS: $e');
     }
@@ -627,14 +598,9 @@ class HomeViewModel extends _$HomeViewModel {
       });
       _locationTrackingService.setSosStatus(false);
 
-      state = state.copyWith(
-        isSosBroadcasting: false,
-        clearSosData: true,
-      );
-      _emitUiEvent(
-        'Distress signal has been revoked',
-        HomeUiEventType.info,
-      );
+      state = state.copyWith(isSosBroadcasting: false, clearSosData: true);
+      await SosLocalStorage.clearBroadcastingState(currentUser.id);
+      _emitUiEvent('Distress signal has been revoked', HomeUiEventType.info);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to revoke SOS: $e');
     }
@@ -653,6 +619,164 @@ class HomeViewModel extends _$HomeViewModel {
 
   void setUiIsActive(bool isUiActive) {
     _locationTrackingService.setUiIsActive(isUiActive);
+  }
+
+  Future<void> handleVictimDistress(String victimUserId) async {
+    // handle signal
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null || !currentUser.isRescuer) {
+      return;
+    }
+    _locationTrackingService.publishRescuerHandleCommand({
+      'userId': victimUserId,
+      'handled_by': currentUser.id,
+    });
+  }
+
+  void selectPin(String? userId) {
+    state = state.copyWith(
+      selectedPinId: userId,
+      clearSelectedPin: userId == null,
+    );
+  }
+
+  List<HomeMapPin> get mapPins {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) {
+      return const [];
+    }
+
+    final pinsById = <String, HomeMapPin>{};
+
+    for (final entry in state.friendLocations.entries) {
+      // .extries là danh sách các phần tử của map
+      final friendInfo = state.friendsWithMapMode
+          .where((f) => f.userId == entry.key)
+          .firstOrNull;
+
+      // entry.key là id
+      // convert từ FriendLocation sang HomeMapPin
+      pinsById[entry.key] = HomeMapPin(
+        userId: entry.key,
+        fullname: friendInfo?.name ?? '[Fail to load]',
+        avatarUrl: friendInfo?.avatarUrl ?? '',
+        position: entry.value,
+        pinType: HomePinType.friend,
+        isSos: false,
+      );
+    }
+
+    for (final entry in state.victimLocations.entries) {
+      // Đảo qua danh sách bạn bè (friendsWithMapMode chứa danh sách bạn bè) để lọc những friend có trong danh sách victim
+      // Điều kiện lọc: f.userId == entry.key
+      final friendInfo = state.friendsWithMapMode
+          .where((f) => f.userId == entry.key)
+          .firstOrNull; // chỉ lấy người đầu tiên với 1 id cụ thể
+      final victimName = state.victimFullnames[entry.key];
+
+      // Convert từ VictimLocation sang HomeMapPin
+      pinsById[entry.key] = HomeMapPin(
+        userId: entry.key,
+        fullname: (victimName != null && victimName.trim().isNotEmpty)
+            ? victimName
+            : (friendInfo?.name ?? '[Fail to load]'),
+        avatarUrl: friendInfo?.avatarUrl ?? '',
+        position: entry.value,
+        pinType: HomePinType.victim,
+        isSos: true,
+      );
+    }
+
+    if (state.currentPosition != null) {
+      pinsById[currentUser.id] = HomeMapPin(
+        userId: currentUser.id,
+        fullname: currentUser.name,
+        avatarUrl: currentUser.avatarUrl ?? '',
+        position: state.currentPosition!,
+        pinType: HomePinType.me,
+        isSos: state.isSosBroadcasting,
+      );
+    }
+
+    return pinsById.values.toList(growable: false);
+  }
+
+  HomePinBubbleData? get selectedBubbleData {
+    final currentUser = ref.read(currentUserProvider);
+    final selectedId = state.selectedPinId;
+    if (selectedId == null || currentUser == null) {
+      return null;
+    }
+
+    final pin = mapPins.where((p) => p.userId == selectedId).firstOrNull;
+    if (pin == null) {
+      return null;
+    }
+
+    final title = switch (pin.pinType) {
+      HomePinType.me => 'Me',
+      HomePinType.friend => 'Friend',
+      HomePinType.victim => 'Victim',
+    };
+
+    return HomePinBubbleData(
+      title: title,
+      userId: pin.userId,
+      fullname: pin.fullname,
+      pinType: pin.pinType,
+      canHandle: currentUser.isRescuer && pin.pinType == HomePinType.victim,
+    );
+  }
+
+  void _clearSelectionIfHidden() {
+    final selectedId = state.selectedPinId;
+    if (selectedId == null) {
+      return;
+    }
+
+    final stillVisible = mapPins.any((pin) => pin.userId == selectedId);
+    if (!stillVisible) {
+      state = state.copyWith(clearSelectedPin: true);
+    }
+  }
+
+  Future<void> _restoreSosState(String userId) async {
+    // khôi phục trạng thái SOS khi màn hình Home khởi động lại hoặc ViewModel được dựng lại.
+    try {
+      final latest = await _signalService
+          .getMyLatestSignal(); // Lấy signal mới nhất của user từ backend
+      if (latest != null && latest.isBroadcasting && latest.signal != null) {
+        //
+        state = state.copyWith(
+          // cập nhật state theo dữ liệu mới
+          isSosBroadcasting: true,
+          sosData: latest.signal,
+        );
+        _locationTrackingService.setSosStatus(true); // Báo cho isolate
+        await SosLocalStorage.saveBroadcastingState(
+          userId,
+          latest.signal!,
+        ); // Lưu vào local storage
+        return;
+      }
+
+      await SosLocalStorage.clearBroadcastingState(
+        userId,
+      ); // Nếu signal mới nhất không phải BROADCASTING ==> Xóa ở local storage
+    } catch (_) {
+      // Fallback to local snapshot when API is unreachable.
+    }
+
+    final local = await SosLocalStorage.getBroadcastingState(userId);
+    // Nếu có dữ liệu signal ở trạng thái broadcasting thì mới lấy
+    if (local != null) {
+      state = state.copyWith(isSosBroadcasting: true, sosData: local);
+      _locationTrackingService.setSosStatus(true);
+      return;
+    }
+
+    state = state.copyWith(isSosBroadcasting: false, clearSosData: true);
+    _locationTrackingService.setSosStatus(false);
   }
 
   // ==================== Friend Sync ====================
@@ -681,10 +805,7 @@ class HomeViewModel extends _$HomeViewModel {
 
   // ==================== Posts ====================
 
-  Future<void> createPost({
-    required String caption,
-    String? imageUrl,
-  }) async {
+  Future<void> createPost({required String caption, String? imageUrl}) async {
     try {
       final post = await _postRepository.createPost(
         caption: caption,
@@ -734,14 +855,14 @@ class HomeViewModel extends _$HomeViewModel {
 
   Future<void> takePicture() async {
     try {
-      final XFile? photo = await _imagePicker.pickImage(source: ImageSource.camera);
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+      );
       if (photo != null) {
         _emitUiEvent('Picture taken: ${photo.path}', HomeUiEventType.success);
       }
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: 'Error taking picture: $e',
-      );
+      state = state.copyWith(errorMessage: 'Error taking picture: $e');
     }
   }
 
@@ -755,10 +876,7 @@ class HomeViewModel extends _$HomeViewModel {
 
   void _emitUiEvent(String message, HomeUiEventType type) {
     state = state.copyWith(
-      uiEvent: HomeUiEvent(
-        type: type,
-        message: message,
-      ),
+      uiEvent: HomeUiEvent(type: type, message: message),
     );
   }
 

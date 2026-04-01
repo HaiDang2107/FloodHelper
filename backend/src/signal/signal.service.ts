@@ -205,6 +205,32 @@ export class SignalService {
     });
   }
 
+  async getLatestSignalByUser(createdBy: string) {
+    return this.prisma.signal.findFirst({
+      where: {
+        createdBy,
+      },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            fullname: true,
+            phoneNumber: true,
+          },
+        },
+        handledByUser: { // handledByUser là tên quan hệ 
+          select: {
+            userId: true,
+            fullname: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
 //   async updateSignalInfo(signalId: string, dto: UpdateSignalInfoDto) {
 //     const actor = dto.updatedBy;
 //     if (!actor) {
@@ -266,13 +292,25 @@ export class SignalService {
       throw new NotFoundException('No broadcasting signal found for this user');
     }
 
-    return this.changeState(activeSignal.signalId, createdBy, {
+    await this.changeState(activeSignal.signalId, createdBy, {
       state: SignalState.STOPPED,
       updatedBy: createdBy,
     });
+
+    return this.prisma.signal.findUnique({
+      where: { signalId: activeSignal.signalId },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            fullname: true,
+          },
+        },
+      },
+    });
   }
 
-  async handleBroadcastingByUser(createdBy: string, handledBy: string) {
+  async handleBroadcastingByRescuer(createdBy: string, handledBy: string) {
     const activeSignal = await this.prisma.signal.findFirst({
       where: {
         createdBy,
@@ -285,9 +323,27 @@ export class SignalService {
       throw new NotFoundException('No broadcasting signal found for this user');
     }
 
-    return this.changeState(activeSignal.signalId, handledBy, {
+    await this.changeState(activeSignal.signalId, handledBy, {
       state: SignalState.HANDLED,
       handledBy
+    });
+
+    return this.prisma.signal.findUnique({
+      where: { signalId: activeSignal.signalId },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            fullname: true,
+          },
+        },
+        handledByUser: {
+          select: {
+            userId: true,
+            fullname: true,
+          },
+        },
+      },
     });
   }
 

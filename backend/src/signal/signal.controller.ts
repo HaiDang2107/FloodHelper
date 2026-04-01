@@ -106,7 +106,7 @@ export class SignalController {
   @UseGuards(ServiceTokenGuard)
   @Patch('state/handle-by-user')
   async handleBroadcastingByUser(@Body() dto: HandleBroadcastingByUserDto) {
-    const data = await this.signalService.handleBroadcastingByUser(
+    const data = await this.signalService.handleBroadcastingByRescuer(
       dto.userId,
       dto.handledBy,
     );
@@ -139,6 +139,18 @@ export class SignalController {
     return {
       success: true,
       message: 'Handled distress signals retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('mine/latest')
+  async getMyLatest(@CurrentUser() user: any) {
+    const data = await this.signalService.getLatestSignalByUser(user.userId);
+
+    return {
+      success: true,
+      message: 'Latest distress signal retrieved successfully',
       data,
     };
   }

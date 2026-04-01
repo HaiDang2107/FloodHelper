@@ -25,6 +25,27 @@ class LocationUpdate {
   });
 }
 
+class VictimSignalEvent {
+  final String userId;
+  final String? fullname;
+  final String? handledBy;
+  final String? rescuerFullname;
+
+  const VictimSignalEvent({
+    required this.userId,
+    this.fullname,
+    this.handledBy,
+    this.rescuerFullname,
+  });
+}
+
+class RescuerReplyEvent {
+  final String rescuerFullname;
+  final String? handledBy;
+
+  const RescuerReplyEvent({required this.rescuerFullname, this.handledBy});
+}
+
 // ================================================================
 //  LocationTrackingService — called from the UI isolate
 // ================================================================
@@ -46,15 +67,32 @@ class LocationTrackingService {
   final _locationController = StreamController<LocationUpdate>.broadcast();
   Stream<LocationUpdate> get locationStream => _locationController.stream;
 
-  final _victimLocationController =
-      StreamController<VictimAlert>.broadcast();
+  final _victimLocationController = StreamController<VictimAlert>.broadcast();
   Stream<VictimAlert> get victimLocationStream =>
       _victimLocationController.stream;
 
+  final _victimStoppedController =
+      StreamController<VictimSignalEvent>.broadcast();
+  Stream<VictimSignalEvent> get victimStoppedStream =>
+      _victimStoppedController.stream;
+
+  final _victimHandledController =
+      StreamController<VictimSignalEvent>.broadcast();
+  Stream<VictimSignalEvent> get victimHandledStream =>
+      _victimHandledController.stream;
+
+  final _rescuerReplyController =
+      StreamController<RescuerReplyEvent>.broadcast();
+  Stream<RescuerReplyEvent> get rescuerReplyStream =>
+      _rescuerReplyController.stream;
+
   StreamSubscription? _bgSubscription; // dùng để quản lý listener
   StreamSubscription? _rescuerSubscription;
+  StreamSubscription? _victimStoppedSubscription;
+  StreamSubscription? _victimHandledSubscription;
+  StreamSubscription? _rescuerReplySubscription;
 
-  Future<void> _bindUserIdWithRetry(String userId) async {
+  Future<void> _bindUserIdWithRetry(String userId, {String? fullname}) async {
     final completer = Completer<void>();
     StreamSubscription? ackSub;
 
@@ -67,7 +105,7 @@ class LocationTrackingService {
 
     try {
       for (var i = 0; i < 6; i++) {
-        _service.invoke('setUserId', {'userId': userId});
+        _service.invoke('setUserId', {'userId': userId, 'fullname': fullname});
 
         if (i == 0) {
           // First send can race with isolate boot on some devices.
@@ -101,7 +139,9 @@ class LocationTrackingService {
   Future<void> initialize() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       if (kDebugMode) {
-        print('📍 Background service initialization skipped (non-Android runtime)');
+        print(
+          '📍 Background service initialization skipped (non-Android runtime)',
+        );
       }
       return;
     }
@@ -126,17 +166,19 @@ class LocationTrackingService {
     final flnPlugin = FlutterLocalNotificationsPlugin();
     await flnPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
     await flnPlugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(distressAlertChannel);
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(distressAlertChannel);
 
     await _service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: onStart,
-        autoStart: false, // background service không tự động khởi động 
+        autoStart: false, // background service không tự động khởi động
         isForegroundMode: true,
         foregroundServiceTypes: [AndroidForegroundType.location],
         notificationChannelId: kLocationNotificationChannelId,
@@ -156,6 +198,7 @@ class LocationTrackingService {
   /// Start the background service, get initial position, begin tracking.
   Future<LocationUpdate> start(
     String userId, {
+    String? fullname,
     List<String> allowedFriendIds = const [],
     bool isRescuer = false,
   }) async {
@@ -164,9 +207,7 @@ class LocationTrackingService {
 
     // 2. Get initial position on UI thread (fast, shows map immediately)
     final initialPosition = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
     final initialUpdate = LocationUpdate(
       latitude: initialPosition.latitude,
@@ -179,7 +220,7 @@ class LocationTrackingService {
     await _service.startService();
 
     // 4. Send userId so background isolate can connect MQTT (with retry handshake)
-    await _bindUserIdWithRetry(userId);
+    await _bindUserIdWithRetry(userId, fullname: fullname);
 
     // 4b. Send initial allowed friends list
     _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
@@ -212,8 +253,52 @@ class LocationTrackingService {
       _victimLocationController.add(
         VictimAlert(
           userId: userId,
+          fullname: (event['fullname'] ?? '').toString(),
           latitude: lat,
           longitude: lng,
+        ),
+      );
+    });
+
+    _victimStoppedSubscription = _service.on('onVictimStopped').listen((event) {
+      if (event == null) return;
+      final victimUserId = (event['userId'] ?? '').toString();
+      if (victimUserId.isEmpty) return;
+
+      _victimStoppedController.add(
+        VictimSignalEvent(
+          userId: victimUserId,
+          fullname: (event['fullname'] ?? '').toString(),
+        ),
+      );
+    });
+
+    _victimHandledSubscription = _service.on('onVictimHandled').listen((event) {
+      if (event == null) return;
+      final victimUserId = (event['userId'] ?? '').toString();
+      if (victimUserId.isEmpty) return;
+
+      _victimHandledController.add(
+        VictimSignalEvent(
+          userId: victimUserId,
+          handledBy: (event['handledBy'] ?? '').toString(),
+          rescuerFullname: (event['rescuerFullname'] ?? '').toString(),
+        ),
+      );
+    });
+
+    _rescuerReplySubscription = _service.on('onRescuerReply').listen((event) {
+      if (event == null) return;
+
+      final rescuerFullname =
+          (event['rescuerFullname'] ?? event['rescuer_fullname'] ?? '')
+              .toString();
+      if (rescuerFullname.isEmpty) return;
+
+      _rescuerReplyController.add(
+        RescuerReplyEvent(
+          rescuerFullname: rescuerFullname,
+          handledBy: (event['handledBy'] ?? event['handled_by'])?.toString(),
         ),
       );
     });
@@ -234,6 +319,12 @@ class LocationTrackingService {
     _bgSubscription = null;
     _rescuerSubscription?.cancel();
     _rescuerSubscription = null;
+    _victimStoppedSubscription?.cancel();
+    _victimStoppedSubscription = null;
+    _victimHandledSubscription?.cancel();
+    _victimHandledSubscription = null;
+    _rescuerReplySubscription?.cancel();
+    _rescuerReplySubscription = null;
     _service.invoke('stopService');
 
     if (kDebugMode) {
@@ -246,6 +337,9 @@ class LocationTrackingService {
     stop();
     _locationController.close();
     _victimLocationController.close();
+    _victimStoppedController.close();
+    _victimHandledController.close();
+    _rescuerReplyController.close();
   }
 
   /// Update the allowed friends list in the background isolate.
@@ -262,6 +356,11 @@ class LocationTrackingService {
   /// Publish distress signal command through background isolate to MQTT topic `signal`.
   void publishSignalCommand(Map<String, dynamic> commandPayload) {
     _service.invoke('publishSignalCommand', commandPayload);
+  }
+
+  /// Publish rescuer handle action through background isolate to MQTT `rescuer/handle`.
+  void publishRescuerHandleCommand(Map<String, dynamic> commandPayload) {
+    _service.invoke('publishRescuerHandleCommand', commandPayload);
   }
 
   /// Tell background isolate whether UI isolate is currently active.

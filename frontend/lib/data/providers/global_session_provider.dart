@@ -8,6 +8,7 @@ import '../../domain/models/user.dart';
 import '../../domain/models/auth_session.dart';
 import 'repository_providers.dart';
 import 'service_providers.dart';
+import '../services/sos_local_storage.dart';
 
 part 'global_session_provider.g.dart';
 
@@ -54,6 +55,8 @@ class GlobalSessionManager extends _$GlobalSessionManager {
 
   /// Sign out
   Future<void> signOut({bool logoutAll = false}) async {
+    final userId = state.valueOrNull?.user.id;
+
     try {
       // 1. Stop background location tracking & MQTT
       await ref.read(locationTrackingServiceProvider).stop();
@@ -63,6 +66,9 @@ class GlobalSessionManager extends _$GlobalSessionManager {
       final authRepository = ref.read(authRepositoryProvider);
       await authRepository.signOut(logoutAll: logoutAll);
     } finally {
+      if (userId != null && userId.isNotEmpty) {
+        await SosLocalStorage.clearBroadcastingState(userId);
+      }
       state = const AsyncValue.data(null);
     }
   }

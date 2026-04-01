@@ -86,8 +86,8 @@ class UserLocationPin extends StatelessWidget {
           // Biểu tượng SOS (nếu isSosState = true)
           if (isSosState)
             Positioned(
-              top: -8,
-              right: -8,
+              top: -10,
+              right: -20,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(

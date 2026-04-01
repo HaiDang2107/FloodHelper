@@ -33,6 +33,7 @@ class MqttWorker:
         lat = data.get("lat")
         lng = data.get("lng")
         sender_user = data.get("user")
+        fullname = data.get("fullname")
         allowed_friends = data.get("allowed_friends", [])
         is_sos = bool(data.get("isSoS", False))
 
@@ -56,6 +57,7 @@ class MqttWorker:
             rescuer_payload = json.dumps(
                 {
                     "userId": sender_user,
+                    "fullname": fullname,
                     "lat": lat,
                     "long": lng,
                 }
@@ -92,20 +94,48 @@ class MqttWorker:
 
         if command in {"STOP", "STOPPED"}:
             stopped_by = data.get("stopped_by")
-            self.api_client.call(
+            if not stopped_by:
+                print("STOPPED signal missing stopped_by")
+                return
+
+            response = self.api_client.call(
                 "PATCH",
                 "/signal/state/stop-by-user",
                 {
                     "createdBy": stopped_by,
                 },
             )
+
+            if response is None:
+                print(f"Failed to stop broadcasting signal for user {stopped_by}")
+                return
+
+            signal = response.get("data") if isinstance(response, dict) else None
+            user = signal.get("user") if isinstance(signal, dict) else None
+
+            self.client.publish(
+                self.settings.topic_rescuer_common,
+                payload=json.dumps(
+                    {
+                        "type": "STOPPED",
+                        "userId": stopped_by,
+                        "fullname": (
+                            user.get("fullname")
+                            if isinstance(user, dict)
+                            else None
+                        ),
+                    }
+                ),
+                qos=1,
+                retain=False,
+            )
             return
 
         print(f"Unsupported signal command: {command}")
 
     def _handle_rescuer_handle(self, data: dict[str, Any]) -> None:
-        handled_by = data.get("handled_by")
-        user_id = data.get("userId")
+        handled_by = data.get("handled_by") or data.get("handledBy")
+        user_id = data.get("userId") or data.get("created_by")
 
         if not handled_by or not user_id:
             print("rescuer/handle missing handled_by or userId")
@@ -124,10 +154,39 @@ class MqttWorker:
             print(f"Failed to mark broadcasting signal as handled for user {user_id}")
             return
 
+        signal = response.get("data") if isinstance(response, dict) else None
+        handled_by_user = (
+            signal.get("handledByUser") if isinstance(signal, dict) else None
+        )
+        handled_fullname = (
+            handled_by_user.get("fullname")
+            if isinstance(handled_by_user, dict)
+            else None
+        )
+
         reply_topic = f"{user_id}/rescuer-reply"
         self.client.publish(
             reply_topic,
-            payload=json.dumps({"handled_by": handled_by}),
+            payload=json.dumps(
+                {
+                    "rescuer_fullname": handled_fullname,
+                    "handled_by": handled_by,
+                }
+            ),
+            qos=1,
+            retain=False,
+        )
+
+        self.client.publish(
+            self.settings.topic_rescuer_common,
+            payload=json.dumps(
+                {
+                    "type": "HANDLED",
+                    "userId": user_id,
+                    "handled_by": handled_by,
+                    "rescuer_fullname": handled_fullname,
+                }
+            ),
             qos=1,
             retain=False,
         )

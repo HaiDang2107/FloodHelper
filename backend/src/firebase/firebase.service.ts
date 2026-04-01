@@ -10,7 +10,7 @@ export class FirebaseService implements OnModuleInit {
     if (admin.apps.length === 0) {
       const serviceAccountPath = path.join(
         process.cwd(),
-        'floodhelper-374c0-firebase-adminsdk-fbsvc-5f8beff8a6.json',
+        'floodhelper-374c0-firebase-adminsdk-fbsvc-e4b27e36c3.json'
       );
 
       admin.initializeApp({

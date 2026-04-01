@@ -25,6 +25,12 @@ class AppConfig {
   // MQTT topic for rescuer distress stream.
   static const String mqttRescuerCommonTopic = 'rescuer/common';
 
+  // MQTT topic for rescuer handle actions.
+  static const String mqttRescuerHandleTopic = 'rescuer/handle';
+
+  // MQTT topic suffix for victim-side rescuer reply.
+  static const String mqttRescuerReplySuffix = 'rescuer-reply';
+
   /// MQTT client ID prefix (will be appended with userId)
   static const String mqttClientIdPrefix = ''; // may be 'floodhelper_'
 
@@ -49,9 +55,10 @@ class AppConfig {
   /// Base URL for the backend API
   /// Current config: Development environment
   // static const String apiBaseUrl = 'http://192.168.88.106:3000'; // Android emulator localhost
-  // static const String apiBaseUrl = 'http://192.168.1.164:3000'; // Development
-  // static const String apiBaseUrl = 'http://192.168.1.159:3000'; // Alternative dev
-  static const String apiBaseUrl = 'http://192.168.110.181:3000';
+  // static const String apiBaseUrl = 'http://192.168.1.164:3000'; // FaceNet
+  static const String apiBaseUrl = 'http://192.168.1.160:3000'; // Home
+  // static const String apiBaseUrl = 'http://192.168.1.159:3000'; // 
+  // static const String apiBaseUrl = 'http://192.168.110.181:3000';
   // static const String apiBaseUrl = 'http://192.168.60.144:3000';
   // static const String apiBaseUrl = 'http://localhost:3000'; // iOS simulator / Web
   // static const String apiBaseUrl = 'https://your-production-api.com'; // Production
