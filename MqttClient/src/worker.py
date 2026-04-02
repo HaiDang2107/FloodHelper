@@ -44,14 +44,12 @@ class MqttWorker:
         location_payload = json.dumps({"lat": lat, "lng": lng})
         for friend_id in allowed_friends:
             target_topic = f"{sender_user}/to_{friend_id}/last-location"
-            result = self.client.publish(
+            self._publish(
                 target_topic,
                 payload=location_payload,
                 qos=0,
                 retain=True,
             )
-            if result.rc != mqtt.MQTT_ERR_SUCCESS:
-                print(f"Failed to publish to {target_topic}")
 
         if is_sos:
             rescuer_payload = json.dumps(
@@ -213,6 +211,8 @@ class MqttWorker:
             if msg.topic == self.settings.topic_current_location:
                 self._handle_current_location(data)
                 return
+            
+            self._debug(f"Received topic={msg.topic} payload={data}")
 
             if msg.topic == self.settings.topic_signal:
                 self._handle_signal_command(data)

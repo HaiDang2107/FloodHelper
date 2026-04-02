@@ -10,6 +10,7 @@ class AppConfig {
   static const String mqttUsername = 'haidang';
   static const String mqttPassword = 'haidang';
   static const bool mqttUseSsl = true;
+  static const bool mqttVerboseLogging = false;
 
   // MQTT topic for publishing user location.
   // Convention: '{userId}/current-location'

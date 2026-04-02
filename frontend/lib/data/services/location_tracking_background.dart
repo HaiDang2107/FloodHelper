@@ -13,12 +13,22 @@ import 'mqtt_service.dart';
 
 const String kLocationNotificationChannelId = 'floodhelper_location';
 const String kDistressAlertChannelId = 'floodhelper_distress_alert';
+bool _bgOnStartInitialized = false;
+Timer? _publishTimer;
 
 /// Entry point for the background isolate.
 /// Must be a top-level function (not a class method).
 @pragma('vm:entry-point')
 Future<void> onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
+
+  if (_bgOnStartInitialized) {
+    if (kDebugMode) {
+      print('📍 [BG] onStart called again, skipping duplicate initialization');
+    }
+    return;
+  }
+  _bgOnStartInitialized = true;
 
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   final mqttService = MqttService();
@@ -28,6 +38,7 @@ Future<void> onStart(ServiceInstance service) async {
   bool isSos = false;
   bool isRescuer = false;
   bool isUiActive = false;
+  bool isPublishingLocation = false;
   List<String> allowedFriends = [];
   StreamSubscription? rescuerSubscription;
   StreamSubscription? rescuerReplySubscription;
@@ -239,14 +250,30 @@ Future<void> onStart(ServiceInstance service) async {
   service.on('stopService').listen((_) {
     teardownRescuerSubscription();
     teardownRescuerReplySubscription();
+    _publishTimer?.cancel();
+    _publishTimer = null;
+    _bgOnStartInitialized = false;
     mqttService.disconnect();
     service.stopSelf();
   });
 
-  Timer.periodic(Duration(seconds: AppConfig.locationPublishIntervalSeconds), (
-    _,
-  ) async {
-    if (userId == null) return;
+  _publishTimer?.cancel();
+  _publishTimer = Timer.periodic(
+    Duration(seconds: AppConfig.locationPublishIntervalSeconds),
+    (_) async {
+    // Timer.periodic does not await async work; guard to avoid overlapping ticks.
+    if (isPublishingLocation) {
+      if (kDebugMode && AppConfig.mqttVerboseLogging) {
+        print('📍 [BG] Skip tick because previous publish is still running');
+      }
+      return;
+    }
+
+    if (userId == null) {
+      return;
+    }
+
+    isPublishingLocation = true;
 
     try {
       final position = await Geolocator.getCurrentPosition(
@@ -264,7 +291,7 @@ Future<void> onStart(ServiceInstance service) async {
           'allowed_friends': allowedFriends,
           'isSoS': isSos,
         });
-        if (kDebugMode) {
+        if (kDebugMode && AppConfig.mqttVerboseLogging) {
           print(payload);
           print(AppConfig.mqttCurrentLocationSuffix);
         }
@@ -296,8 +323,11 @@ Future<void> onStart(ServiceInstance service) async {
       if (kDebugMode) {
         print('📍 [BG] Poll error: $e');
       }
+    } finally {
+      isPublishingLocation = false;
     }
-  });
+    },
+  );
 }
 
 /// iOS background fetch handler (required by flutter_background_service).
