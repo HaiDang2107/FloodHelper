@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,11 +26,6 @@ void main() async {
   
   // Initialize ApiClient persistent cookie jar for auto-login
   await container.read(apiClientProvider).init();
-
-  // Initialize background location service (configures foreground service)
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-    await container.read(locationTrackingServiceProvider).initialize();
-  }
   
   runApp(
     UncontrolledProviderScope(
@@ -36,4 +33,13 @@ void main() async {
       child: const MyApp(),
     ),
   );
+
+  // Initialize background location service after UI is mounted to avoid launch stalls.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    unawaited(
+      container.read(locationTrackingServiceProvider).initialize().catchError((e) {
+        debugPrint('📍 Background service initialize failed: $e');
+      }),
+    );
+  }
 }

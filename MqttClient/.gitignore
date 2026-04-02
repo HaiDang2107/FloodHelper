@@ -1,3 +1,7 @@
 certs
 .env
-__pycache__
+**/__pycache__/
+# Ignore tất cả các file thực thi của python
+*.pyc
+*.pyo
+*.pyd

@@ -78,7 +78,7 @@ class MqttService {
     _client!.autoReconnect = true;
     _client!.resubscribeOnAutoReconnect = true;
 
-    _client!.logging(on: kDebugMode);
+    _client!.logging(on: kDebugMode && AppConfig.mqttVerboseLogging);
 
     _client!.onConnected = _onConnected;
     _client!.onDisconnected = _onDisconnected;

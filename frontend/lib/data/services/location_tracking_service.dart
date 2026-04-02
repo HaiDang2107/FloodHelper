@@ -205,10 +205,21 @@ class LocationTrackingService {
     // 1. Check permissions
     await _ensureLocationPermission();
 
-    // 2. Get initial position on UI thread (fast, shows map immediately)
-    final initialPosition = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-    );
+    // 2. Get initial position on UI thread with timeout/fallback so app entry
+    // is not blocked when GPS takes too long.
+    Position? initialPosition;
+    try {
+      initialPosition = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      ).timeout(const Duration(seconds: 6));
+    } catch (_) {
+      initialPosition = await Geolocator.getLastKnownPosition();
+    }
+
+    if (initialPosition == null) {
+      throw Exception('Unable to get initial location quickly. Please enable GPS.');
+    }
+
     final initialUpdate = LocationUpdate(
       latitude: initialPosition.latitude,
       longitude: initialPosition.longitude,
