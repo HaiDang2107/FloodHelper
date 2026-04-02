@@ -2,13 +2,30 @@ services:
   mqttclient:
     build: .
     container_name: floodhelper_api_worker
+    env_file:
+      - .env
     ports:
       # Ánh xạ cổng 8000 của máy chủ vào cổng 8000 của container
       - "8000:8000"
     environment:
-      # Defang sẽ ưu tiên lấy giá trị từ hệ thống quản lý Secret của họ.
-      # Nếu chạy ở máy tính local, bạn có thể truyền thẳng biến môi trường vào đây
-      # hoặc tạo một file .env nằm cùng thư mục.
-      - MQTT_USERNAME=${MQTT_USERNAME}
-      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      # Required by src/settings.py
+      MQTT_BROKER: ${MQTT_BROKER}
+      MQTT_PORT: ${MQTT_PORT:-8883}
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      CA_CERT_RELATIVE_PATH: ${CA_CERT_RELATIVE_PATH:-certs/emqxsl-ca.crt}
+
+      # API integration
+      BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://host.docker.internal:3000}
+      MQTT_SERVICE_TOKEN: ${MQTT_SERVICE_TOKEN}
+
+      # Topics
+      TOPIC_CURRENT_LOCATION: ${TOPIC_CURRENT_LOCATION:-current-location}
+      TOPIC_SIGNAL: ${TOPIC_SIGNAL:-signal}
+      TOPIC_RESCUER_HANDLE: ${TOPIC_RESCUER_HANDLE:-rescuer/handle}
+      TOPIC_RESCUER_COMMON: ${TOPIC_RESCUER_COMMON:-rescuer/common}
+
+    # Needed on Linux so container can call backend running on host machine.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: always # Tự động khởi động lại nếu server bị crash
