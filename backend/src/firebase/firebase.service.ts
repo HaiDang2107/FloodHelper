@@ -1,6 +1,5 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import * as path from 'path';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
@@ -8,16 +7,27 @@ export class FirebaseService implements OnModuleInit {
 
   onModuleInit() {
     if (admin.apps.length === 0) {
-      const serviceAccountPath = path.join(
-        process.cwd(),
-        'floodhelper-374c0-firebase-adminsdk-fbsvc-e4b27e36c3.json'
-      );
+      const projectId = process.env.FIREBASE_PROJECT_ID;
+      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+      if (!projectId || !clientEmail || !privateKey) {
+        this.logger.error(
+          'Missing Firebase environment variables. Required: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY',
+        );
+        throw new Error('Firebase Admin SDK configuration is missing');
+      }
 
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountPath),
+        credential: admin.credential.cert({
+          projectId,
+          clientEmail,
+          // Private key in .env is usually stored with escaped newlines.
+          privateKey: privateKey.replace(/\\n/g, '\n'),
+        }),
       });
 
-      this.logger.log('Firebase Admin SDK initialized');
+      this.logger.log('Firebase Admin SDK initialized from environment');
     }
   }
 
