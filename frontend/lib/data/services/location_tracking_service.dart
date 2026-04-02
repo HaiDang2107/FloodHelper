@@ -216,8 +216,16 @@ class LocationTrackingService {
     );
     _locationController.add(initialUpdate);
 
-    // 3. Start the background isolate (đánh thức hàm onStart())
-    await _service.startService();
+    // 3. Start the background isolate (đánh thức hàm onStart()) only if needed.
+    final serviceRunning = await _service.isRunning();
+    if (!serviceRunning) {
+      await _service.startService();
+      if (kDebugMode) {
+        print('📍 Background service started from UI');
+      }
+    } else if (kDebugMode) {
+      print('📍 Background service already running, skip startService()');
+    }
 
     // 4. Send userId so background isolate can connect MQTT (with retry handshake)
     await _bindUserIdWithRetry(userId, fullname: fullname);
