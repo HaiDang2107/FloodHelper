@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../domain/models/broadcasting_signal.dart';
 import '../../domain/models/distress_signal_input.dart';
 import 'api_client.dart';
 
@@ -21,7 +22,9 @@ class SignalService {
 
   Future<LatestSignalResult?> getMyLatestSignal() async {
     try {
-      final response = await _apiClient.get<Map<String, dynamic>>('/signal/mine/latest');
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/signal/mine/latest',
+      );
       final body = response.data;
       if (body == null || body['success'] != true) {
         return null;
@@ -53,6 +56,58 @@ class SignalService {
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }
+  }
+
+  Future<List<BroadcastingSignal>> getRescuerBroadcastingSignals() async { // Lấy danh sách Broadcasting signal
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/signal/rescuer/broadcasting',
+      );
+      final body = response.data;
+      if (body == null || body['success'] != true) {
+        return const [];
+      }
+
+      final data = body['data'];
+      if (data is! List) {
+        return const [];
+      }
+
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map(_toBroadcastingSignal)
+          .toList(growable: false);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  BroadcastingSignal _toBroadcastingSignal(Map<String, dynamic> raw) { // chuyển từ raw sang BroadcastingSignal
+    final user = raw['user'];
+    final userJson = user is Map<String, dynamic>
+        ? user
+        : const <String, dynamic>{};
+
+    final createdAtRaw = raw['createdAt'];
+    final createdAt = DateTime.tryParse(createdAtRaw?.toString() ?? '');
+
+    return BroadcastingSignal(
+      signalId: (raw['signalId'] ?? '').toString(),
+      createdBy: (raw['createdBy'] ?? '').toString(),
+      createdAt: createdAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+      trappedCount: _asInt(raw['trappedCount']),
+      childrenNum: _asInt(raw['childrenNum']),
+      elderlyNum: _asInt(raw['elderlyNum']),
+      hasFood: raw['hasFood'] == true,
+      hasWater: raw['hasWater'] == true,
+      note: (raw['note'] ?? '').toString().trim().isEmpty
+          ? null
+          : raw['note'].toString().trim(),
+      userFullname: (userJson['fullname'] ?? '').toString().trim(),
+      userPhoneNumber: (userJson['phoneNumber'] ?? '').toString().trim().isEmpty
+          ? null
+          : userJson['phoneNumber'].toString().trim(),
+    );
   }
 
   int _asInt(dynamic value) {

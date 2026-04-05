@@ -226,7 +226,7 @@ class MqttWorker:
             if msg.topic == self.settings.topic_current_location:
                 self._handle_current_location(data)
                 return
-            
+
             self._debug(f"Received topic={msg.topic} payload={data}")
 
             if msg.topic == self.settings.topic_signal:

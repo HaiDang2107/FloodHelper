@@ -16,6 +16,7 @@ import '../../charity_campaign/screens/existing_charity_screen.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/services/firebase_messaging_service.dart';
 import 'settings/_settings_sheet.dart';
+import 'rescuer/_broadcasting_signals_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -86,7 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final selectedBubble = viewModel.selectedBubbleData;
     final hasHandleButton = selectedBubble?.canHandle ?? false;
     final bubbleHeight = hasHandleButton ? 260.0 : 170.0;
-    final bubbleLift = hasHandleButton ? 73.0 : 67.0;
+    final bubbleLift = hasHandleButton ? 67.0 : 67.0;
     HomeMapPin? selectedPin;
     if (selectedBubble != null) {
       for (final pin in pins) {
@@ -239,7 +240,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     );
                   },
                   onRescuerPressed: () {
-                    viewModel.showInfoMessage('Rescuer feature coming soon!');
+                    _showBottomSheet(
+                      'Broadcasting Signals',
+                      BroadcastingSignalsSheet(
+                        onLocateVictim: (victimUserId) async {
+                          final focused = viewModel.focusOnVictim(victimUserId);
+                          if (!focused) {
+                            return false;
+                          }
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          }
+                          return true;
+                        },
+                      ),
+                    );
                   },
                   onCharityPressed: () {
                     Navigator.push(
