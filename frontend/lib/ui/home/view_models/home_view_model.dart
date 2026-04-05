@@ -385,6 +385,16 @@ class HomeViewModel extends _$HomeViewModel {
     mapController.move(location, 17.0);
   }
 
+  bool focusOnVictim(String victimUserId) {
+    final pin = mapPins.where((p) => p.userId == victimUserId).firstOrNull;
+    if (pin == null) {
+      return false;
+    }
+    selectPin(victimUserId);
+    moveCameraToLocation(pin.position);
+    return true;
+  }
+
   // ==================== Map Type ====================
 
   void setMapType(MapType mapType) {

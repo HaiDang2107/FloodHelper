@@ -19,6 +19,10 @@ class MqttWorker:
         )
 
     @staticmethod
+    def _debug(message: str) -> None:
+        print(f"[MQTT DEBUG] {message}")
+
+    @staticmethod
     def _normalize_signal_data(raw_data: dict[str, Any]) -> dict[str, Any]:
         return {
             "trappedCount": raw_data.get("trappedCount", raw_data.get("trappedCounts")),
@@ -211,7 +215,7 @@ class MqttWorker:
             if msg.topic == self.settings.topic_current_location:
                 self._handle_current_location(data)
                 return
-            
+
             self._debug(f"Received topic={msg.topic} payload={data}")
 
             if msg.topic == self.settings.topic_signal:

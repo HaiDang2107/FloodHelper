@@ -8,6 +8,7 @@ import '../../domain/models/user.dart';
 import '../../domain/models/auth_session.dart';
 import 'repository_providers.dart';
 import 'service_providers.dart';
+import '../services/broadcasting_signals_local_storage.dart';
 import '../services/sos_local_storage.dart';
 
 part 'global_session_provider.g.dart';
@@ -24,7 +25,8 @@ class GlobalSessionManager extends _$GlobalSessionManager {
   /// Initialize - check for existing session
   Future<AuthSession?> _init() async {
     final authRepository = ref.watch(authRepositoryProvider);
-    return await authRepository.getCurrentSession(); // trả về session thông qua một hàm trong AuthRepository
+    return await authRepository
+        .getCurrentSession(); // trả về session thông qua một hàm trong AuthRepository
   }
 
   /// Sign in
@@ -68,6 +70,7 @@ class GlobalSessionManager extends _$GlobalSessionManager {
     } finally {
       if (userId != null && userId.isNotEmpty) {
         await SosLocalStorage.clearBroadcastingState(userId);
+        await BroadcastingSignalsLocalStorage.clearSortCriteriaOrder(userId);
       }
       state = const AsyncValue.data(null);
     }
@@ -90,9 +93,9 @@ class GlobalSessionManager extends _$GlobalSessionManager {
     if (kIsWeb) {
       return 'web_device';
     }
-    
+
     final deviceInfo = DeviceInfoPlugin();
-    
+
     if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
       return androidInfo.id;
