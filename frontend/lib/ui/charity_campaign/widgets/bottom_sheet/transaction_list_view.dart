@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/charity_campaign.dart';
+import '../../../../domain/models/charity_campaign.dart';
 
 class TransactionListView extends StatelessWidget {
-  final List<Transaction> transactions;
+  final List<Donation> transactions;
   final bool isOwner;
 
   const TransactionListView({
@@ -68,7 +68,7 @@ class TransactionListView extends StatelessWidget {
               final isIncome = transaction.amount > 0;
               return ListTile(
                 title: Text(
-                  transaction.name,
+                  transaction.donorName,
                   style: const TextStyle(
                       color: Colors.black87, fontWeight: FontWeight.w500),
                 ),

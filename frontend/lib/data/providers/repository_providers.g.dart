@@ -128,5 +128,27 @@ final friendRepositoryProvider = AutoDisposeProvider<FriendRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef FriendRepositoryRef = AutoDisposeProviderRef<FriendRepository>;
+String _$charityCampaignRepositoryHash() =>
+    r'ef5a3cc7caa9c3c8112777c8ca67c40ef25c6911';
+
+/// Provider for CharityCampaignRepository
+///
+/// Copied from [charityCampaignRepository].
+@ProviderFor(charityCampaignRepository)
+final charityCampaignRepositoryProvider =
+    AutoDisposeProvider<CharityCampaignRepository>.internal(
+      charityCampaignRepository,
+      name: r'charityCampaignRepositoryProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$charityCampaignRepositoryHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CharityCampaignRepositoryRef =
+    AutoDisposeProviderRef<CharityCampaignRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

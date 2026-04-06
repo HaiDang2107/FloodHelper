@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
-import '../models/charity_campaign.dart';
+import '../../../domain/models/charity_campaign.dart';
 import 'bottom_sheet/purchased_supplies_view.dart';
 import 'bottom_sheet/transaction_list_view.dart';
 import 'bottom_sheet/detail_view/detail_view.dart';
@@ -11,8 +11,15 @@ enum _SheetView { details, supplies, transactions }
 class CharityItem extends StatelessWidget {
   final CharityCampaign campaign;
   final bool isOwner;
+  final Future<void> Function(String campaignId, String text)?
+  onPostAnnouncement;
 
-  const CharityItem({super.key, required this.campaign, this.isOwner = false});
+  const CharityItem({
+    super.key,
+    required this.campaign,
+    this.isOwner = false,
+    this.onPostAnnouncement,
+  });
 
   void _showDetailsBottomSheet(BuildContext context) {
     var currentView = _SheetView.details;
@@ -51,8 +58,7 @@ class CharityItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildBackButton(
-                    () =>
-                        setSheetState(() => currentView = _SheetView.details),
+                    () => setSheetState(() => currentView = _SheetView.details),
                   ),
                   PurchasedSuppliesView(
                     supplies: campaign.purchasedSupplies,
@@ -67,11 +73,10 @@ class CharityItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildBackButton(
-                    () =>
-                        setSheetState(() => currentView = _SheetView.details),
+                    () => setSheetState(() => currentView = _SheetView.details),
                   ),
                   TransactionListView(
-                    transactions: campaign.transactions,
+                    transactions: campaign.donations,
                     isOwner: isOwner,
                   ),
                 ],
@@ -86,6 +91,9 @@ class CharityItem extends StatelessWidget {
                     setSheetState(() => currentView = _SheetView.supplies),
                 onTransaction: () =>
                     setSheetState(() => currentView = _SheetView.transactions),
+                onPostAnnouncement: onPostAnnouncement == null
+                    ? null
+                    : (text) => onPostAnnouncement!(campaign.id, text),
               );
               break;
           }

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../models/charity_campaign.dart';
+import '../../../../../../domain/models/charity_campaign.dart';
 
 class CharityAnnouncementItem extends StatelessWidget {
   final CampaignAnnouncement announcement;
 
-  const CharityAnnouncementItem({
-    super.key,
-    required this.announcement,
-  });
+  const CharityAnnouncementItem({super.key, required this.announcement});
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
@@ -32,10 +29,7 @@ class CharityAnnouncementItem extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 _formatDate(announcement.date),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),

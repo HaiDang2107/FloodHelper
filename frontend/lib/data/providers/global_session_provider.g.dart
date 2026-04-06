@@ -45,7 +45,7 @@ final currentUserProvider = AutoDisposeProvider<User?>.internal(
 // ignore: unused_element
 typedef CurrentUserRef = AutoDisposeProviderRef<User?>;
 String _$globalSessionManagerHash() =>
-    r'88769b5233e9c1811a7690d2e86c8522174b9e70';
+    r'0f6358c1401ee883900cafe0cc97266b3c039669';
 
 /// Provider for current auth session
 /// Manages authentication state (login, logout, refresh)

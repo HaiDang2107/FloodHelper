@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/charity_campaign.dart';
+import '../../../../../domain/models/charity_campaign.dart';
 import 'components/charity_info_row.dart';
 import 'components/charity_location_row.dart';
 import 'components/charity_action_buttons.dart';
@@ -12,6 +12,7 @@ class DetailView extends StatefulWidget {
   final bool isOwner;
   final VoidCallback onPurchasedSupplies;
   final VoidCallback onTransaction;
+  final Future<void> Function(String text)? onPostAnnouncement;
 
   const DetailView({
     super.key,
@@ -19,6 +20,7 @@ class DetailView extends StatefulWidget {
     required this.isOwner,
     required this.onPurchasedSupplies,
     required this.onTransaction,
+    this.onPostAnnouncement,
   });
 
   @override
@@ -26,6 +28,16 @@ class DetailView extends StatefulWidget {
 }
 
 class _DetailViewState extends State<DetailView> {
+  late List<CampaignAnnouncement> _announcements;
+
+  @override
+  void initState() {
+    super.initState();
+    _announcements = List<CampaignAnnouncement>.from(
+      widget.campaign.announcements,
+    );
+  }
+
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
@@ -42,7 +54,7 @@ class _DetailViewState extends State<DetailView> {
     final bool isActiveStatus = [
       CampaignStatus.donating,
       CampaignStatus.distributing,
-      CampaignStatus.finished
+      CampaignStatus.finished,
     ].contains(widget.campaign.status);
 
     return Column(
@@ -50,10 +62,17 @@ class _DetailViewState extends State<DetailView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CharityInfoRow(
-            label: 'Organizer', value: widget.campaign.benefactorName),
+          label: 'Organizer',
+          value: widget.campaign.benefactorName,
+        ),
         CharityInfoRow(
-            label: 'Bank Account', value: widget.campaign.bankAccountNumber),
-        CharityInfoRow(label: 'Bank Name', value: widget.campaign.bankName),
+          label: 'Bank Account',
+          value: widget.campaign.bankInfo.accountNumber,
+        ),
+        CharityInfoRow(
+          label: 'Bank Name',
+          value: widget.campaign.bankInfo.bankName,
+        ),
         CharityLocationRow(
           location: widget.campaign.reliefLocation,
           onMapPressed: () {
@@ -61,15 +80,21 @@ class _DetailViewState extends State<DetailView> {
           },
         ),
         CharityInfoRow(
-            label: 'Start Date', value: _formatDate(widget.campaign.startDate)),
+          label: 'Start Date',
+          value: _formatDate(widget.campaign.period.startDate),
+        ),
         CharityInfoRow(
-            label: 'End Date', value: _formatDate(widget.campaign.endDate)),
+          label: 'End Date',
+          value: _formatDate(widget.campaign.period.endDate),
+        ),
         const SizedBox(height: 24),
         if (isActiveStatus) ...[
           CharityActionButtons(
             status: widget.campaign.status,
             onDonate: () => showDialog(
-                context: context, builder: (_) => const DonateDialog()),
+              context: context,
+              builder: (_) => const DonateDialog(),
+            ),
             onPurchasedSupplies: widget.onPurchasedSupplies,
             onTransaction: widget.onTransaction,
           ),
@@ -81,33 +106,40 @@ class _DetailViewState extends State<DetailView> {
                 onPressed: () async {
                   final text = await _showPostAnnouncementDialog(context);
                   if (text != null && text.isNotEmpty) {
+                    final newAnnouncement = CampaignAnnouncement(
+                      text: text,
+                      date: DateTime.now(),
+                    );
+
                     setState(() {
-                      widget.campaign.announcements.insert(
-                          0,
-                          CampaignAnnouncement(
-                            text: text,
-                            date: DateTime.now(),
-                          ));
+                      _announcements.insert(0, newAnnouncement);
                     });
+
+                    await widget.onPostAnnouncement?.call(text);
                   }
                 },
                 icon: const Icon(Icons.post_add),
                 label: const Text('Post Announcement'),
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F62FE),
-                    foregroundColor: Colors.white),
+                  backgroundColor: const Color(0xFF0F62FE),
+                  foregroundColor: Colors.white,
+                ),
               ),
             ),
             const SizedBox(height: 24),
           ],
-          const Text('Announcements',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87)),
+          const Text(
+            'Announcements',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
           const SizedBox(height: 16),
-          ...widget.campaign.announcements
-              .map((a) => CharityAnnouncementItem(announcement: a)),
+          ..._announcements.map(
+            (a) => CharityAnnouncementItem(announcement: a),
+          ),
         ],
         const SizedBox(height: 32),
       ],

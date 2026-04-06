@@ -12,7 +12,7 @@ import '../widgets/pin_action_bubble.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
 import '../../core/common/constants/user_state.dart';
 import '../../profile/screens/profile_screen.dart';
-import '../../charity_campaign/screens/existing_charity_screen.dart';
+import '../../charity_campaign/views/existing_charity_screen.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/services/firebase_messaging_service.dart';
 import 'settings/_settings_sheet.dart';

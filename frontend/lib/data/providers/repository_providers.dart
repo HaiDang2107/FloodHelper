@@ -76,3 +76,14 @@ FriendRepository friendRepository(Ref ref) {
     friendService: ref.read(friendServiceProvider),
   );
 }
+
+/// Provider for CharityCampaignRepository
+@riverpod
+CharityCampaignRepository charityCampaignRepository(Ref ref) {
+  if (useMockData) {
+    return MockCharityCampaignRepository();
+  }
+
+  // TODO: Replace with real repository implementation when backend endpoints are ready.
+  return MockCharityCampaignRepository();
+}

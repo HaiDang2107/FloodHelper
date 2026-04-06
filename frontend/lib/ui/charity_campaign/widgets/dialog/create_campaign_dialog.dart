@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/charity_campaign.dart';
+import '../../../../domain/models/charity_campaign.dart';
 
 class CreateCampaignDialog extends StatefulWidget {
   const CreateCampaignDialog({super.key});
@@ -125,8 +125,9 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  final now = DateTime.now();
                   final newCampaign = CharityCampaign(
-                    id: DateTime.now().toString(),
+                    id: now.microsecondsSinceEpoch.toString(),
                     name: nameController.text.isEmpty
                         ? 'New Campaign'
                         : nameController.text,
@@ -134,11 +135,15 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                         ? 'Me'
                         : benefactorController.text,
                     status: CampaignStatus.pending,
-                    bankAccountNumber: accountController.text,
-                    bankName: bankController.text,
+                    bankInfo: BankInfo(
+                      accountNumber: accountController.text,
+                      bankName: bankController.text,
+                    ),
                     reliefLocation: locationController.text,
-                    startDate: DateTime.now(),
-                    endDate: DateTime.now().add(const Duration(days: 30)),
+                    period: DateRange(
+                      startDate: now,
+                      endDate: now.add(const Duration(days: 30)),
+                    ),
                     announcements: [],
                   );
                   Navigator.pop(context, newCampaign);

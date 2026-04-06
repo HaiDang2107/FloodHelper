@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../models/charity_campaign.dart';
+import '../../../../../../domain/models/charity_campaign.dart';
 
 class CharityActionButtons extends StatelessWidget {
   final CampaignStatus status;

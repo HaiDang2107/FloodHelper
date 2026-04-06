@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/charity_campaign.dart';
+import '../../../../domain/models/charity_campaign.dart';
 
 class PurchasedSuppliesView extends StatelessWidget {
   final List<PurchasedSupply> supplies;
@@ -72,7 +72,7 @@ class PurchasedSuppliesView extends StatelessWidget {
                     cells: [
                       DataCell(Text(supply.productName,
                           style: const TextStyle(color: Colors.black87))),
-                      DataCell(Text(supply.buyAt,
+                        DataCell(Text(supply.vendor,
                           style: const TextStyle(color: Colors.black87))),
                       DataCell(Text(supply.quantity.toString(),
                           style: const TextStyle(color: Colors.black87))),

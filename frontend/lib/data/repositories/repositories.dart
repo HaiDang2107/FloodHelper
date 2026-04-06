@@ -8,6 +8,7 @@ export 'announcement_repository.dart';
 export 'profile_repository.dart';
 export 'friend_repository.dart';
 export 'authority_repository.dart';
+export 'charity_campaign_repository.dart';
 
 // Mock implementations
 export 'mock/mock_user_repository.dart';
@@ -15,6 +16,7 @@ export 'mock/mock_post_repository.dart';
 export 'mock/mock_announcement_repository.dart';
 export 'mock/mock_profile_repository.dart';
 export 'mock/mock_authority_repository.dart';
+export 'mock/mock_charity_campaign_repository.dart';
 
 // Real implementations
 export 'real/real_user_repository.dart';
