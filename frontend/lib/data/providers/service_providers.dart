@@ -49,6 +49,12 @@ AuthorityService authorityService(Ref ref) {
   return AuthorityService(apiClient: ref.watch(apiClientProvider));
 }
 
+/// CharityCampaignService provider
+@riverpod
+CharityCampaignService charityCampaignService(Ref ref) {
+  return CharityCampaignService(apiClient: ref.watch(apiClientProvider));
+}
+
 /// MqttService provider (keepAlive: true for persistent MQTT connection)
 /// Manages singleton instance and ensures proper cleanup on app shutdown.
 @Riverpod(keepAlive: true)

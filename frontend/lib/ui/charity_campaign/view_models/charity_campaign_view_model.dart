@@ -54,8 +54,36 @@ class CharityCampaignViewModel
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final existing = await _repository.getExistingCampaigns();
-      final mine = await _repository.getMyCampaigns();
+      const existingStatuses = [
+        CampaignStatus.donating,
+        CampaignStatus.distributing,
+        CampaignStatus.finished,
+      ];
+
+      const myStatuses = [
+        CampaignStatus.pending,
+        CampaignStatus.approved,
+        CampaignStatus.rejected,
+        CampaignStatus.donating,
+        CampaignStatus.distributing,
+        CampaignStatus.finished,
+      ];
+
+      final existingBatches = await Future.wait(
+        existingStatuses.map(
+          (status) => _repository.getExistingCampaigns(status: status),
+        ),
+      );
+
+      final myBatches = await Future.wait(
+        myStatuses.map((status) => _repository.getMyCampaigns(status: status)),
+      );
+
+      final existing = existingBatches
+          .expand((batch) => batch)
+          .toList(growable: false);
+      final mine = myBatches.expand((batch) => batch).toList(growable: false);
+
       state = state.copyWith(
         isLoading: false,
         existingCampaigns: existing,
@@ -76,6 +104,23 @@ class CharityCampaignViewModel
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to create campaign: $e');
     }
+  }
+
+  Future<CharityCampaign> loadCampaignDetail(String campaignId) async {
+    final detail = await _repository.getCampaignDetail(campaignId);
+
+    List<CharityCampaign> replaceIfMatch(List<CharityCampaign> source) {
+      return source
+          .map((campaign) => campaign.id == campaignId ? detail : campaign)
+          .toList(growable: false);
+    }
+
+    state = state.copyWith(
+      existingCampaigns: replaceIfMatch(state.existingCampaigns),
+      myCampaigns: replaceIfMatch(state.myCampaigns),
+    );
+
+    return detail;
   }
 
   Future<void> postAnnouncement({

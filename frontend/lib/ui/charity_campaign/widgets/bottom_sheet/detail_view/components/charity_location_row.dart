@@ -39,13 +39,14 @@ class CharityLocationRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.map, color: Colors.blue),
-                  onPressed: onMapPressed,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  visualDensity: VisualDensity.compact,
-                ),
+                if (onMapPressed != null)
+                  IconButton(
+                    icon: const Icon(Icons.map, color: Colors.blue),
+                    onPressed: onMapPressed,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
           ),

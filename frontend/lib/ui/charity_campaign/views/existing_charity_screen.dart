@@ -23,9 +23,9 @@ class ExistingCharityScreen extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.errorMessage!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         viewModel.clearError();
       });
     }
@@ -64,14 +64,17 @@ class ExistingCharityScreen extends ConsumerWidget {
         _buildCampaignList(
           campaigns: viewModel.existingByStatus(CampaignStatus.donating),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.existingByStatus(CampaignStatus.distributing),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.existingByStatus(CampaignStatus.finished),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
       ],
     );
@@ -80,6 +83,8 @@ class ExistingCharityScreen extends ConsumerWidget {
   Widget _buildCampaignList({
     required List<CharityCampaign> campaigns,
     required bool isLoading,
+    required Future<CharityCampaign> Function(String campaignId)
+    onLoadCampaignDetail,
   }) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -105,7 +110,10 @@ class ExistingCharityScreen extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       itemCount: campaigns.length,
       itemBuilder: (context, index) {
-        return CharityItem(campaign: campaigns[index]);
+        return CharityItem(
+          campaign: campaigns[index],
+          onLoadCampaignDetail: onLoadCampaignDetail,
+        );
       },
     );
   }

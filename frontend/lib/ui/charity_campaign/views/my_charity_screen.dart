@@ -61,7 +61,7 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
       ],
       tabs: const [
         Tab(text: 'Pending'),
-        Tab(text: 'Accepted'),
+        Tab(text: 'Approved'),
         Tab(text: 'Rejected'),
         Tab(text: 'Donating'),
         Tab(text: 'Distributing'),
@@ -71,26 +71,32 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.pending),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.approved),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.rejected),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.donating),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.distributing),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.finished),
           isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
       ],
     );
@@ -99,6 +105,8 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
   Widget _buildCampaignList({
     required List<CharityCampaign> campaigns,
     required bool isLoading,
+    required Future<CharityCampaign> Function(String campaignId)
+    onLoadCampaignDetail,
   }) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -127,6 +135,7 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
         return CharityItem(
           campaign: campaigns[index],
           isOwner: true,
+          onLoadCampaignDetail: onLoadCampaignDetail,
           onPostAnnouncement: (campaignId, text) {
             return ref
                 .read(charityCampaignViewModelProvider.notifier)

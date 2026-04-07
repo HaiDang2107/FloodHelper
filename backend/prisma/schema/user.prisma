@@ -26,7 +26,8 @@ model User {
   // Relations
   account              Account?
   posts                Post[]
-  campaigns            CharityCampaign[]
+  organizedCampaigns   CharityCampaign[]      @relation("CampaignOrganizer")
+  checkedCampaigns     CharityCampaign[]      @relation("CampaignChecker")
   signals              Signal[] @relation("SignalCreator")
   handledSignals       Signal[] @relation("SignalHandler")
   sentMessages         Message[]

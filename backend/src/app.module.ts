@@ -10,6 +10,7 @@ import { FriendModule } from './friend/friend.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { RoleRequestModule } from './role-request/role-request.module';
 import { SignalModule } from './signal/signal.module';
+import { CharityModule } from './charity/charity.module';
 import { LoggingMiddleware } from './common/logging.middleware';
 
 @Module({
@@ -20,6 +21,7 @@ import { LoggingMiddleware } from './common/logging.middleware';
     FirebaseModule,
     RoleRequestModule,
     SignalModule,
+    CharityModule,
     CacheModule.register({
       isGlobal: true, // Để dùng ở mọi nơi không cần import lại
       store: redisStore,

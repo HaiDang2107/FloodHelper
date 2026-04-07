@@ -168,13 +168,33 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
   ];
 
   @override
-  Future<List<CharityCampaign>> getExistingCampaigns() async {
-    return List<CharityCampaign>.from(_existingCampaigns);
+  Future<List<CharityCampaign>> getExistingCampaigns({
+    CampaignStatus? status,
+  }) async {
+    if (status == null) {
+      return List<CharityCampaign>.from(_existingCampaigns);
+    }
+
+    return _existingCampaigns
+        .where((campaign) => campaign.status == status)
+        .toList(growable: false);
   }
 
   @override
-  Future<List<CharityCampaign>> getMyCampaigns() async {
-    return List<CharityCampaign>.from(_myCampaigns);
+  Future<List<CharityCampaign>> getMyCampaigns({CampaignStatus? status}) async {
+    if (status == null) {
+      return List<CharityCampaign>.from(_myCampaigns);
+    }
+
+    return _myCampaigns
+        .where((campaign) => campaign.status == status)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<CharityCampaign> getCampaignDetail(String campaignId) async {
+    final all = [..._existingCampaigns, ..._myCampaigns];
+    return all.firstWhere((campaign) => campaign.id == campaignId);
   }
 
   @override

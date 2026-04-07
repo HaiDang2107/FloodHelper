@@ -11,17 +11,31 @@ enum _SheetView { details, supplies, transactions }
 class CharityItem extends StatelessWidget {
   final CharityCampaign campaign;
   final bool isOwner;
-  final Future<void> Function(String campaignId, String text)?
-  onPostAnnouncement;
+  final Future<CharityCampaign> Function(String campaignId) ? onLoadCampaignDetail;
+  final Future<void> Function(String campaignId, String text) ? onPostAnnouncement;
 
   const CharityItem({
     super.key,
     required this.campaign,
     this.isOwner = false,
+    this.onLoadCampaignDetail,
     this.onPostAnnouncement,
   });
 
-  void _showDetailsBottomSheet(BuildContext context) {
+  Future<void> _showDetailsBottomSheet(BuildContext context) async {
+    var detailCampaign = campaign;
+    if (onLoadCampaignDetail != null) {
+      try {
+        detailCampaign = await onLoadCampaignDetail!(campaign.id);
+      } catch (_) {
+        detailCampaign = campaign;
+      }
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
     var currentView = _SheetView.details;
 
     showModalBottomSheet(
@@ -52,16 +66,18 @@ class CharityItem extends StatelessWidget {
           Widget content;
 
           switch (currentView) {
+            // currentView quyết định nội dung nào sẽ được hiển thị
             case _SheetView.supplies:
               content = Column(
                 key: const ValueKey('supplies'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildBackButton(
+                    // thay đổi trạng thái currentView
                     () => setSheetState(() => currentView = _SheetView.details),
                   ),
                   PurchasedSuppliesView(
-                    supplies: campaign.purchasedSupplies,
+                    supplies: detailCampaign.purchasedSupplies,
                     isOwner: isOwner,
                   ),
                 ],
@@ -76,8 +92,9 @@ class CharityItem extends StatelessWidget {
                     () => setSheetState(() => currentView = _SheetView.details),
                   ),
                   TransactionListView(
-                    transactions: campaign.donations,
+                    transactions: detailCampaign.donations,
                     isOwner: isOwner,
+                    campaignStatus: detailCampaign.status,
                   ),
                 ],
               );
@@ -85,7 +102,7 @@ class CharityItem extends StatelessWidget {
             case _SheetView.details:
               content = DetailView(
                 key: const ValueKey('details'),
-                campaign: campaign,
+                campaign: detailCampaign,
                 isOwner: isOwner,
                 onPurchasedSupplies: () =>
                     setSheetState(() => currentView = _SheetView.supplies),
@@ -93,7 +110,7 @@ class CharityItem extends StatelessWidget {
                     setSheetState(() => currentView = _SheetView.transactions),
                 onPostAnnouncement: onPostAnnouncement == null
                     ? null
-                    : (text) => onPostAnnouncement!(campaign.id, text),
+                    : (text) => onPostAnnouncement!(detailCampaign.id, text),
               );
               break;
           }

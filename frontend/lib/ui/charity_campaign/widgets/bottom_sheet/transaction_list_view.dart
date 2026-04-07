@@ -5,21 +5,29 @@ import '../../../../domain/models/charity_campaign.dart';
 class TransactionListView extends StatelessWidget {
   final List<Donation> transactions;
   final bool isOwner;
+  final CampaignStatus campaignStatus;
 
   const TransactionListView({
     super.key,
     required this.transactions,
     required this.isOwner,
+    required this.campaignStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter =
-        NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: '₫',
+    );
+    final canUploadBankStatement =
+        isOwner &&
+        campaignStatus != CampaignStatus.donating &&
+        campaignStatus != CampaignStatus.distributing;
 
     return Column(
       children: [
-        if (isOwner)
+        if (canUploadBankStatement)
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -29,11 +37,12 @@ class TransactionListView extends StatelessWidget {
               icon: const Icon(Icons.upload_file),
               label: const Text('Upload Bank Statement'),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F62FE),
-                  foregroundColor: Colors.white),
+                backgroundColor: const Color(0xFF0F62FE),
+                foregroundColor: Colors.white,
+              ),
             ),
           )
-        else
+        else if (!isOwner)
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -70,7 +79,9 @@ class TransactionListView extends StatelessWidget {
                 title: Text(
                   transaction.donorName,
                   style: const TextStyle(
-                      color: Colors.black87, fontWeight: FontWeight.w500),
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 subtitle: Text(
                   DateFormat.yMd().add_jm().format(transaction.date),

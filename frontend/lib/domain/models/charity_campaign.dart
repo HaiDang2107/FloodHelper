@@ -4,10 +4,19 @@
 
 class CharityCampaign {
   final String id;
+  final String? organizedBy;
+  final String? checkedBy;
   final String name;
   final String benefactorName;
+  final String purpose;
+  final String charityObject;
   final CampaignStatus status;
   final BankInfo bankInfo;
+  final String? bankStatementFileUrl;
+  final DateTime? startDonationAt;
+  final DateTime? finishDonationAt;
+  final DateTime? startDistributionAt;
+  final DateTime? finishDistributionAt;
   final String reliefLocation;
   final DateRange period;
   final List<CampaignAnnouncement> announcements;
@@ -16,10 +25,19 @@ class CharityCampaign {
 
   const CharityCampaign({
     required this.id,
+    this.organizedBy,
+    this.checkedBy,
     required this.name,
     required this.benefactorName,
+    this.purpose = '',
+    this.charityObject = '',
     required this.status,
     required this.bankInfo,
+    this.bankStatementFileUrl,
+    this.startDonationAt,
+    this.finishDonationAt,
+    this.startDistributionAt,
+    this.finishDistributionAt,
     required this.reliefLocation,
     required this.period,
     this.announcements = const [],
@@ -33,12 +51,12 @@ class CharityCampaign {
   }
 
   /// Calculate total spent on supplies
-  double get totalSpent {
-    return purchasedSupplies.fold(0, (sum, s) => sum + s.totalPrice);
-  }
+  // double get totalSpent {
+  //   return purchasedSupplies.fold(0, (sum, s) => sum + s.totalPrice);
+  // }
 
   /// Remaining funds
-  double get remainingFunds => totalDonations - totalSpent;
+  // double get remainingFunds => totalDonations - totalSpent;
 
   /// Check if campaign is active (can receive donations)
   bool get isActive => status == CampaignStatus.donating;
@@ -47,19 +65,28 @@ class CharityCampaign {
   bool get isFinished => status == CampaignStatus.finished;
 
   /// Get progress percentage (days elapsed)
-  double get progressPercentage {
-    final totalDays = period.endDate.difference(period.startDate).inDays;
-    final elapsedDays = DateTime.now().difference(period.startDate).inDays;
-    if (totalDays <= 0) return 100;
-    return (elapsedDays / totalDays * 100).clamp(0, 100);
-  }
+  // double get progressPercentage {
+  //   final totalDays = period.endDate.difference(period.startDate).inDays;
+  //   final elapsedDays = DateTime.now().difference(period.startDate).inDays;
+  //   if (totalDays <= 0) return 100;
+  //   return (elapsedDays / totalDays * 100).clamp(0, 100);
+  // }
 
   CharityCampaign copyWith({
     String? id,
+    String? organizedBy,
+    String? checkedBy,
     String? name,
     String? benefactorName,
+    String? purpose,
+    String? charityObject,
     CampaignStatus? status,
     BankInfo? bankInfo,
+    String? bankStatementFileUrl,
+    DateTime? startDonationAt,
+    DateTime? finishDonationAt,
+    DateTime? startDistributionAt,
+    DateTime? finishDistributionAt,
     String? reliefLocation,
     DateRange? period,
     List<CampaignAnnouncement>? announcements,
@@ -68,10 +95,19 @@ class CharityCampaign {
   }) {
     return CharityCampaign(
       id: id ?? this.id,
+      organizedBy: organizedBy ?? this.organizedBy,
+      checkedBy: checkedBy ?? this.checkedBy,
       name: name ?? this.name,
       benefactorName: benefactorName ?? this.benefactorName,
+      purpose: purpose ?? this.purpose,
+      charityObject: charityObject ?? this.charityObject,
       status: status ?? this.status,
       bankInfo: bankInfo ?? this.bankInfo,
+      bankStatementFileUrl: bankStatementFileUrl ?? this.bankStatementFileUrl,
+      startDonationAt: startDonationAt ?? this.startDonationAt,
+      finishDonationAt: finishDonationAt ?? this.finishDonationAt,
+      startDistributionAt: startDistributionAt ?? this.startDistributionAt,
+      finishDistributionAt: finishDistributionAt ?? this.finishDistributionAt,
       reliefLocation: reliefLocation ?? this.reliefLocation,
       period: period ?? this.period,
       announcements: announcements ?? this.announcements,
@@ -94,19 +130,19 @@ class CharityCampaign {
 enum CampaignStatus {
   /// Waiting for approval
   pending,
-  
+
   /// Approved, ready to start
   approved,
-  
+
   /// Rejected by admin
   rejected,
-  
+
   /// Currently accepting donations
   donating,
-  
+
   /// Distributing relief supplies
   distributing,
-  
+
   /// Campaign completed
   finished;
 
@@ -184,10 +220,7 @@ class DateRange {
   final DateTime startDate;
   final DateTime endDate;
 
-  const DateRange({
-    required this.startDate,
-    required this.endDate,
-  });
+  const DateRange({required this.startDate, required this.endDate});
 
   /// Duration in days
   int get durationDays => endDate.difference(startDate).inDays;
@@ -205,10 +238,7 @@ class DateRange {
     return endDate.difference(now).inDays;
   }
 
-  DateRange copyWith({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) {
+  DateRange copyWith({DateTime? startDate, DateTime? endDate}) {
     return DateRange(
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,

@@ -72,9 +72,7 @@ ProfileRepository profileRepository(Ref ref) {
 /// Provider for FriendRepository
 @riverpod
 FriendRepository friendRepository(Ref ref) {
-  return RealFriendRepository(
-    friendService: ref.read(friendServiceProvider),
-  );
+  return RealFriendRepository(friendService: ref.read(friendServiceProvider));
 }
 
 /// Provider for CharityCampaignRepository
@@ -84,6 +82,7 @@ CharityCampaignRepository charityCampaignRepository(Ref ref) {
     return MockCharityCampaignRepository();
   }
 
-  // TODO: Replace with real repository implementation when backend endpoints are ready.
-  return MockCharityCampaignRepository();
+  return RealCharityCampaignRepository(
+    charityCampaignService: ref.read(charityCampaignServiceProvider),
+  );
 }

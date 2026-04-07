@@ -42,6 +42,19 @@ class _DetailViewState extends State<DetailView> {
     return '${date.day}/${date.month}/${date.year}';
   }
 
+  String _formatDateTime(DateTime? date) {
+    if (date == null) {
+      return 'Chưa cập nhật';
+    }
+
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
+  }
+
   Future<String?> _showPostAnnouncementDialog(BuildContext context) async {
     return showDialog<String>(
       context: context,
@@ -75,9 +88,11 @@ class _DetailViewState extends State<DetailView> {
         ),
         CharityLocationRow(
           location: widget.campaign.reliefLocation,
-          onMapPressed: () {
-            // TODO: Navigate to map
-          },
+          onMapPressed: widget.campaign.status == CampaignStatus.donating
+              ? null
+              : () {
+                  // TODO: Navigate to map
+                },
         ),
         CharityInfoRow(
           label: 'Start Date',
@@ -87,10 +102,29 @@ class _DetailViewState extends State<DetailView> {
           label: 'End Date',
           value: _formatDate(widget.campaign.period.endDate),
         ),
+        CharityInfoRow(
+          label: 'Start Donation',
+          value: _formatDateTime(widget.campaign.startDonationAt),
+        ),
+        CharityInfoRow(
+          label: 'End Donation',
+          value: _formatDateTime(widget.campaign.finishDonationAt),
+        ),
+        CharityInfoRow(
+          label: 'Start Distribution',
+          value: _formatDateTime(widget.campaign.startDistributionAt),
+        ),
+        CharityInfoRow(
+          label: 'End Distribution',
+          value: _formatDateTime(widget.campaign.finishDistributionAt),
+        ),
         const SizedBox(height: 24),
         if (isActiveStatus) ...[
           CharityActionButtons(
             status: widget.campaign.status,
+            canDonate:
+                !(widget.isOwner &&
+                    widget.campaign.status == CampaignStatus.donating),
             onDonate: () => showDialog(
               context: context,
               builder: (_) => const DonateDialog(),

@@ -3,6 +3,7 @@ import '../../../../../../domain/models/charity_campaign.dart';
 
 class CharityActionButtons extends StatelessWidget {
   final CampaignStatus status;
+  final bool canDonate;
   final VoidCallback? onDonate;
   final VoidCallback? onTransaction;
   final VoidCallback? onPurchasedSupplies;
@@ -10,6 +11,7 @@ class CharityActionButtons extends StatelessWidget {
   const CharityActionButtons({
     super.key,
     required this.status,
+    this.canDonate = true,
     this.onDonate,
     this.onTransaction,
     this.onPurchasedSupplies,
@@ -18,6 +20,21 @@ class CharityActionButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (status == CampaignStatus.donating) {
+      if (!canDonate) {
+        return SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: onTransaction,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.black87,
+              side: const BorderSide(color: Colors.grey),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
+            child: const Text('Transaction'),
+          ),
+        );
+      }
+
       return Row(
         children: [
           Expanded(
@@ -57,7 +74,7 @@ class CharityActionButtons extends StatelessWidget {
                 foregroundColor: Colors.white,
                 textStyle: const TextStyle(fontSize: 12),
               ),
-              child: const Text('Purchased Supplies'),
+              child: const Text('Allocation'),
             ),
           ),
           const SizedBox(width: 16),
