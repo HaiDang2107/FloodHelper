@@ -11,8 +11,10 @@ enum _SheetView { details, supplies, transactions }
 class CharityItem extends StatelessWidget {
   final CharityCampaign campaign;
   final bool isOwner;
-  final Future<CharityCampaign> Function(String campaignId) ? onLoadCampaignDetail;
-  final Future<void> Function(String campaignId, String text) ? onPostAnnouncement;
+  final Future<CharityCampaign> Function(String campaignId)? onLoadCampaignDetail;
+  final Future<void> Function(String campaignId, String text)? onPostAnnouncement;
+  final Future<void> Function(CharityCampaign campaign)? onUpdateCampaign;
+  final Future<void> Function(String campaignId)? onSendCampaignRequest;
 
   const CharityItem({
     super.key,
@@ -20,13 +22,46 @@ class CharityItem extends StatelessWidget {
     this.isOwner = false,
     this.onLoadCampaignDetail,
     this.onPostAnnouncement,
+    this.onUpdateCampaign,
+    this.onSendCampaignRequest,
   });
 
   Future<void> _showDetailsBottomSheet(BuildContext context) async {
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(rootNavigator.context);
+    final loadCampaignDetail = onLoadCampaignDetail;
+    final mediaQuery = MediaQuery.of(context);
+    const snackBarHeight = 56.0;
+    final snackBottomMargin =
+      (mediaQuery.size.height - mediaQuery.viewPadding.top - snackBarHeight - 8)
+        .clamp(16.0, mediaQuery.size.height - snackBarHeight)
+        .toDouble();
+
+    void showTopSnackBar(String message, {required bool isError}) {
+      if (!rootNavigator.context.mounted) {
+        return;
+      }
+
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
+            margin: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: snackBottomMargin,
+            ),
+          ),
+        );
+    }
+
     var detailCampaign = campaign;
-    if (onLoadCampaignDetail != null) {
+    if (loadCampaignDetail != null) {
       try {
-        detailCampaign = await onLoadCampaignDetail!(campaign.id);
+        detailCampaign = await loadCampaignDetail(campaign.id);
       } catch (_) {
         detailCampaign = campaign;
       }
@@ -100,6 +135,10 @@ class CharityItem extends StatelessWidget {
               );
               break;
             case _SheetView.details:
+              final postAnnouncement = onPostAnnouncement;
+              final updateCampaign = onUpdateCampaign;
+              final sendCampaignRequest = onSendCampaignRequest;
+
               content = DetailView(
                 key: const ValueKey('details'),
                 campaign: detailCampaign,
@@ -108,9 +147,53 @@ class CharityItem extends StatelessWidget {
                     setSheetState(() => currentView = _SheetView.supplies),
                 onTransaction: () =>
                     setSheetState(() => currentView = _SheetView.transactions),
-                onPostAnnouncement: onPostAnnouncement == null
+                onPostAnnouncement: postAnnouncement == null
                     ? null
-                    : (text) => onPostAnnouncement!(detailCampaign.id, text),
+                    : (text) => postAnnouncement(detailCampaign.id, text),
+                onUpdateInformation: updateCampaign == null
+                    ? null
+                    : () async {
+                        try {
+                          await updateCampaign(detailCampaign);
+                          if (loadCampaignDetail != null) {
+                            final refreshed = await loadCampaignDetail(
+                              detailCampaign.id,
+                            );
+                            setSheetState(() => detailCampaign = refreshed);
+                          }
+                          showTopSnackBar(
+                            'Campaign updated successfully.',
+                            isError: false,
+                          );
+                        } catch (error) {
+                          showTopSnackBar(
+                            'Update failed: $error',
+                            isError: true,
+                          );
+                        }
+                      },
+                onSendRequest: sendCampaignRequest == null
+                    ? null
+                    : () async {
+                        try {
+                          await sendCampaignRequest(detailCampaign.id);
+                          if (loadCampaignDetail != null) {
+                            final refreshed = await loadCampaignDetail(
+                              detailCampaign.id,
+                            );
+                            setSheetState(() => detailCampaign = refreshed);
+                          }
+                          showTopSnackBar(
+                            'Campaign request sent successfully.',
+                            isError: false,
+                          );
+                        } catch (_) {
+                          showTopSnackBar(
+                            'Cannot send request. Please verify timeline and campaign information.',
+                            isError: true,
+                          );
+                        }
+                      },
               );
               break;
           }

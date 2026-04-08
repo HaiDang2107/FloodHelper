@@ -13,6 +13,8 @@ class DetailView extends StatefulWidget {
   final VoidCallback onPurchasedSupplies;
   final VoidCallback onTransaction;
   final Future<void> Function(String text)? onPostAnnouncement;
+  final Future<void> Function()? onUpdateInformation;
+  final Future<void> Function()? onSendRequest;
 
   const DetailView({
     super.key,
@@ -21,6 +23,8 @@ class DetailView extends StatefulWidget {
     required this.onPurchasedSupplies,
     required this.onTransaction,
     this.onPostAnnouncement,
+    this.onUpdateInformation,
+    this.onSendRequest,
   });
 
   @override
@@ -39,20 +43,16 @@ class _DetailViewState extends State<DetailView> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
   }
 
-  String _formatDateTime(DateTime? date) {
+  String _formatDateOrPlaceholder(DateTime? date) {
     if (date == null) {
       return 'Chưa cập nhật';
     }
-
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$day/$month/$year $hour:$minute';
+    return _formatDate(date);
   }
 
   Future<String?> _showPostAnnouncementDialog(BuildContext context) async {
@@ -69,6 +69,15 @@ class _DetailViewState extends State<DetailView> {
       CampaignStatus.distributing,
       CampaignStatus.finished,
     ].contains(widget.campaign.status);
+    final bool canShowMapIcon = [
+      CampaignStatus.pending,
+      CampaignStatus.distributing,
+      CampaignStatus.finished,
+    ].contains(widget.campaign.status);
+    final bool showAuthorityNote = [
+      CampaignStatus.approved,
+      CampaignStatus.rejected,
+    ].contains(widget.campaign.status);
 
     return Column(
       key: const ValueKey('details'),
@@ -79,20 +88,27 @@ class _DetailViewState extends State<DetailView> {
           value: widget.campaign.benefactorName,
         ),
         CharityInfoRow(
-          label: 'Bank Account',
-          value: widget.campaign.bankInfo.accountNumber,
-        ),
-        CharityInfoRow(
           label: 'Bank Name',
           value: widget.campaign.bankInfo.bankName,
         ),
+        CharityInfoRow(
+          label: 'Bank Account',
+          value: widget.campaign.bankInfo.accountNumber,
+        ),
+        if (widget.isOwner)
+          CharityInfoRow(label: 'Purpose', value: widget.campaign.purpose),
+        if (widget.isOwner)
+          CharityInfoRow(
+            label: 'Charity Object',
+            value: widget.campaign.charityObject,
+          ),
         CharityLocationRow(
           location: widget.campaign.reliefLocation,
-          onMapPressed: widget.campaign.status == CampaignStatus.donating
-              ? null
-              : () {
+          onMapPressed: canShowMapIcon
+              ? () {
                   // TODO: Navigate to map
-                },
+                }
+              : null,
         ),
         CharityInfoRow(
           label: 'Start Date',
@@ -104,20 +120,51 @@ class _DetailViewState extends State<DetailView> {
         ),
         CharityInfoRow(
           label: 'Start Donation',
-          value: _formatDateTime(widget.campaign.startDonationAt),
+          value: _formatDateOrPlaceholder(widget.campaign.startDonationAt),
         ),
         CharityInfoRow(
           label: 'End Donation',
-          value: _formatDateTime(widget.campaign.finishDonationAt),
+          value: _formatDateOrPlaceholder(widget.campaign.finishDonationAt),
         ),
         CharityInfoRow(
           label: 'Start Distribution',
-          value: _formatDateTime(widget.campaign.startDistributionAt),
+          value: _formatDateOrPlaceholder(widget.campaign.startDistributionAt),
         ),
         CharityInfoRow(
           label: 'End Distribution',
-          value: _formatDateTime(widget.campaign.finishDistributionAt),
+          value: _formatDateOrPlaceholder(widget.campaign.finishDistributionAt),
         ),
+        if (showAuthorityNote)
+          CharityInfoRow(
+            label: 'Note by Authority',
+            value: widget.campaign.noteByAuthority ?? 'Không có ghi chú',
+          ),
+        if (widget.isOwner && widget.campaign.status == CampaignStatus.created)
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: widget.onUpdateInformation,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Update Campaign'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F62FE),
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: widget.onSendRequest,
+                  icon: const Icon(Icons.send),
+                  label: const Text('Send Request'),
+                ),
+              ),
+            ],
+          ),
+        if (widget.isOwner && widget.campaign.status == CampaignStatus.created)
+          const SizedBox(height: 24),
         const SizedBox(height: 24),
         if (isActiveStatus) ...[
           CharityActionButtons(

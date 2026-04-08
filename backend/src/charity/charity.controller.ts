@@ -1,8 +1,11 @@
 import {
+  Body,
   BadRequestException,
   Controller,
   Get,
   Param,
+  Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -12,7 +15,11 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../common/enum/userRole.enum';
 import { CharityService } from './charity.service';
-import { QueryCampaignsByStateDto } from './dto';
+import {
+  CreateCampaignDto,
+  QueryCampaignsByStateDto,
+  UpdateCampaignDto,
+} from './dto';
 
 @Controller('charity/campaigns')
 @UseGuards(JwtAuthGuard)
@@ -66,6 +73,62 @@ export class CharityController {
     return {
       success: true,
       message: 'Campaign detail retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post()
+  async createCampaign(
+    @CurrentUser() user: any,
+    @Body() body: CreateCampaignDto,
+  ) {
+    const data = await this.charityService.createCampaign(user.userId, body);
+
+    return {
+      success: true,
+      message: 'Campaign draft created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Put(':campaignId')
+  async updateCampaign(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: UpdateCampaignDto,
+  ) {
+    const data = await this.charityService.updateCampaign(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post(':campaignId/send-request')
+  async sendCampaignRequest(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+  ) {
+    const data = await this.charityService.sendCampaignRequest(
+      user.userId,
+      campaignId,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign request sent successfully',
       data,
     };
   }

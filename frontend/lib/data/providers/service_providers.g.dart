@@ -122,7 +122,7 @@ final authorityServiceProvider = AutoDisposeProvider<AuthorityService>.internal(
 // ignore: unused_element
 typedef AuthorityServiceRef = AutoDisposeProviderRef<AuthorityService>;
 String _$charityCampaignServiceHash() =>
-    r'7f5a0f0d8dc0f3d4db5f8f2c1a5b3f4b5f2b3c11';
+    r'e45572f29f9ecd835fde58fcb6888662e526c44d';
 
 /// CharityCampaignService provider
 ///

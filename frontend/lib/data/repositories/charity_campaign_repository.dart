@@ -8,4 +8,8 @@ abstract class CharityCampaignRepository {
   Future<CharityCampaign> getCampaignDetail(String campaignId);
 
   Future<CharityCampaign> createMyCampaign(CharityCampaign campaign);
+
+  Future<CharityCampaign> updateMyCampaign(CharityCampaign campaign);
+
+  Future<CharityCampaign> sendCampaignRequest(String campaignId);
 }

@@ -129,7 +129,7 @@ final friendRepositoryProvider = AutoDisposeProvider<FriendRepository>.internal(
 // ignore: unused_element
 typedef FriendRepositoryRef = AutoDisposeProviderRef<FriendRepository>;
 String _$charityCampaignRepositoryHash() =>
-    r'ef5a3cc7caa9c3c8112777c8ca67c40ef25c6911';
+    r'a4ab4cbd33883274f4b70c4e49a20779c12886e6';
 
 /// Provider for CharityCampaignRepository
 ///

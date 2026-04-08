@@ -17,15 +17,16 @@ class ExistingCharityScreen extends ConsumerWidget {
     final viewModel = ref.read(charityCampaignViewModelProvider.notifier);
     final currentUser = ref.watch(currentUserProvider);
     final isBenefactor = currentUser?.isBenefactor ?? false;
+    final errorMessage = state.errorMessage;
 
-    if (state.errorMessage != null) {
+    if (errorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) {
           return;
         }
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
         viewModel.clearError();
       });
     }

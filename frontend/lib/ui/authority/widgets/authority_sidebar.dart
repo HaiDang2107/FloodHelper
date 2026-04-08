@@ -59,12 +59,9 @@ class AuthoritySidebar extends StatelessWidget {
                   isCollapsed: isCollapsed,
                   currentLocation: currentLocation,
                 ),
-                _SidebarItem(
-                  icon: Icons.volunteer_activism_outlined,
-                  label: 'Charity campaign',
+                _CharityCampaignMenu(
                   isCollapsed: isCollapsed,
-                  isActive: currentPath == AuthorityRoutes.charity,
-                  onTap: () => _navigate(context, AuthorityRoutes.charity),
+                  currentLocation: currentLocation,
                 ),
                 _SidebarItem(
                   icon: Icons.announcement_outlined,
@@ -190,6 +187,90 @@ class _RoleRequestsMenuState extends State<_RoleRequestsMenu> {
             label: 'Approved',
             isActive: parentActive && status == 'approved',
             onTap: () => context.go('${AuthorityRoutes.requests}?status=approved'),
+          ),
+          const SizedBox(height: 6),
+        ],
+      ],
+    );
+  }
+}
+
+class _CharityCampaignMenu extends StatefulWidget {
+  const _CharityCampaignMenu({
+    required this.isCollapsed,
+    required this.currentLocation,
+  });
+
+  final bool isCollapsed;
+  final String currentLocation;
+
+  @override
+  State<_CharityCampaignMenu> createState() => _CharityCampaignMenuState();
+}
+
+class _CharityCampaignMenuState extends State<_CharityCampaignMenu> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = _currentUri.path == AuthorityRoutes.charity;
+  }
+
+  @override
+  void didUpdateWidget(covariant _CharityCampaignMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldPath = Uri.parse(oldWidget.currentLocation).path;
+    final newPath = _currentUri.path;
+    if (newPath == AuthorityRoutes.charity && oldPath != AuthorityRoutes.charity) {
+      _expanded = true;
+    }
+  }
+
+  Uri get _currentUri => Uri.parse(widget.currentLocation);
+
+  @override
+  Widget build(BuildContext context) {
+    final currentPath = _currentUri.path;
+    final status = _currentUri.queryParameters['status'];
+    final parentActive = currentPath == AuthorityRoutes.charity;
+
+    return Column(
+      children: [
+        _SidebarItem(
+          icon: Icons.volunteer_activism_outlined,
+          label: 'Charity campaign',
+          isCollapsed: widget.isCollapsed,
+          isActive: parentActive,
+          trailing: widget.isCollapsed
+              ? null
+              : Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+          onTap: () {
+            setState(() => _expanded = !_expanded);
+            if (currentPath != AuthorityRoutes.charity) {
+              context.go(AuthorityRoutes.charity);
+            }
+          },
+        ),
+        if (_expanded && !widget.isCollapsed) ...[
+          _SubSidebarItem(
+            label: 'Pending',
+            isActive: parentActive && status == 'pending',
+            onTap: () => context.go('${AuthorityRoutes.charity}?status=pending'),
+          ),
+          _SubSidebarItem(
+            label: 'Rejected',
+            isActive: parentActive && status == 'rejected',
+            onTap: () => context.go('${AuthorityRoutes.charity}?status=rejected'),
+          ),
+          _SubSidebarItem(
+            label: 'Approved',
+            isActive: parentActive && status == 'approved',
+            onTap: () => context.go('${AuthorityRoutes.charity}?status=approved'),
           ),
           const SizedBox(height: 6),
         ],

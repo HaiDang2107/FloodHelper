@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+
 import '../../../../domain/models/charity_campaign.dart';
 
 class CreateCampaignDialog extends StatefulWidget {
-  const CreateCampaignDialog({super.key});
+  final CharityCampaign? campaignToEdit;
+
+  const CreateCampaignDialog({super.key, this.campaignToEdit});
+
+  bool get isUpdateMode => campaignToEdit != null;
 
   @override
   State<CreateCampaignDialog> createState() => _CreateCampaignDialogState();
@@ -10,11 +15,8 @@ class CreateCampaignDialog extends StatefulWidget {
 
 class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
   final nameController = TextEditingController();
-  final benefactorController = TextEditingController();
   final purposeController = TextEditingController();
   final charityObjectController = TextEditingController();
-  final organizedByController = TextEditingController();
-  final checkedByController = TextEditingController();
   final accountController = TextEditingController();
   final bankController = TextEditingController();
   final bankStatementFileUrlController = TextEditingController();
@@ -28,7 +30,33 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
   DateTime? _finishDonationAt;
   DateTime? _startDistributionAt;
   DateTime? _finishDistributionAt;
-  CampaignStatus _selectedStatus = CampaignStatus.pending;
+
+  @override
+  void initState() {
+    super.initState();
+    final campaign = widget.campaignToEdit;
+    if (campaign == null) {
+      return;
+    }
+
+    nameController.text = campaign.name;
+    purposeController.text = campaign.purpose;
+    charityObjectController.text = campaign.charityObject;
+    accountController.text = campaign.bankInfo.accountNumber;
+    bankController.text = campaign.bankInfo.bankName;
+    bankStatementFileUrlController.text = campaign.bankStatementFileUrl ?? '';
+    locationController.text = campaign.reliefLocation;
+
+    _startDonationAt = campaign.startDonationAt;
+    _finishDonationAt = campaign.finishDonationAt;
+    _startDistributionAt = campaign.startDistributionAt;
+    _finishDistributionAt = campaign.finishDistributionAt;
+
+    startDonationAtController.text = _formatDate(_startDonationAt);
+    finishDonationAtController.text = _formatDate(_finishDonationAt);
+    startDistributionAtController.text = _formatDate(_startDistributionAt);
+    finishDistributionAtController.text = _formatDate(_finishDistributionAt);
+  }
 
   Future<void> _pickDate({
     required TextEditingController controller,
@@ -48,6 +76,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
       }
       return selectedDate;
     })();
+
     final picked = await showDatePicker(
       context: context,
       initialDate: safeInitialDate,
@@ -60,17 +89,123 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     }
 
     onSelected(picked);
-    controller.text = '${picked.day}/${picked.month}/${picked.year}';
+    controller.text = _formatDate(picked);
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) {
+      return '';
+    }
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
+  }
+
+  String? _validateInputs() {
+    if (nameController.text.trim().isEmpty ||
+        purposeController.text.trim().isEmpty ||
+        charityObjectController.text.trim().isEmpty ||
+        locationController.text.trim().isEmpty ||
+        accountController.text.trim().isEmpty ||
+        bankController.text.trim().isEmpty ||
+        _startDonationAt == null ||
+        _finishDonationAt == null ||
+        _startDistributionAt == null ||
+        _finishDistributionAt == null) {
+      return 'Please fill all required fields before submitting.';
+    }
+
+    final now = DateTime.now();
+    final startDonationAt = _startDonationAt!;
+    final finishDonationAt = _finishDonationAt!;
+    final startDistributionAt = _startDistributionAt!;
+    final finishDistributionAt = _finishDistributionAt!;
+
+    if (!startDonationAt.isAfter(now)) {
+      return 'Start Donation must be after current time.';
+    }
+    if (!startDonationAt.isBefore(finishDonationAt)) {
+      return 'Timeline is invalid: Start Donation must be before Finish Donation.';
+    }
+    if (!finishDonationAt.isBefore(startDistributionAt)) {
+      return 'Timeline is invalid: Finish Donation must be before Start Distribution.';
+    }
+    if (!startDistributionAt.isBefore(finishDistributionAt)) {
+      return 'Timeline is invalid: Start Distribution must be before Finish Distribution.';
+    }
+
+    return null;
+  }
+
+  Future<void> _submit() async {
+    final validationError = _validateInputs();
+    if (validationError != null) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Invalid campaign data'),
+          content: Text(validationError),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final existing = widget.campaignToEdit;
+    final startDonationAt = _startDonationAt!;
+    final finishDistributionAt = _finishDistributionAt!;
+
+    final campaign = CharityCampaign(
+      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+      organizedBy: existing?.organizedBy,
+      checkedBy: existing?.checkedBy,
+      name: nameController.text.trim(),
+      benefactorName: existing?.benefactorName ?? 'Me',
+      purpose: purposeController.text.trim(),
+      charityObject: charityObjectController.text.trim(),
+      status: existing?.status ?? CampaignStatus.created,
+      bankInfo: BankInfo(
+        accountNumber: accountController.text.trim(),
+        bankName: bankController.text.trim(),
+        accountHolder: existing?.bankInfo.accountHolder,
+      ),
+      bankStatementFileUrl: bankStatementFileUrlController.text.trim().isEmpty
+          ? null
+          : bankStatementFileUrlController.text.trim(),
+      requestedAt: existing?.requestedAt,
+      respondedAt: existing?.respondedAt,
+      noteByAuthority: existing?.noteByAuthority,
+      startDonationAt: _startDonationAt,
+      finishDonationAt: _finishDonationAt,
+      startDistributionAt: _startDistributionAt,
+      finishDistributionAt: _finishDistributionAt,
+      reliefLocation: locationController.text.trim(),
+      period: DateRange(
+        startDate: startDonationAt,
+        endDate: finishDistributionAt,
+      ),
+      announcements: existing?.announcements ?? const [],
+      purchasedSupplies: existing?.purchasedSupplies ?? const [],
+      donations: existing?.donations ?? const [],
+    );
+
+    if (!mounted) {
+      return;
+    }
+    Navigator.pop(context, campaign);
   }
 
   @override
   void dispose() {
     nameController.dispose();
-    benefactorController.dispose();
     purposeController.dispose();
     charityObjectController.dispose();
-    organizedByController.dispose();
-    checkedByController.dispose();
     accountController.dispose();
     bankController.dispose();
     bankStatementFileUrlController.dispose();
@@ -84,6 +219,10 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isUpdateMode = widget.isUpdateMode;
+    final title = isUpdateMode ? 'Update Campaign' : 'Create New Campaign';
+    final actionLabel = isUpdateMode ? 'Update Campaign' : 'Create Campaign';
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SingleChildScrollView(
@@ -92,39 +231,37 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Create New Campaign',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Close',
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             TextField(
               controller: nameController,
               decoration: const InputDecoration(
-                labelText: 'Campaign Name',
+                labelText: 'Campaign Name *',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: benefactorController,
+              controller: locationController,
               decoration: const InputDecoration(
-                labelText: 'Benefactor Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: organizedByController,
-              decoration: const InputDecoration(
-                labelText: 'Organized By (User ID)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: checkedByController,
-              decoration: const InputDecoration(
-                labelText: 'Checked By (User ID)',
+                labelText: 'Relief Location *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -133,7 +270,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
               controller: purposeController,
               maxLines: 2,
               decoration: const InputDecoration(
-                labelText: 'Purpose',
+                labelText: 'Purpose *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -141,39 +278,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
             TextField(
               controller: charityObjectController,
               decoration: const InputDecoration(
-                labelText: 'Charity Object',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<CampaignStatus>(
-              initialValue: _selectedStatus,
-              decoration: const InputDecoration(
-                labelText: 'State',
-                border: OutlineInputBorder(),
-              ),
-              items: CampaignStatus.values
-                  .map(
-                    (status) => DropdownMenuItem(
-                      value: status,
-                      child: Text(status.name.toUpperCase()),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: (value) {
-                if (value == null) {
-                  return;
-                }
-                setState(() {
-                  _selectedStatus = value;
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: accountController,
-              decoration: const InputDecoration(
-                labelText: 'Bank Account Number',
+                labelText: 'Charity Object *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -181,23 +286,15 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
             TextField(
               controller: bankController,
               decoration: const InputDecoration(
-                labelText: 'Bank Name',
+                labelText: 'Bank Name *',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: bankStatementFileUrlController,
+              controller: accountController,
               decoration: const InputDecoration(
-                labelText: 'Bank Statement File URL',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: locationController,
-              decoration: const InputDecoration(
-                labelText: 'Relief Location',
+                labelText: 'Bank Account Number *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -214,7 +311,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                       onSelected: (date) => _startDonationAt = date,
                     ),
                     decoration: const InputDecoration(
-                      labelText: 'Start Donation At',
+                      labelText: 'Start Donation At *',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -230,7 +327,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                       onSelected: (date) => _finishDonationAt = date,
                     ),
                     decoration: const InputDecoration(
-                      labelText: 'Finish Donation At',
+                      labelText: 'Finish Donation At *',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -250,7 +347,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                       onSelected: (date) => _startDistributionAt = date,
                     ),
                     decoration: const InputDecoration(
-                      labelText: 'Start Distribution At',
+                      labelText: 'Start Distribution At *',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -266,7 +363,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                       onSelected: (date) => _finishDistributionAt = date,
                     ),
                     decoration: const InputDecoration(
-                      labelText: 'Finish Distribution At',
+                      labelText: 'Finish Distribution At *',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -277,56 +374,12 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  final now = DateTime.now();
-                  final startDonationAt = _startDonationAt ?? now;
-                  final finishDistributionAt =
-                      _finishDistributionAt ??
-                      now.add(const Duration(days: 30));
-
-                  final newCampaign = CharityCampaign(
-                    id: now.microsecondsSinceEpoch.toString(),
-                    organizedBy: organizedByController.text.trim().isEmpty
-                        ? null
-                        : organizedByController.text.trim(),
-                    checkedBy: checkedByController.text.trim().isEmpty
-                        ? null
-                        : checkedByController.text.trim(),
-                    name: nameController.text.isEmpty
-                        ? 'New Campaign'
-                        : nameController.text,
-                    benefactorName: benefactorController.text.isEmpty
-                        ? 'Me'
-                        : benefactorController.text,
-                    purpose: purposeController.text,
-                    charityObject: charityObjectController.text,
-                    status: _selectedStatus,
-                    bankInfo: BankInfo(
-                      accountNumber: accountController.text,
-                      bankName: bankController.text,
-                    ),
-                    bankStatementFileUrl:
-                        bankStatementFileUrlController.text.trim().isEmpty
-                        ? null
-                        : bankStatementFileUrlController.text.trim(),
-                    startDonationAt: _startDonationAt,
-                    finishDonationAt: _finishDonationAt,
-                    startDistributionAt: _startDistributionAt,
-                    finishDistributionAt: _finishDistributionAt,
-                    reliefLocation: locationController.text,
-                    period: DateRange(
-                      startDate: startDonationAt,
-                      endDate: finishDistributionAt,
-                    ),
-                    announcements: [],
-                  );
-                  Navigator.pop(context, newCampaign);
-                },
+                onPressed: _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F62FE),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Create Charity Campaign'),
+                child: Text(actionLabel),
               ),
             ),
           ],

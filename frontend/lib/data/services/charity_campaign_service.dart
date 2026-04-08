@@ -62,6 +62,61 @@ class CharityCampaignService {
     }
   }
 
+  Future<Map<String, dynamic>> createCampaign(Map<String, dynamic> payload) async {
+    try {
+      final response = await _apiClient.post('/charity/campaigns', data: payload);
+      return _extractMap(response.data, fallbackMessage: 'Failed to create campaign');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCampaign(
+    String campaignId,
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await _apiClient.put(
+        '/charity/campaigns/$campaignId',
+        data: payload,
+      );
+      return _extractMap(response.data, fallbackMessage: 'Failed to update campaign');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> sendCampaignRequest(String campaignId) async {
+    try {
+      final response = await _apiClient.post(
+        '/charity/campaigns/$campaignId/send-request',
+      );
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to send campaign request',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Map<String, dynamic> _extractMap(
+    dynamic responseData, {
+    required String fallbackMessage,
+  }) {
+    if (responseData is! Map<String, dynamic>) {
+      throw ApiException(message: fallbackMessage);
+    }
+
+    if (responseData['success'] == true && responseData['data'] is Map) {
+      return Map<String, dynamic>.from(responseData['data'] as Map);
+    }
+
+    throw ApiException(
+      message: responseData['message']?.toString() ?? fallbackMessage,
+    );
+  }
+
   List<Map<String, dynamic>> _extractList(dynamic responseData) {
     if (responseData is! Map<String, dynamic>) {
       return [];

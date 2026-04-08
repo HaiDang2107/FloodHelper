@@ -48,4 +48,59 @@ class AuthorityService {
 
     return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
   }
+
+  Future<Map<String, dynamic>> getCharityCampaignRequests({
+    String? beforeRequestedAt,
+    String? state,
+  }) async {
+    final query = <String, dynamic>{};
+    if (beforeRequestedAt != null) {
+      query['beforeRequestedAt'] = beforeRequestedAt;
+    }
+    if (state != null) {
+      query['state'] = state;
+    }
+
+    final response = await _apiClient.get(
+      '/authority/campaigns',
+      queryParameters: query,
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> getCharityCampaignDetail(String campaignId) async {
+    final response = await _apiClient.get('/authority/campaigns/$campaignId');
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> approveCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    final response = await _apiClient.patch(
+      '/authority/campaigns/$campaignId/approve',
+      data: {
+        if (noteByAuthority != null && noteByAuthority.trim().isNotEmpty)
+          'noteByAuthority': noteByAuthority.trim(),
+      },
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> rejectCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    final response = await _apiClient.patch(
+      '/authority/campaigns/$campaignId/reject',
+      data: {
+        if (noteByAuthority != null && noteByAuthority.trim().isNotEmpty)
+          'noteByAuthority': noteByAuthority.trim(),
+      },
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
 }

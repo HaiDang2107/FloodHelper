@@ -1,5 +1,17 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
+import {
+  CreateCampaignDto,
+  ListAuthorityCampaignsDto,
+  RespondCampaignDto,
+  UpdateCampaignDto,
+} from './dto';
 
 type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
   select: {
@@ -7,10 +19,14 @@ type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
     campaignName: true;
     state: true;
     createdAt: true;
+    requestedAt: true;
+    respondedAt: true;
     organizer: {
       select: {
+        userId: true;
         fullname: true;
         nickname: true;
+        placeOfResidence: true;
       };
     };
   };
@@ -25,7 +41,7 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
         nickname: true;
       };
     };
-    bankAccounts: true;
+    bankAccount: true;
     transactions: true;
     supplies: true;
   };
@@ -36,6 +52,7 @@ export class CharityService {
   private readonly prisma: PrismaClient;
 
   private readonly allowedStates = new Set([
+    'CREATED',
     'PENDING',
     'APPROVED',
     'REJECTED',
@@ -50,6 +67,9 @@ export class CharityService {
 
   async listExistingCampaignsByState(state: string) {
     const normalizedState = this.normalizeAndValidateState(state);
+    if (normalizedState === 'CREATED') {
+      return [];
+    }
 
     const campaigns = await this.prisma.charityCampaign.findMany({
       where: {
@@ -63,10 +83,14 @@ export class CharityService {
         campaignName: true,
         state: true,
         createdAt: true,
+        requestedAt: true,
+        respondedAt: true,
         organizer: {
           select: {
+            userId: true,
             fullname: true,
             nickname: true,
+            placeOfResidence: true,
           },
         },
       },
@@ -94,10 +118,14 @@ export class CharityService {
         campaignName: true,
         state: true,
         createdAt: true,
+        requestedAt: true,
+        respondedAt: true,
         organizer: {
           select: {
+            userId: true,
             fullname: true,
             nickname: true,
+            placeOfResidence: true,
           },
         },
       },
@@ -120,9 +148,7 @@ export class CharityService {
             nickname: true,
           },
         },
-        bankAccounts: {
-          orderBy: { bankAccountId: 'asc' },
-        },
+        bankAccount: true,
         transactions: {
           orderBy: { donateAt: 'desc' },
         },
@@ -144,6 +170,267 @@ export class CharityService {
     return this.mapCampaignDetail(campaign, announcements);
   }
 
+  async createCampaign(userId: string, payload: CreateCampaignDto) {
+    const timeline = this.parseAndValidateTimeline(payload);
+    const bankAccountId = await this.resolveOrCreateBankAccountId(
+      this.prisma,
+      payload,
+    );
+
+    const created = await this.prisma.charityCampaign.create({
+      data: {
+        organizedBy: userId,
+        bankAccountId,
+        campaignName: payload.campaignName.trim(),
+        purpose: payload.purpose.trim(),
+        destination: payload.destination.trim(),
+        charityObject: payload.charityObject.trim(),
+        state: 'CREATED',
+        startDonationAt: timeline.startDonationAt,
+        finishDonationAt: timeline.finishDonationAt,
+        startDistributionAt: timeline.startDistributionAt,
+        finishDistributionAt: timeline.finishDistributionAt,
+        bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
+      },
+      select: { campaignId: true },
+    });
+
+    return this.getCampaignDetail(created.campaignId);
+  }
+
+  async updateCampaign(
+    userId: string,
+    campaignId: string,
+    payload: UpdateCampaignDto,
+  ) {
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+    if (campaign.organizedBy !== userId) {
+      throw new ForbiddenException('You are not allowed to update this campaign');
+    }
+    if (String(campaign.state).toUpperCase() !== 'CREATED') {
+      throw new BadRequestException('Only CREATED campaigns can be updated');
+    }
+
+    const timeline = this.parseAndValidateTimeline(payload);
+    const bankAccountId = await this.resolveOrCreateBankAccountId(
+      this.prisma,
+      payload,
+    );
+
+    await this.prisma.charityCampaign.update({
+      where: { campaignId },
+      data: {
+        bankAccountId,
+        campaignName: payload.campaignName.trim(),
+        purpose: payload.purpose.trim(),
+        destination: payload.destination.trim(),
+        charityObject: payload.charityObject.trim(),
+        startDonationAt: timeline.startDonationAt,
+        finishDonationAt: timeline.finishDonationAt,
+        startDistributionAt: timeline.startDistributionAt,
+        finishDistributionAt: timeline.finishDistributionAt,
+        bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
+      },
+    });
+
+    return this.getCampaignDetail(campaignId);
+  }
+
+  async sendCampaignRequest(userId: string, campaignId: string) {
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        organizedBy: true,
+        state: true,
+        bankAccountId: true,
+        startDonationAt: true,
+        finishDonationAt: true,
+        startDistributionAt: true,
+        finishDistributionAt: true,
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+    if (campaign.organizedBy !== userId) {
+      throw new ForbiddenException('You are not allowed to send this campaign');
+    }
+    if (String(campaign.state).toUpperCase() !== 'CREATED') {
+      throw new BadRequestException('Only CREATED campaigns can be submitted');
+    }
+    if (!campaign.bankAccountId) {
+      throw new BadRequestException('Campaign bank account is required');
+    }
+
+    this.validateTimelineValues(
+      campaign.startDonationAt,
+      campaign.finishDonationAt,
+      campaign.startDistributionAt,
+      campaign.finishDistributionAt,
+    );
+
+    await this.prisma.charityCampaign.update({
+      where: { campaignId },
+      data: {
+        state: 'PENDING',
+        requestedAt: new Date(),
+      },
+    });
+
+    return this.getCampaignDetail(campaignId);
+  }
+
+  async listCampaignsForAuthority(
+    authorityUserId: string,
+    dto: ListAuthorityCampaignsDto,
+  ) {
+    const authorityResidence = await this.getAuthorityPlace(authorityUserId);
+    const limit = dto.limit ?? 20;
+    const cursorTime = dto.beforeRequestedAt // cursorTime: Lấy những bản ghi trước mốc này (kết hợp với limit nữa)
+      ? new Date(dto.beforeRequestedAt)
+      : new Date();
+    const stateFilter = dto.state?.toUpperCase();
+
+    const allowedStates = stateFilter
+      ? [stateFilter]
+      : ['PENDING', 'APPROVED', 'REJECTED'];
+
+    const where: Prisma.CharityCampaignWhereInput = { // Tạo bộ lọc
+      AND: [ // AND các điều kiện
+        {
+          state: {
+            in: allowedStates, // Lấy các bản ghi có trạng xuất hiện trong danh sách allowedStates 
+          },
+        },
+        {
+          organizer: {
+            placeOfResidence: authorityResidence, // người tổ chức campaign có cùng residence
+          },
+        },
+        {
+          requestedAt: { lte: cursorTime }, // requestedAt <= cursorTime
+        },
+        stateFilter === 'PENDING' || !stateFilter
+            ? {
+                OR: [{ checkedBy: authorityUserId }, { checkedBy: null }],
+              }
+            : { checkedBy: authorityUserId },
+      ],
+    };
+
+    const rows = await this.prisma.charityCampaign.findMany({
+      where,
+      select: {
+        campaignId: true,
+        campaignName: true,
+        state: true,
+        createdAt: true,
+        requestedAt: true,
+        respondedAt: true,
+        organizer: {
+          select: {
+            userId: true,
+            fullname: true,
+            nickname: true,
+            placeOfResidence: true,
+          },
+        },
+      },
+      orderBy: { requestedAt: 'desc' },
+      take: limit + 1, // Lấy ra limit + 1 bản ghi
+    });
+
+    const hasMore = rows.length > limit; // số lượng bản ghi > limit chứng tỏ vẫn còn (phục vụ cho lần lấy tiếp theo)
+    const sliced = hasMore ? rows.slice(0, limit) : rows; // Cắt bản ghi cuối
+    const nextCursor = hasMore
+      ? (sliced[sliced.length - 1].requestedAt ??
+          sliced[sliced.length - 1].createdAt
+        ).toISOString()
+      : null;
+
+    return {
+      items: sliced.map((campaign) => this.mapCampaignListItem(campaign)),
+      pagination: {
+        hasMore,
+        nextCursor,
+      },
+    };
+  }
+
+  async getCampaignDetailForAuthority(
+    authorityUserId: string,
+    campaignId: string,
+  ) {
+    await this.assertAuthorityCanAccessCampaign(authorityUserId, campaignId); // Kiểm tra xem auth có được truy cập campaign không
+    return this.getCampaignDetail(campaignId);
+  }
+
+  async approveCampaignForAuthority(
+    authorityUserId: string,
+    campaignId: string,
+    dto: RespondCampaignDto,
+  ) {
+    return this.respondCampaignForAuthority(
+      authorityUserId,
+      campaignId,
+      'APPROVED',
+      dto,
+    );
+  }
+
+  async rejectCampaignForAuthority(
+    authorityUserId: string,
+    campaignId: string,
+    dto: RespondCampaignDto,
+  ) {
+    return this.respondCampaignForAuthority(
+      authorityUserId,
+      campaignId,
+      'REJECTED',
+      dto,
+    );
+  }
+
+  private async respondCampaignForAuthority( // Hàm này phục vụ 2 hàm trên (private)
+    authorityUserId: string,
+    campaignId: string,
+    nextState: 'APPROVED' | 'REJECTED',
+    dto: RespondCampaignDto,
+  ) {
+    const reviewTarget = await this.assertAuthorityCanAccessCampaign(
+      authorityUserId,
+      campaignId,
+    );
+
+    if (String(reviewTarget.state).toUpperCase() !== 'PENDING') {
+      throw new ConflictException('Only PENDING campaigns can be processed');
+    }
+
+    const trimmedNote = dto.noteByAuthority?.trim();
+    if (nextState === 'REJECTED' && !trimmedNote) {
+      throw new BadRequestException('noteByAuthority is required when rejecting');
+    }
+
+    await this.prisma.charityCampaign.update({
+      where: { campaignId },
+      data: {
+        state: nextState,
+        checkedBy: authorityUserId,
+        respondedAt: new Date(),
+        noteByAuthority: trimmedNote ?? reviewTarget.noteByAuthority,
+      },
+    });
+
+    return this.getCampaignDetail(campaignId);
+  }
+
   private normalizeAndValidateState(state: string): string {
     if (!state) {
       throw new BadRequestException('state is required');
@@ -154,7 +441,7 @@ export class CharityService {
 
     if (!this.allowedStates.has(mapped)) {
       throw new BadRequestException(
-        'Invalid state. Allowed values: PENDING, APPROVED, REJECTED, DONATING, DISTRIBUTING, FINISHED',
+        'Invalid state. Allowed values: CREATED, PENDING, APPROVED, REJECTED, DONATING, DISTRIBUTING, FINISHED',
       );
     }
 
@@ -165,18 +452,200 @@ export class CharityService {
     return {
       id: campaign.campaignId,
       name: campaign.campaignName,
+      organizedBy: campaign.organizer?.userId,
+      organizerResidence: campaign.organizer?.placeOfResidence ?? null,
       benefactorName:
         campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
       state: String(campaign.state).toUpperCase(),
+      requestedAt: campaign.requestedAt,
+      respondedAt: campaign.respondedAt,
       createdAt: campaign.createdAt,
     };
+  }
+
+  private async getAuthorityPlace(authorityUserId: string) {
+    const authority = await this.prisma.user.findUnique({
+      where: { userId: authorityUserId },
+      select: {
+        userId: true,
+        placeOfResidence: true,
+        role: true,
+      },
+    });
+
+    if (!authority) {
+      throw new NotFoundException('Authority account not found');
+    }
+    if (!authority.role.includes('AUTHORITY')) {
+      throw new ForbiddenException('Only authority users can access this resource');
+    }
+    if (!authority.placeOfResidence) {
+      throw new BadRequestException(
+        'Authority placeOfResidence is required to review campaigns',
+      );
+    }
+
+    return authority.placeOfResidence;
+  }
+
+  private async assertAuthorityCanAccessCampaign( // Xác nhận xem Authority có được truy cập campaign không
+    authorityUserId: string,
+    campaignId: string,
+  ) {
+    const authorityPlace = await this.getAuthorityPlace(authorityUserId);
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        checkedBy: true,
+        state: true,
+        noteByAuthority: true,
+        organizer: {
+          select: {
+            placeOfResidence: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    if (campaign.organizer?.placeOfResidence !== authorityPlace) {
+      throw new ForbiddenException(
+        'You are not allowed to review campaigns outside your residence area',
+      );
+    }
+
+    if (campaign.checkedBy && campaign.checkedBy !== authorityUserId) {
+      throw new ForbiddenException('This campaign has been assigned to another authority');
+    }
+
+    return campaign;
+  }
+
+  private normalizeBankPayload(payload: {
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountName?: string;
+  }) {
+    return {
+      bankName: payload.bankName.trim(),
+      bankAccountNumber: payload.bankAccountNumber.trim(),
+      bankAccountName: payload.bankAccountName?.trim() || '',
+    };
+  }
+
+  private async resolveOrCreateBankAccountId(
+    db: Prisma.TransactionClient | PrismaClient,
+    payload: {
+      bankName: string;
+      bankAccountNumber: string;
+      bankAccountName?: string;
+    },
+  ) {
+    const normalized = this.normalizeBankPayload(payload);
+    const existing = await db.bankAccount.findUnique({ // tìm bankAccount dựa trên tên ngân hàng và só TK
+      where: {
+        bankName_bankAccountNumber: {
+          bankName: normalized.bankName,
+          bankAccountNumber: normalized.bankAccountNumber,
+        },
+      },
+      select: {
+        bankAccountId: true,
+        bankAccountName: true,
+      },
+    });
+
+    if (existing) {
+      return existing.bankAccountId;
+    }
+
+    // Tra cứu bankAccountName sử dụng API nữa
+
+    const created = await db.bankAccount.create({
+      data: {
+        bankName: normalized.bankName,
+        bankAccountNumber: normalized.bankAccountNumber,
+        bankAccountName: normalized.bankAccountName,
+      },
+      select: {
+        bankAccountId: true,
+      },
+    });
+
+    return created.bankAccountId;
+  }
+
+  private parseAndValidateTimeline(payload: {
+    startDonationAt: string;
+    finishDonationAt: string;
+    startDistributionAt: string;
+    finishDistributionAt: string;
+  }) {
+    const startDonationAt = new Date(payload.startDonationAt);
+    const finishDonationAt = new Date(payload.finishDonationAt);
+    const startDistributionAt = new Date(payload.startDistributionAt);
+    const finishDistributionAt = new Date(payload.finishDistributionAt);
+
+    this.validateTimelineValues(
+      startDonationAt,
+      finishDonationAt,
+      startDistributionAt,
+      finishDistributionAt,
+    );
+
+    return {
+      startDonationAt,
+      finishDonationAt,
+      startDistributionAt,
+      finishDistributionAt,
+    };
+  }
+
+  private validateTimelineValues(
+    startDonationAt: Date | null,
+    finishDonationAt: Date | null,
+    startDistributionAt: Date | null,
+    finishDistributionAt: Date | null,
+  ) {
+    if (
+      !startDonationAt ||
+      !finishDonationAt ||
+      !startDistributionAt ||
+      !finishDistributionAt
+    ) {
+      throw new BadRequestException('All campaign timeline fields are required');
+    }
+
+    const now = new Date();
+    if (startDonationAt.getTime() <= now.getTime()) {
+      throw new BadRequestException('startDonationAt must be after current time');
+    }
+    if (startDonationAt.getTime() >= finishDonationAt.getTime()) {
+      throw new BadRequestException(
+        'startDonationAt must be earlier than finishDonationAt',
+      );
+    }
+    if (finishDonationAt.getTime() >= startDistributionAt.getTime()) {
+      throw new BadRequestException(
+        'finishDonationAt must be earlier than startDistributionAt',
+      );
+    }
+    if (startDistributionAt.getTime() >= finishDistributionAt.getTime()) {
+      throw new BadRequestException(
+        'startDistributionAt must be earlier than finishDistributionAt',
+      );
+    }
   }
 
   private mapCampaignDetail(
     campaign: CharityCampaignDetailPayload,
     announcements: Array<{ textContent: string | null; imageUrl: string | null }>,
   ) {
-    const firstBank = campaign.bankAccounts?.[0];
+    const bank = campaign.bankAccount;
 
     const startDate =
       campaign.startDonationAt ?? campaign.startDistributionAt ?? campaign.createdAt;
@@ -186,7 +655,7 @@ export class CharityService {
     return {
       id: campaign.campaignId,
       organizedBy: campaign.organizer?.userId,
-      checkedBy: null,
+      checkedBy: campaign.checkedBy,
       name: campaign.campaignName,
       benefactorName:
         campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
@@ -197,9 +666,9 @@ export class CharityService {
           ? 'APPROVED'
           : String(campaign.state).toUpperCase(),
       bankInfo: {
-        accountNumber: firstBank?.bankAccountNumber ?? '',
-        bankName: firstBank?.bankName ?? '',
-        accountHolder: firstBank?.bankAccountName ?? null,
+        accountNumber: bank?.bankAccountNumber ?? '',
+        bankName: bank?.bankName ?? '',
+        accountHolder: bank?.bankAccountName ?? null,
       },
       reliefLocation: campaign.destination,
       startDonationAt: campaign.startDonationAt,
@@ -207,6 +676,9 @@ export class CharityService {
       startDistributionAt: campaign.startDistributionAt,
       finishDistributionAt: campaign.finishDistributionAt,
       bankStatementFileUrl: campaign.bankStatementFileUrl,
+      requestedAt: campaign.requestedAt,
+      respondedAt: campaign.respondedAt,
+      noteByAuthority: campaign.noteByAuthority,
       period: {
         startDate,
         endDate,

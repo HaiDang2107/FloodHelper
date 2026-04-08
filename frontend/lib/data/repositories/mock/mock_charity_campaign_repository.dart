@@ -144,6 +144,28 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
       announcements: const [],
     ),
     CharityCampaign(
+      id: '8',
+      name: 'Draft Campaign Awaiting Submission',
+      benefactorName: 'Me',
+      status: CampaignStatus.created,
+      bankInfo: const BankInfo(
+        accountNumber: '6677889900',
+        bankName: 'ACB',
+      ),
+      reliefLocation: 'Da Nang',
+      purpose: 'Prepare aid package for flood victims',
+      charityObject: 'Flood-affected households',
+      startDonationAt: DateTime(2030, 1, 10),
+      finishDonationAt: DateTime(2030, 1, 20),
+      startDistributionAt: DateTime(2030, 1, 21),
+      finishDistributionAt: DateTime(2030, 1, 30),
+      period: DateRange(
+        startDate: DateTime(2030, 1, 10),
+        endDate: DateTime(2030, 1, 30),
+      ),
+      announcements: const [],
+    ),
+    CharityCampaign(
       id: '7',
       name: 'Winter Clothes Donation',
       benefactorName: 'Me',
@@ -201,5 +223,29 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
   Future<CharityCampaign> createMyCampaign(CharityCampaign campaign) async {
     _myCampaigns.insert(0, campaign);
     return campaign;
+  }
+
+  @override
+  Future<CharityCampaign> updateMyCampaign(CharityCampaign campaign) async {
+    final index = _myCampaigns.indexWhere((item) => item.id == campaign.id);
+    if (index >= 0) {
+      _myCampaigns[index] = campaign;
+      return campaign;
+    }
+
+    _myCampaigns.insert(0, campaign);
+    return campaign;
+  }
+
+  @override
+  Future<CharityCampaign> sendCampaignRequest(String campaignId) async {
+    final index = _myCampaigns.indexWhere((item) => item.id == campaignId);
+    if (index < 0) {
+      throw Exception('Campaign not found');
+    }
+
+    final updated = _myCampaigns[index].copyWith(status: CampaignStatus.pending);
+    _myCampaigns[index] = updated;
+    return updated;
   }
 }

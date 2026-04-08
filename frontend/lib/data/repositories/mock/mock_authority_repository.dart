@@ -1,8 +1,94 @@
 import '../../models/authority/authority_profile.dart';
 import '../../models/authority/role_request.dart';
+import '../../../domain/models/charity_campaign.dart';
 import '../authority_repository.dart';
 
 class MockAuthorityRepository implements AuthorityRepository {
+  final List<CharityCampaign> _campaignRequests = [
+    CharityCampaign(
+      id: 'CAMP-2001',
+      organizedBy: 'user-1',
+      checkedBy: null,
+      name: 'Central Flood Relief 2026',
+      benefactorName: 'Nguyen Van A',
+      purpose: 'Support households affected by flooding',
+      charityObject: 'Flood-affected families',
+      status: CampaignStatus.pending,
+      bankInfo: const BankInfo(
+        accountNumber: '1234567890',
+        bankName: 'Vietcombank',
+        accountHolder: 'Nguyen Van A',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(hours: 4)),
+      startDonationAt: DateTime.now().add(const Duration(days: 2)),
+      finishDonationAt: DateTime.now().add(const Duration(days: 10)),
+      startDistributionAt: DateTime.now().add(const Duration(days: 11)),
+      finishDistributionAt: DateTime.now().add(const Duration(days: 20)),
+      reliefLocation: 'Hue, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().add(const Duration(days: 2)),
+        endDate: DateTime.now().add(const Duration(days: 20)),
+      ),
+      announcements: const [],
+    ),
+    CharityCampaign(
+      id: 'CAMP-2002',
+      organizedBy: 'user-2',
+      checkedBy: 'authority-mock-id',
+      name: 'Emergency Food Support',
+      benefactorName: 'Tran Thi B',
+      purpose: 'Provide food support for 50 households',
+      charityObject: 'Low-income households',
+      status: CampaignStatus.approved,
+      bankInfo: const BankInfo(
+        accountNumber: '0987654321',
+        bankName: 'Techcombank',
+        accountHolder: 'Tran Thi B',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(days: 1)),
+      respondedAt: DateTime.now().subtract(const Duration(hours: 20)),
+      noteByAuthority: 'Looks good, approved for rollout.',
+      startDonationAt: DateTime.now().add(const Duration(days: 1)),
+      finishDonationAt: DateTime.now().add(const Duration(days: 8)),
+      startDistributionAt: DateTime.now().add(const Duration(days: 9)),
+      finishDistributionAt: DateTime.now().add(const Duration(days: 15)),
+      reliefLocation: 'Da Nang, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().add(const Duration(days: 1)),
+        endDate: DateTime.now().add(const Duration(days: 15)),
+      ),
+      announcements: const [],
+    ),
+    CharityCampaign(
+      id: 'CAMP-2003',
+      organizedBy: 'user-3',
+      checkedBy: 'authority-mock-id',
+      name: 'School Rebuild Fund',
+      benefactorName: 'Pham Van C',
+      purpose: 'Rebuild classrooms after floods',
+      charityObject: 'Students and teachers',
+      status: CampaignStatus.rejected,
+      bankInfo: const BankInfo(
+        accountNumber: '1122334455',
+        bankName: 'BIDV',
+        accountHolder: 'Pham Van C',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(days: 2)),
+      respondedAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
+      noteByAuthority: 'Missing timeline details.',
+      startDonationAt: DateTime.now().add(const Duration(days: 3)),
+      finishDonationAt: DateTime.now().add(const Duration(days: 12)),
+      startDistributionAt: DateTime.now().add(const Duration(days: 13)),
+      finishDistributionAt: DateTime.now().add(const Duration(days: 18)),
+      reliefLocation: 'Quang Tri, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().add(const Duration(days: 3)),
+        endDate: DateTime.now().add(const Duration(days: 18)),
+      ),
+      announcements: const [],
+    ),
+  ];
+
   @override
   Future<AuthorityProfile?> fetchProfileFromSession() async {
     await Future.delayed(const Duration(milliseconds: 400));
@@ -139,5 +225,110 @@ class MockAuthorityRepository implements AuthorityRepository {
       backImageUrl: '',
       notes: note ?? '',
     );
+  }
+
+  @override
+  Future<AuthorityCampaignRequestPage> fetchCharityCampaignRequests({
+    String? beforeRequestedAt,
+    CampaignStatus? status,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 450));
+
+    final cutoff = beforeRequestedAt == null
+        ? null
+        : DateTime.tryParse(beforeRequestedAt);
+
+    final filtered = _campaignRequests.where((campaign) {
+      if (status != null && campaign.status != status) {
+        return false;
+      }
+
+      final requestedAt = campaign.requestedAt ?? campaign.period.startDate;
+      if (cutoff != null && !requestedAt.isBefore(cutoff) && requestedAt.isAtSameMomentAs(cutoff)) {
+        return false;
+      }
+
+      if (cutoff != null && requestedAt.isAfter(cutoff)) {
+        return false;
+      }
+
+      return status != null
+          ? campaign.status == status
+          : campaign.status == CampaignStatus.pending ||
+              campaign.status == CampaignStatus.approved ||
+              campaign.status == CampaignStatus.rejected;
+    }).toList(growable: false);
+
+    filtered.sort((a, b) {
+      final aTime = a.requestedAt ?? a.period.startDate;
+      final bTime = b.requestedAt ?? b.period.startDate;
+      return bTime.compareTo(aTime);
+    });
+
+    return AuthorityCampaignRequestPage(
+      items: filtered,
+      hasMore: false,
+      nextCursor: null,
+    );
+  }
+
+  @override
+  Future<CharityCampaign> fetchCharityCampaignDetail(String campaignId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _campaignRequests.firstWhere((campaign) => campaign.id == campaignId);
+  }
+
+  @override
+  Future<CharityCampaign> approveCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final updated = _updateCampaign(
+      campaignId,
+      status: CampaignStatus.approved,
+      checkedBy: 'authority-mock-id',
+      respondedAt: DateTime.now(),
+      noteByAuthority: noteByAuthority ?? 'Approved in mock mode.',
+    );
+    return updated;
+  }
+
+  @override
+  Future<CharityCampaign> rejectCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final updated = _updateCampaign(
+      campaignId,
+      status: CampaignStatus.rejected,
+      checkedBy: 'authority-mock-id',
+      respondedAt: DateTime.now(),
+      noteByAuthority: noteByAuthority ?? 'Rejected in mock mode.',
+    );
+    return updated;
+  }
+
+  CharityCampaign _updateCampaign(
+    String campaignId, {
+    CampaignStatus? status,
+    String? checkedBy,
+    DateTime? respondedAt,
+    String? noteByAuthority,
+  }) {
+    final index = _campaignRequests.indexWhere((campaign) => campaign.id == campaignId);
+    if (index < 0) {
+      throw Exception('Campaign not found');
+    }
+
+    final updated = _campaignRequests[index].copyWith(
+      status: status,
+      checkedBy: checkedBy,
+      respondedAt: respondedAt,
+      noteByAuthority: noteByAuthority,
+    );
+    _campaignRequests[index] = updated;
+    return updated;
   }
 }

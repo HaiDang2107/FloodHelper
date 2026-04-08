@@ -13,6 +13,9 @@ class CharityCampaign {
   final CampaignStatus status;
   final BankInfo bankInfo;
   final String? bankStatementFileUrl;
+  final DateTime? requestedAt;
+  final DateTime? respondedAt;
+  final String? noteByAuthority;
   final DateTime? startDonationAt;
   final DateTime? finishDonationAt;
   final DateTime? startDistributionAt;
@@ -34,6 +37,9 @@ class CharityCampaign {
     required this.status,
     required this.bankInfo,
     this.bankStatementFileUrl,
+    this.requestedAt,
+    this.respondedAt,
+    this.noteByAuthority,
     this.startDonationAt,
     this.finishDonationAt,
     this.startDistributionAt,
@@ -83,6 +89,9 @@ class CharityCampaign {
     CampaignStatus? status,
     BankInfo? bankInfo,
     String? bankStatementFileUrl,
+    DateTime? requestedAt,
+    DateTime? respondedAt,
+    String? noteByAuthority,
     DateTime? startDonationAt,
     DateTime? finishDonationAt,
     DateTime? startDistributionAt,
@@ -104,6 +113,9 @@ class CharityCampaign {
       status: status ?? this.status,
       bankInfo: bankInfo ?? this.bankInfo,
       bankStatementFileUrl: bankStatementFileUrl ?? this.bankStatementFileUrl,
+      requestedAt: requestedAt ?? this.requestedAt,
+      respondedAt: respondedAt ?? this.respondedAt,
+      noteByAuthority: noteByAuthority ?? this.noteByAuthority,
       startDonationAt: startDonationAt ?? this.startDonationAt,
       finishDonationAt: finishDonationAt ?? this.finishDonationAt,
       startDistributionAt: startDistributionAt ?? this.startDistributionAt,
@@ -137,6 +149,9 @@ enum CampaignStatus {
   /// Rejected by admin
   rejected,
 
+  /// Draft created by benefactor
+  created,
+
   /// Currently accepting donations
   donating,
 
@@ -154,6 +169,8 @@ enum CampaignStatus {
         return 'Đã duyệt';
       case CampaignStatus.rejected:
         return 'Từ chối';
+      case CampaignStatus.created:
+        return 'Mới tạo';
       case CampaignStatus.donating:
         return 'Đang quyên góp';
       case CampaignStatus.distributing:
@@ -172,6 +189,8 @@ enum CampaignStatus {
         return CampaignStatus.approved;
       case 'rejected':
         return CampaignStatus.rejected;
+      case 'created':
+        return CampaignStatus.created;
       case 'donating':
         return CampaignStatus.donating;
       case 'distributing':

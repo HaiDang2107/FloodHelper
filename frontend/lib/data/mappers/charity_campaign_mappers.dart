@@ -61,6 +61,9 @@ class CharityCampaignMappers {
         ),
       ),
       bankStatementFileUrl: _nullableString(json['bankStatementFileUrl']),
+      requestedAt: _parseOptionalDate(json['requestedAt']),
+      respondedAt: _parseOptionalDate(json['respondedAt']),
+      noteByAuthority: _nullableString(json['noteByAuthority']),
       startDonationAt: _parseOptionalDate(json['startDonationAt']),
       finishDonationAt: _parseOptionalDate(json['finishDonationAt']),
       startDistributionAt: _parseOptionalDate(json['startDistributionAt']),
@@ -72,6 +75,25 @@ class CharityCampaignMappers {
       purchasedSupplies: _parseSupplies(json['purchasedSupplies']),
       donations: _parseDonations(json['donations']),
     );
+  }
+
+  static Map<String, dynamic> mutationPayloadFromCampaign(
+    CharityCampaign campaign,
+  ) {
+    return {
+      'campaignName': campaign.name,
+      'purpose': campaign.purpose,
+      'destination': campaign.reliefLocation,
+      'charityObject': campaign.charityObject,
+      'bankAccountNumber': campaign.bankInfo.accountNumber,
+      'bankName': campaign.bankInfo.bankName,
+      'bankAccountName': campaign.bankInfo.accountHolder,
+      'bankStatementFileUrl': campaign.bankStatementFileUrl,
+      'startDonationAt': campaign.startDonationAt?.toIso8601String(),
+      'finishDonationAt': campaign.finishDonationAt?.toIso8601String(),
+      'startDistributionAt': campaign.startDistributionAt?.toIso8601String(),
+      'finishDistributionAt': campaign.finishDistributionAt?.toIso8601String(),
+    };
   }
 
   static List<CampaignAnnouncement> _parseAnnouncements(dynamic value) {

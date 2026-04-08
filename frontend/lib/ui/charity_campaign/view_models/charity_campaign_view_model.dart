@@ -61,6 +61,7 @@ class CharityCampaignViewModel
       ];
 
       const myStatuses = [
+        CampaignStatus.created,
         CampaignStatus.pending,
         CampaignStatus.approved,
         CampaignStatus.rejected,
@@ -103,6 +104,27 @@ class CharityCampaignViewModel
       state = state.copyWith(myCampaigns: [created, ...state.myCampaigns]);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to create campaign: $e');
+    }
+  }
+
+  Future<void> updateCampaign(CharityCampaign campaign) async {
+    try {
+      final updated = await _repository.updateMyCampaign(campaign);
+      state = state.copyWith(myCampaigns: _replaceCampaign(state.myCampaigns, updated));
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Failed to update campaign: $e');
+    }
+  }
+
+  Future<void> sendCampaignRequest(String campaignId) async {
+    try {
+      final updated = await _repository.sendCampaignRequest(campaignId);
+      state = state.copyWith(myCampaigns: _replaceCampaign(state.myCampaigns, updated));
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to send campaign request: $e',
+      );
+      rethrow;
     }
   }
 
@@ -162,6 +184,15 @@ class CharityCampaignViewModel
 
   List<CharityCampaign> mineByStatus(CampaignStatus status) {
     return state.myCampaigns.where((c) => c.status == status).toList();
+  }
+
+  List<CharityCampaign> _replaceCampaign(
+    List<CharityCampaign> source,
+    CharityCampaign updated,
+  ) {
+    return source
+        .map((campaign) => campaign.id == updated.id ? updated : campaign)
+        .toList(growable: false);
   }
 
   void clearError() {

@@ -30,19 +30,31 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
     }
   }
 
+  Future<void> _showUpdateCampaignDialog(CharityCampaign campaign) async {
+    final CharityCampaign? result = await showDialog<CharityCampaign>(
+      context: context,
+      builder: (context) => CreateCampaignDialog(campaignToEdit: campaign),
+    );
+
+    if (result != null && mounted) {
+      await ref.read(charityCampaignViewModelProvider.notifier).updateCampaign(result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(charityCampaignViewModelProvider);
     final viewModel = ref.read(charityCampaignViewModelProvider.notifier);
+    final errorMessage = state.errorMessage;
 
-    if (state.errorMessage != null) {
+    if (errorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) {
           return;
         }
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
         viewModel.clearError();
       });
     }
@@ -60,6 +72,7 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
         ),
       ],
       tabs: const [
+        Tab(text: 'Created'),
         Tab(text: 'Pending'),
         Tab(text: 'Approved'),
         Tab(text: 'Rejected'),
@@ -68,6 +81,11 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
         Tab(text: 'Finished'),
       ],
       tabViews: [
+        _buildCampaignList(
+          campaigns: viewModel.mineByStatus(CampaignStatus.created),
+          isLoading: state.isLoading,
+          onLoadCampaignDetail: viewModel.loadCampaignDetail,
+        ),
         _buildCampaignList(
           campaigns: viewModel.mineByStatus(CampaignStatus.pending),
           isLoading: state.isLoading,
@@ -136,6 +154,10 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
           campaign: campaigns[index],
           isOwner: true,
           onLoadCampaignDetail: onLoadCampaignDetail,
+          onUpdateCampaign: _showUpdateCampaignDialog,
+          onSendCampaignRequest: (campaignId) => ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .sendCampaignRequest(campaignId),
           onPostAnnouncement: (campaignId, text) {
             return ref
                 .read(charityCampaignViewModelProvider.notifier)

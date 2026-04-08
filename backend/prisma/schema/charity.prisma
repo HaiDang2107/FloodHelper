@@ -5,7 +5,11 @@
 model CharityCampaign {
   campaignId           String    @id @default(uuid()) @db.Uuid @map("campaign_id")
   organizedBy          String    @db.Uuid @map("organized_by")
+  bankAccountId        String?   @db.Uuid @map("bank_account_id")
   checkedBy            String?   @db.Uuid @map("checked_by")
+  requestedAt          DateTime? @map("requested_at")
+  respondedAt          DateTime? @map("responded_at")
+  noteByAuthority      String?   @map("note_by_authority")
   campaignName         String    @map("campaign_name")
   purpose              String    @db.Text
   destination          String
@@ -20,9 +24,9 @@ model CharityCampaign {
   createdAt            DateTime  @default(now()) @map("created_at") 
 
   organizer         User               @relation("CampaignOrganizer", fields: [organizedBy], references: [userId])
+  bankAccount       BankAccount?       @relation(fields: [bankAccountId], references: [bankAccountId])
   checker           User?              @relation("CampaignChecker", fields: [checkedBy], references: [userId])
   transactions      Transaction[]
-  bankAccounts      BankAccount[]
   supplies          Supply[]
   financialSupports FinancialSupport[]
 
@@ -45,13 +49,12 @@ model Transaction {
 
 model BankAccount {
   bankAccountId     String @id @default(uuid()) @db.Uuid @map("bank_account_id")
-  campaignId        String @db.Uuid @map("campaign_id")
   bankName          String @map("bank_name")
   bankAccountName   String @map("bank_account_name")
   bankAccountNumber String @map("bank_account_number")
-  balance           Decimal @default(0)
+  campaigns         CharityCampaign[]
 
-  campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
+  @@unique([bankName, bankAccountNumber])
 
   @@map("BankAccount")
 }

@@ -11,6 +11,7 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
   }) : _charityCampaignService = charityCampaignService;
 
   static const List<CampaignStatus> _allStatuses = [
+    CampaignStatus.created,
     CampaignStatus.pending,
     CampaignStatus.approved,
     CampaignStatus.rejected,
@@ -23,11 +24,13 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
   Future<List<CharityCampaign>> getExistingCampaigns({
     CampaignStatus? status,
   }) async {
-    final statuses = status == null ? _allStatuses : <CampaignStatus>[status];
+    final statuses = status == null ? _allStatuses : <CampaignStatus>[status]; // Nhận vào danh sách status 
 
     final resultBatches = await Future.wait(
-      statuses.map(_charityCampaignService.getExistingCampaignsByState),
+      statuses.map(_charityCampaignService.getExistingCampaignsByState), // Gọi song song cho từng trạng thái thay vì chạy vòng for
     );
+    // Kết quả trả về là list of list
+    // ==> cần làm phẳng và parse. Việc loại bỏ duplicate là optional (phòng thủ)
 
     return _parseAndDeduplicate(resultBatches);
   }
@@ -51,9 +54,25 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
 
   @override
   Future<CharityCampaign> createMyCampaign(CharityCampaign campaign) async {
-    // Backend create endpoint is not implemented yet.
-    // Return input so current UI flow remains functional.
-    return campaign;
+    final payload = await _charityCampaignService.createCampaign(
+      CharityCampaignMappers.mutationPayloadFromCampaign(campaign),
+    );
+    return CharityCampaignMappers.campaignFromApi(payload);
+  }
+
+  @override
+  Future<CharityCampaign> updateMyCampaign(CharityCampaign campaign) async {
+    final payload = await _charityCampaignService.updateCampaign(
+      campaign.id,
+      CharityCampaignMappers.mutationPayloadFromCampaign(campaign),
+    );
+    return CharityCampaignMappers.campaignFromApi(payload);
+  }
+
+  @override
+  Future<CharityCampaign> sendCampaignRequest(String campaignId) async {
+    final payload = await _charityCampaignService.sendCampaignRequest(campaignId);
+    return CharityCampaignMappers.campaignFromApi(payload);
   }
 
   List<CharityCampaign> _parseAndDeduplicate(

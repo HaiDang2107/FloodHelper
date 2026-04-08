@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/authority/role_request.dart';
-import '../../theme/authority_theme.dart';
 import '../../view_models/role_requests_view_model.dart';
+import '../../widgets/request_review_frame.dart';
 import '../../widgets/role_request_card.dart';
 import '../../widgets/role_request_detail.dart';
 
@@ -53,98 +53,40 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
     final state = ref.watch(roleRequestsViewModelProvider);
     final viewModel = ref.read(roleRequestsViewModelProvider.notifier);
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Role requests',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AuthorityTheme.textDark,
-                    ),
-              ),
-              const Spacer(),
-              _FilterChip(
-                label: 'All',
-                isActive: state.roleFilter == null,
-                onTap: () => viewModel.setRoleFilter(null),
-              ),
-              _FilterChip(
-                label: 'By benefactor',
-                isActive: state.roleFilter == RoleRequestType.benefactor,
-                onTap: () => viewModel.setRoleFilter(RoleRequestType.benefactor),
-              ),
-              _FilterChip(
-                label: 'By rescuer',
-                isActive: state.roleFilter == RoleRequestType.rescuer,
-                onTap: () => viewModel.setRoleFilter(RoleRequestType.rescuer),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 1100;
-                final listPanel = Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFF),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE1E6F4)),
-                  ),
-                  child: state.isLoading && state.requests.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : _RoleRequestList(
-                          requests: state.requests,
-                          selectedId: state.selectedId,
-                          onSelect: viewModel.selectRequest,
-                          onReachEnd: viewModel.loadMore,
-                          isLoadingMore: state.isLoadingMore,
-                          endMessage: state.endMessage,
-                        ),
-                );
-
-                if (isNarrow) {
-                  return Column(
-                    children: [
-                      Expanded(child: listPanel),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: RoleRequestDetail(
-                          request: state.selectedRequest,
-                          isSubmitting: state.isLoading,
-                          onApprove: (note) => viewModel.approveSelected(note: note),
-                          onReject: (note) => viewModel.rejectSelected(note: note),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    Expanded(flex: 3, child: listPanel),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 5,
-                      child: RoleRequestDetail(
-                        request: state.selectedRequest,
-                        isSubmitting: state.isLoading,
-                        onApprove: (note) => viewModel.approveSelected(note: note),
-                        onReject: (note) => viewModel.rejectSelected(note: note),
-                      ),
-                    ),
-                  ],
-                );
-              },
+    return AuthorityReviewFrame(
+      title: 'Role requests',
+      filters: [
+        AuthorityFilterChip(
+          label: 'All',
+          isActive: state.roleFilter == null,
+          onTap: () => viewModel.setRoleFilter(null),
+        ),
+        AuthorityFilterChip(
+          label: 'By benefactor',
+          isActive: state.roleFilter == RoleRequestType.benefactor,
+          onTap: () => viewModel.setRoleFilter(RoleRequestType.benefactor),
+        ),
+        AuthorityFilterChip(
+          label: 'By rescuer',
+          isActive: state.roleFilter == RoleRequestType.rescuer,
+          onTap: () => viewModel.setRoleFilter(RoleRequestType.rescuer),
+        ),
+      ],
+      listContent: state.isLoading && state.requests.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : _RoleRequestList(
+              requests: state.requests,
+              selectedId: state.selectedId,
+              onSelect: viewModel.selectRequest,
+              onReachEnd: viewModel.loadMore,
+              isLoadingMore: state.isLoadingMore,
+              endMessage: state.endMessage,
             ),
-          ),
-        ],
+      detailPanel: RoleRequestDetail(
+        request: state.selectedRequest,
+        isSubmitting: state.isLoading,
+        onApprove: (note) => viewModel.approveSelected(note: note),
+        onReject: (note) => viewModel.rejectSelected(note: note),
       ),
     );
   }
@@ -250,40 +192,6 @@ class _RoleRequestList extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isActive,
-        onSelected: (_) => onTap(),
-        selectedColor: AuthorityTheme.brandBlue,
-        labelStyle: TextStyle(
-          color: isActive ? Colors.white : const Color(0xFF344054),
-          fontWeight: FontWeight.w600,
-        ),
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Color(0xFFE1E6F4)),
-        ),
       ),
     );
   }
