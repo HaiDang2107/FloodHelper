@@ -23,6 +23,8 @@ class RoleRequestsScreen extends ConsumerStatefulWidget {
 class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
   String? _lastStatusQuery;
 
+  RoleRequestStatus? get _activeStatus => _parseStatus(widget.statusQuery);
+
   @override
   void initState() {
     super.initState();
@@ -52,38 +54,45 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(roleRequestsViewModelProvider);
     final viewModel = ref.read(roleRequestsViewModelProvider.notifier);
+    final hasStatusSelection = _activeStatus != null;
 
     return AuthorityReviewFrame(
       title: 'Role requests',
-      filters: [
-        AuthorityFilterChip(
-          label: 'All',
-          isActive: state.roleFilter == null,
-          onTap: () => viewModel.setRoleFilter(null),
-        ),
-        AuthorityFilterChip(
-          label: 'By benefactor',
-          isActive: state.roleFilter == RoleRequestType.benefactor,
-          onTap: () => viewModel.setRoleFilter(RoleRequestType.benefactor),
-        ),
-        AuthorityFilterChip(
-          label: 'By rescuer',
-          isActive: state.roleFilter == RoleRequestType.rescuer,
-          onTap: () => viewModel.setRoleFilter(RoleRequestType.rescuer),
-        ),
-      ],
-      listContent: state.isLoading && state.requests.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _RoleRequestList(
-              requests: state.requests,
-              selectedId: state.selectedId,
-              onSelect: viewModel.selectRequest,
-              onReachEnd: viewModel.loadMore,
-              isLoadingMore: state.isLoadingMore,
-              endMessage: state.endMessage,
-            ),
+      filters: hasStatusSelection
+          ? [
+              AuthorityFilterChip(
+                label: 'All',
+                isActive: state.roleFilter == null,
+                onTap: () => viewModel.setRoleFilter(null),
+              ),
+              AuthorityFilterChip(
+                label: 'By benefactor',
+                isActive: state.roleFilter == RoleRequestType.benefactor,
+                onTap: () => viewModel.setRoleFilter(RoleRequestType.benefactor),
+              ),
+              AuthorityFilterChip(
+                label: 'By rescuer',
+                isActive: state.roleFilter == RoleRequestType.rescuer,
+                onTap: () => viewModel.setRoleFilter(RoleRequestType.rescuer),
+              ),
+            ]
+          : const [],
+      listContent: !hasStatusSelection
+          ? const _StatusSelectionHint(
+              message: 'Select a status from the sidebar to view role requests.',
+            )
+          : state.isLoading && state.requests.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : _RoleRequestList(
+                  requests: state.requests,
+                  selectedId: state.selectedId,
+                  onSelect: viewModel.selectRequest,
+                  onReachEnd: viewModel.loadMore,
+                  isLoadingMore: state.isLoadingMore,
+                  endMessage: state.endMessage,
+                ),
       detailPanel: RoleRequestDetail(
-        request: state.selectedRequest,
+        request: hasStatusSelection ? state.selectedRequest : null,
         isSubmitting: state.isLoading,
         onApprove: (note) => viewModel.approveSelected(note: note),
         onReject: (note) => viewModel.rejectSelected(note: note),
@@ -202,6 +211,26 @@ class _RoleRequestSection {
 
   final String label;
   final List<RoleRequest> items;
+}
+
+class _StatusSelectionHint extends StatelessWidget {
+  const _StatusSelectionHint({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF667085),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 }
 
 List<_RoleRequestSection> _groupByDate(List<RoleRequest> requests) {

@@ -17,6 +17,26 @@ class MyCharityScreen extends ConsumerStatefulWidget {
 }
 
 class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
+  static const List<CampaignStatus> _tabStatuses = [
+    CampaignStatus.created,
+    CampaignStatus.pending,
+    CampaignStatus.approved,
+    CampaignStatus.rejected,
+    CampaignStatus.donating,
+    CampaignStatus.distributing,
+    CampaignStatus.finished,
+  ];
+
+  Future<void> _handleTabChanged(int index) async {
+    if (index < 0 || index >= _tabStatuses.length) {
+      return;
+    }
+
+    await ref
+        .read(charityCampaignViewModelProvider.notifier)
+        .ensureMyStatusLoaded(_tabStatuses[index]);
+  }
+
   void _showCreateCampaignDialog() async {
     final CharityCampaign? result = await showDialog<CharityCampaign>(
       context: context,
@@ -80,40 +100,48 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
         Tab(text: 'Distributing'),
         Tab(text: 'Finished'),
       ],
+      onTabChanged: _handleTabChanged,
       tabViews: [
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.created),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[0]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[0]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[0]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.pending),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[1]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[1]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[1]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.approved),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[2]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[2]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[2]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.rejected),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[3]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[3]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[3]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.donating),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[4]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[4]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[4]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.distributing),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[5]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[5]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[5]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
         _buildCampaignList(
-          campaigns: viewModel.mineByStatus(CampaignStatus.finished),
-          isLoading: state.isLoading,
+          campaigns: viewModel.mineByStatus(_tabStatuses[6]),
+          isLoading: viewModel.isMyStatusLoading(_tabStatuses[6]),
+          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[6]),
           onLoadCampaignDetail: viewModel.loadCampaignDetail,
         ),
       ],
@@ -123,48 +151,69 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
   Widget _buildCampaignList({
     required List<CharityCampaign> campaigns,
     required bool isLoading,
+    required Future<void> Function() onRefresh,
     required Future<CharityCampaign> Function(String campaignId)
     onLoadCampaignDetail,
   }) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 240),
+            Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      );
     }
 
     if (campaigns.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            Icon(Icons.campaign, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No campaigns found',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            const SizedBox(height: 200),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.campaign, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'No campaigns found',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+              ],
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 16),
-      itemCount: campaigns.length,
-      itemBuilder: (context, index) {
-        return CharityItem(
-          campaign: campaigns[index],
-          isOwner: true,
-          onLoadCampaignDetail: onLoadCampaignDetail,
-          onUpdateCampaign: _showUpdateCampaignDialog,
-          onSendCampaignRequest: (campaignId) => ref
-              .read(charityCampaignViewModelProvider.notifier)
-              .sendCampaignRequest(campaignId),
-          onPostAnnouncement: (campaignId, text) {
-            return ref
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: 8, bottom: 16),
+        itemCount: campaigns.length,
+        itemBuilder: (context, index) {
+          return CharityItem(
+            campaign: campaigns[index],
+            isOwner: true,
+            onLoadCampaignDetail: onLoadCampaignDetail,
+            onUpdateCampaign: _showUpdateCampaignDialog,
+            onSendCampaignRequest: (campaignId) => ref
                 .read(charityCampaignViewModelProvider.notifier)
-                .postAnnouncement(campaignId: campaignId, text: text);
-          },
-        );
-      },
+                .sendCampaignRequest(campaignId),
+            onPostAnnouncement: (campaignId, text) {
+              return ref
+                  .read(charityCampaignViewModelProvider.notifier)
+                  .postAnnouncement(campaignId: campaignId, text: text);
+            },
+          );
+        },
+      ),
     );
   }
 }

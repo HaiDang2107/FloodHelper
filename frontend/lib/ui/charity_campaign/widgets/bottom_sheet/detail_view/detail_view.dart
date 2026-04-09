@@ -112,19 +112,19 @@ class _DetailViewState extends State<DetailView> {
         ),
         CharityInfoRow(
           label: 'Start Donation',
-          value: _formatDateOrPlaceholder(widget.campaign.startDonationAt),
+          value: _formatDateOrPlaceholder(widget.campaign.startedDonationAt),
         ),
         CharityInfoRow(
           label: 'End Donation',
-          value: _formatDateOrPlaceholder(widget.campaign.finishDonationAt),
+          value: _formatDateOrPlaceholder(widget.campaign.finishedDonationAt),
         ),
         CharityInfoRow(
           label: 'Start Distribution',
-          value: _formatDateOrPlaceholder(widget.campaign.startDistributionAt),
+          value: _formatDateOrPlaceholder(widget.campaign.startedDistributionAt),
         ),
         CharityInfoRow(
           label: 'End Distribution',
-          value: _formatDateOrPlaceholder(widget.campaign.finishDistributionAt),
+          value: _formatDateOrPlaceholder(widget.campaign.finishedDistributionAt),
         ),
         if (showAuthorityNote)
           CharityInfoRow(

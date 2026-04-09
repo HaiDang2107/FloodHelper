@@ -6,6 +6,8 @@ class BaseCharityScreen extends StatefulWidget {
   final Widget? leading;
   final List<Tab> tabs;
   final List<Widget> tabViews;
+  final int initialTabIndex;
+  final ValueChanged<int>? onTabChanged;
 
   const BaseCharityScreen({
     super.key,
@@ -14,6 +16,8 @@ class BaseCharityScreen extends StatefulWidget {
     this.leading,
     required this.tabs,
     required this.tabViews,
+    this.initialTabIndex = 0,
+    this.onTabChanged,
   });
 
   @override
@@ -27,11 +31,28 @@ class _BaseCharityScreenState extends State<BaseCharityScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: widget.tabs.length, vsync: this);
+    _tabController = TabController(
+      length: widget.tabs.length,
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
+    _tabController.addListener(_handleTabChange);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onTabChanged?.call(_tabController.index);
+    });
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      return;
+    }
+    widget.onTabChanged?.call(_tabController.index);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
   }

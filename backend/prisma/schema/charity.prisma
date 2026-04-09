@@ -15,10 +15,10 @@ model CharityCampaign {
   destination          String
   charityObject        String    @map("charity_object")
   state                String
-  startDonationAt  DateTime? @map("start_donation_at")
-  finishDonationAt DateTime? @map("finish_donation_at")
-  startDistributionAt  DateTime? @map("start_distribution_at")
-  finishDistributionAt DateTime? @map("finish_distribution_at")
+  startedDonationAt  DateTime? @map("started_donation_at")
+  finishedDonationAt DateTime? @map("finished_donation_at")
+  startedDistributionAt  DateTime? @map("started_distribution_at")
+  finishedDistributionAt DateTime? @map("finished_distribution_at")
   bankStatementFileUrl String?   @map("bank_statement_file_url")
   
   createdAt            DateTime  @default(now()) @map("created_at") 

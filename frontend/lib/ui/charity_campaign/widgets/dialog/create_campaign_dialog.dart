@@ -21,15 +21,15 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
   final bankController = TextEditingController();
   final bankStatementFileUrlController = TextEditingController();
   final locationController = TextEditingController();
-  final startDonationAtController = TextEditingController();
-  final finishDonationAtController = TextEditingController();
-  final startDistributionAtController = TextEditingController();
-  final finishDistributionAtController = TextEditingController();
+  final startedDonationAtController = TextEditingController();
+  final finishedDonationAtController = TextEditingController();
+  final startedDistributionAtController = TextEditingController();
+  final finishedDistributionAtController = TextEditingController();
 
-  DateTime? _startDonationAt;
-  DateTime? _finishDonationAt;
-  DateTime? _startDistributionAt;
-  DateTime? _finishDistributionAt;
+  DateTime? _startedDonationAt;
+  DateTime? _finishedDonationAt;
+  DateTime? _startedDistributionAt;
+  DateTime? _finishedDistributionAt;
 
   @override
   void initState() {
@@ -47,15 +47,15 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     bankStatementFileUrlController.text = campaign.bankStatementFileUrl ?? '';
     locationController.text = campaign.reliefLocation;
 
-    _startDonationAt = campaign.startDonationAt;
-    _finishDonationAt = campaign.finishDonationAt;
-    _startDistributionAt = campaign.startDistributionAt;
-    _finishDistributionAt = campaign.finishDistributionAt;
+    _startedDonationAt = campaign.startedDonationAt;
+    _finishedDonationAt = campaign.finishedDonationAt;
+    _startedDistributionAt = campaign.startedDistributionAt;
+    _finishedDistributionAt = campaign.finishedDistributionAt;
 
-    startDonationAtController.text = _formatDate(_startDonationAt);
-    finishDonationAtController.text = _formatDate(_finishDonationAt);
-    startDistributionAtController.text = _formatDate(_startDistributionAt);
-    finishDistributionAtController.text = _formatDate(_finishDistributionAt);
+    startedDonationAtController.text = _formatDate(_startedDonationAt);
+    finishedDonationAtController.text = _formatDate(_finishedDonationAt);
+    startedDistributionAtController.text = _formatDate(_startedDistributionAt);
+    finishedDistributionAtController.text = _formatDate(_finishedDistributionAt);
   }
 
   Future<void> _pickDate({
@@ -109,29 +109,29 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
         locationController.text.trim().isEmpty ||
         accountController.text.trim().isEmpty ||
         bankController.text.trim().isEmpty ||
-        _startDonationAt == null ||
-        _finishDonationAt == null ||
-        _startDistributionAt == null ||
-        _finishDistributionAt == null) {
+        _startedDonationAt == null ||
+        _finishedDonationAt == null ||
+        _startedDistributionAt == null ||
+        _finishedDistributionAt == null) {
       return 'Please fill all required fields before submitting.';
     }
 
     final now = DateTime.now();
-    final startDonationAt = _startDonationAt!;
-    final finishDonationAt = _finishDonationAt!;
-    final startDistributionAt = _startDistributionAt!;
-    final finishDistributionAt = _finishDistributionAt!;
+    final startedDonationAt = _startedDonationAt!;
+    final finishedDonationAt = _finishedDonationAt!;
+    final startedDistributionAt = _startedDistributionAt!;
+    final finishedDistributionAt = _finishedDistributionAt!;
 
-    if (!startDonationAt.isAfter(now)) {
+    if (!startedDonationAt.isAfter(now)) {
       return 'Start Donation must be after current time.';
     }
-    if (!startDonationAt.isBefore(finishDonationAt)) {
+    if (!startedDonationAt.isBefore(finishedDonationAt)) {
       return 'Timeline is invalid: Start Donation must be before Finish Donation.';
     }
-    if (!finishDonationAt.isBefore(startDistributionAt)) {
+    if (!finishedDonationAt.isBefore(startedDistributionAt)) {
       return 'Timeline is invalid: Finish Donation must be before Start Distribution.';
     }
-    if (!startDistributionAt.isBefore(finishDistributionAt)) {
+    if (!startedDistributionAt.isBefore(finishedDistributionAt)) {
       return 'Timeline is invalid: Start Distribution must be before Finish Distribution.';
     }
 
@@ -158,8 +158,8 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     }
 
     final existing = widget.campaignToEdit;
-    final startDonationAt = _startDonationAt!;
-    final finishDistributionAt = _finishDistributionAt!;
+    final startedDonationAt = _startedDonationAt!;
+    final finishedDistributionAt = _finishedDistributionAt!;
 
     final campaign = CharityCampaign(
       id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
@@ -181,14 +181,14 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
       requestedAt: existing?.requestedAt,
       respondedAt: existing?.respondedAt,
       noteByAuthority: existing?.noteByAuthority,
-      startDonationAt: _startDonationAt,
-      finishDonationAt: _finishDonationAt,
-      startDistributionAt: _startDistributionAt,
-      finishDistributionAt: _finishDistributionAt,
+      startedDonationAt: _startedDonationAt,
+      finishedDonationAt: _finishedDonationAt,
+      startedDistributionAt: _startedDistributionAt,
+      finishedDistributionAt: _finishedDistributionAt,
       reliefLocation: locationController.text.trim(),
       period: DateRange(
-        startDate: startDonationAt,
-        endDate: finishDistributionAt,
+        startDate: startedDonationAt,
+        endDate: finishedDistributionAt,
       ),
       announcements: existing?.announcements ?? const [],
       purchasedSupplies: existing?.purchasedSupplies ?? const [],
@@ -210,10 +210,10 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     bankController.dispose();
     bankStatementFileUrlController.dispose();
     locationController.dispose();
-    startDonationAtController.dispose();
-    finishDonationAtController.dispose();
-    startDistributionAtController.dispose();
-    finishDistributionAtController.dispose();
+    startedDonationAtController.dispose();
+    finishedDonationAtController.dispose();
+    startedDistributionAtController.dispose();
+    finishedDistributionAtController.dispose();
     super.dispose();
   }
 
@@ -303,12 +303,12 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: startDonationAtController,
+                    controller: startedDonationAtController,
                     readOnly: true,
                     onTap: () => _pickDate(
-                      controller: startDonationAtController,
-                      initialDate: _startDonationAt,
-                      onSelected: (date) => _startDonationAt = date,
+                      controller: startedDonationAtController,
+                      initialDate: _startedDonationAt,
+                      onSelected: (date) => _startedDonationAt = date,
                     ),
                     decoration: const InputDecoration(
                       labelText: 'Start Donation At *',
@@ -319,12 +319,12 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextField(
-                    controller: finishDonationAtController,
+                    controller: finishedDonationAtController,
                     readOnly: true,
                     onTap: () => _pickDate(
-                      controller: finishDonationAtController,
-                      initialDate: _finishDonationAt,
-                      onSelected: (date) => _finishDonationAt = date,
+                      controller: finishedDonationAtController,
+                      initialDate: _finishedDonationAt,
+                      onSelected: (date) => _finishedDonationAt = date,
                     ),
                     decoration: const InputDecoration(
                       labelText: 'Finish Donation At *',
@@ -339,12 +339,12 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: startDistributionAtController,
+                    controller: startedDistributionAtController,
                     readOnly: true,
                     onTap: () => _pickDate(
-                      controller: startDistributionAtController,
-                      initialDate: _startDistributionAt,
-                      onSelected: (date) => _startDistributionAt = date,
+                      controller: startedDistributionAtController,
+                      initialDate: _startedDistributionAt,
+                      onSelected: (date) => _startedDistributionAt = date,
                     ),
                     decoration: const InputDecoration(
                       labelText: 'Start Distribution At *',
@@ -355,12 +355,12 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextField(
-                    controller: finishDistributionAtController,
+                    controller: finishedDistributionAtController,
                     readOnly: true,
                     onTap: () => _pickDate(
-                      controller: finishDistributionAtController,
-                      initialDate: _finishDistributionAt,
-                      onSelected: (date) => _finishDistributionAt = date,
+                      controller: finishedDistributionAtController,
+                      initialDate: _finishedDistributionAt,
+                      onSelected: (date) => _finishedDistributionAt = date,
                     ),
                     decoration: const InputDecoration(
                       labelText: 'Finish Distribution At *',

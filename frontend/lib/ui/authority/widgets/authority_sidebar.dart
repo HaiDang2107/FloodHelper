@@ -167,9 +167,6 @@ class _RoleRequestsMenuState extends State<_RoleRequestsMenu> {
                 ),
           onTap: () {
             setState(() => _expanded = !_expanded);
-            if (currentPath != AuthorityRoutes.requests) {
-              context.go(AuthorityRoutes.requests);
-            }
           },
         ),
         if (_expanded && !widget.isCollapsed) ...[
@@ -251,9 +248,6 @@ class _CharityCampaignMenuState extends State<_CharityCampaignMenu> {
                 ),
           onTap: () {
             setState(() => _expanded = !_expanded);
-            if (currentPath != AuthorityRoutes.charity) {
-              context.go(AuthorityRoutes.charity);
-            }
           },
         ),
         if (_expanded && !widget.isCollapsed) ...[

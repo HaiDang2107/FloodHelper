@@ -34,14 +34,14 @@ export class UpdateCampaignDto {
   bankStatementFileUrl?: string;
 
   @IsDateString()
-  startDonationAt!: string;
+  startedDonationAt!: string;
 
   @IsDateString()
-  finishDonationAt!: string;
+  finishedDonationAt!: string;
 
   @IsDateString()
-  startDistributionAt!: string;
+  startedDistributionAt!: string;
 
   @IsDateString()
-  finishDistributionAt!: string;
+  finishedDistributionAt!: string;
 }

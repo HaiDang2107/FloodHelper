@@ -23,14 +23,14 @@ class CharityCampaignMappers {
 
     final startDate = _parseDate(
       periodJson?['startDate'] ??
-          json['startDonationAt'] ??
-          json['startDistributionAt'] ??
+          json['startedDonationAt'] ??
+          json['startedDistributionAt'] ??
           json['createdAt'],
     );
     final endDate = _parseDate(
       periodJson?['endDate'] ??
-          json['finishDistributionAt'] ??
-          json['finishDonationAt'] ??
+          json['finishedDistributionAt'] ??
+          json['finishedDonationAt'] ??
           periodJson?['startDate'] ??
           json['createdAt'],
     );
@@ -62,11 +62,12 @@ class CharityCampaignMappers {
       bankStatementFileUrl: _nullableString(json['bankStatementFileUrl']),
       requestedAt: _parseOptionalDate(json['requestedAt']),
       respondedAt: _parseOptionalDate(json['respondedAt']),
+      createdAt: _parseOptionalDate(json['createdAt']),
       noteByAuthority: _nullableString(json['noteByAuthority']),
-      startDonationAt: _parseOptionalDate(json['startDonationAt']),
-      finishDonationAt: _parseOptionalDate(json['finishDonationAt']),
-      startDistributionAt: _parseOptionalDate(json['startDistributionAt']),
-      finishDistributionAt: _parseOptionalDate(json['finishDistributionAt']),
+      startedDonationAt: _parseOptionalDate(json['startedDonationAt']),
+      finishedDonationAt: _parseOptionalDate(json['finishedDonationAt']),
+      startedDistributionAt: _parseOptionalDate(json['startedDistributionAt']),
+      finishedDistributionAt: _parseOptionalDate(json['finishedDistributionAt']),
       reliefLocation: (json['reliefLocation'] ?? json['destination'] ?? '')
           .toString(),
       period: DateRange(startDate: startDate, endDate: endDate),
@@ -88,10 +89,10 @@ class CharityCampaignMappers {
       'bankName': campaign.bankInfo.bankName,
       'bankAccountName': campaign.bankInfo.accountHolder,
       'bankStatementFileUrl': campaign.bankStatementFileUrl,
-      'startDonationAt': campaign.startDonationAt?.toIso8601String(),
-      'finishDonationAt': campaign.finishDonationAt?.toIso8601String(),
-      'startDistributionAt': campaign.startDistributionAt?.toIso8601String(),
-      'finishDistributionAt': campaign.finishDistributionAt?.toIso8601String(),
+      'startedDonationAt': campaign.startedDonationAt?.toIso8601String(),
+      'finishedDonationAt': campaign.finishedDonationAt?.toIso8601String(),
+      'startedDistributionAt': campaign.startedDistributionAt?.toIso8601String(),
+      'finishedDistributionAt': campaign.finishedDistributionAt?.toIso8601String(),
     };
   }
 

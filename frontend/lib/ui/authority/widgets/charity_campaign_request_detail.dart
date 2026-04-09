@@ -151,19 +151,19 @@ class _CharityCampaignRequestDetailState
                 ),
                 _InfoRow(
                   label: 'Start donation',
-                  value: _formatDateTime(campaign.startDonationAt),
+                  value: _formatDateTime(campaign.startedDonationAt),
                 ),
                 _InfoRow(
                   label: 'Finish donation',
-                  value: _formatDateTime(campaign.finishDonationAt),
+                  value: _formatDateTime(campaign.finishedDonationAt),
                 ),
                 _InfoRow(
                   label: 'Start distribution',
-                  value: _formatDateTime(campaign.startDistributionAt),
+                  value: _formatDateTime(campaign.startedDistributionAt),
                 ),
                 _InfoRow(
                   label: 'Finish distribution',
-                  value: _formatDateTime(campaign.finishDistributionAt),
+                  value: _formatDateTime(campaign.finishedDistributionAt),
                 ),
                 _InfoRow(
                   label: 'Bank account',

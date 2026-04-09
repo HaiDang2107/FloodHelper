@@ -79,11 +79,14 @@ class CharityCampaignRequestsViewModel
   extends _$CharityCampaignRequestsViewModel {
   @override
   CharityCampaignRequestsState build() {
-    Future.microtask(load);
-    return const CharityCampaignRequestsState(isLoading: true);
+    return const CharityCampaignRequestsState();
   }
 
   Future<void> load() async {
+    if (state.statusFilter == null) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true, clearEndMessage: true, clearError: true);
     try {
       final repository = ref.read(authorityRepositoryProvider);
@@ -115,7 +118,12 @@ class CharityCampaignRequestsViewModel
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || state.isLoadingMore || !state.hasMore) {
+    if (
+      state.statusFilter == null ||
+      state.isLoading ||
+      state.isLoadingMore ||
+      !state.hasMore
+    ) {
       return;
     }
 
@@ -146,18 +154,21 @@ class CharityCampaignRequestsViewModel
   }
 
   Future<void> setStatusFilter(CampaignStatus? status) async {
-    final nextState = status == null
-        ? state.copyWith(clearStatusFilter: true)
-        : state.copyWith(statusFilter: status);
+    if (status == null) {
+      state = const CharityCampaignRequestsState();
+      return;
+    }
 
-    state = nextState;
-    if (nextState.allCampaigns.isEmpty) {
+    final isSameFilter = state.statusFilter == status;
+    state = state.copyWith(statusFilter: status);
+
+    if (state.allCampaigns.isEmpty || !isSameFilter) {
       await load();
       return;
     }
 
-    final filtered = _applyFilters(nextState.allCampaigns, state: nextState);
-    final selectedId = _resolveSelectedId(filtered, nextState.selectedId);
+    final filtered = _applyFilters(state.allCampaigns, state: state);
+    final selectedId = _resolveSelectedId(filtered, state.selectedId);
     state = state.copyWith(
       campaigns: filtered,
       selectedId: selectedId,
@@ -254,12 +265,11 @@ class CharityCampaignRequestsViewModel
     CharityCampaignRequestsState? state,
   }) {
     final currentState = state ?? this.state;
+    if (currentState.statusFilter == null) {
+      return const [];
+    }
+
     return source.where((campaign) {
-      if (currentState.statusFilter == null) {
-        return campaign.status == CampaignStatus.pending ||
-            campaign.status == CampaignStatus.approved ||
-            campaign.status == CampaignStatus.rejected;
-      }
       return campaign.status == currentState.statusFilter;
     }).toList(growable: false);
   }

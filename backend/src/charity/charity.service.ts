@@ -32,6 +32,8 @@ type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
   };
 }>;
 
+type AuthorityCampaignCursorField = 'requestedAt' | 'respondedAt';
+
 type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
   include: {
     organizer: {
@@ -94,9 +96,7 @@ export class CharityService {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: this.getOrderByForState(normalizedState),
     });
 
     return campaigns.map((campaign) => this.mapCampaignListItem(campaign));
@@ -129,9 +129,7 @@ export class CharityService {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: this.getOrderByForState(normalizedState),
     });
 
     return campaigns.map((campaign) => this.mapCampaignListItem(campaign));
@@ -186,10 +184,10 @@ export class CharityService {
         destination: payload.destination.trim(),
         charityObject: payload.charityObject.trim(),
         state: 'CREATED',
-        startDonationAt: timeline.startDonationAt,
-        finishDonationAt: timeline.finishDonationAt,
-        startDistributionAt: timeline.startDistributionAt,
-        finishDistributionAt: timeline.finishDistributionAt,
+        startedDonationAt: timeline.startedDonationAt,
+        finishedDonationAt: timeline.finishedDonationAt,
+        startedDistributionAt: timeline.startedDistributionAt,
+        finishedDistributionAt: timeline.finishedDistributionAt,
         bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
       },
       select: { campaignId: true },
@@ -231,10 +229,10 @@ export class CharityService {
         purpose: payload.purpose.trim(),
         destination: payload.destination.trim(),
         charityObject: payload.charityObject.trim(),
-        startDonationAt: timeline.startDonationAt,
-        finishDonationAt: timeline.finishDonationAt,
-        startDistributionAt: timeline.startDistributionAt,
-        finishDistributionAt: timeline.finishDistributionAt,
+        startedDonationAt: timeline.startedDonationAt,
+        finishedDonationAt: timeline.finishedDonationAt,
+        startedDistributionAt: timeline.startedDistributionAt,
+        finishedDistributionAt: timeline.finishedDistributionAt,
         bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
       },
     });
@@ -249,10 +247,10 @@ export class CharityService {
         organizedBy: true,
         state: true,
         bankAccountId: true,
-        startDonationAt: true,
-        finishDonationAt: true,
-        startDistributionAt: true,
-        finishDistributionAt: true,
+        startedDonationAt: true,
+        finishedDonationAt: true,
+        startedDistributionAt: true,
+        finishedDistributionAt: true,
       },
     });
 
@@ -270,10 +268,10 @@ export class CharityService {
     }
 
     this.validateTimelineValues(
-      campaign.startDonationAt,
-      campaign.finishDonationAt,
-      campaign.startDistributionAt,
-      campaign.finishDistributionAt,
+      campaign.startedDonationAt,
+      campaign.finishedDonationAt,
+      campaign.startedDistributionAt,
+      campaign.finishedDistributionAt,
     );
 
     await this.prisma.charityCampaign.update({
@@ -293,10 +291,11 @@ export class CharityService {
   ) {
     const authorityResidence = await this.getAuthorityPlace(authorityUserId);
     const limit = dto.limit ?? 20;
-    const cursorTime = dto.beforeRequestedAt // cursorTime: Lấy những bản ghi trước mốc này (kết hợp với limit nữa)
+    const stateFilter = dto.state?.toUpperCase();
+    const cursorField = this.getAuthorityCursorField(stateFilter);
+    const cursorTime = dto.beforeRequestedAt
       ? new Date(dto.beforeRequestedAt)
       : new Date();
-    const stateFilter = dto.state?.toUpperCase();
 
     const allowedStates = stateFilter
       ? [stateFilter]
@@ -315,13 +314,14 @@ export class CharityService {
           },
         },
         {
-          requestedAt: { lte: cursorTime }, // requestedAt <= cursorTime
+          [cursorField]: { // Các trạng thái khác nhau sẽ có cursor field khác nhau
+            not: null,
+            lte: cursorTime,
+          },
         },
-        stateFilter === 'PENDING' || !stateFilter
-            ? {
-                OR: [{ checkedBy: authorityUserId }, { checkedBy: null }],
-              }
-            : { checkedBy: authorityUserId },
+        {
+          checkedBy: authorityUserId,
+        }
       ],
     };
 
@@ -343,17 +343,18 @@ export class CharityService {
           },
         },
       },
-      orderBy: { requestedAt: 'desc' },
+      orderBy: this.getAuthorityOrderBy(stateFilter), // hàm lấy thứ tự
       take: limit + 1, // Lấy ra limit + 1 bản ghi
     });
 
     const hasMore = rows.length > limit; // số lượng bản ghi > limit chứng tỏ vẫn còn (phục vụ cho lần lấy tiếp theo)
     const sliced = hasMore ? rows.slice(0, limit) : rows; // Cắt bản ghi cuối
-    const nextCursor = hasMore
-      ? (sliced[sliced.length - 1].requestedAt ??
-          sliced[sliced.length - 1].createdAt
-        ).toISOString()
-      : null;
+    const lastRow = sliced[sliced.length - 1];
+    const nextCursorDate =
+      hasMore && lastRow
+        ? this.getAuthorityCursorDate(lastRow, stateFilter)
+        : null;
+    const nextCursor = nextCursorDate?.toISOString() ?? null;
 
     return {
       items: sliced.map((campaign) => this.mapCampaignListItem(campaign)),
@@ -446,6 +447,54 @@ export class CharityService {
     }
 
     return mapped;
+  }
+
+  private getOrderByForState(
+    state: string,
+  ): Prisma.CharityCampaignOrderByWithRelationInput[] {
+    switch (state) {
+      case 'PENDING':
+        return [{ requestedAt: 'desc' }, { createdAt: 'desc' }];
+      case 'APPROVED':
+      case 'REJECTED':
+        return [{ respondedAt: 'desc' }, { createdAt: 'desc' }];
+      case 'DONATING':
+        return [{ startedDonationAt: 'desc' }, { createdAt: 'desc' }];
+      case 'DISTRIBUTING':
+        return [{ startedDistributionAt: 'desc' }, { createdAt: 'desc' }];
+      case 'FINISHED':
+        return [{ finishedDistributionAt: 'desc' }, { createdAt: 'desc' }];
+      case 'CREATED':
+      default:
+        return [{ createdAt: 'desc' }];
+    }
+  }
+
+  private getAuthorityCursorField(stateFilter?: string): AuthorityCampaignCursorField {
+    if (stateFilter === 'APPROVED' || stateFilter === 'REJECTED') {
+      return 'respondedAt';
+    }
+    return 'requestedAt';
+  }
+
+  private getAuthorityOrderBy(
+    stateFilter?: string,
+  ): Prisma.CharityCampaignOrderByWithRelationInput[] {
+    const cursorField = this.getAuthorityCursorField(stateFilter);
+    return [{ [cursorField]: 'desc' }, { createdAt: 'desc' }];
+  }
+
+  private getAuthorityCursorDate(
+    campaign: CharityCampaignListItemPayload,
+    stateFilter?: string,
+  ): Date {
+    const cursorField = this.getAuthorityCursorField(stateFilter);
+
+    if (cursorField === 'respondedAt') {
+      return campaign.respondedAt ?? campaign.requestedAt ?? campaign.createdAt;
+    }
+
+    return campaign.requestedAt ?? campaign.createdAt;
   }
 
   private mapCampaignListItem(campaign: CharityCampaignListItemPayload) {
@@ -580,63 +629,63 @@ export class CharityService {
   }
 
   private parseAndValidateTimeline(payload: {
-    startDonationAt: string;
-    finishDonationAt: string;
-    startDistributionAt: string;
-    finishDistributionAt: string;
+    startedDonationAt: string;
+    finishedDonationAt: string;
+    startedDistributionAt: string;
+    finishedDistributionAt: string;
   }) {
-    const startDonationAt = new Date(payload.startDonationAt);
-    const finishDonationAt = new Date(payload.finishDonationAt);
-    const startDistributionAt = new Date(payload.startDistributionAt);
-    const finishDistributionAt = new Date(payload.finishDistributionAt);
+    const startedDonationAt = new Date(payload.startedDonationAt);
+    const finishedDonationAt = new Date(payload.finishedDonationAt);
+    const startedDistributionAt = new Date(payload.startedDistributionAt);
+    const finishedDistributionAt = new Date(payload.finishedDistributionAt);
 
     this.validateTimelineValues(
-      startDonationAt,
-      finishDonationAt,
-      startDistributionAt,
-      finishDistributionAt,
+      startedDonationAt,
+      finishedDonationAt,
+      startedDistributionAt,
+      finishedDistributionAt,
     );
 
     return {
-      startDonationAt,
-      finishDonationAt,
-      startDistributionAt,
-      finishDistributionAt,
+      startedDonationAt,
+      finishedDonationAt,
+      startedDistributionAt,
+      finishedDistributionAt,
     };
   }
 
   private validateTimelineValues(
-    startDonationAt: Date | null,
-    finishDonationAt: Date | null,
-    startDistributionAt: Date | null,
-    finishDistributionAt: Date | null,
+    startedDonationAt: Date | null,
+    finishedDonationAt: Date | null,
+    startedDistributionAt: Date | null,
+    finishedDistributionAt: Date | null,
   ) {
     if (
-      !startDonationAt ||
-      !finishDonationAt ||
-      !startDistributionAt ||
-      !finishDistributionAt
+      !startedDonationAt ||
+      !finishedDonationAt ||
+      !startedDistributionAt ||
+      !finishedDistributionAt
     ) {
       throw new BadRequestException('All campaign timeline fields are required');
     }
 
     const now = new Date();
-    if (startDonationAt.getTime() <= now.getTime()) {
-      throw new BadRequestException('startDonationAt must be after current time');
+    if (startedDonationAt.getTime() <= now.getTime()) {
+      throw new BadRequestException('startedDonationAt must be after current time');
     }
-    if (startDonationAt.getTime() >= finishDonationAt.getTime()) {
+    if (startedDonationAt.getTime() >= finishedDonationAt.getTime()) {
       throw new BadRequestException(
-        'startDonationAt must be earlier than finishDonationAt',
+        'startedDonationAt must be earlier than finishedDonationAt',
       );
     }
-    if (finishDonationAt.getTime() >= startDistributionAt.getTime()) {
+    if (finishedDonationAt.getTime() >= startedDistributionAt.getTime()) {
       throw new BadRequestException(
-        'finishDonationAt must be earlier than startDistributionAt',
+        'finishedDonationAt must be earlier than startedDistributionAt',
       );
     }
-    if (startDistributionAt.getTime() >= finishDistributionAt.getTime()) {
+    if (startedDistributionAt.getTime() >= finishedDistributionAt.getTime()) {
       throw new BadRequestException(
-        'startDistributionAt must be earlier than finishDistributionAt',
+        'startedDistributionAt must be earlier than finishedDistributionAt',
       );
     }
   }
@@ -648,9 +697,9 @@ export class CharityService {
     const bank = campaign.bankAccount;
 
     const startDate =
-      campaign.startDonationAt ?? campaign.startDistributionAt ?? campaign.createdAt;
+      campaign.startedDonationAt ?? campaign.startedDistributionAt ?? campaign.createdAt;
     const endDate =
-      campaign.finishDistributionAt ?? campaign.finishDonationAt ?? startDate;
+      campaign.finishedDistributionAt ?? campaign.finishedDonationAt ?? startDate;
 
     return {
       id: campaign.campaignId,
@@ -671,10 +720,10 @@ export class CharityService {
         accountHolder: bank?.bankAccountName ?? null,
       },
       reliefLocation: campaign.destination,
-      startDonationAt: campaign.startDonationAt,
-      finishDonationAt: campaign.finishDonationAt,
-      startDistributionAt: campaign.startDistributionAt,
-      finishDistributionAt: campaign.finishDistributionAt,
+      startedDonationAt: campaign.startedDonationAt,
+      finishedDonationAt: campaign.finishedDonationAt,
+      startedDistributionAt: campaign.startedDistributionAt,
+      finishedDistributionAt: campaign.finishedDistributionAt,
       bankStatementFileUrl: campaign.bankStatementFileUrl,
       requestedAt: campaign.requestedAt,
       respondedAt: campaign.respondedAt,

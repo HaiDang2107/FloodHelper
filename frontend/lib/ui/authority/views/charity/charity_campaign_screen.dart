@@ -38,6 +38,7 @@ class _CharityCampaignScreenState extends ConsumerState<CharityCampaignScreen> {
     final viewModel = ref.read(charityCampaignRequestsViewModelProvider.notifier);
     final routeStatusFilter = _statusFromQuery(widget.statusQuery);
     final errorMessage = state.errorMessage;
+    final hasStatusSelection = routeStatusFilter != null;
 
     if (errorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -63,20 +64,22 @@ class _CharityCampaignScreenState extends ConsumerState<CharityCampaignScreen> {
     return AuthorityReviewFrame(
       title: 'Charity campaign requests',
       filters: const [],
-      listContent: state.isLoading && state.campaigns.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _CampaignRequestList(
-              campaigns: state.campaigns,
-              selectedId: state.selectedId,
-              onSelect: viewModel.selectCampaign,
-              onReachEnd: viewModel.loadMore,
-              isLoadingMore: state.isLoadingMore,
-              endMessage: state.endMessage,
-            ),
+      listContent: !hasStatusSelection
+          ? const _StatusSelectionHint(message: 'Select a status from the sidebar to view campaign requests.')
+          : state.isLoading && state.campaigns.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : _CampaignRequestList(
+                  campaigns: state.campaigns,
+                  selectedId: state.selectedId,
+                  onSelect: viewModel.selectCampaign,
+                  onReachEnd: viewModel.loadMore,
+                  isLoadingMore: state.isLoadingMore,
+                  endMessage: state.endMessage,
+                ),
       detailPanel: CharityCampaignRequestDetail(
-        campaign: state.selectedCampaign,
+        campaign: hasStatusSelection ? state.selectedCampaign : null,
         isSubmitting: state.isLoading,
-        isDetailLoading: state.isDetailLoading,
+        isDetailLoading: hasStatusSelection ? state.isDetailLoading : false,
         onApprove: (note) => viewModel.approveSelected(
           noteByAuthority: note,
         ),
@@ -198,6 +201,27 @@ class _CampaignSection {
   final List<CharityCampaign> items;
 }
 
+class _StatusSelectionHint extends StatelessWidget {
+  const _StatusSelectionHint({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF667085),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+// Chia campaign theo ngày.
 List<_CampaignSection> _groupByDate(List<CharityCampaign> campaigns) {
   final formatter = DateFormat('MMM d, yyyy');
   final Map<String, List<CharityCampaign>> grouped = {};
@@ -222,9 +246,9 @@ List<_CampaignSection> _groupByDate(List<CharityCampaign> campaigns) {
 
 DateTime _groupingDateOf(CharityCampaign campaign) {
   return campaign.requestedAt ??
-    campaign.startDonationAt ??
-    campaign.startDistributionAt ??
-    campaign.finishDonationAt ??
-    campaign.finishDistributionAt ??
+    campaign.startedDonationAt ??
+    campaign.startedDistributionAt ??
+    campaign.finishedDonationAt ??
+    campaign.finishedDistributionAt ??
     DateTime.fromMillisecondsSinceEpoch(0);
 }

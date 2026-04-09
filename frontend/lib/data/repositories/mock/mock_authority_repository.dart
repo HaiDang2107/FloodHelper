@@ -20,10 +20,10 @@ class MockAuthorityRepository implements AuthorityRepository {
         accountHolder: 'Nguyen Van A',
       ),
       requestedAt: DateTime.now().subtract(const Duration(hours: 4)),
-      startDonationAt: DateTime.now().add(const Duration(days: 2)),
-      finishDonationAt: DateTime.now().add(const Duration(days: 10)),
-      startDistributionAt: DateTime.now().add(const Duration(days: 11)),
-      finishDistributionAt: DateTime.now().add(const Duration(days: 20)),
+      startedDonationAt: DateTime.now().add(const Duration(days: 2)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 10)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 11)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 20)),
       reliefLocation: 'Hue, Vietnam',
       period: DateRange(
         startDate: DateTime.now().add(const Duration(days: 2)),
@@ -48,10 +48,10 @@ class MockAuthorityRepository implements AuthorityRepository {
       requestedAt: DateTime.now().subtract(const Duration(days: 1)),
       respondedAt: DateTime.now().subtract(const Duration(hours: 20)),
       noteByAuthority: 'Looks good, approved for rollout.',
-      startDonationAt: DateTime.now().add(const Duration(days: 1)),
-      finishDonationAt: DateTime.now().add(const Duration(days: 8)),
-      startDistributionAt: DateTime.now().add(const Duration(days: 9)),
-      finishDistributionAt: DateTime.now().add(const Duration(days: 15)),
+      startedDonationAt: DateTime.now().add(const Duration(days: 1)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 8)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 9)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 15)),
       reliefLocation: 'Da Nang, Vietnam',
       period: DateRange(
         startDate: DateTime.now().add(const Duration(days: 1)),
@@ -76,10 +76,10 @@ class MockAuthorityRepository implements AuthorityRepository {
       requestedAt: DateTime.now().subtract(const Duration(days: 2)),
       respondedAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
       noteByAuthority: 'Missing timeline details.',
-      startDonationAt: DateTime.now().add(const Duration(days: 3)),
-      finishDonationAt: DateTime.now().add(const Duration(days: 12)),
-      startDistributionAt: DateTime.now().add(const Duration(days: 13)),
-      finishDistributionAt: DateTime.now().add(const Duration(days: 18)),
+      startedDonationAt: DateTime.now().add(const Duration(days: 3)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 12)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 13)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 18)),
       reliefLocation: 'Quang Tri, Vietnam',
       period: DateRange(
         startDate: DateTime.now().add(const Duration(days: 3)),
@@ -274,10 +274,10 @@ class MockAuthorityRepository implements AuthorityRepository {
 
   DateTime _requestOrderingDate(CharityCampaign campaign) {
     return campaign.requestedAt ??
-        campaign.startDonationAt ??
-        campaign.startDistributionAt ??
-        campaign.finishDonationAt ??
-        campaign.finishDistributionAt ??
+        campaign.startedDonationAt ??
+        campaign.startedDistributionAt ??
+        campaign.finishedDonationAt ??
+        campaign.finishedDistributionAt ??
         DateTime.fromMillisecondsSinceEpoch(0);
   }
 

@@ -120,16 +120,16 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
   }
 
   Future<void> setStatusFilter(RoleRequestStatus? status) async {
-    final nextState = status == null
-        ? state.copyWith(
-            clearStatusFilter: true,
-          )
-        : state.copyWith(
-            statusFilter: status,
-          );
+    if (status == null) {
+      state = const RoleRequestsState();
+      return;
+    }
+
+    final nextState = state.copyWith(statusFilter: status);
+    final isSameFilter = state.statusFilter == status;
 
     state = nextState;
-    if (nextState.allRequests.isEmpty) {
+    if (nextState.allRequests.isEmpty || !isSameFilter) {
       await load();
       return;
     }

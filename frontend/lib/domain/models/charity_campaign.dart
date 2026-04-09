@@ -15,11 +15,12 @@ class CharityCampaign {
   final String? bankStatementFileUrl;
   final DateTime? requestedAt;
   final DateTime? respondedAt;
+  final DateTime? createdAt;
   final String? noteByAuthority;
-  final DateTime? startDonationAt;
-  final DateTime? finishDonationAt;
-  final DateTime? startDistributionAt;
-  final DateTime? finishDistributionAt;
+  final DateTime? startedDonationAt;
+  final DateTime? finishedDonationAt;
+  final DateTime? startedDistributionAt;
+  final DateTime? finishedDistributionAt;
   final String reliefLocation;
   final DateRange period;
   final List<CampaignAnnouncement> announcements;
@@ -39,11 +40,12 @@ class CharityCampaign {
     this.bankStatementFileUrl,
     this.requestedAt,
     this.respondedAt,
+    this.createdAt,
     this.noteByAuthority,
-    this.startDonationAt,
-    this.finishDonationAt,
-    this.startDistributionAt,
-    this.finishDistributionAt,
+    this.startedDonationAt,
+    this.finishedDonationAt,
+    this.startedDistributionAt,
+    this.finishedDistributionAt,
     required this.reliefLocation,
     required this.period,
     this.announcements = const [],
@@ -72,8 +74,8 @@ class CharityCampaign {
 
   /// Get progress percentage (days elapsed)
   // double get progressPercentage {
-  //   final totalDays = finishDistributionAt?.difference(startDonationAt ?? DateTime.now()).inDays ?? 0;
-  //   final elapsedDays = DateTime.now().difference(startDonationAt ?? DateTime.now()).inDays;
+  //   final totalDays = finishedDistributionAt?.difference(startedDonationAt ?? DateTime.now()).inDays ?? 0;
+  //   final elapsedDays = DateTime.now().difference(startedDonationAt ?? DateTime.now()).inDays;
   //   if (totalDays <= 0) return 100;
   //   return (elapsedDays / totalDays * 100).clamp(0, 100);
   // }
@@ -91,11 +93,12 @@ class CharityCampaign {
     String? bankStatementFileUrl,
     DateTime? requestedAt,
     DateTime? respondedAt,
+    DateTime? createdAt,
     String? noteByAuthority,
-    DateTime? startDonationAt,
-    DateTime? finishDonationAt,
-    DateTime? startDistributionAt,
-    DateTime? finishDistributionAt,
+    DateTime? startedDonationAt,
+    DateTime? finishedDonationAt,
+    DateTime? startedDistributionAt,
+    DateTime? finishedDistributionAt,
     String? reliefLocation,
     DateRange? period,
     List<CampaignAnnouncement>? announcements,
@@ -115,11 +118,12 @@ class CharityCampaign {
       bankStatementFileUrl: bankStatementFileUrl ?? this.bankStatementFileUrl,
       requestedAt: requestedAt ?? this.requestedAt,
       respondedAt: respondedAt ?? this.respondedAt,
+      createdAt: createdAt ?? this.createdAt,
       noteByAuthority: noteByAuthority ?? this.noteByAuthority,
-      startDonationAt: startDonationAt ?? this.startDonationAt,
-      finishDonationAt: finishDonationAt ?? this.finishDonationAt,
-      startDistributionAt: startDistributionAt ?? this.startDistributionAt,
-      finishDistributionAt: finishDistributionAt ?? this.finishDistributionAt,
+      startedDonationAt: startedDonationAt ?? this.startedDonationAt,
+      finishedDonationAt: finishedDonationAt ?? this.finishedDonationAt,
+      startedDistributionAt: startedDistributionAt ?? this.startedDistributionAt,
+      finishedDistributionAt: finishedDistributionAt ?? this.finishedDistributionAt,
       reliefLocation: reliefLocation ?? this.reliefLocation,
       period: period ?? this.period,
       announcements: announcements ?? this.announcements,
