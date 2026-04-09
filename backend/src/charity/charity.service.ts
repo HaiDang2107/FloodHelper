@@ -251,6 +251,11 @@ export class CharityService {
         finishedDonationAt: true,
         startedDistributionAt: true,
         finishedDistributionAt: true,
+        organizer: {
+          select: {
+            placeOfResidence: true,
+          },
+        },
       },
     });
 
@@ -266,6 +271,27 @@ export class CharityService {
     if (!campaign.bankAccountId) {
       throw new BadRequestException('Campaign bank account is required');
     }
+    if (!campaign.organizer?.placeOfResidence) {
+      throw new BadRequestException(
+        'Benefactor placeOfResidence is required before sending campaign request',
+      );
+    }
+
+    const assignedAuthority = await this.prisma.user.findFirst({
+      where: {
+        placeOfResidence: campaign.organizer.placeOfResidence,
+        role: { has: 'AUTHORITY' },
+      },
+      select: {
+        userId: true,
+      }
+    });
+
+    if (!assignedAuthority) {
+      throw new BadRequestException(
+        'No authority account found for benefactor residence area',
+      );
+    }
 
     this.validateTimelineValues(
       campaign.startedDonationAt,
@@ -279,6 +305,7 @@ export class CharityService {
       data: {
         state: 'PENDING',
         requestedAt: new Date(),
+        checkedBy: assignedAuthority.userId,
       },
     });
 
@@ -423,7 +450,6 @@ export class CharityService {
       where: { campaignId },
       data: {
         state: nextState,
-        checkedBy: authorityUserId,
         respondedAt: new Date(),
         noteByAuthority: trimmedNote ?? reviewTarget.noteByAuthority,
       },
