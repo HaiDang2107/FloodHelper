@@ -1,15 +1,11 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../data/services/broadcasting_signals_local_storage.dart';
 import '../../../data/services/signal_service.dart';
 import '../../../domain/models/broadcasting_signal.dart';
 
-final broadcastingSignalsViewModelProvider =
-    AutoDisposeNotifierProvider<
-      BroadcastingSignalsViewModel,
-      BroadcastingSignalsState
-    >(BroadcastingSignalsViewModel.new);
+part 'broadcasting_signals_view_model.g.dart';
 
 class BroadcastingSignalsState {
   final bool isLoading;
@@ -40,7 +36,9 @@ class BroadcastingSignalsState {
   }
 }
 
-class BroadcastingSignalsViewModel extends AutoDisposeNotifier<BroadcastingSignalsState> {
+@riverpod
+class BroadcastingSignalsViewModel
+    extends _$BroadcastingSignalsViewModel {
   late final SignalService _signalService = SignalService(
     apiClient: ref.read(apiClientProvider),
   );

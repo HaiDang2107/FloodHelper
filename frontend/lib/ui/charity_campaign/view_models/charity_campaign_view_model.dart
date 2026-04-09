@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/providers/global_session_provider.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/repositories/charity_campaign_repository.dart';
 import '../../../domain/models/charity_campaign.dart';
@@ -54,6 +55,9 @@ class CharityCampaignViewModel
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
+      final currentUser = ref.read(currentUserProvider);
+      final isBenefactor = currentUser?.isBenefactor ?? false;
+
       const existingStatuses = [
         CampaignStatus.donating,
         CampaignStatus.distributing,
@@ -76,14 +80,17 @@ class CharityCampaignViewModel
         ),
       );
 
-      final myBatches = await Future.wait(
-        myStatuses.map((status) => _repository.getMyCampaigns(status: status)),
+      final myBatches = await _loadMyBatchesIfBenefactor(
+        isBenefactor,
+        myStatuses,
       );
 
       final existing = existingBatches
           .expand((batch) => batch)
           .toList(growable: false);
-      final mine = myBatches.expand((batch) => batch).toList(growable: false);
+      final mine = isBenefactor
+          ? myBatches.expand((batch) => batch).toList(growable: false)
+          : const <CharityCampaign>[];
 
       state = state.copyWith(
         isLoading: false,
@@ -96,6 +103,19 @@ class CharityCampaignViewModel
         errorMessage: 'Failed to load campaigns: $e',
       );
     }
+  }
+
+  Future<List<List<CharityCampaign>>> _loadMyBatchesIfBenefactor(
+    bool isBenefactor,
+    List<CampaignStatus> statuses,
+  ) async {
+    if (!isBenefactor) {
+      return const <List<CharityCampaign>>[];
+    }
+
+    return Future.wait(
+      statuses.map((status) => _repository.getMyCampaigns(status: status)),
+    );
   }
 
   Future<void> createCampaign(CharityCampaign campaign) async {

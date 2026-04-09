@@ -243,7 +243,7 @@ class MockAuthorityRepository implements AuthorityRepository {
         return false;
       }
 
-      final requestedAt = campaign.requestedAt ?? campaign.period.startDate;
+      final requestedAt = _requestOrderingDate(campaign);
       if (cutoff != null && !requestedAt.isBefore(cutoff) && requestedAt.isAtSameMomentAs(cutoff)) {
         return false;
       }
@@ -260,8 +260,8 @@ class MockAuthorityRepository implements AuthorityRepository {
     }).toList(growable: false);
 
     filtered.sort((a, b) {
-      final aTime = a.requestedAt ?? a.period.startDate;
-      final bTime = b.requestedAt ?? b.period.startDate;
+      final aTime = _requestOrderingDate(a);
+      final bTime = _requestOrderingDate(b);
       return bTime.compareTo(aTime);
     });
 
@@ -270,6 +270,15 @@ class MockAuthorityRepository implements AuthorityRepository {
       hasMore: false,
       nextCursor: null,
     );
+  }
+
+  DateTime _requestOrderingDate(CharityCampaign campaign) {
+    return campaign.requestedAt ??
+        campaign.startDonationAt ??
+        campaign.startDistributionAt ??
+        campaign.finishDonationAt ??
+        campaign.finishDistributionAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   @override

@@ -72,8 +72,8 @@ class CharityCampaign {
 
   /// Get progress percentage (days elapsed)
   // double get progressPercentage {
-  //   final totalDays = period.endDate.difference(period.startDate).inDays;
-  //   final elapsedDays = DateTime.now().difference(period.startDate).inDays;
+  //   final totalDays = finishDistributionAt?.difference(startDonationAt ?? DateTime.now()).inDays ?? 0;
+  //   final elapsedDays = DateTime.now().difference(startDonationAt ?? DateTime.now()).inDays;
   //   if (totalDays <= 0) return 100;
   //   return (elapsedDays / totalDays * 100).clamp(0, 100);
   // }

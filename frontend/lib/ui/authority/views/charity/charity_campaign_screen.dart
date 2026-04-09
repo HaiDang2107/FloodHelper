@@ -203,19 +203,28 @@ List<_CampaignSection> _groupByDate(List<CharityCampaign> campaigns) {
   final Map<String, List<CharityCampaign>> grouped = {};
 
   for (final campaign in campaigns) {
-    final keyDate = campaign.requestedAt ?? campaign.period.startDate;
+    final keyDate = _groupingDateOf(campaign);
     final key = formatter.format(keyDate);
     grouped.putIfAbsent(key, () => []).add(campaign);
   }
 
   final entries = grouped.entries.toList();
   entries.sort((a, b) {
-    final aDate = a.value.first.requestedAt ?? a.value.first.period.startDate;
-    final bDate = b.value.first.requestedAt ?? b.value.first.period.startDate;
+    final aDate = _groupingDateOf(a.value.first);
+    final bDate = _groupingDateOf(b.value.first);
     return bDate.compareTo(aDate);
   });
 
   return entries
       .map((entry) => _CampaignSection(label: entry.key, items: entry.value))
       .toList(growable: false);
+}
+
+DateTime _groupingDateOf(CharityCampaign campaign) {
+  return campaign.requestedAt ??
+    campaign.startDonationAt ??
+    campaign.startDistributionAt ??
+    campaign.finishDonationAt ??
+    campaign.finishDistributionAt ??
+    DateTime.fromMillisecondsSinceEpoch(0);
 }

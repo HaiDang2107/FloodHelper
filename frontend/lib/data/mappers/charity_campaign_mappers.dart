@@ -14,7 +14,6 @@ class CharityCampaignMappers {
     }
 
     final campaigns = merged.values.toList(growable: false);
-    campaigns.sort((a, b) => b.period.startDate.compareTo(a.period.startDate));
     return campaigns;
   }
 

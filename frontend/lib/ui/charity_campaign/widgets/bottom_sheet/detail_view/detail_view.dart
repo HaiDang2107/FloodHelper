@@ -111,14 +111,6 @@ class _DetailViewState extends State<DetailView> {
               : null,
         ),
         CharityInfoRow(
-          label: 'Start Date',
-          value: _formatDate(widget.campaign.period.startDate),
-        ),
-        CharityInfoRow(
-          label: 'End Date',
-          value: _formatDate(widget.campaign.period.endDate),
-        ),
-        CharityInfoRow(
           label: 'Start Donation',
           value: _formatDateOrPlaceholder(widget.campaign.startDonationAt),
         ),
