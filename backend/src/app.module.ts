@@ -1,4 +1,5 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
@@ -15,6 +16,7 @@ import { LoggingMiddleware } from './common/logging.middleware';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
     FriendModule,
