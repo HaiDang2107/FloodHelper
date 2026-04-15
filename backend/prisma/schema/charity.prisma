@@ -34,13 +34,21 @@ model CharityCampaign {
 }
 
 model Transaction {
-  transactionId  String   @id @default(uuid()) @db.Uuid @map("transaction_id")
-  campaignId     String   @db.Uuid @map("campaign_id")
-  transferType   String   @map("transfer_type") // IN / OUT
-  donateAt       DateTime @map("donate_at")
-  transferBy     String?  @map("transfer_by")
-  transferAmount Decimal  @map("transfer_amount") @db.Decimal(15, 2)
-  message        String?
+  transactionId             String           @id @default(uuid()) @db.Uuid @map("transaction_id")
+  campaignId                String           @db.Uuid @map("campaign_id")
+  transType                 String           @default("C") @map("trans_type")
+  donateAt                  DateTime         @map("donate_at")
+  donatedBy                 String?          @map("donated_by")
+  amount                    Decimal          @db.Decimal(15, 2)
+  content                   String?
+  transactionIdFromVietQR   String?          @map("transaction_id_from_vietqr")
+  transactionRefId          String?          @map("transaction_ref_id")
+  referencenumber           String?
+  qrLink                    String?          @map("qr_link")
+  createdAt                 DateTime         @default(now()) @map("created_at")
+  transactionTime           DateTime?        @map("transaction_time")
+  expiredAt                 DateTime?        @map("expired_at")
+  state                     TransactionState @default(CREATED)
 
   campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
 
@@ -50,7 +58,8 @@ model Transaction {
 model BankAccount {
   bankAccountId     String @id @default(uuid()) @db.Uuid @map("bank_account_id")
   bankName          String @map("bank_name")
-  bankAccountName   String @map("bank_account_name")
+  userBankName      String @map("user_bank_name") @default("UNKNOWN")
+  bankCode          String @map("bank_code") @default("UNKNOWN")
   bankAccountNumber String @map("bank_account_number")
   campaigns         CharityCampaign[]
 
@@ -94,4 +103,12 @@ model FinancialSupport {
   campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
 
   @@map("FinancialSupport")
+}
+
+enum TransactionState {
+  CREATED
+  VERIFYING
+  SUCCESS
+  FAILED
+  EXPIRED
 }

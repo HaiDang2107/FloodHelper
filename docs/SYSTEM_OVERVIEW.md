@@ -1,66 +1,54 @@
 # FloodHelper System Overview
 
-## Monorepo Structure
+## Architecture
 
-FloodHelper is organized as a single repository with multiple application layers:
+FloodHelper is a multi-service repository:
 
-- `frontend/`: Flutter mobile/web client.
-- `backend/`: NestJS REST API + Prisma + Redis cache + Mailer + Firebase admin integration.
-- `MqttClient/`: Python FastAPI process that bridges MQTT topics and backend signal APIs.
-- `diagram/`: UML and activity/use-case assets.
-- `docs/`: Curated operational and architectural documentation (this folder).
+1. Frontend (Flutter).
 
-## Core Technology Stack
+- Mobile/web client with Riverpod state management.
+- User, benefactor, rescuer, and authority interfaces.
 
-### Frontend
+1. Backend (NestJS).
 
-- Flutter + Dart
-- Riverpod state management
-- `flutter_map` for map rendering
-- Firebase (core + messaging)
-- MQTT client for realtime location/signal topic communication
-- Background service on Android for location tracking/publishing
+- REST APIs and business logic.
+- Prisma ORM over PostgreSQL.
+- Redis cache manager.
+- JWT and role-based authorization.
+- Firebase Admin integration.
+- Daily scheduled jobs via NestJS Schedule.
 
-### Backend
+1. MQTT Worker (Python FastAPI).
 
-- NestJS (TypeScript)
-- Prisma ORM + PostgreSQL
-- Redis (cache manager)
-- JWT auth + role guards
-- Firebase Admin SDK (notifications)
-- Mailer module
+- Consumes MQTT commands/events.
+- Calls backend signal APIs.
+- Republishes normalized events to topics used by frontend.
 
-### MQTT Worker Service
+## Current Backend Runtime Notes
 
-- Python + FastAPI
-- Paho MQTT client
-- Requests-based backend API calls
-- TLS connection to broker
-- Subscribes to:
-  - `current-location`
-  - `signal`
-  - `rescuer/handle`
+- Cookie parser enabled for refresh token cookie flow.
+- CORS enabled for development.
+- ScheduleModule enabled globally in AppModule.
 
-## Runtime Topology
+## Charity Lifecycle Automation
 
-1. Client app obtains user session from backend (JWT/cookies depending flow).
-2. Client publishes location and signal commands to MQTT topics.
-3. Python worker consumes MQTT, normalizes payloads, and calls backend signal endpoints.
-4. Worker republishes derived events to rescuer/common or user-specific reply topics.
-5. Frontend map and sheets react to these events to render friend/victim pins and state.
+Charity module includes a scheduled job that runs at 00:00 Asia/Ho_Chi_Minh and applies date-based state transitions:
 
-## Feature Domains (Observed)
+- APPROVED to DONATING.
+- DONATING to DISTRIBUTING.
+- DONATING to FINISHED.
 
-- Authentication and session management
-- Friend requests and friend map visibility
-- Map presence and location sharing modes
-- SOS broadcasting and rescuer handling
-- Profile and role request flows
-- Posts/announcements/charity related UI domains
+Date comparison uses day boundaries in Vietnam timezone and ignores hour/minute/second semantics.
 
-## Key Constraints and Patterns
+## Main Feature Domains
 
-- Backend modules are centralized in `backend/src/app.module.ts`.
-- Signal and MQTT integration depend on strict topic + payload contract.
-- Frontend logic uses ViewModel-style Riverpod notifiers and sheet-based interaction patterns.
-- Some docs under backend are generic Nest starter docs; source code should be treated as canonical behavior.
+- Authentication and session lifecycle.
+- Friend relationships and requests.
+- Role request workflow.
+- SOS signaling and rescuer coordination.
+- Charity campaign creation/review/processing.
+- User profile and visibility controls.
+
+## Source of Truth
+
+When docs differ from implementation, treat controller/service code and Prisma schema as authoritative.

@@ -4,117 +4,89 @@
 
 - Node.js + npm
 - Flutter SDK
-- Python 3.x (for MQTT worker)
-- Docker + Docker Compose (optional/local infra)
-- PostgreSQL + Redis (or Dockerized equivalents)
+- Python 3.x
+- PostgreSQL
+- Redis
+- Docker + Docker Compose (optional)
 
-## Backend Runbook
+## Backend
 
-Working directory: `backend/`
+Working directory: backend.
 
-### Install and Start
+### Install and Run
 
 ```bash
 npm install
 npm run start:dev
 ```
 
-### Database
+### Build and Tests
+
+```bash
+npm run build
+npm run lint
+npm run test
+npm run test:e2e
+```
+
+### Prisma
 
 ```bash
 npx prisma generate
 npx prisma migrate dev
 npm run db:seed
+npx prisma studio
 ```
 
-### Tests and Lint
-
-```bash
-npm run test
-npm run test:e2e
-npm run lint
-```
-
-### Dockerized Infra (postgres + redis)
+### Dockerized Infra
 
 ```bash
 docker-compose up -d postgres
 docker-compose up -d redis
 ```
 
-## Frontend Runbook
+## Frontend
 
-Working directory: `frontend/`
-
-### Install and Run
+Working directory: frontend.
 
 ```bash
 flutter pub get
 flutter run
+flutter analyze lib
 ```
 
-### Static Analysis and Formatting
+## MQTT Worker
 
-```bash
-flutter analyze
-dart format lib
-```
-
-## MQTT Worker Runbook
-
-Working directory: `MqttClient/`
-
-### Install and Run Locally
+Working directory: MqttClient.
 
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-### Env Setup
+## Daily Charity Scheduler Check
 
-Copy `.env.example` to `.env`, then configure:
+The backend runs a daily cron task at 00:00 Asia/Ho_Chi_Minh for charity state transitions.
 
-- `MQTT_BROKER`, `MQTT_PORT`, `MQTT_USERNAME`, `MQTT_PASSWORD`
-- `BACKEND_BASE_URL`
-- `MQTT_SERVICE_TOKEN`
-- Topics:
-  - `TOPIC_CURRENT_LOCATION`
-  - `TOPIC_SIGNAL`
-  - `TOPIC_RESCUER_HANDLE`
-  - `TOPIC_RESCUER_COMMON`
+If you need to verify behavior:
 
-### Docker
-
-```bash
-docker-compose up --build
-```
+1. Prepare test campaigns with boundary dates.
+1. Run backend and inspect logs from CharityCampaignStateScheduler.
+1. Validate resulting states in Prisma Studio.
 
 ## Common Troubleshooting
 
-### Backend cannot reach DB/Redis
+1. Cannot connect DB/Redis.
 
-- Verify containers are up: `docker-compose ps` in `backend/`.
-- Check `.env` host/port values.
-- Re-run `npx prisma migrate dev`.
+- Check containers with docker-compose ps.
+- Verify env values in backend/.env.
 
-### Worker starts but no signal updates
+1. Prisma type mismatch after schema change.
 
-- Verify MQTT topic names match frontend/backend expectations.
-- Check `MQTT_SERVICE_TOKEN` for backend protected endpoints.
-- Confirm broker TLS cert path and credentials.
-- Inspect worker logs for payload normalization or unsupported command output.
+- Run npx prisma generate.
+- Rebuild backend.
 
-### Frontend map/sheet behavior mismatch
+1. Frontend API mismatch.
 
-- Run `flutter analyze` on changed files.
-- Validate callback contracts between Home screen and sheet widgets.
-- Confirm local storage keys are cleared on sign out when testing per-user preferences.
-
-## Quick Start Sequence (End-to-End)
-
-1. Start postgres + redis.
-2. Run backend migrations + seed.
-3. Start backend in dev mode.
-4. Start MQTT worker.
-5. Run Flutter app.
+- Confirm backend branch and frontend mapper/model field names align.
+- Re-run flutter analyze lib.

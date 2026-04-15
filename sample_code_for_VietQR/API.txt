@@ -1,0 +1,111 @@
+- Để implement webhook, tôi dùng 2 API của VietQR:
+++ API Get Token
+Request đến server của tôi không cần body, header có base64[username:pasword] (username và password chính là MY_USERNAME và MY_PASSWORD trong .env)
+Response từ server 
+++ API Transaction Sync (https://<your-host>/<your-basepath>/bank/api/transaction-sync)
+Webhook có chứa các thông tin:
+{
+  "transactionid": "TX123456789",
+  "transactiontime": "2026-04-15 01:15:00",
+  “referencenumer”: “”,
+  "amount": 50000,
+  "content": "FH FLOOD01 USER99",
+  "bankaccount": "0987654321",
+  "orderId": "550e8400-e29b-41d4-a716-446655440000",
+}
+Phản hồi webhook:
+{
+    "error": false,
+    "errorReason": "mã_lỗi_trả_về_từ_đối_tác",
+    "toastMessage": "mô_tả_lỗi_trả_về_từ_đối_tác",
+    "object": {
+        "reftransactionid": "ID_của_giao_dịch"
+    }
+}
+
+- Tôi sẽ sử dụng 3 API của VietQR:
+++ API Get Token (https://dev.vietqr.org/vqr/api/token_generate).
+Request: base64[username:password] được gắn trong header (authorization). Username, password được lấy trong .env với tên VIETQR_USERNAME, VIETQR_PASSWORD)
+Response:
+{
+    "access_token": "bearer_token_của_VietQR_cung_cấp",
+    "token_type": "Bearer",
+    "expires_in": 300
+}
+++ API Generate VietQR Code (https://dev.vietqr.org/vqr/api/qr/generate-customer)
+Request: gắn access token vào header; body:
+{
+    "bankCode": "mã_ngân_hàng",
+    "bankName": "tên_ngân_hàng",
+    "bankAccount": "tài_khoản_ngân_hàng_nhận",
+    "userBankName": "tên_chủ_tài_khoản",
+    "amount": "số_tiền_cần_thanh_toán", 
+    "content": "nội_dung_thanh_toán", (Tối đa 19 ký tự, mặc định là FLOOD HELPER)
+    "qrType": 0/1/3 (ở project này, chỉ dùng 0 - QR động)
+    "orderId": "mã_đơn_hàng",
+    “transType”: “...”, (ở project này chỉ dùng “C”)
+}
+Response:
+{
+    "bankCode": "mã_ngân_hàng",
+    "bankName": "tên_ngân_hàng",
+    "bankAccount": "tài_khoản_ngân_hàng_nhận",
+    "userBankName": "tên_chủ_tài_khoản",
+    "amount": "số_tiền_cần_thanh_toán",
+    "content": "nội_dung_thanh_toán",
+    "qrCode": "mã_QR_dạng_string",
+    "existing": "1: đã_được_tạo_trên_hệ_thống_vietQR_thành_công",
+    "transactionId": "id_định_danh_của_QR",
+    "transactionRefId": "mã_định_danh_của_QR",
+    "qrLink": "mã_QR_dạng_link",
+    "orderId": "mã_đơn_hàng",
+}
+++ Call API Test Callback (https://dev.vietqr.org/vqr/bank/api/test/transaction-callback)
+Request: gắn access token vào header; body:
+{
+  "bankAccount": "0987654321",
+  "content": "FH FLOOD01 USER99",
+  "amount": 50000,
+  "transType": "C",
+  "bankCode": "MB"
+}
+Response:
+{
+    "status": "SUCCESS",
+    "message": ""
+}
+
+- Các mã lỗi trong trường message của response:
+E05: Lỗi không xác định (Unknown error).
+
+E24: Không tìm thấy ngân hàng tương ứng với bankCode đã cung cấp.
+
+E39: Sai chữ ký kiểm tra (checkSum).
+
+E42: Đối tác không có quyền truy cập API Hoàn tiền (API Refund).
+
+E43: Hoàn tiền (Refund) thất bại do nguyên nhân chưa xác định.
+
+E44: Mã tham chiếu (referenceNumber) không tồn tại hoặc không hỗ trợ hoàn tiền cho giao dịch vãng lai.
+
+E45: Số tiền hoàn không chính xác (Phải nhỏ hơn hoặc bằng giá trị giao dịch gốc).
+
+E46: Cấu trúc hoặc tham số trong Request Body không hợp lệ.
+
+E51: Mã ngân hàng (bankCode) không chính xác.
+
+E74: Mã định danh (token) không hợp lệ.
+
+E75: Chức năng Test Callback hiện không khả dụng.
+
+E76: Tài khoản chưa đăng ký dịch vụ hoặc đang trong trạng thái bị khóa.
+
+E77: Tài khoản ngân hàng chưa được đối tác đăng ký thành công trên hệ thống.
+
+E95: Loại bộ lọc (filter type) không đúng trong API Check Order.
+
+E96: Không tìm thấy thông tin giao dịch.
+
+E104: Không tìm thấy thông tin đăng ký đại lý của đối tác.
+
+E158: Hệ thống đang bận do một yêu cầu (request) khác đang được xử lý.
