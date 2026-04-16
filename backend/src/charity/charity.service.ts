@@ -3,8 +3,10 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import {
   CreateCampaignDto,
@@ -12,6 +14,7 @@ import {
   RespondCampaignDto,
   UpdateCampaignDto,
 } from './dto';
+import { VietQrService } from './vietqr/vietqr.service';
 
 type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
   select: {
@@ -52,6 +55,9 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
 @Injectable()
 export class CharityService {
   private readonly prisma: PrismaClient;
+  private readonly logger = new Logger(CharityService.name);
+  private static readonly MAX_QR_API_SAFE_AMOUNT = BigInt(Number.MAX_SAFE_INTEGER);
+  private static readonly MAX_TRANSACTION_AMOUNT = BigInt('9999999999999');
 
   private readonly allowedStates = new Set([
     'CREATED',
@@ -63,8 +69,153 @@ export class CharityService {
     'FINISHED',
   ]);
 
-  constructor() {
+  constructor(private readonly vietQrService: VietQrService) {
     this.prisma = new PrismaClient();
+  }
+
+  async createDonationQr(
+    campaignId: string,
+    amountInput: string,
+    donorUserId: string,
+  ) {
+    this.logger.log(
+      `createDonationQr started campaignId=${campaignId} donorUserId=${donorUserId} amount=${amountInput}`,
+    );
+
+    const amount = this.parseAndValidateDonationAmount(amountInput);
+    if (amount <= 0n) {
+      this.logger.warn(
+        `createDonationQr rejected invalid amount campaignId=${campaignId} donorUserId=${donorUserId} amount=${amountInput}`,
+      );
+      throw new BadRequestException('amount must be greater than 0');
+    }
+
+    if (amount > CharityService.MAX_QR_API_SAFE_AMOUNT) {
+      this.logger.warn(
+        `createDonationQr rejected amount exceeds QR safe range campaignId=${campaignId} donorUserId=${donorUserId} amount=${amount.toString()}`,
+      );
+      throw new BadRequestException('amount is too large for VietQR request');
+    }
+
+    const amountForQrApi = Number(amount);
+
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        state: true,
+        bankAccount: {
+          select: {
+            bankCode: true,
+            bankAccountNumber: true,
+            userBankName: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      this.logger.warn(
+        `createDonationQr campaign not found campaignId=${campaignId} donorUserId=${donorUserId}`,
+      );
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    if (String(campaign.state).toUpperCase() !== 'DONATING') {
+      this.logger.warn(
+        `createDonationQr rejected by state campaignId=${campaignId} donorUserId=${donorUserId} state=${String(
+          campaign.state,
+        ).toUpperCase()}`,
+      );
+      throw new BadRequestException('Only DONATING campaigns can receive donations');
+    }
+
+    const bank = campaign.bankAccount;
+    if (!bank) {
+      this.logger.warn(
+        `createDonationQr rejected missing bank account campaignId=${campaignId} donorUserId=${donorUserId}`,
+      );
+      throw new BadRequestException('Campaign bank account is required');
+    }
+
+    const transactionId = randomUUID();
+    const orderId = '111';
+    const content = this.buildVietQrContent(
+      campaign.campaignId,
+      donorUserId,
+      transactionId,
+    );
+
+    this.logger.log(
+      `createDonationQr requesting VietQR campaignId=${campaignId} donorUserId=${donorUserId} transactionId=${transactionId}`,
+    );
+
+    const qr = await this.vietQrService.generateCustomerQr({
+      orderId: orderId,
+      amount: amountForQrApi,
+      content,
+      bankCode: bank.bankCode,
+      bankAccount: bank.bankAccountNumber,
+      userBankName: bank.userBankName,
+      transType: 'C',
+      qrType: 0,
+    });
+
+    this.logger.log(
+      `createDonationQr received VietQR response campaignId=${campaignId} donorUserId=${donorUserId} transactionId=${transactionId} vietQrTransactionId=${qr.transactionId}`,
+    );
+
+    await this.prisma.transaction.create({
+      data: {
+        transactionId,
+        campaignId: campaign.campaignId,
+        transType: 'C',
+        donateAt: new Date(),
+        donatedBy: donorUserId,
+        amount: new Prisma.Decimal(amount.toString()),
+        content,
+        transactionIdFromVietQR: qr.transactionId,
+        transactionRefId: qr.transactionRefId,
+        referencenumber: null,
+        qrLink: qr.qrLink,
+        transactionTime: null,
+        expiredAt: null,
+        state: 'CREATED',
+      },
+    });
+
+    this.logger.log(
+      `createDonationQr persisted transaction campaignId=${campaignId} donorUserId=${donorUserId} transactionId=${transactionId} state=CREATED`,
+    );
+
+    return {
+      campaignId: campaign.campaignId,
+      transactionId,
+      amount: amount.toString(),
+      content,
+      qrLink: qr.qrLink,
+      transactionIdFromVietQR: qr.transactionId,
+      transactionRefId: qr.transactionRefId,
+      state: 'CREATED',
+    };
+  }
+
+  private parseAndValidateDonationAmount(value: string): bigint {
+    const normalized = value.trim();
+    if (!/^\d+$/.test(normalized)) {
+      throw new BadRequestException('amount must be a positive integer string');
+    }
+
+    const amount = BigInt(normalized);
+    if (amount <= 0n) {
+      throw new BadRequestException('amount must be greater than 0');
+    }
+
+    if (amount > CharityService.MAX_TRANSACTION_AMOUNT) {
+      throw new BadRequestException('amount exceeds maximum supported value');
+    }
+
+    return amount;
   }
 
   async listExistingCampaignsByState(state: string) {
@@ -608,7 +759,8 @@ export class CharityService {
     return {
       bankName: payload.bankName.trim(),
       bankAccountNumber: payload.bankAccountNumber.trim(),
-      bankAccountName: payload.bankAccountName?.trim() || '',
+      userBankName: payload.bankAccountName?.trim() || 'UNKNOWN',
+      bankCode: 'UNKNOWN',
     };
   }
 
@@ -630,7 +782,7 @@ export class CharityService {
       },
       select: {
         bankAccountId: true,
-        bankAccountName: true,
+        userBankName: true,
       },
     });
 
@@ -644,7 +796,8 @@ export class CharityService {
       data: {
         bankName: normalized.bankName,
         bankAccountNumber: normalized.bankAccountNumber,
-        bankAccountName: normalized.bankAccountName,
+        userBankName: normalized.userBankName,
+        bankCode: normalized.bankCode,
       },
       select: {
         bankAccountId: true,
@@ -743,7 +896,7 @@ export class CharityService {
       bankInfo: {
         accountNumber: bank?.bankAccountNumber ?? '',
         bankName: bank?.bankName ?? '',
-        accountHolder: bank?.bankAccountName ?? null,
+        accountHolder: bank?.userBankName ?? null,
       },
       reliefLocation: campaign.destination,
       startedDonationAt: campaign.startedDonationAt,
@@ -770,13 +923,29 @@ export class CharityService {
         price: supply.price,
       })),
       donations: campaign.transactions.map((transaction) => ({
-        transferType: transaction.transferType,
-        transferAmount: transaction.transferAmount,
-        transferBy: transaction.transferBy,
+        transferType: transaction.transType,
+        transferAmount: transaction.amount,
+        transferBy: transaction.donatedBy,
         donateAt: transaction.donateAt,
-        message: transaction.message,
+        message: transaction.content,
       })),
       createdAt: campaign.createdAt,
     };
+  }
+
+  private buildVietQrContent(
+    campaignId: string,
+    donorUserId: string,
+    transactionId: string,
+  ): string { // Tạo nội dung giao dịch: FH-<>
+    const campaignCode = this.sanitizeAlphaNum(campaignId).slice(0, 4).padEnd(4, '0'); // Lấy 4 kí tự kể từ vị trí đầu, nếu chuỗi ngắn hơn 4 thì thêm số 0
+    const userCode = this.sanitizeAlphaNum(donorUserId).slice(0, 4).padEnd(4, '0');
+    const txCode = this.sanitizeAlphaNum(transactionId).slice(0, 5).padEnd(5, '0');
+
+    return `FHx${campaignCode}x${userCode}x${txCode}`;
+  }
+
+  private sanitizeAlphaNum(value: string): string { // chỉ lấy chữ cái và số, sau đó viết hoa
+    return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
   }
 }

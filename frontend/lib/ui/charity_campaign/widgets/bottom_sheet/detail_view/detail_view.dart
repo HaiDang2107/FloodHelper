@@ -166,7 +166,7 @@ class _DetailViewState extends State<DetailView> {
                     widget.campaign.status == CampaignStatus.donating),
             onDonate: () => showDialog(
               context: context,
-              builder: (_) => const DonateDialog(),
+              builder: (_) => DonateDialog(campaignId: widget.campaign.id),
             ),
             onPurchasedSupplies: widget.onPurchasedSupplies,
             onTransaction: widget.onTransaction,

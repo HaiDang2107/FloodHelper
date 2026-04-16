@@ -225,6 +225,25 @@ class CharityCampaignViewModel
     }
   }
 
+  Future<String> createDonateQr({
+    required String campaignId,
+    required BigInt amount,
+  }) async {
+    try {
+      final qrLink = await _repository.createDonateQr(
+        campaignId: campaignId,
+        amount: amount,
+      );
+      state = state.copyWith(clearError: true);
+      return qrLink;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to create VietQR: $e',
+      );
+      rethrow;
+    }
+  }
+
   Future<CharityCampaign> loadCampaignDetail(String campaignId) async {
     final detail = await _repository.getCampaignDetail(campaignId);
 

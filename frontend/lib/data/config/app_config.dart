@@ -56,9 +56,9 @@ class AppConfig {
   /// Base URL for the backend API
   /// Current config: Development environment
   // static const String apiBaseUrl = 'http://192.168.88.106:3000'; // Android emulator localhost
-  // static const String apiBaseUrl = 'http://192.168.1.164:3000'; // FaceNet
+  static const String apiBaseUrl = 'http://192.168.1.164:3000'; // FaceNet
   // static const String apiBaseUrl = 'http://192.168.1.160:3000'; // Home
-  static const String apiBaseUrl = 'http://192.168.1.159:3000'; // Topohouse
+  // static const String apiBaseUrl = 'http://192.168.1.159:3000'; // Topohouse
   // static const String apiBaseUrl = 'http://10.17.58.87:3000'; // HUST
   // static const String apiBaseUrl = 'http://192.168.1.83:3000'; // Colin
   // static const String apiBaseUrl = 'http://192.168.60.144:3000';

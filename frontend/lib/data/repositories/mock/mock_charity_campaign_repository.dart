@@ -248,4 +248,25 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
     _myCampaigns[index] = updated;
     return updated;
   }
+
+  @override
+  Future<String> createDonateQr({
+    required String campaignId,
+    required BigInt amount,
+  }) async {
+    if (amount <= BigInt.zero) {
+      throw Exception('Amount must be greater than 0');
+    }
+
+    final campaignExists = [
+      ..._existingCampaigns,
+      ..._myCampaigns,
+    ].any((campaign) => campaign.id == campaignId);
+
+    if (!campaignExists) {
+      throw Exception('Campaign not found');
+    }
+
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=FLOODHELPER+$campaignId+$amount';
+  }
 }

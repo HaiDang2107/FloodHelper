@@ -12,4 +12,9 @@ abstract class CharityCampaignRepository {
   Future<CharityCampaign> updateMyCampaign(CharityCampaign campaign);
 
   Future<CharityCampaign> sendCampaignRequest(String campaignId);
+
+  Future<String> createDonateQr({
+    required String campaignId,
+    required BigInt amount,
+  });
 }

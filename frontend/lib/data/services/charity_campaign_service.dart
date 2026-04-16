@@ -100,6 +100,24 @@ class CharityCampaignService {
     }
   }
 
+  Future<Map<String, dynamic>> createDonateQr({
+    required String campaignId,
+    required BigInt amount,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/charity/campaigns/$campaignId/donate/qr',
+        data: {'amount': amount.toString()},
+      );
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to create VietQR',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Map<String, dynamic> _extractMap(
     dynamic responseData, {
     required String fallbackMessage,

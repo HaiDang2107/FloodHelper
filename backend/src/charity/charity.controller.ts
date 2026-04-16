@@ -20,6 +20,7 @@ import {
   QueryCampaignsByStateDto,
   UpdateCampaignDto,
 } from './dto';
+import { CreateDonateQrDto } from './vietqr/dto';
 
 @Controller('charity/campaigns')
 @UseGuards(JwtAuthGuard)
@@ -129,6 +130,25 @@ export class CharityController {
     return {
       success: true,
       message: 'Campaign request sent successfully',
+      data,
+    };
+  }
+
+  @Post(':campaignId/donate/qr')
+  async createDonateQr(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateDonateQrDto,
+  ) {
+    const data = await this.charityService.createDonationQr(
+      campaignId,
+      body.amount,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'VietQR created successfully',
       data,
     };
   }

@@ -75,6 +75,23 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
     return CharityCampaignMappers.campaignFromApi(payload);
   }
 
+  @override
+  Future<String> createDonateQr({
+    required String campaignId,
+    required BigInt amount,
+  }) async {
+    final payload = await _charityCampaignService.createDonateQr(
+      campaignId: campaignId,
+      amount: amount,
+    );
+
+    final qrLink = payload['qrLink']?.toString() ?? '';
+    if (qrLink.isEmpty) {
+      throw Exception('Missing qrLink in backend response');
+    }
+    return qrLink;
+  }
+
   List<CharityCampaign> _parseAndDeduplicate(
     List<List<Map<String, dynamic>>> batches,
   ) {

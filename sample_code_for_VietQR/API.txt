@@ -48,7 +48,6 @@ Request: gắn access token vào header; body:
 Response:
 {
     "bankCode": "mã_ngân_hàng",
-    "bankName": "tên_ngân_hàng",
     "bankAccount": "tài_khoản_ngân_hàng_nhận",
     "userBankName": "tên_chủ_tài_khoản",
     "amount": "số_tiền_cần_thanh_toán",
