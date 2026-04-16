@@ -1,19 +1,47 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { AuthorityCharityController } from './authority-charity.controller';
+import { AuthorityCharityController } from './authority/authority-charity.controller';
+import { AuthorityCharityService } from './authority/authority-charity.service';
 import { CharityCampaignStateScheduler } from './charity-campaign-state.scheduler';
-import { CharityController } from './charity.controller';
-import { CharityService } from './charity.service';
+import { CommonCharityService } from './common.service';
+import { NoruserBenefCharityController } from './noruser_benef/noruser-benef-charity.controller';
+import { NoruserBenefCharityService } from './noruser_benef/noruser-benef-charity.service';
+import { VietQrWebhookController } from './vietqr/vietqr-webhook.controller';
 import { VietQrService } from './vietqr/vietqr.service';
 
 @Module({
-  controllers: [CharityController, AuthorityCharityController],
+  imports: [
+    JwtModule.register({
+      secret:
+        process.env.VIETQR_WEBHOOK_SECRET ??
+        process.env.SECRET_KEY ??
+        process.env.AT_SECRET ??
+        'vietqr-webhook-secret',
+      signOptions: {
+        algorithm: 'HS512',
+        expiresIn: '300s',
+      },
+    }),
+  ],
+  controllers: [
+    NoruserBenefCharityController,
+    AuthorityCharityController,
+    VietQrWebhookController,
+  ],
   providers: [
-    CharityService,
+    CommonCharityService,
+    AuthorityCharityService,
+    NoruserBenefCharityService,
     CharityCampaignStateScheduler,
     VietQrService,
     RolesGuard,
   ],
-  exports: [CharityService],
+  exports: [
+    CommonCharityService,
+    AuthorityCharityService,
+    NoruserBenefCharityService,
+    VietQrService,
+  ],
 })
 export class CharityModule {}

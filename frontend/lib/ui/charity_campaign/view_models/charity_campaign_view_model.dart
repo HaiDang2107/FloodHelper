@@ -225,20 +225,51 @@ class CharityCampaignViewModel
     }
   }
 
-  Future<String> createDonateQr({
+  Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,
   }) async {
     try {
-      final qrLink = await _repository.createDonateQr(
+      final result = await _repository.createDonateQr(
         campaignId: campaignId,
         amount: amount,
       );
       state = state.copyWith(clearError: true);
-      return qrLink;
+      return result;
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Failed to create VietQR: $e',
+      );
+      rethrow;
+    }
+  }
+
+  Future<String> triggerDonateTestCallback({
+    required String transactionId,
+  }) async {
+    try {
+      final callbackState = await _repository.triggerDonateTestCallback(
+        transactionId: transactionId,
+      );
+      state = state.copyWith(clearError: true);
+      return callbackState;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to trigger callback: $e',
+      );
+      rethrow;
+    }
+  }
+
+  Future<List<Donation>> loadSuccessTransactions(String campaignId) async {
+    try {
+      return await _repository.getCampaignTransactions(
+        campaignId: campaignId,
+        state: 'SUCCESS',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to load transactions: $e',
       );
       rethrow;
     }

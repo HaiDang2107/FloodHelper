@@ -118,6 +118,38 @@ class CharityCampaignService {
     }
   }
 
+  Future<Map<String, dynamic>> triggerDonateTestCallback({
+    required String transactionId,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/charity/transactions/$transactionId/test-callback',
+      );
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to trigger test callback',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCampaignTransactions({
+    required String campaignId,
+    String state = 'SUCCESS',
+  }) async {
+    try {
+      final response = await _apiClient.get(
+        '/charity/campaigns/$campaignId/transactions',
+        queryParameters: {'state': state},
+      );
+
+      return _extractList(response.data);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Map<String, dynamic> _extractMap(
     dynamic responseData, {
     required String fallbackMessage,

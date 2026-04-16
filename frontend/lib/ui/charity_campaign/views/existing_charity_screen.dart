@@ -161,6 +161,9 @@ class _ExistingCharityScreenState extends ConsumerState<ExistingCharityScreen> {
           return CharityItem(
             campaign: campaigns[index],
             onLoadCampaignDetail: onLoadCampaignDetail,
+            onLoadCampaignTransactions: ref
+                .read(charityCampaignViewModelProvider.notifier)
+                .loadSuccessTransactions,
           );
         },
       ),

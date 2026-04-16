@@ -31,7 +31,6 @@ This guide explains how to run the FloodHelper backend using Docker and Docker C
    REDIS_HOST="localhost"
    REDIS_PORT=6379
 
-   JWT_SECRET="your-jwt-secret-key-here"
    AT_SECRET="your-access-token-secret-here"
    RT_SECRET="your-refresh-token-secret-here"
    PASSWORD_RESET_JWT_SECRET="your-password-reset-secret-here"

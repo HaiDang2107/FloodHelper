@@ -351,7 +351,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(
       payload as any,
       {
-        secret: process.env.JWT_SECRET || 'jwt-secret',
+        secret: process.env.AT_SECRET || 'at-secret',
         expiresIn: atExpiresIn,
       } as any,
     );

@@ -202,6 +202,9 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
             campaign: campaigns[index],
             isOwner: true,
             onLoadCampaignDetail: onLoadCampaignDetail,
+            onLoadCampaignTransactions: ref
+                .read(charityCampaignViewModelProvider.notifier)
+                .loadSuccessTransactions,
             onUpdateCampaign: _showUpdateCampaignDialog,
             onSendCampaignRequest: (campaignId) => ref
                 .read(charityCampaignViewModelProvider.notifier)

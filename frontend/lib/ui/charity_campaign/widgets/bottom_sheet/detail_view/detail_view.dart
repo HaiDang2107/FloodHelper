@@ -11,7 +11,7 @@ class DetailView extends StatefulWidget {
   final CharityCampaign campaign;
   final bool isOwner;
   final VoidCallback onPurchasedSupplies;
-  final VoidCallback onTransaction;
+  final Future<void> Function() onTransaction;
   final Future<void> Function(String text)? onPostAnnouncement;
   final Future<void> Function()? onUpdateInformation;
   final Future<void> Function()? onSendRequest;

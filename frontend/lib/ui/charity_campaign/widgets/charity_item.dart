@@ -12,6 +12,7 @@ class CharityItem extends StatelessWidget {
   final CharityCampaign campaign;
   final bool isOwner;
   final Future<CharityCampaign> Function(String campaignId)? onLoadCampaignDetail;
+  final Future<List<Donation>> Function(String campaignId)? onLoadCampaignTransactions;
   final Future<void> Function(String campaignId, String text)? onPostAnnouncement;
   final Future<void> Function(CharityCampaign campaign)? onUpdateCampaign;
   final Future<void> Function(String campaignId)? onSendCampaignRequest;
@@ -21,6 +22,7 @@ class CharityItem extends StatelessWidget {
     required this.campaign,
     this.isOwner = false,
     this.onLoadCampaignDetail,
+    this.onLoadCampaignTransactions,
     this.onPostAnnouncement,
     this.onUpdateCampaign,
     this.onSendCampaignRequest,
@@ -72,6 +74,7 @@ class CharityItem extends StatelessWidget {
     }
 
     var currentView = _SheetView.details;
+    var transactionItems = detailCampaign.donations;
 
     showModalBottomSheet(
       context: context,
@@ -127,7 +130,7 @@ class CharityItem extends StatelessWidget {
                     () => setSheetState(() => currentView = _SheetView.details),
                   ),
                   TransactionListView(
-                    transactions: detailCampaign.donations,
+                    transactions: transactionItems,
                     isOwner: isOwner,
                     campaignStatus: detailCampaign.status,
                   ),
@@ -145,8 +148,28 @@ class CharityItem extends StatelessWidget {
                 isOwner: isOwner,
                 onPurchasedSupplies: () =>
                     setSheetState(() => currentView = _SheetView.supplies),
-                onTransaction: () =>
-                    setSheetState(() => currentView = _SheetView.transactions),
+                onTransaction: () async {
+                      final loadTransactions = onLoadCampaignTransactions;
+                      if (loadTransactions != null) {
+                        try {
+                          final transactions = await loadTransactions(
+                            detailCampaign.id,
+                          );
+                          setSheetState(() {
+                            transactionItems = transactions;
+                            currentView = _SheetView.transactions;
+                          });
+                          return;
+                        } catch (_) {
+                          showTopSnackBar(
+                            'Cannot load transactions now.',
+                            isError: true,
+                          );
+                        }
+                      }
+
+                      setSheetState(() => currentView = _SheetView.transactions);
+                    },
                 onPostAnnouncement: postAnnouncement == null
                     ? null
                     : (text) => postAnnouncement(detailCampaign.id, text),

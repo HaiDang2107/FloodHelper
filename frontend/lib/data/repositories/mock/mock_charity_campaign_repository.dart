@@ -250,7 +250,7 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
   }
 
   @override
-  Future<String> createDonateQr({
+  Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,
   }) async {
@@ -267,6 +267,29 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
       throw Exception('Campaign not found');
     }
 
-    return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=FLOODHELPER+$campaignId+$amount';
+    return DonateQrResult(
+      qrLink:
+          'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=FLOODHELPER+$campaignId+$amount',
+      transactionId: 'mock-tx-${DateTime.now().millisecondsSinceEpoch}',
+    );
+  }
+
+  @override
+  Future<String> triggerDonateTestCallback({required String transactionId}) async {
+    if (transactionId.trim().isEmpty) {
+      throw Exception('Transaction ID is required');
+    }
+
+    return 'VERIFYING';
+  }
+
+  @override
+  Future<List<Donation>> getCampaignTransactions({
+    required String campaignId,
+    String state = 'SUCCESS',
+  }) async {
+    final all = [..._existingCampaigns, ..._myCampaigns];
+    final campaign = all.firstWhere((c) => c.id == campaignId);
+    return campaign.donations;
   }
 }

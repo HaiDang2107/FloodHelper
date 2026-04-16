@@ -1,6 +1,17 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaClient, TransactionState } from '@prisma/client';
 import type { Cache } from 'cache-manager';
+import { TransactionSyncDto } from './dto';
 
 interface GenerateCustomerQrInput {
   bankCode: string;
@@ -19,11 +30,25 @@ interface GenerateCustomerQrOutput {
   transactionRefId: string;
 }
 
+interface TestTransactionCallbackInput {
+  bankAccount: string;
+  content: string;
+  amount: number;
+  transType: 'C';
+  bankCode: string;
+}
+
+interface TestTransactionCallbackOutput {
+  status: string;
+  message: string;
+}
+
 @Injectable()
 export class VietQrService {
   private static readonly TOKEN_CACHE_KEY = 'vietqr:access-token';
   private static readonly TOKEN_TTL_MS = 250 * 1000;
   private readonly logger = new Logger(VietQrService.name);
+  private readonly prisma: PrismaClient;
 
   private readonly tokenUrl =
     process.env.VIETQR_TOKEN_URL ??
@@ -33,7 +58,208 @@ export class VietQrService {
     process.env.VIETQR_GENERATE_QR_URL ??
     'https://dev.vietqr.org/vqr/api/qr/generate-customer';
 
-  constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {}
+  private readonly testCallbackUrl =
+    process.env.VIETQR_TEST_CALLBACK_URL ??
+    'https://dev.vietqr.org/vqr/bank/api/test/transaction-callback';
+
+  constructor(
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly jwtService: JwtService,
+  ) {
+    this.prisma = new PrismaClient();
+  }
+
+  async createDonationQr(
+    campaignId: string,
+    amountInput: string,
+    donorUserId: string,
+  ) {
+    const amount = this.parseAmount(amountInput);
+    const amountNumber = Number(amount);
+
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        state: true,
+        bankAccount: {
+          select: {
+            bankCode: true,
+            bankAccountNumber: true,
+            userBankName: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    if (String(campaign.state).toUpperCase() !== 'DONATING') {
+      throw new BadRequestException(
+        'Campaign is not in DONATING state, cannot create donation QR',
+      );
+    }
+
+    const bankCode = campaign.bankAccount?.bankCode?.trim();
+    const bankAccount = campaign.bankAccount?.bankAccountNumber?.trim();
+    const userBankName = campaign.bankAccount?.userBankName?.trim();
+
+    if (!bankCode || !bankAccount || !userBankName) {
+      throw new BadRequestException('Campaign bank information is incomplete');
+    }
+
+    const transactionId = randomUUID();
+    const formattedContent = this.buildVietQrContent(
+      campaignId,
+      donorUserId,
+      transactionId,
+    );
+    const orderId = transactionId.slice(0, 10);
+
+    const createdTransaction = await this.prisma.transaction.create({
+      data: {
+        transactionId,
+        campaignId,
+        transType: 'C',
+        donateAt: new Date(),
+        donatedBy: donorUserId,
+        amount: amount.toString(),
+        state: 'CREATED',
+        content: formattedContent,
+      },
+      select: {
+        transactionId: true,
+      },
+    });
+
+    const qrResult = await this.generateCustomerQr({
+      bankCode,
+      bankAccount,
+      userBankName,
+      amount: amountNumber,
+      content: formattedContent,
+      orderId,
+      transType: 'C',
+      qrType: 0,
+    });
+
+    await this.prisma.transaction.update({
+      where: {
+        transactionId: createdTransaction.transactionId,
+      },
+      data: {
+        transactionIdFromVietQR: qrResult.transactionId || null,
+        transactionRefId: qrResult.transactionRefId || null,
+        qrLink: qrResult.qrLink,
+      },
+    });
+
+    return {
+      transactionId: createdTransaction.transactionId,
+      qrLink: qrResult.qrLink,
+    };
+  }
+
+  triggerTestCallback(transactionId: string, requesterUserId: string) {
+    return this.prisma.transaction.findUnique({
+      where: { transactionId },
+      select: {
+        transactionId: true,
+        state: true,
+        amount: true,
+        donatedBy: true,
+        campaign: {
+          select: {
+            organizedBy: true,
+          },
+        },
+      },
+    }).then(async (transaction) => {
+      if (!transaction) {
+        throw new NotFoundException('Transaction not found');
+      }
+
+      if (transaction.campaign?.organizedBy !== requesterUserId) {
+        throw new ForbiddenException(
+          'You are not allowed to trigger callback for this transaction',
+        );
+      }
+
+      const state = String(transaction.state).toUpperCase();
+      if (state !== 'CREATED' && state !== 'VERIFYING') {
+        throw new BadRequestException(
+          'Only CREATED or VERIFYING transactions can trigger test callback',
+        );
+      }
+
+      const amount = Number(transaction.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new BadRequestException('Transaction amount is invalid');
+      }
+
+      await this.prisma.transaction.update({
+        where: { transactionId },
+        data: {
+          state: 'VERIFYING',
+        },
+      });
+
+      await this.callTestTransactionCallback({
+        bankAccount: transaction.donatedBy || '',
+        content: transaction.transactionId,
+        amount,
+        transType: 'C',
+        bankCode: '970422',
+      });
+
+      return {
+        transactionId,
+        state: 'VERIFYING',
+        message:
+          'Test callback triggered successfully. Processing may take a few minutes.',
+      };
+    });
+  }
+
+  async callTestTransactionCallback(
+    payload: TestTransactionCallbackInput,
+  ): Promise<TestTransactionCallbackOutput> {
+    this.logger.log(
+      `callTestTransactionCallback started content=${payload.content} amount=${payload.amount}`,
+    );
+
+    const token = await this.getAccessToken();
+    const response = await fetch(this.testCallbackUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const status = (body.status ?? '').toString();
+    const message = (body.message ?? '').toString();
+
+    this.logger.debug(
+      `callTestTransactionCallback response status=${response.status} body=${JSON.stringify(
+        body,
+      )}`,
+    );
+
+    if (!response.ok || !status) {
+      const errorText = this.extractVietQrError(body);
+      throw new BadRequestException(`Failed to call test callback: ${errorText}`);
+    }
+
+    return {
+      status,
+      message,
+    };
+  }
 
   async generateCustomerQr(
     payload: GenerateCustomerQrInput,
@@ -173,6 +399,102 @@ export class VietQrService {
     throw new BadRequestException(`Failed to generate VietQR: ${errorText}`);
   }
 
+  async issuePartnerToken(authorization?: string) {
+    const [username, password] = this.extractBasicCredentials(authorization);
+    const expectedUsername =
+      process.env.MY_USERNAME ?? process.env.MY_USERNAME ?? '';
+    const expectedPassword =
+      process.env.MY_PASSWORD ?? process.env.MY_PASSWORD ?? '';
+
+    if (!expectedUsername || !expectedPassword) {
+      throw new BadRequestException('Partner credentials are not configured');
+    }
+
+    if (username != expectedUsername || password != expectedPassword) {
+      throw new BadRequestException('Invalid partner credentials');
+    }
+
+    const accessToken = await this.jwtService.signAsync(
+      {
+        username,
+        purpose: 'vietqr-transaction-sync',
+      },
+      {
+        algorithm: 'HS512',
+        expiresIn: '300s',
+        secret:
+          process.env.AT_SECRET ??
+          'vietqr-webhook-secret',
+      },
+    );
+
+    return {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: 300,
+    };
+  }
+
+  async handleVietQrTransactionSync(
+    authorization: string | undefined,
+    payload: TransactionSyncDto,
+  ) {
+    await this.verifyPartnerToken(authorization);
+
+    const content = (payload.content || '').trim();
+    if (!content) {
+      throw new BadRequestException('content is required to match transaction');
+    }
+
+    const transaction = await this.prisma.transaction.findFirst({
+      where: {
+        content,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        transactionId: true,
+        state: true,
+      },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException('Transaction not found for given content');
+    }
+
+    const amount = this.parseAmount(payload.amount);
+    const transactionTime = new Date(payload.transactiontime);
+    if (Number.isNaN(transactionTime.getTime())) {
+      throw new BadRequestException('transactiontime is invalid');
+    }
+
+    const nextState = this.resolveSyncState(payload);
+    const referenceNumber = (payload.referencenumber || payload.referencenumer || '')
+      .trim();
+
+    await this.prisma.transaction.update({
+      where: {
+        transactionId: transaction.transactionId,
+      },
+      data: {
+        state: nextState,
+        referencenumber: referenceNumber || null,
+        transactionTime,
+      },
+    });
+
+    return {
+      matchedBy: 'content',
+      transactionId: transaction.transactionId,
+      previousState: String(transaction.state).toUpperCase(),
+      newState: nextState,
+      updated: true,
+    };
+  }
+
+  // PRIVATE FUNCTION
+
   private extractVietQrError(body: Record<string, unknown>): string {
     return (
       body.message?.toString() ||
@@ -218,5 +540,98 @@ export class VietQrService {
 
     const suffix = account.slice(-4);
     return `****${suffix}`;
+  }
+
+  private extractBasicCredentials(authorization?: string): [string, string] {
+    if (!authorization || !authorization.startsWith('Basic ')) {
+      throw new BadRequestException('Missing Basic authorization header');
+    }
+
+    const encoded = authorization.slice('Basic '.length).trim();
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    const separatorIndex = decoded.indexOf(':');
+
+    if (separatorIndex <= 0) {
+      throw new BadRequestException('Invalid Basic authorization format');
+    }
+
+    const username = decoded.slice(0, separatorIndex);
+    const password = decoded.slice(separatorIndex + 1);
+    return [username, password];
+  }
+
+  async verifyPartnerToken(authorization?: string) { // decode
+    const token = this.extractBearerToken(authorization);
+    return this.jwtService.verifyAsync(token, {
+      algorithms: ['HS512'],
+      secret:
+        process.env.AT_SECRET ??
+        'vietqr-webhook-secret',
+    });
+  }
+
+  private extractBearerToken(authorization?: string): string {
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      throw new BadRequestException('Missing Bearer authorization header');
+    }
+
+    const token = authorization.slice('Bearer '.length).trim();
+    if (!token) {
+      throw new BadRequestException('Empty Bearer token');
+    }
+
+    return token;
+  }
+
+  private resolveSyncState(payload: TransactionSyncDto): TransactionState {
+    const amount = this.parseAmount(payload.amount);
+    if (amount > 0n) {
+      return 'SUCCESS';
+    }
+    return 'FAILED';
+  }
+
+  private parseAmount(rawAmount: string): bigint {
+    const raw = (rawAmount || '').trim();
+    if (!raw) {
+      throw new BadRequestException('amount must be a non-empty integer string');
+    }
+
+    if (!/^\d+$/.test(raw)) {
+      throw new BadRequestException('amount must contain digits only');
+    }
+
+    const amount = BigInt(raw);
+    if (amount <= 0n) {
+      throw new BadRequestException('amount must be greater than 0');
+    }
+
+    if (amount > BigInt(Number.MAX_SAFE_INTEGER)) {
+      throw new BadRequestException(
+        'amount is too large for VietQR simulation limits',
+      );
+    }
+
+    return amount;
+  }
+
+  private buildVietQrContent(
+    campaignId: string,
+    userId: string,
+    transactionId: string,
+  ): string {
+    const c4 = this.sanitizeSegment(campaignId, 4);
+    const u4 = this.sanitizeSegment(userId, 4);
+    const t5 = this.sanitizeSegment(transactionId, 5);
+
+    return `FHx${c4}x${u4}x${t5}`;
+  }
+
+  private sanitizeSegment(raw: string, length: number): string {
+    const compact = (raw || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (compact.length >= length) {
+      return compact.slice(0, length);
+    }
+    return compact.padEnd(length, '0');
   }
 }

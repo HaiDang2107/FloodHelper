@@ -76,7 +76,7 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
   }
 
   @override
-  Future<String> createDonateQr({
+  Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,
   }) async {
@@ -86,10 +86,39 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
     );
 
     final qrLink = payload['qrLink']?.toString() ?? '';
+    final transactionId = payload['transactionId']?.toString() ?? '';
     if (qrLink.isEmpty) {
       throw Exception('Missing qrLink in backend response');
     }
-    return qrLink;
+    if (transactionId.isEmpty) {
+      throw Exception('Missing transactionId in backend response');
+    }
+
+    return DonateQrResult(
+      qrLink: qrLink,
+      transactionId: transactionId,
+    );
+  }
+
+  @override
+  Future<String> triggerDonateTestCallback({required String transactionId}) async {
+    final payload = await _charityCampaignService.triggerDonateTestCallback(
+      transactionId: transactionId,
+    );
+
+    return payload['state']?.toString() ?? 'VERIFYING';
+  }
+
+  @override
+  Future<List<Donation>> getCampaignTransactions({
+    required String campaignId,
+    String state = 'SUCCESS',
+  }) async {
+    final payload = await _charityCampaignService.getCampaignTransactions(
+      campaignId: campaignId,
+      state: state,
+    );
+    return CharityCampaignMappers.donationsFromApiList(payload);
   }
 
   List<CharityCampaign> _parseAndDeduplicate(

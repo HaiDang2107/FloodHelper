@@ -5,7 +5,7 @@ class CharityActionButtons extends StatelessWidget {
   final CampaignStatus status;
   final bool canDonate;
   final VoidCallback? onDonate;
-  final VoidCallback? onTransaction;
+  final Future<void> Function()? onTransaction;
   final VoidCallback? onPurchasedSupplies;
 
   const CharityActionButtons({
@@ -24,7 +24,7 @@ class CharityActionButtons extends StatelessWidget {
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton(
-            onPressed: onTransaction,
+            onPressed: onTransaction == null ? null : () => onTransaction!.call(),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.black87,
               side: const BorderSide(color: Colors.grey),
@@ -51,7 +51,7 @@ class CharityActionButtons extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: OutlinedButton(
-              onPressed: onTransaction,
+              onPressed: onTransaction == null ? null : () => onTransaction!.call(),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black87,
                 side: const BorderSide(color: Colors.grey),
@@ -80,7 +80,7 @@ class CharityActionButtons extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: OutlinedButton(
-              onPressed: onTransaction,
+              onPressed: onTransaction == null ? null : () => onTransaction!.call(),
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.black87,
                 side: const BorderSide(color: Colors.grey),

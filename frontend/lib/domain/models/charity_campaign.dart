@@ -353,3 +353,13 @@ class Donation {
     );
   }
 }
+
+class DonateQrResult {
+  final String qrLink;
+  final String transactionId;
+
+  const DonateQrResult({
+    required this.qrLink,
+    required this.transactionId,
+  });
+}

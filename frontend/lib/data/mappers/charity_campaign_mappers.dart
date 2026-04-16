@@ -77,6 +77,10 @@ class CharityCampaignMappers {
     );
   }
 
+  static List<Donation> donationsFromApiList(List<Map<String, dynamic>> items) {
+    return _parseDonations(items);
+  }
+
   static Map<String, dynamic> mutationPayloadFromCampaign(
     CharityCampaign campaign,
   ) {

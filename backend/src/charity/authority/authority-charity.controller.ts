@@ -1,24 +1,25 @@
 import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '../common/enum/userRole.enum';
-import { CharityService } from './charity.service';
-import { ListAuthorityCampaignsDto, RespondCampaignDto } from './dto';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { UserRole } from '../../common/enum/userRole.enum';
+import { ListAuthorityCampaignsDto } from './dto/list-authority-campaigns.dto';
+import { RespondCampaignDto } from './dto/respond-campaign.dto';
+import { AuthorityCharityService } from './authority-charity.service';
 
 @Controller('authority/campaigns')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.AUTHORITY)
 export class AuthorityCharityController {
-  constructor(private readonly charityService: CharityService) {}
+  constructor(private readonly authorityCharityService: AuthorityCharityService) {}
 
   @Get()
   async listCampaignsForAuthority(
     @CurrentUser() user: any,
     @Query() query: ListAuthorityCampaignsDto,
   ) {
-    const result = await this.charityService.listCampaignsForAuthority(
+    const result = await this.authorityCharityService.listCampaignsForAuthority(
       user.userId,
       query,
     );
@@ -36,7 +37,7 @@ export class AuthorityCharityController {
     @CurrentUser() user: any,
     @Param('campaignId') campaignId: string,
   ) {
-    const data = await this.charityService.getCampaignDetailForAuthority(
+    const data = await this.authorityCharityService.getCampaignDetailForAuthority(
       user.userId,
       campaignId,
     );
@@ -54,7 +55,7 @@ export class AuthorityCharityController {
     @Param('campaignId') campaignId: string,
     @Body() body: RespondCampaignDto,
   ) {
-    const data = await this.charityService.approveCampaignForAuthority(
+    const data = await this.authorityCharityService.approveCampaignForAuthority(
       user.userId,
       campaignId,
       body,
@@ -73,7 +74,7 @@ export class AuthorityCharityController {
     @Param('campaignId') campaignId: string,
     @Body() body: RespondCampaignDto,
   ) {
-    const data = await this.charityService.rejectCampaignForAuthority(
+    const data = await this.authorityCharityService.rejectCampaignForAuthority(
       user.userId,
       campaignId,
       body,

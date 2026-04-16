@@ -13,8 +13,15 @@ abstract class CharityCampaignRepository {
 
   Future<CharityCampaign> sendCampaignRequest(String campaignId);
 
-  Future<String> createDonateQr({
+  Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,
+  });
+
+  Future<String> triggerDonateTestCallback({required String transactionId});
+
+  Future<List<Donation>> getCampaignTransactions({
+    required String campaignId,
+    String state,
   });
 }
