@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { AccountState } from '../common/enum/accountState.enum';
 import { Purpose } from '../common/enum/purpose.enum';
@@ -33,18 +32,16 @@ import {
   VerifyCodeDto,
   ResendVerificationCodeDto,
 } from './dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
-  private prisma: PrismaClient;
-
   constructor(
+    private readonly prisma: PrismaService,
     private jwtService: JwtService,
     private mailerService: MailerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {
-    this.prisma = new PrismaClient();
-  }
+  ) {}
 
   async signUp(
     registerDto: SignupDto,

@@ -9,9 +9,10 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaClient, TransactionState } from '@prisma/client';
+import { TransactionState } from '@prisma/client';
 import type { Cache } from 'cache-manager';
 import { TransactionSyncDto } from './dto';
+import { PrismaService } from '../../prisma/prisma.service';
 
 interface GenerateCustomerQrInput {
   bankCode: string;
@@ -26,8 +27,10 @@ interface GenerateCustomerQrInput {
 
 interface GenerateCustomerQrOutput {
   qrLink: string;
+  qrCode: string;
   transactionId: string;
   transactionRefId: string;
+  content: string;
 }
 
 interface TestTransactionCallbackInput {
@@ -48,7 +51,6 @@ export class VietQrService {
   private static readonly TOKEN_CACHE_KEY = 'vietqr:access-token';
   private static readonly TOKEN_TTL_MS = 250 * 1000;
   private readonly logger = new Logger(VietQrService.name);
-  private readonly prisma: PrismaClient;
 
   private readonly tokenUrl =
     process.env.VIETQR_TOKEN_URL ??
@@ -63,104 +65,10 @@ export class VietQrService {
     'https://dev.vietqr.org/vqr/bank/api/test/transaction-callback';
 
   constructor(
+    private readonly prisma: PrismaService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly jwtService: JwtService,
-  ) {
-    this.prisma = new PrismaClient();
-  }
-
-  async createDonationQr(
-    campaignId: string,
-    amountInput: string,
-    donorUserId: string,
-  ) {
-    const amount = this.parseAmount(amountInput);
-    const amountNumber = Number(amount);
-
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        state: true,
-        bankAccount: {
-          select: {
-            bankCode: true,
-            bankAccountNumber: true,
-            userBankName: true,
-          },
-        },
-      },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
-
-    if (String(campaign.state).toUpperCase() !== 'DONATING') {
-      throw new BadRequestException(
-        'Campaign is not in DONATING state, cannot create donation QR',
-      );
-    }
-
-    const bankCode = campaign.bankAccount?.bankCode?.trim();
-    const bankAccount = campaign.bankAccount?.bankAccountNumber?.trim();
-    const userBankName = campaign.bankAccount?.userBankName?.trim();
-
-    if (!bankCode || !bankAccount || !userBankName) {
-      throw new BadRequestException('Campaign bank information is incomplete');
-    }
-
-    const transactionId = randomUUID();
-    const formattedContent = this.buildVietQrContent(
-      campaignId,
-      donorUserId,
-      transactionId,
-    );
-    const orderId = transactionId.slice(0, 10);
-
-    const createdTransaction = await this.prisma.transaction.create({
-      data: {
-        transactionId,
-        campaignId,
-        transType: 'C',
-        donateAt: new Date(),
-        donatedBy: donorUserId,
-        amount: amount.toString(),
-        state: 'CREATED',
-        content: formattedContent,
-      },
-      select: {
-        transactionId: true,
-      },
-    });
-
-    const qrResult = await this.generateCustomerQr({
-      bankCode,
-      bankAccount,
-      userBankName,
-      amount: amountNumber,
-      content: formattedContent,
-      orderId,
-      transType: 'C',
-      qrType: 0,
-    });
-
-    await this.prisma.transaction.update({
-      where: {
-        transactionId: createdTransaction.transactionId,
-      },
-      data: {
-        transactionIdFromVietQR: qrResult.transactionId || null,
-        transactionRefId: qrResult.transactionRefId || null,
-        qrLink: qrResult.qrLink,
-      },
-    });
-
-    return {
-      transactionId: createdTransaction.transactionId,
-      qrLink: qrResult.qrLink,
-    };
-  }
+  ) {}
 
   triggerTestCallback(transactionId: string, requesterUserId: string) {
     return this.prisma.transaction.findUnique({
@@ -258,6 +166,99 @@ export class VietQrService {
     return {
       status,
       message,
+    };
+  }
+
+  async createDonationQr(
+    campaignId: string,
+    amountInput: string,
+    donorUserId: string,
+  ) {
+    const amount = this.parseAmount(amountInput);
+    const amountNumber = Number(amount);
+
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        state: true,
+        bankAccount: {
+          select: {
+            bankCode: true,
+            bankAccountNumber: true,
+            userBankName: true,
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    if (String(campaign.state).toUpperCase() !== 'DONATING') {
+      throw new BadRequestException(
+        'Campaign is not in DONATING state, cannot create donation QR',
+      );
+    }
+
+    const bankCode = campaign.bankAccount?.bankCode?.trim();
+    const bankAccount = campaign.bankAccount?.bankAccountNumber?.trim();
+    const userBankName = campaign.bankAccount?.userBankName?.trim();
+
+    if (!bankCode || !bankAccount || !userBankName) {
+      throw new BadRequestException('Campaign bank information is incomplete');
+    }
+
+    const transactionId = randomUUID();
+    const formattedContent = this.buildVietQrContent(
+      campaignId,
+      donorUserId,
+      transactionId,
+    );
+    const orderId = transactionId.slice(0, 10);
+
+    const createdTransaction = await this.prisma.transaction.create({
+      data: {
+        transactionId,
+        campaignId,
+        transType: 'C',
+        donateAt: new Date(),
+        donatedBy: donorUserId,
+        amount: amount.toString(),
+        state: 'CREATED',
+      },
+      select: {
+        transactionId: true,
+      },
+    });
+
+    const qrResult = await this.generateCustomerQr({
+      bankCode,
+      bankAccount,
+      userBankName,
+      amount: amountNumber,
+      content: formattedContent,
+      orderId,
+      transType: 'C',
+      qrType: 0,
+    });
+
+    await this.prisma.transaction.update({
+      where: {
+        transactionId: createdTransaction.transactionId,
+      },
+      data: {
+        transactionIdFromVietQR: qrResult.transactionId || null,
+        transactionRefId: qrResult.transactionRefId || null,
+        qrLink: qrResult.qrLink,
+        content: qrResult.content
+      },
+    });
+
+    return {
+      transactionId: createdTransaction.transactionId,
+      qrCode: qrResult.qrCode,
     };
   }
 
@@ -366,17 +367,21 @@ export class VietQrService {
     );
 
     const qrLink = (body.qrLink ?? '').toString();
+    const qrCode = (body.qrCode ?? '').toString();
     const transactionId = (body.transactionId ?? '').toString();
     const transactionRefId = (body.transactionRefId ?? '').toString();
+    const content = (body.content ?? '').toString();
 
-    if (response.ok && qrLink) {
+    if (response.ok && qrCode) {
       this.logger.log(
         `callGenerateQrApi success orderId=${payload.orderId} vietQrTransactionId=${transactionId}`,
       );
       return {
         qrLink,
+        qrCode,
         transactionId,
         transactionRefId,
+        content,
       };
     }
 
@@ -524,9 +529,9 @@ export class VietQrService {
       errorReason: body.errorReason,
       toastMessage: body.toastMessage,
       qrLink: body.qrLink,
+      qrCode: body.qrCode,
       transactionId: body.transactionId,
       transactionRefId: body.transactionRefId,
-      merchantName: body.merchantName,
       bankCode: body.bankCode,
       amount: body.amount,
       content: body.content,

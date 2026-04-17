@@ -5,7 +5,7 @@ import '../../../domain/models/charity_campaign.dart';
 import '../view_models/charity_campaign_view_model.dart';
 import '../widgets/charity_item.dart';
 import '_base_charity_screen.dart';
-import '../widgets/dialog/create_campaign_dialog.dart';
+import '../widgets/dialog/form_dialog.dart';
 
 class MyCharityScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBackPressed;

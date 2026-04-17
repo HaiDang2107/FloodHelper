@@ -85,7 +85,8 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
       amount: amount,
     );
 
-    final qrLink = payload['qrLink']?.toString() ?? '';
+    final qrLink =
+        payload['qrLink']?.toString() ?? payload['qrCode']?.toString() ?? '';
     final transactionId = payload['transactionId']?.toString() ?? '';
     if (qrLink.isEmpty) {
       throw Exception('Missing qrLink in backend response');

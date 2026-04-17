@@ -3,21 +3,17 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import {
   CreateUserDto,
   UpdateUserDto,
   UpdateLocationDto,
   UpdateVisibilityDto,
 } from './dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get current user profile by userId (from JWT)

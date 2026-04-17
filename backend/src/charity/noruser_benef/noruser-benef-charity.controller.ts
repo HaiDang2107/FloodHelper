@@ -182,4 +182,40 @@ export class NoruserBenefCharityController {
       data,
     };
   }
+
+  @Post('internal/campaigns/:campaignId/donate/qr')
+  async createDonateQrInternal(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateDonateQrDto,
+  ) {
+    const data = await this.noruserBenefCharityService.createDonationQrInternal(
+      campaignId,
+      body.amount,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'Internal VietQR created successfully',
+      data,
+    };
+  }
+
+  @Post('internal/transactions/:transactionId/test-callback')
+  async testCallbackInternal(
+    @CurrentUser() user: any,
+    @Param('transactionId') transactionId: string,
+  ) {
+    const data = await this.noruserBenefCharityService.triggerTestCallbackInternal(
+      transactionId,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'Internal transaction callback simulated successfully',
+      data,
+    };
+  }
 }

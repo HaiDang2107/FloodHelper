@@ -7,6 +7,7 @@ import { CharityCampaignStateScheduler } from './charity-campaign-state.schedule
 import { CommonCharityService } from './common.service';
 import { NoruserBenefCharityController } from './noruser_benef/noruser-benef-charity.controller';
 import { NoruserBenefCharityService } from './noruser_benef/noruser-benef-charity.service';
+import { VietQrInternalService } from './vietqr/vietqr-internal.service';
 import { VietQrWebhookController } from './vietqr/vietqr-webhook.controller';
 import { VietQrService } from './vietqr/vietqr.service';
 
@@ -35,6 +36,7 @@ import { VietQrService } from './vietqr/vietqr.service';
     NoruserBenefCharityService,
     CharityCampaignStateScheduler,
     VietQrService,
+    VietQrInternalService,
     RolesGuard,
   ],
   exports: [
@@ -42,6 +44,7 @@ import { VietQrService } from './vietqr/vietqr.service';
     AuthorityCharityService,
     NoruserBenefCharityService,
     VietQrService,
+    VietQrInternalService,
   ],
 })
 export class CharityModule {}

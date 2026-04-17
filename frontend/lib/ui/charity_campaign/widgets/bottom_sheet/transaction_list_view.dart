@@ -24,6 +24,10 @@ class TransactionListView extends StatelessWidget {
         isOwner &&
         campaignStatus != CampaignStatus.donating &&
         campaignStatus != CampaignStatus.distributing;
+    final canDownloadBankStatement =
+      !isOwner &&
+      campaignStatus != CampaignStatus.donating &&
+      campaignStatus != CampaignStatus.distributing;
 
     return Column(
       children: [
@@ -42,7 +46,7 @@ class TransactionListView extends StatelessWidget {
               ),
             ),
           )
-        else if (!isOwner)
+        else if (canDownloadBankStatement)
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

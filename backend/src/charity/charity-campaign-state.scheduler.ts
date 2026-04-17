@@ -1,15 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class CharityCampaignStateScheduler {
   private readonly logger = new Logger(CharityCampaignStateScheduler.name);
-  private readonly prisma: PrismaClient;
 
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   @Cron('0 0 * * *', { timeZone: 'Asia/Ho_Chi_Minh' }) // Vào lúc 0h mỗi ngày theo giờ VN, gọi hàm xử lý
   async handleDailyCampaignStateTransition() {

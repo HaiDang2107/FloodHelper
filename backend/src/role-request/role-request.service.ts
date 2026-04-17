@@ -5,20 +5,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import {
   CreateRoleRequestDto,
   ListRoleRequestsDto,
   RespondRoleRequestDto,
 } from './dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoleRequestService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createRequest(userId: string, dto: CreateRoleRequestDto) {
     const user = await this.prisma.user.findUnique({

@@ -4,14 +4,16 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, PrismaClient, TransactionState } from '@prisma/client';
+import { Prisma, TransactionState } from '@prisma/client';
 import {
   CreateCampaignDto,
   QueryCampaignTransactionsDto,
   UpdateCampaignDto,
 } from './dto';
 import { CommonCharityService } from '../common.service';
+import { VietQrInternalService } from '../vietqr/vietqr-internal.service';
 import { VietQrService } from '../vietqr/vietqr.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
   select: {
@@ -34,7 +36,6 @@ type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
 
 @Injectable()
 export class NoruserBenefCharityService {
-  private readonly prisma: PrismaClient;
   private readonly allowedStates = new Set([
     'CREATED',
     'PENDING',
@@ -54,11 +55,11 @@ export class NoruserBenefCharityService {
   ]);
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly commonCharityService: CommonCharityService,
     private readonly vietQrService: VietQrService,
-  ) {
-    this.prisma = new PrismaClient();
-  }
+    private readonly vietQrInternalService: VietQrInternalService,
+  ) {}
 
   async listExistingCampaignsByState(state: string) {
     const normalizedState = this.normalizeAndValidateState(state);
@@ -162,12 +163,44 @@ export class NoruserBenefCharityService {
       },
     });
 
+    const donorIds = Array.from(
+      new Set(
+        transactions
+          .map((transaction) => transaction.donatedBy)
+          .filter((value): value is string =>
+            Boolean(value && value.trim().length > 0),
+          ),
+      ),
+    );
+
+    const donors = donorIds.length
+      ? await this.prisma.user.findMany({
+          where: {
+            userId: {
+              in: donorIds,
+            },
+          },
+          select: {
+            userId: true,
+            fullname: true,
+            nickname: true,
+          },
+        })
+      : [];
+
+    const donorNameById = new Map(
+      donors.map((donor) => [donor.userId, donor.fullname]),
+    );
+
     return transactions.map((transaction) => ({
       transactionId: transaction.transactionId,
       state: String(transaction.state).toUpperCase(),
       amount: transaction.amount,
-      donorName: transaction.donatedBy ?? 'Anonymous',
-      date: transaction.donateAt,
+      donorName:
+        (transaction.donatedBy
+          ? donorNameById.get(transaction.donatedBy)
+          : undefined) || 'Anonymous',
+      date: transaction.transactionTime ?? transaction.donateAt,
       message: transaction.content,
     }));
   }
@@ -331,6 +364,25 @@ export class NoruserBenefCharityService {
     );
   }
 
+  createDonationQrInternal(
+    campaignId: string,
+    amountInput: string,
+    donorUserId: string,
+  ) {
+    return this.vietQrInternalService.createDonationQrInternal(
+      campaignId,
+      amountInput,
+      donorUserId,
+    );
+  }
+
+  triggerTestCallbackInternal(transactionId: string, requesterUserId: string) {
+    return this.vietQrInternalService.triggerTestCallbackInternal(
+      transactionId,
+      requesterUserId,
+    );
+  }
+
   private normalizeAndValidateState(state: string): string {
     if (!state) {
       throw new BadRequestException('state is required');
@@ -398,7 +450,7 @@ export class NoruserBenefCharityService {
   }
 
   private async resolveOrCreateBankAccountId(
-    db: Prisma.TransactionClient | PrismaClient,
+    db: Prisma.TransactionClient | PrismaService,
     payload: {
       bankName: string;
       bankAccountNumber: string;

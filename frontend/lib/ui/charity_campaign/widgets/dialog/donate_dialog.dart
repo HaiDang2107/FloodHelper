@@ -200,7 +200,7 @@ class _DonateDialogState extends ConsumerState<DonateDialog> {
                           color: Colors.grey[200],
                           alignment: Alignment.center,
                           child: const Text(
-                            'Unable to preview QR image\nUse qrLink directly.',
+                            'Unable to load QR image from URL.',
                             textAlign: TextAlign.center,
                           ),
                         );
@@ -208,9 +208,9 @@ class _DonateDialogState extends ConsumerState<DonateDialog> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  SelectableText(
-                    _qrLink!,
-                    style: const TextStyle(fontSize: 11),
+                  const Text(
+                    'QR image generated successfully.',
+                    style: TextStyle(fontSize: 11),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(

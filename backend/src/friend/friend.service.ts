@@ -5,18 +5,18 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { FriendRequestState } from '../common/enum/friendRequestState.enum';
 import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FriendService {
-  private prisma: PrismaClient;
   private readonly logger = new Logger(FriendService.name);
 
-  constructor(private readonly firebaseService: FirebaseService) {
-    this.prisma = new PrismaClient();
-  }
+  constructor(
+    private readonly firebaseService: FirebaseService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * Send a friend request from sender to receiver

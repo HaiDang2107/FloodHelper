@@ -1,21 +1,17 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PrismaClient } from '@prisma/client';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  private prisma: PrismaClient;
-
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: process.env.AT_SECRET || 'jwt-secret',
     });
-
-    this.prisma = new PrismaClient();
   }
 
   // Hàm này tự động được gọi. Passport tự động gán đối tượng trả về vào request.user.

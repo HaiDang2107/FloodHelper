@@ -5,9 +5,10 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { ListAuthorityCampaignsDto, RespondCampaignDto } from './dto';
 import { CommonCharityService } from '../common.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
   select: {
@@ -32,11 +33,10 @@ type AuthorityCampaignCursorField = 'requestedAt' | 'respondedAt';
 
 @Injectable()
 export class AuthorityCharityService {
-  private readonly prisma: PrismaClient;
-
-  constructor(private readonly commonCharityService: CommonCharityService) {
-    this.prisma = new PrismaClient();
-  }
+  constructor(
+    private readonly commonCharityService: CommonCharityService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   listCampaignsForAuthority(
     authorityUserId: string,

@@ -12,12 +12,14 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { RoleRequestModule } from './role-request/role-request.module';
 import { SignalModule } from './signal/signal.module';
 import { CharityModule } from './charity/charity.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { LoggingMiddleware } from './common/logging.middleware';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     UserModule,
+    PrismaModule,
     AuthModule,
     FriendModule,
     FirebaseModule,

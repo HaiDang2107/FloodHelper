@@ -161,11 +161,15 @@ class CharityCampaignMappers {
 
   static DateTime _parseDate(dynamic value) {
     if (value is DateTime) {
-      return value;
+      return value.isUtc ? value.toLocal() : value;
     }
 
     final parsed = DateTime.tryParse(value?.toString() ?? '');
-    return parsed ?? DateTime.now();
+    if (parsed == null) {
+      return DateTime.now();
+    }
+
+    return parsed.isUtc ? parsed.toLocal() : parsed;
   }
 
   static DateTime? _parseOptionalDate(dynamic value) {

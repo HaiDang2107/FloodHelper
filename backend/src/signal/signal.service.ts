@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { SignalState } from '../common/enum/signalState.enum';
 import {
   ChangeSignalStateDto,
@@ -13,14 +13,11 @@ import {
   QuerySignalsDto,
   UpdateSignalInfoDto,
 } from './dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SignalService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createSignal(createdBy: string, dto: CreateSignalDto) {
     await this.ensureNoBroadcastingSignal(createdBy);

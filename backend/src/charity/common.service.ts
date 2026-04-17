@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
   include: {
@@ -18,11 +19,7 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
 
 @Injectable()
 export class CommonCharityService {
-  private readonly prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getCampaignDetail(campaignId: string) {
     const campaign = await this.prisma.charityCampaign.findUnique({

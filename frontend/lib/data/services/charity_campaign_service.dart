@@ -106,7 +106,7 @@ class CharityCampaignService {
   }) async {
     try {
       final response = await _apiClient.post(
-        '/charity/campaigns/$campaignId/donate/qr',
+        '/charity/internal/campaigns/$campaignId/donate/qr',
         data: {'amount': amount.toString()},
       );
       return _extractMap(
@@ -123,7 +123,7 @@ class CharityCampaignService {
   }) async {
     try {
       final response = await _apiClient.post(
-        '/charity/transactions/$transactionId/test-callback',
+        '/charity/internal/transactions/$transactionId/test-callback',
       );
       return _extractMap(
         response.data,
