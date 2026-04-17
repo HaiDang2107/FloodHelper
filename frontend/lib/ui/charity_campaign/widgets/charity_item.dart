@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
 import '../../../domain/models/charity_campaign.dart';
-import 'bottom_sheet/purchased_supplies_view.dart';
+import 'bottom_sheet/allocation_view.dart';
 import 'bottom_sheet/transaction_list_view.dart';
 import 'bottom_sheet/detail_view/detail_view.dart';
 
@@ -110,13 +110,20 @@ class CharityItem extends StatelessWidget {
                 key: const ValueKey('supplies'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildBackButton(
-                    // thay đổi trạng thái currentView
-                    () => setSheetState(() => currentView = _SheetView.details),
-                  ),
                   PurchasedSuppliesView(
+                    campaignId: detailCampaign.id,
                     supplies: detailCampaign.purchasedSupplies,
+                    financialSupports: detailCampaign.financialSupports,
                     isOwner: isOwner,
+                    onClose: () => setSheetState(() => currentView = _SheetView.details),
+                    onAllocationSaved: (supplies, financialSupports) {
+                      setSheetState(() {
+                        detailCampaign = detailCampaign.copyWith(
+                          purchasedSupplies: supplies,
+                          financialSupports: financialSupports,
+                        );
+                      });
+                    },
                   ),
                 ],
               );

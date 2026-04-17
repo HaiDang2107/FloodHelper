@@ -150,6 +150,122 @@ class CharityCampaignService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getCampaignSupplies({
+    required String campaignId,
+  }) async {
+    try {
+      final response = await _apiClient.get('/charity/campaigns/$campaignId/supplies');
+      return _extractList(response.data);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createCampaignSupply({
+    required String campaignId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/charity/campaigns/$campaignId/supplies',
+        data: payload,
+      );
+      return _extractMap(response.data, fallbackMessage: 'Failed to create supply');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCampaignSupply({
+    required String campaignId,
+    required String supplyId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final response = await _apiClient.put(
+        '/charity/campaigns/$campaignId/supplies/$supplyId',
+        data: payload,
+      );
+      return _extractMap(response.data, fallbackMessage: 'Failed to update supply');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> deleteCampaignSupply({
+    required String campaignId,
+    required String supplyId,
+  }) async {
+    try {
+      await _apiClient.delete('/charity/campaigns/$campaignId/supplies/$supplyId');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getCampaignFinancialSupports({
+    required String campaignId,
+  }) async {
+    try {
+      final response = await _apiClient.get(
+        '/charity/campaigns/$campaignId/financial-supports',
+      );
+      return _extractList(response.data);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createCampaignFinancialSupport({
+    required String campaignId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/charity/campaigns/$campaignId/financial-supports',
+        data: payload,
+      );
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to create financial support',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCampaignFinancialSupport({
+    required String campaignId,
+    required String financialSupportId,
+    required Map<String, dynamic> payload,
+  }) async {
+    try {
+      final response = await _apiClient.put(
+        '/charity/campaigns/$campaignId/financial-supports/$financialSupportId',
+        data: payload,
+      );
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to update financial support',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> deleteCampaignFinancialSupport({
+    required String campaignId,
+    required String financialSupportId,
+  }) async {
+    try {
+      await _apiClient.delete(
+        '/charity/campaigns/$campaignId/financial-supports/$financialSupportId',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Map<String, dynamic> _extractMap(
     dynamic responseData, {
     required String fallbackMessage,

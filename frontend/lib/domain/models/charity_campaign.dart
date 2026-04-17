@@ -25,6 +25,7 @@ class CharityCampaign {
   final DateRange period;
   final List<CampaignAnnouncement> announcements;
   final List<PurchasedSupply> purchasedSupplies;
+  final List<FinancialSupportAllocation> financialSupports;
   final List<Donation> donations;
 
   const CharityCampaign({
@@ -50,6 +51,7 @@ class CharityCampaign {
     required this.period,
     this.announcements = const [],
     this.purchasedSupplies = const [],
+    this.financialSupports = const [],
     this.donations = const [],
   });
 
@@ -103,6 +105,7 @@ class CharityCampaign {
     DateRange? period,
     List<CampaignAnnouncement>? announcements,
     List<PurchasedSupply>? purchasedSupplies,
+    List<FinancialSupportAllocation>? financialSupports,
     List<Donation>? donations,
   }) {
     return CharityCampaign(
@@ -128,6 +131,7 @@ class CharityCampaign {
       period: period ?? this.period,
       announcements: announcements ?? this.announcements,
       purchasedSupplies: purchasedSupplies ?? this.purchasedSupplies,
+      financialSupports: financialSupports ?? this.financialSupports,
       donations: donations ?? this.donations,
     );
   }
@@ -296,31 +300,67 @@ class CampaignAnnouncement {
 
 /// Value object for purchased supplies
 class PurchasedSupply {
+  final String? supplyId;
   final String productName;
   final String vendor;
   final int quantity;
   final double unitPrice;
+  final DateTime? boughtAt;
 
   const PurchasedSupply({
+    this.supplyId,
     required this.productName,
     required this.vendor,
     required this.quantity,
     required this.unitPrice,
+    this.boughtAt,
   });
 
   double get totalPrice => quantity * unitPrice;
 
   PurchasedSupply copyWith({
+    String? supplyId,
     String? productName,
     String? vendor,
     int? quantity,
     double? unitPrice,
+    DateTime? boughtAt,
   }) {
     return PurchasedSupply(
+      supplyId: supplyId ?? this.supplyId,
       productName: productName ?? this.productName,
       vendor: vendor ?? this.vendor,
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
+      boughtAt: boughtAt ?? this.boughtAt,
+    );
+  }
+}
+
+class FinancialSupportAllocation {
+  final String? financialSupportId;
+  final String householdName;
+  final double amount;
+  final DateTime? allocatedAt;
+
+  const FinancialSupportAllocation({
+    this.financialSupportId,
+    required this.householdName,
+    required this.amount,
+    this.allocatedAt,
+  });
+
+  FinancialSupportAllocation copyWith({
+    String? financialSupportId,
+    String? householdName,
+    double? amount,
+    DateTime? allocatedAt,
+  }) {
+    return FinancialSupportAllocation(
+      financialSupportId: financialSupportId ?? this.financialSupportId,
+      householdName: householdName ?? this.householdName,
+      amount: amount ?? this.amount,
+      allocatedAt: allocatedAt ?? this.allocatedAt,
     );
   }
 }

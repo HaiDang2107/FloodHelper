@@ -2,6 +2,7 @@ import {
   Body,
   BadRequestException,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -19,12 +20,22 @@ import { QueryCampaignTransactionsDto } from './dto/query-campaign-transactions.
 import { QueryCampaignsByStateDto } from './dto/query-campaigns-by-state.dto';
 import { UpdateCampaignDto } from './dto/update-campaign.dto';
 import { CreateDonateQrDto } from '../vietqr/dto';
+import {
+  CreateFinancialSupportDto,
+  CreateSupplyDto,
+  UpdateFinancialSupportDto,
+  UpdateSupplyDto,
+} from './dto';
+import { NoruserBenefAllocationService } from './noruser-benef-allocation.service';
 import { NoruserBenefCharityService } from './noruser-benef-charity.service';
 
 @Controller('charity')
 @UseGuards(JwtAuthGuard)
 export class NoruserBenefCharityController {
-  constructor(private readonly noruserBenefCharityService: NoruserBenefCharityService) {}
+  constructor(
+    private readonly noruserBenefCharityService: NoruserBenefCharityService,
+    private readonly noruserBenefAllocationService: NoruserBenefAllocationService,
+  ) {}
 
   @Get('campaigns/existing')
   async getExistingCampaigns(@Query() query: QueryCampaignsByStateDto) {
@@ -143,6 +154,160 @@ export class NoruserBenefCharityController {
     return {
       success: true,
       message: 'Campaign request sent successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/supplies') // Lấy danh sách supplies
+  async getCampaignSupplies(@Param('campaignId') campaignId: string) {
+    const data = await this.noruserBenefAllocationService.listSupplies(campaignId);
+
+    return {
+      success: true,
+      message: 'Campaign supplies retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/supplies')
+  async createCampaignSupply( // Tạo supply
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateSupplyDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.createSupply(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Supply created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Put('campaigns/:campaignId/supplies/:supplyId')
+  async updateCampaignSupply(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('supplyId') supplyId: string,
+    @Body() body: UpdateSupplyDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.updateSupply(
+      user.userId,
+      campaignId,
+      supplyId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Supply updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Delete('campaigns/:campaignId/supplies/:supplyId')
+  async deleteCampaignSupply(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('supplyId') supplyId: string,
+  ) {
+    const data = await this.noruserBenefAllocationService.deleteSupply(
+      user.userId,
+      campaignId,
+      supplyId,
+    );
+
+    return {
+      success: true,
+      message: 'Supply deleted successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/financial-supports')
+  async getCampaignFinancialSupports(@Param('campaignId') campaignId: string) {
+    const data = await this.noruserBenefAllocationService.listFinancialSupports(
+      campaignId,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign financial supports retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/financial-supports')
+  async createCampaignFinancialSupport(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateFinancialSupportDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.createFinancialSupport(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Financial support created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Put('campaigns/:campaignId/financial-supports/:financialSupportId')
+  async updateCampaignFinancialSupport(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('financialSupportId') financialSupportId: string,
+    @Body() body: UpdateFinancialSupportDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.updateFinancialSupport(
+      user.userId,
+      campaignId,
+      financialSupportId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Financial support updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Delete('campaigns/:campaignId/financial-supports/:financialSupportId')
+  async deleteCampaignFinancialSupport(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('financialSupportId') financialSupportId: string,
+  ) {
+    const data = await this.noruserBenefAllocationService.deleteFinancialSupport(
+      user.userId,
+      campaignId,
+      financialSupportId,
+    );
+
+    return {
+      success: true,
+      message: 'Financial support deleted successfully',
       data,
     };
   }

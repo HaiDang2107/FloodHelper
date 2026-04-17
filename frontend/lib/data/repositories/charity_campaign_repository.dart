@@ -24,4 +24,42 @@ abstract class CharityCampaignRepository {
     required String campaignId,
     String state,
   });
+
+  Future<List<PurchasedSupply>> getCampaignSupplies({
+    required String campaignId,
+  });
+
+  Future<PurchasedSupply> createCampaignSupply({
+    required String campaignId,
+    required PurchasedSupply supply,
+  });
+
+  Future<PurchasedSupply> updateCampaignSupply({
+    required String campaignId,
+    required PurchasedSupply supply,
+  });
+
+  Future<void> deleteCampaignSupply({
+    required String campaignId,
+    required String supplyId,
+  });
+
+  Future<List<FinancialSupportAllocation>> getCampaignFinancialSupports({
+    required String campaignId,
+  });
+
+  Future<FinancialSupportAllocation> createCampaignFinancialSupport({
+    required String campaignId,
+    required FinancialSupportAllocation support,
+  });
+
+  Future<FinancialSupportAllocation> updateCampaignFinancialSupport({
+    required String campaignId,
+    required FinancialSupportAllocation support,
+  });
+
+  Future<void> deleteCampaignFinancialSupport({
+    required String campaignId,
+    required String financialSupportId,
+  });
 }

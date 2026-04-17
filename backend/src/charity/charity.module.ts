@@ -6,6 +6,7 @@ import { AuthorityCharityService } from './authority/authority-charity.service';
 import { CharityCampaignStateScheduler } from './charity-campaign-state.scheduler';
 import { CommonCharityService } from './common.service';
 import { NoruserBenefCharityController } from './noruser_benef/noruser-benef-charity.controller';
+import { NoruserBenefAllocationService } from './noruser_benef/noruser-benef-allocation.service';
 import { NoruserBenefCharityService } from './noruser_benef/noruser-benef-charity.service';
 import { VietQrInternalService } from './vietqr/vietqr-internal.service';
 import { VietQrWebhookController } from './vietqr/vietqr-webhook.controller';
@@ -33,6 +34,7 @@ import { VietQrService } from './vietqr/vietqr.service';
   providers: [
     CommonCharityService,
     AuthorityCharityService,
+    NoruserBenefAllocationService,
     NoruserBenefCharityService,
     CharityCampaignStateScheduler,
     VietQrService,
@@ -42,6 +44,7 @@ import { VietQrService } from './vietqr/vietqr.service';
   exports: [
     CommonCharityService,
     AuthorityCharityService,
+    NoruserBenefAllocationService,
     NoruserBenefCharityService,
     VietQrService,
     VietQrInternalService,

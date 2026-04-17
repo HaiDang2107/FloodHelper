@@ -122,9 +122,161 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
     return CharityCampaignMappers.donationsFromApiList(payload);
   }
 
+  @override
+  Future<List<PurchasedSupply>> getCampaignSupplies({
+    required String campaignId,
+  }) async {
+    final payload = await _charityCampaignService.getCampaignSupplies(
+      campaignId: campaignId,
+    );
+
+    return payload.map(_supplyFromApi).toList(growable: false);
+  }
+
+  @override
+  Future<PurchasedSupply> createCampaignSupply({
+    required String campaignId,
+    required PurchasedSupply supply,
+  }) async {
+    final payload = await _charityCampaignService.createCampaignSupply(
+      campaignId: campaignId,
+      payload: {
+        'supplyName': supply.productName,
+        'quantity': supply.quantity,
+        'unitPrice': supply.unitPrice,
+        if (supply.boughtAt != null) 'boughtAt': supply.boughtAt!.toIso8601String(),
+      },
+    );
+
+    return _supplyFromApi(payload);
+  }
+
+  @override
+  Future<PurchasedSupply> updateCampaignSupply({
+    required String campaignId,
+    required PurchasedSupply supply,
+  }) async {
+    final supplyId = supply.supplyId;
+    if (supplyId == null || supplyId.isEmpty) {
+      throw Exception('Cannot update supply without supplyId');
+    }
+
+    final payload = await _charityCampaignService.updateCampaignSupply(
+      campaignId: campaignId,
+      supplyId: supplyId,
+      payload: {
+        'supplyName': supply.productName,
+        'quantity': supply.quantity,
+        'unitPrice': supply.unitPrice,
+        if (supply.boughtAt != null) 'boughtAt': supply.boughtAt!.toIso8601String(),
+      },
+    );
+
+    return _supplyFromApi(payload);
+  }
+
+  @override
+  Future<void> deleteCampaignSupply({
+    required String campaignId,
+    required String supplyId,
+  }) {
+    return _charityCampaignService.deleteCampaignSupply(
+      campaignId: campaignId,
+      supplyId: supplyId,
+    );
+  }
+
+  @override
+  Future<List<FinancialSupportAllocation>> getCampaignFinancialSupports({
+    required String campaignId,
+  }) async {
+    final payload = await _charityCampaignService.getCampaignFinancialSupports(
+      campaignId: campaignId,
+    );
+
+    return payload.map(_financialSupportFromApi).toList(growable: false);
+  }
+
+  @override
+  Future<FinancialSupportAllocation> createCampaignFinancialSupport({
+    required String campaignId,
+    required FinancialSupportAllocation support,
+  }) async {
+    final payload = await _charityCampaignService.createCampaignFinancialSupport(
+      campaignId: campaignId,
+      payload: {
+        'householdName': support.householdName,
+        'amount': support.amount,
+        if (support.allocatedAt != null)
+          'allocatedAt': support.allocatedAt!.toIso8601String(),
+      },
+    );
+
+    return _financialSupportFromApi(payload);
+  }
+
+  @override
+  Future<FinancialSupportAllocation> updateCampaignFinancialSupport({
+    required String campaignId,
+    required FinancialSupportAllocation support,
+  }) async {
+    final supportId = support.financialSupportId;
+    if (supportId == null || supportId.isEmpty) {
+      throw Exception('Cannot update financial support without financialSupportId');
+    }
+
+    final payload = await _charityCampaignService.updateCampaignFinancialSupport(
+      campaignId: campaignId,
+      financialSupportId: supportId,
+      payload: {
+        'householdName': support.householdName,
+        'amount': support.amount,
+        if (support.allocatedAt != null)
+          'allocatedAt': support.allocatedAt!.toIso8601String(),
+      },
+    );
+
+    return _financialSupportFromApi(payload);
+  }
+
+  @override
+  Future<void> deleteCampaignFinancialSupport({
+    required String campaignId,
+    required String financialSupportId,
+  }) {
+    return _charityCampaignService.deleteCampaignFinancialSupport(
+      campaignId: campaignId,
+      financialSupportId: financialSupportId,
+    );
+  }
+
   List<CharityCampaign> _parseAndDeduplicate(
     List<List<Map<String, dynamic>>> batches,
   ) {
     return CharityCampaignMappers.parseAndDeduplicateCampaigns(batches);
+  }
+
+  PurchasedSupply _supplyFromApi(Map<String, dynamic> item) {
+    final quantity = int.tryParse(item['quantity']?.toString() ?? '') ?? 0;
+    final unitPrice = double.tryParse(item['unitPrice']?.toString() ?? '') ?? 0;
+
+    return PurchasedSupply(
+      supplyId: item['supplyId']?.toString(),
+      productName: (item['supplyName'] ?? item['productName'] ?? '').toString(),
+      vendor: (item['vendor'] ?? '').toString(),
+      quantity: quantity,
+      unitPrice: unitPrice,
+      boughtAt: DateTime.tryParse(item['boughtAt']?.toString() ?? ''),
+    );
+  }
+
+  FinancialSupportAllocation _financialSupportFromApi(Map<String, dynamic> item) {
+    final amount = double.tryParse(item['amount']?.toString() ?? '') ?? 0;
+    return FinancialSupportAllocation(
+      financialSupportId: item['financialSupportId']?.toString(),
+      householdName: (item['householdName'] ?? '').toString(),
+      amount: amount,
+      allocatedAt: DateTime.tryParse(item['allocatedAt']?.toString() ?? ''),
+    );
   }
 }

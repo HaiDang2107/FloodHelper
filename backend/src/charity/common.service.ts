@@ -13,7 +13,6 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
     };
     bankAccount: true;
     transactions: true;
-    supplies: true;
   };
 }>;
 
@@ -35,9 +34,6 @@ export class CommonCharityService {
         bankAccount: true,
         transactions: {
           orderBy: { donateAt: 'desc' },
-        },
-        supplies: {
-          orderBy: { boughtAt: 'desc' },
         },
       },
     });
@@ -100,12 +96,6 @@ export class CommonCharityService {
         textContent: announcement.textContent,
         imageUrl: announcement.imageUrl,
         createdAt: campaign.createdAt,
-      })),
-      purchasedSupplies: campaign.supplies.map((supply) => ({
-        supplyName: supply.supplyName,
-        quantity: supply.quantity,
-        unitPrice: supply.unitPrice,
-        price: supply.price,
       })),
       donations: campaign.transactions.map((transaction) => ({
         transferType: transaction.transType,

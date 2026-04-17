@@ -292,4 +292,70 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
     final campaign = all.firstWhere((c) => c.id == campaignId);
     return campaign.donations;
   }
+
+  @override
+  Future<List<PurchasedSupply>> getCampaignSupplies({
+    required String campaignId,
+  }) async {
+    final campaign = await getCampaignDetail(campaignId);
+    return campaign.purchasedSupplies;
+  }
+
+  @override
+  Future<PurchasedSupply> createCampaignSupply({
+    required String campaignId,
+    required PurchasedSupply supply,
+  }) async {
+    return supply.copyWith(
+      supplyId: supply.supplyId ?? 'mock-supply-${DateTime.now().millisecondsSinceEpoch}',
+    );
+  }
+
+  @override
+  Future<PurchasedSupply> updateCampaignSupply({
+    required String campaignId,
+    required PurchasedSupply supply,
+  }) async {
+    return supply;
+  }
+
+  @override
+  Future<void> deleteCampaignSupply({
+    required String campaignId,
+    required String supplyId,
+  }) async {}
+
+  @override
+  Future<List<FinancialSupportAllocation>> getCampaignFinancialSupports({
+    required String campaignId,
+  }) async {
+    final campaign = await getCampaignDetail(campaignId);
+    return campaign.financialSupports;
+  }
+
+  @override
+  Future<FinancialSupportAllocation> createCampaignFinancialSupport({
+    required String campaignId,
+    required FinancialSupportAllocation support,
+  }) async {
+    return support.copyWith(
+      financialSupportId:
+          support.financialSupportId ??
+          'mock-fin-${DateTime.now().millisecondsSinceEpoch}',
+    );
+  }
+
+  @override
+  Future<FinancialSupportAllocation> updateCampaignFinancialSupport({
+    required String campaignId,
+    required FinancialSupportAllocation support,
+  }) async {
+    return support;
+  }
+
+  @override
+  Future<void> deleteCampaignFinancialSupport({
+    required String campaignId,
+    required String financialSupportId,
+  }) async {}
 }

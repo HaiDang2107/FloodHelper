@@ -73,6 +73,7 @@ class CharityCampaignMappers {
       period: DateRange(startDate: startDate, endDate: endDate),
       announcements: _parseAnnouncements(json['announcements']),
       purchasedSupplies: _parseSupplies(json['purchasedSupplies']),
+      financialSupports: _parseFinancialSupports(json['financialSupports']),
       donations: _parseDonations(json['donations']),
     );
   }
@@ -129,11 +130,32 @@ class CharityCampaignMappers {
         .map((item) => Map<String, dynamic>.from(item))
         .map(
           (item) => PurchasedSupply(
+            supplyId: _nullableString(item['supplyId']),
             productName: (item['productName'] ?? item['supplyName'] ?? '')
                 .toString(),
             vendor: (item['vendor'] ?? item['supplier'] ?? '').toString(),
             quantity: _parseInt(item['quantity']),
             unitPrice: _parseDouble(item['unitPrice']),
+            boughtAt: _parseOptionalDate(item['boughtAt']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  static List<FinancialSupportAllocation> _parseFinancialSupports(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .map(
+          (item) => FinancialSupportAllocation(
+            financialSupportId: _nullableString(item['financialSupportId']),
+            householdName: (item['householdName'] ?? '').toString(),
+            amount: _parseDouble(item['amount']),
+            allocatedAt: _parseOptionalDate(item['allocatedAt']),
           ),
         )
         .toList(growable: false);
