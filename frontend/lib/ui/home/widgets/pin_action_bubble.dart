@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../view_models/home_view_model.dart';
+
 class PinActionBubble extends StatelessWidget {
   final double width;
   final double height;
   final String title;
   final String userId;
   final String fullname;
+  final HomePinType pinType;
   final bool canHandle;
   final VoidCallback onClose;
   final VoidCallback? onHandle;
@@ -18,6 +21,7 @@ class PinActionBubble extends StatelessWidget {
     required this.title,
     required this.userId,
     required this.fullname,
+    required this.pinType,
     required this.canHandle,
     required this.onClose,
     this.onHandle,
@@ -66,18 +70,27 @@ class PinActionBubble extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  'User ID: $userId',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black),
-                ),
-                Text(
-                  'Fullname: $fullname',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black),
-                ),
+                if (pinType == HomePinType.campaign)
+                  Text(
+                    'Campaign Name: $fullname',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.black),
+                  )
+                else ...[
+                  Text(
+                    'User ID: $userId',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                  Text(
+                    'Fullname: $fullname',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                ],
                 SizedBox(height: canHandle ? 16 : 10),
                 if (canHandle)
                   ElevatedButton(

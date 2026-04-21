@@ -227,6 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           title: selectedBubble.title,
                           userId: selectedBubble.userId,
                           fullname: selectedBubble.fullname,
+                          pinType: selectedBubble.pinType,
                           canHandle: selectedBubble.canHandle,
                           onHandle: selectedBubble.canHandle
                               ? () {
@@ -290,12 +291,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     );
                   },
                   onCharityPressed: () {
-                    Navigator.push<ExistingCharityFocusRequest>(
+                    Navigator.push<ExistingCharityFocusRequest>( // Kỳ vọng khi màn hình đóng lại sẽ nhận được ExistingCharityFocusRequest
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ExistingCharityScreen(),
                       ),
-                    ).then((focusRequest) async {
+                    ).then((focusRequest) async { // pop(result) ==> result được đưa vào focusRequest và có kiểu dữ liệu ExistingCharityFocusRequest 
                       if (focusRequest == null || !mounted) {
                         return;
                       }

@@ -210,7 +210,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
       HomePinType.me => 'Me',
       HomePinType.friend => 'Friend',
       HomePinType.victim => 'Victim',
-      HomePinType.campaign => 'Campaign',
+      HomePinType.campaign => 'Charity Campaign',
     };
 
     return HomePinBubbleData(

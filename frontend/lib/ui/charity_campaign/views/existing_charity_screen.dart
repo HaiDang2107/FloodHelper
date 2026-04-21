@@ -52,13 +52,13 @@ class _ExistingCharityScreenState extends ConsumerState<ExistingCharityScreen> {
     double latitude,
     double longitude,
   ) async {
-    if (!context.mounted) {
+    if (!context.mounted) { // mounted context được truyền vào hàm
       return;
     }
 
     Navigator.of(context, rootNavigator: true).pop();
 
-    if (!mounted) {
+    if (!mounted) { // mounted của context hiện tại
       return;
     }
 
