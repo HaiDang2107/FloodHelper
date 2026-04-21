@@ -13,6 +13,14 @@ abstract class CharityCampaignRepository {
 
   Future<CharityCampaign> sendCampaignRequest(String campaignId);
 
+  Future<void> updateCampaignLocation({
+    required String campaignId,
+    required double latitude,
+    required double longitude,
+  });
+
+  Future<List<CharityCampaignLocation>> getDistributingCampaignLocations();
+
   Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,

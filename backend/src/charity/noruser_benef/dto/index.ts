@@ -7,3 +7,4 @@ export * from './send-request.dto';
 export * from './update-financial-support.dto';
 export * from './update-supply.dto';
 export * from './update-campaign.dto';
+export * from './update-campaign-location.dto';

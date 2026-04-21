@@ -250,6 +250,52 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
   }
 
   @override
+  Future<void> updateCampaignLocation({
+    required String campaignId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final index = _myCampaigns.indexWhere((item) => item.id == campaignId);
+    if (index >= 0) {
+      _myCampaigns[index] = _myCampaigns[index].copyWith(
+        latitude: latitude,
+        longitude: longitude,
+      );
+      return;
+    }
+
+    final existingIndex = _existingCampaigns.indexWhere(
+      (item) => item.id == campaignId,
+    );
+    if (existingIndex >= 0) {
+      _existingCampaigns[existingIndex] = _existingCampaigns[existingIndex]
+          .copyWith(
+            latitude: latitude,
+            longitude: longitude,
+          );
+    }
+  }
+
+  @override
+  Future<List<CharityCampaignLocation>> getDistributingCampaignLocations() async {
+    final all = [..._existingCampaigns, ..._myCampaigns];
+
+    return all
+        .where((item) => item.status == CampaignStatus.distributing)
+        .where((item) => item.latitude != null && item.longitude != null)
+        .map(
+          (item) => CharityCampaignLocation(
+            campaignId: item.id,
+            campaignName: item.name,
+            destination: item.reliefLocation,
+            latitude: item.latitude!,
+            longitude: item.longitude!,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
   Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,

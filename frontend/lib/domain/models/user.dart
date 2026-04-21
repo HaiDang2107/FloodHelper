@@ -8,6 +8,7 @@ class User {
   final String? phoneNumber;
   final List<UserRole> roles;
   final String? avatarUrl;
+  final bool showCharityCampaignLocations;
 
   User({
     required this.id,
@@ -16,6 +17,7 @@ class User {
     this.phoneNumber,
     required this.roles,
     this.avatarUrl,
+    this.showCharityCampaignLocations = false,
   });
 
   /// Get the display name or fallback to name
@@ -43,6 +45,7 @@ class User {
     String? phoneNumber,
     List<UserRole>? roles,
     String? avatarUrl,
+    bool? showCharityCampaignLocations,
   }) {
     return User(
       id: id ?? this.id,
@@ -51,6 +54,8 @@ class User {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       roles: roles ?? this.roles,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      showCharityCampaignLocations:
+          showCharityCampaignLocations ?? this.showCharityCampaignLocations,
     );
   }
 

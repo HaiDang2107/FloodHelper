@@ -258,9 +258,23 @@ class AuthRepository {
       'phoneNumber': profile.phoneNumber,
       'role': profile.roles,
       'avatarUrl': profile.avatarUrl,
+      'showCharityCampaignLocations': profile.showCharityCampaignLocations,
     };
 
     await AuthLocalStorage.saveUserData(updatedUserData);
+  }
+
+  /// Sync a single display preference to locally persisted auth session user data.
+  Future<void> syncSessionShowCharityCampaignLocations(bool value) async {
+    final existingUserData = await AuthLocalStorage.getUserData();
+    if (existingUserData == null) {
+      return;
+    }
+
+    await AuthLocalStorage.saveUserData({
+      ...existingUserData,
+      'showCharityCampaignLocations': value,
+    });
   }
 
   // ==================== Private Helpers ====================
@@ -292,6 +306,8 @@ class AuthRepository {
         'citizenIdCardImg': data.user.citizenIdCardImg,
         'jobPosition': data.user.jobPosition,
         'visibilityMode': data.user.visibilityMode,
+        'showCharityCampaignLocations':
+            data.user.showCharityCampaignLocations ?? false,
       },
     );
 
@@ -307,6 +323,8 @@ class AuthRepository {
         phoneNumber: data.user.phoneNumber,
         roles: data.user.role.map((r) => UserRole.fromString(r)).toList(),
         avatarUrl: data.user.avatarUrl,
+        showCharityCampaignLocations:
+            data.user.showCharityCampaignLocations ?? false,
       ),
       accessToken: data.tokens.accessToken,
       sessionId: data.session.sessionId,
@@ -325,6 +343,8 @@ class AuthRepository {
               .toList() ??
           [UserRole.normalUser],
       avatarUrl: map['avatarUrl'],
+      showCharityCampaignLocations:
+          map['showCharityCampaignLocations'] as bool? ?? false,
     );
   }
 }

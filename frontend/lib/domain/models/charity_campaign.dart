@@ -22,6 +22,8 @@ class CharityCampaign {
   final DateTime? startedDistributionAt;
   final DateTime? finishedDistributionAt;
   final String reliefLocation;
+  final double? latitude;
+  final double? longitude;
   final DateRange period;
   final List<CampaignAnnouncement> announcements;
   final List<PurchasedSupply> purchasedSupplies;
@@ -48,6 +50,8 @@ class CharityCampaign {
     this.startedDistributionAt,
     this.finishedDistributionAt,
     required this.reliefLocation,
+    this.latitude,
+    this.longitude,
     required this.period,
     this.announcements = const [],
     this.purchasedSupplies = const [],
@@ -102,6 +106,8 @@ class CharityCampaign {
     DateTime? startedDistributionAt,
     DateTime? finishedDistributionAt,
     String? reliefLocation,
+    double? latitude,
+    double? longitude,
     DateRange? period,
     List<CampaignAnnouncement>? announcements,
     List<PurchasedSupply>? purchasedSupplies,
@@ -128,6 +134,8 @@ class CharityCampaign {
       startedDistributionAt: startedDistributionAt ?? this.startedDistributionAt,
       finishedDistributionAt: finishedDistributionAt ?? this.finishedDistributionAt,
       reliefLocation: reliefLocation ?? this.reliefLocation,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       period: period ?? this.period,
       announcements: announcements ?? this.announcements,
       purchasedSupplies: purchasedSupplies ?? this.purchasedSupplies,
@@ -401,5 +409,21 @@ class DonateQrResult {
   const DonateQrResult({
     required this.qrLink,
     required this.transactionId,
+  });
+}
+
+class CharityCampaignLocation {
+  final String campaignId;
+  final String campaignName;
+  final String destination;
+  final double latitude;
+  final double longitude;
+
+  const CharityCampaignLocation({
+    required this.campaignId,
+    required this.campaignName,
+    required this.destination,
+    required this.latitude,
+    required this.longitude,
   });
 }

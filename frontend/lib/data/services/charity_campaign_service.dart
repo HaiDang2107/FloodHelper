@@ -86,6 +86,41 @@ class CharityCampaignService {
     }
   }
 
+  Future<Map<String, dynamic>> updateCampaignLocation({
+    required String campaignId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await _apiClient.patch(
+        '/charity/campaigns/$campaignId/location',
+        data: {
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to check in campaign location',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getDistributingCampaignLocations() async {
+    try {
+      final response = await _apiClient.get(
+        '/charity/campaigns/distributing-locations',
+      );
+
+      return _extractList(response.data);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Future<Map<String, dynamic>> sendCampaignRequest(String campaignId) async {
     try {
       final response = await _apiClient.post(

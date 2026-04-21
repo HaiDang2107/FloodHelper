@@ -13,6 +13,8 @@ import '../../core/common/widgets/bottom_sheet.dart';
 import '../../core/common/constants/user_state.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../charity_campaign/views/existing_charity_screen.dart';
+import '../../charity_campaign/widgets/charity_item.dart';
+import '../widgets/campaign_pin.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/services/firebase_messaging_service.dart';
 import 'settings/_settings_sheet.dart';
@@ -77,6 +79,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         );
       },
     );
+  }
+
+  Future<void> _openCampaignDetail(String campaignId) async {
+    try {
+      final homeVm = ref.read(homeViewModelProvider.notifier);
+      final campaign = await homeVm.loadCampaignDetailFromMapPin(campaignId);
+      if (!mounted) {
+        return;
+      }
+
+      await CharityItem.showDetailsBottomSheet(
+        context,
+        campaign: campaign,
+        isOwner: false,
+        onLoadCampaignDetail: homeVm.loadCampaignDetailFromMapPin,
+        onLoadCampaignTransactions: homeVm.loadSuccessCampaignTransactions,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot open campaign detail: $error')),
+      );
+    }
   }
 
   @override
@@ -157,6 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           HomePinType.me => UserStatus.online.color,
                           HomePinType.friend => const Color(0xFF0F62FE),
                           HomePinType.victim => Colors.red,
+                          HomePinType.campaign => const Color(0xFF0F62FE),
                         };
 
                         return Marker(
@@ -165,14 +193,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           height: 81,
                           alignment: Alignment.topCenter,
                           rotate: true,
-                          child: UserLocationPin(
-                            size: 60,
-                            imageUrl: pin.avatarUrl,
-                            color: color,
-                            isSosState: pin.isSos,
-                            roles: const [],
-                            onTap: () => viewModel.selectPin(pin.userId),
-                          ),
+                          child: pin.pinType == HomePinType.campaign
+                              ? CampaignLocationPin(
+                                  imageUrl: '',
+                                  onTap: () => _openCampaignDetail(pin.userId),
+                                )
+                              : UserLocationPin(
+                                  size: 60,
+                                  imageUrl: pin.avatarUrl,
+                                  color: color,
+                                  isSosState: pin.isSos,
+                                  roles: const [],
+                                  onTap: () => viewModel.selectPin(pin.userId),
+                                ),
                         );
                       })
                       .toList(growable: false),
@@ -257,12 +290,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     );
                   },
                   onCharityPressed: () {
-                    Navigator.push(
+                    Navigator.push<ExistingCharityFocusRequest>(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ExistingCharityScreen(),
                       ),
-                    );
+                    ).then((focusRequest) async {
+                      if (focusRequest == null || !mounted) {
+                        return;
+                      }
+
+                      final focusedOnPin = await viewModel.focusOnCampaignLocation(
+                        focusRequest.campaignId,
+                        latitude: focusRequest.latitude,
+                        longitude: focusRequest.longitude,
+                      );
+
+                      if (!focusedOnPin && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Focused on campaign location. Turn on campaign pins in Settings to highlight the pin.',
+                            ),
+                          ),
+                        );
+                      }
+                    });
                   },
                   isSosBroadcasting: state.isSosBroadcasting,
                   sosData: state.sosData,

@@ -143,6 +143,25 @@ final charityCampaignServiceProvider =
 // ignore: unused_element
 typedef CharityCampaignServiceRef =
     AutoDisposeProviderRef<CharityCampaignService>;
+String _$signalServiceHash() => r'a7f6cdbda73317e4ad9be717fc6eabe60b3465d3';
+
+/// SignalService provider
+///
+/// Copied from [signalService].
+@ProviderFor(signalService)
+final signalServiceProvider = Provider<SignalService>.internal(
+  signalService,
+  name: r'signalServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$signalServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SignalServiceRef = ProviderRef<SignalService>;
 String _$mqttServiceHash() => r'7515b490c05264ddb93f3ade8a50296583dea568';
 
 /// MqttService provider (keepAlive: true for persistent MQTT connection)

@@ -70,6 +70,8 @@ class CharityCampaignMappers {
       finishedDistributionAt: _parseOptionalDate(json['finishedDistributionAt']),
       reliefLocation: (json['reliefLocation'] ?? json['destination'] ?? '')
           .toString(),
+        latitude: _parseNullableDouble(json['latitude']),
+        longitude: _parseNullableDouble(json['longitude']),
       period: DateRange(startDate: startDate, endDate: endDate),
       announcements: _parseAnnouncements(json['announcements']),
       purchasedSupplies: _parseSupplies(json['purchasedSupplies']),
@@ -214,6 +216,16 @@ class CharityCampaignMappers {
       return value.toDouble();
     }
     return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static double? _parseNullableDouble(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse(value.toString());
   }
 
   static String? _nullableString(dynamic value) {

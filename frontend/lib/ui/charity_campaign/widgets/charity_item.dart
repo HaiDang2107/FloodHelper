@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
 import '../../../domain/models/charity_campaign.dart';
 import 'bottom_sheet/allocation_view.dart';
@@ -16,6 +17,18 @@ class CharityItem extends StatelessWidget {
   final Future<void> Function(String campaignId, String text)? onPostAnnouncement;
   final Future<void> Function(CharityCampaign campaign)? onUpdateCampaign;
   final Future<void> Function(String campaignId)? onSendCampaignRequest;
+  final Future<void> Function(
+    String campaignId,
+    double latitude,
+    double longitude,
+  )?
+  onFocusCampaignLocation;
+  final Future<void> Function(
+    String campaignId,
+    double latitude,
+    double longitude,
+  )?
+  onCheckInLocation;
 
   const CharityItem({
     super.key,
@@ -26,9 +39,47 @@ class CharityItem extends StatelessWidget {
     this.onPostAnnouncement,
     this.onUpdateCampaign,
     this.onSendCampaignRequest,
+    this.onFocusCampaignLocation,
+    this.onCheckInLocation,
   });
 
   Future<void> _showDetailsBottomSheet(BuildContext context) async {
+    await CharityItem.showDetailsBottomSheet(
+      context,
+      campaign: campaign,
+      isOwner: isOwner,
+      onLoadCampaignDetail: onLoadCampaignDetail,
+      onLoadCampaignTransactions: onLoadCampaignTransactions,
+      onPostAnnouncement: onPostAnnouncement,
+      onUpdateCampaign: onUpdateCampaign,
+      onSendCampaignRequest: onSendCampaignRequest,
+      onFocusCampaignLocation: onFocusCampaignLocation,
+      onCheckInLocation: onCheckInLocation,
+    );
+  }
+
+  static Future<void> showDetailsBottomSheet(
+    BuildContext context, {
+    required CharityCampaign campaign,
+    bool isOwner = false,
+    Future<CharityCampaign> Function(String campaignId)? onLoadCampaignDetail,
+    Future<List<Donation>> Function(String campaignId)? onLoadCampaignTransactions,
+    Future<void> Function(String campaignId, String text)? onPostAnnouncement,
+    Future<void> Function(CharityCampaign campaign)? onUpdateCampaign,
+    Future<void> Function(String campaignId)? onSendCampaignRequest,
+    Future<void> Function(
+      String campaignId,
+      double latitude,
+      double longitude,
+    )?
+    onFocusCampaignLocation,
+    Future<void> Function(
+      String campaignId,
+      double latitude,
+      double longitude,
+    )?
+    onCheckInLocation,
+  }) async {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     final messenger = ScaffoldMessenger.of(rootNavigator.context);
     final loadCampaignDetail = onLoadCampaignDetail;
@@ -58,6 +109,30 @@ class CharityItem extends StatelessWidget {
             ),
           ),
         );
+    }
+
+    Future<Position> resolveCurrentPosition() async {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled');
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permission denied');
+      }
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permission denied permanently');
+      }
+
+      return Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+        ),
+      );
     }
 
     var detailCampaign = campaign;
@@ -223,6 +298,54 @@ class CharityItem extends StatelessWidget {
                             isError: true,
                           );
                         }
+                      },
+                onCheckInLocation: onCheckInLocation == null
+                    ? null
+                    : () async {
+                        try {
+                          final position = await resolveCurrentPosition();
+                          await onCheckInLocation(
+                            detailCampaign.id,
+                            position.latitude,
+                            position.longitude,
+                          );
+
+                          if (loadCampaignDetail != null) {
+                            final refreshed = await loadCampaignDetail(
+                              detailCampaign.id,
+                            );
+                            setSheetState(() => detailCampaign = refreshed);
+                          }
+
+                          showTopSnackBar(
+                            'Campaign location check-in successful.',
+                            isError: false,
+                          );
+                        } catch (error) {
+                          showTopSnackBar(
+                            'Check-in failed: $error',
+                            isError: true,
+                          );
+                        }
+                      },
+                onFocusCampaignLocation: onFocusCampaignLocation == null
+                    ? null
+                    : () async {
+                        final latitude = detailCampaign.latitude;
+                        final longitude = detailCampaign.longitude;
+                        if (latitude == null || longitude == null) {
+                          showTopSnackBar(
+                            'Campaign location is not available yet.',
+                            isError: true,
+                          );
+                          return;
+                        }
+
+                        await onFocusCampaignLocation(
+                          detailCampaign.id,
+                          latitude,
+                          longitude,
+                        );
                       },
               );
               break;

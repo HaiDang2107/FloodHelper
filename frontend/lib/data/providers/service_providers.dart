@@ -55,6 +55,12 @@ CharityCampaignService charityCampaignService(Ref ref) {
   return CharityCampaignService(apiClient: ref.watch(apiClientProvider));
 }
 
+/// SignalService provider
+@Riverpod(keepAlive: true)
+SignalService signalService(Ref ref) {
+  return SignalService(apiClient: ref.watch(apiClientProvider));
+}
+
 /// MqttService provider (keepAlive: true for persistent MQTT connection)
 /// Manages singleton instance and ensures proper cleanup on app shutdown.
 @Riverpod(keepAlive: true)

@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class CharityLocationRow extends StatelessWidget {
   final String location;
   final VoidCallback? onMapPressed;
+  final VoidCallback? onFocusMapPressed;
 
   const CharityLocationRow({
     super.key,
     required this.location,
     this.onMapPressed,
+    this.onFocusMapPressed,
   });
 
   @override
@@ -43,6 +45,15 @@ class CharityLocationRow extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.map, color: Colors.blue),
                     onPressed: onMapPressed,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                if (onFocusMapPressed != null)
+                  IconButton(
+                    icon: const Icon(Icons.my_location, color: Colors.teal, size: 18),
+                    tooltip: 'Focus campaign on map',
+                    onPressed: onFocusMapPressed,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     visualDensity: VisualDensity.compact,

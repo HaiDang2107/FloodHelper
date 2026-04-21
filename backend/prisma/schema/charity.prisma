@@ -13,6 +13,8 @@ model CharityCampaign {
   campaignName         String    @map("campaign_name")
   purpose              String    @db.Text
   destination          String
+  campaignLatitude     Decimal?  @map("campaign_latitude") @db.Decimal(10, 7)
+  campaignLongitude    Decimal?  @map("campaign_longitude") @db.Decimal(10, 7)
   charityObject        String    @map("charity_object")
   state                String
   startedDonationAt  DateTime? @map("started_donation_at")

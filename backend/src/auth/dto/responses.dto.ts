@@ -41,6 +41,7 @@ export class SigninResponseDto {
       citizenId?: string | null;
       citizenIdCardImg?: string | null;
       jobPosition?: string | null;
+      showCharityCampaignLocations?: boolean;
     };
     tokens: {
       accessToken: string;

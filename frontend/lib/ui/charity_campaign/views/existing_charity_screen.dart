@@ -8,6 +8,18 @@ import '../widgets/charity_item.dart';
 import '_base_charity_screen.dart';
 import 'my_charity_screen.dart';
 
+class ExistingCharityFocusRequest {
+  final String campaignId;
+  final double latitude;
+  final double longitude;
+
+  const ExistingCharityFocusRequest({
+    required this.campaignId,
+    required this.latitude,
+    required this.longitude,
+  });
+}
+
 class ExistingCharityScreen extends ConsumerStatefulWidget {
   const ExistingCharityScreen({super.key});
 
@@ -34,25 +46,49 @@ class _ExistingCharityScreenState extends ConsumerState<ExistingCharityScreen> {
         .ensureExistingStatusLoaded(status);
   }
 
+  Future<void> _focusCampaignOnHomeMap(
+    BuildContext context,
+    String campaignId,
+    double latitude,
+    double longitude,
+  ) async {
+    if (!context.mounted) {
+      return;
+    }
+
+    Navigator.of(context, rootNavigator: true).pop();
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(this.context).pop(
+      ExistingCharityFocusRequest(
+        campaignId: campaignId,
+        latitude: latitude,
+        longitude: longitude,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(charityCampaignViewModelProvider);
+    ref.listen(charityCampaignViewModelProvider, (previous, next) {
+      final errorMessage = next.errorMessage;
+      if (errorMessage == null || errorMessage == previous?.errorMessage) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      ref.read(charityCampaignViewModelProvider.notifier).clearError();
+    });
+
+    ref.watch(charityCampaignViewModelProvider);
     final viewModel = ref.read(charityCampaignViewModelProvider.notifier);
     final currentUser = ref.watch(currentUserProvider);
     final isBenefactor = currentUser?.isBenefactor ?? false;
-    final errorMessage = state.errorMessage;
-
-    if (errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMessage)));
-        viewModel.clearError();
-      });
-    }
 
     return BaseCharityScreen(
       title: 'Charity Campaigns',
@@ -164,6 +200,14 @@ class _ExistingCharityScreenState extends ConsumerState<ExistingCharityScreen> {
             onLoadCampaignTransactions: ref
                 .read(charityCampaignViewModelProvider.notifier)
                 .loadSuccessTransactions,
+            onFocusCampaignLocation: (campaignId, latitude, longitude) {
+              return _focusCampaignOnHomeMap(
+                context,
+                campaignId,
+                latitude,
+                longitude,
+              );
+            },
           );
         },
       ),

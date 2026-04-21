@@ -80,6 +80,10 @@ export class CommonCharityService {
         accountHolder: bank?.userBankName ?? null,
       },
       reliefLocation: campaign.destination,
+      latitude: campaign.campaignLatitude ? Number(campaign.campaignLatitude) : null,
+      longitude: campaign.campaignLongitude
+        ? Number(campaign.campaignLongitude)
+        : null,
       startedDonationAt: campaign.startedDonationAt,
       finishedDonationAt: campaign.finishedDonationAt,
       startedDistributionAt: campaign.startedDistributionAt,

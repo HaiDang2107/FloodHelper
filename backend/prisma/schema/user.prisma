@@ -15,6 +15,7 @@ model User {
   curLongitude     Decimal?  @map("cur_longitude") @db.Decimal(10, 7)
   curLatitude      Decimal?  @map("cur_latitude") @db.Decimal(10, 7)
   visibilityMode   String    @default("JUST_FRIEND") @map("visibility_mode") @db.VarChar(20) // PUBLIC | JUST_FRIEND | NO_ONE
+  showCharityCampaignLocations Boolean @default(false) @map("show_charity_campaign_locations")
   avatarUrl        String?   @map("avatar_url")
   citizenId        String?   @map("citizen_id")
   gender           String?   @db.VarChar(20)

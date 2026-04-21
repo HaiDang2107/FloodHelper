@@ -7,7 +7,7 @@ part of 'broadcasting_signals_view_model.dart';
 // **************************************************************************
 
 String _$broadcastingSignalsViewModelHash() =>
-    r'a0ef3f3cfa5a3927104a6a9080b5202889c057ed';
+    r'a2367a1ab97165a7cd72e2a4c9873fc01507380c';
 
 /// See also [BroadcastingSignalsViewModel].
 @ProviderFor(BroadcastingSignalsViewModel)

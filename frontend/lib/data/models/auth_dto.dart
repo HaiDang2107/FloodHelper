@@ -173,6 +173,7 @@ class UserResponseDto {
   final String? citizenIdCardImg;
   final String? jobPosition;
   final String? visibilityMode;
+  final bool? showCharityCampaignLocations;
 
   UserResponseDto({
     required this.userId,
@@ -191,6 +192,7 @@ class UserResponseDto {
     this.citizenIdCardImg,
     this.jobPosition,
     this.visibilityMode,
+    this.showCharityCampaignLocations,
   });
 
   factory UserResponseDto.fromJson(Map<String, dynamic> json) {
@@ -211,6 +213,7 @@ class UserResponseDto {
       citizenIdCardImg: json['citizenIdCardImg'],
       jobPosition: json['jobPosition'],
       visibilityMode: json['visibilityMode'],
+      showCharityCampaignLocations: json['showCharityCampaignLocations'] as bool?,
     );
   }
 }

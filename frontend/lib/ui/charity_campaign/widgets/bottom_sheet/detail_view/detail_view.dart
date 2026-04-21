@@ -15,6 +15,8 @@ class DetailView extends StatefulWidget {
   final Future<void> Function(String text)? onPostAnnouncement;
   final Future<void> Function()? onUpdateInformation;
   final Future<void> Function()? onSendRequest;
+  final Future<void> Function()? onCheckInLocation;
+  final Future<void> Function()? onFocusCampaignLocation;
 
   const DetailView({
     super.key,
@@ -25,6 +27,8 @@ class DetailView extends StatefulWidget {
     this.onPostAnnouncement,
     this.onUpdateInformation,
     this.onSendRequest,
+    this.onCheckInLocation,
+    this.onFocusCampaignLocation,
   });
 
   @override
@@ -69,11 +73,15 @@ class _DetailViewState extends State<DetailView> {
       CampaignStatus.distributing,
       CampaignStatus.finished,
     ].contains(widget.campaign.status);
-    final bool canShowMapIcon = [
-      CampaignStatus.pending,
-      CampaignStatus.distributing,
-      CampaignStatus.finished,
-    ].contains(widget.campaign.status);
+    final bool canShowMapIcon =
+        widget.isOwner &&
+        widget.campaign.status == CampaignStatus.distributing &&
+        widget.onCheckInLocation != null;
+    final bool canShowFocusIcon =
+      !widget.isOwner &&
+      widget.campaign.latitude != null &&
+      widget.campaign.longitude != null &&
+      widget.onFocusCampaignLocation != null;
     final bool showAuthorityNote = [
       CampaignStatus.approved,
       CampaignStatus.rejected,
@@ -105,8 +113,13 @@ class _DetailViewState extends State<DetailView> {
         CharityLocationRow(
           location: widget.campaign.reliefLocation,
           onMapPressed: canShowMapIcon
-              ? () {
-                  // TODO: Navigate to map
+              ? () async {
+                  await widget.onCheckInLocation?.call();
+                }
+              : null,
+          onFocusMapPressed: canShowFocusIcon
+              ? () async {
+                  await widget.onFocusCampaignLocation?.call();
                 }
               : null,
         ),

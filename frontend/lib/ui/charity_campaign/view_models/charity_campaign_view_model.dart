@@ -292,6 +292,26 @@ class CharityCampaignViewModel
     return detail;
   }
 
+  Future<void> checkInCampaignLocation({
+    required String campaignId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      await _repository.updateCampaignLocation(
+        campaignId: campaignId,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      state = state.copyWith(clearError: true);
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to check in campaign location: $e',
+      );
+      rethrow;
+    }
+  }
+
   Future<void> postAnnouncement({
     required String campaignId,
     required String text,

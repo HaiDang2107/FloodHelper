@@ -39,9 +39,7 @@ class BroadcastingSignalsState {
 @riverpod
 class BroadcastingSignalsViewModel
     extends _$BroadcastingSignalsViewModel {
-  late final SignalService _signalService = SignalService(
-    apiClient: ref.read(apiClientProvider),
-  );
+  late final SignalService _signalService = ref.read(signalServiceProvider);
 
   @override
   BroadcastingSignalsState build() {

@@ -56,6 +56,10 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   visibilityMode?: string;
 
   @IsOptional()
+  @IsBoolean()
+  showCharityCampaignLocations?: boolean;
+
+  @IsOptional()
   @IsString()
   avatarUrl?: string;
 

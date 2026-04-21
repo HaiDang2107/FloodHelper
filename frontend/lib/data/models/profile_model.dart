@@ -13,6 +13,7 @@ class ProfileModel {
   final double? longitude;
   final double? latitude;
   final String visibilityMode; // PUBLIC | JUST_FRIEND | NO_ONE
+  final bool showCharityCampaignLocations;
   final String? avatarUrl;
   final String? citizenId;
   final String phoneNumber;
@@ -34,6 +35,7 @@ class ProfileModel {
     this.longitude,
     this.latitude,
     this.visibilityMode = 'PUBLIC',
+    this.showCharityCampaignLocations = false,
     this.avatarUrl,
     this.citizenId,
     required this.phoneNumber,
@@ -65,6 +67,8 @@ class ProfileModel {
       longitude: json['longitude']?.toDouble(),
       latitude: json['latitude']?.toDouble(),
       visibilityMode: json['visibilityMode'] ?? 'PUBLIC',
+        showCharityCampaignLocations:
+          json['showCharityCampaignLocations'] as bool? ?? false,
       avatarUrl: json['avatarUrl'],
       citizenId: json['citizenId'],
       phoneNumber: json['phoneNumber'] ?? '',
@@ -91,6 +95,7 @@ class ProfileModel {
       'longitude': longitude,
       'latitude': latitude,
       'visibilityMode': visibilityMode,
+      'showCharityCampaignLocations': showCharityCampaignLocations,
       'avatarUrl': avatarUrl,
       'citizenId': citizenId,
       'phoneNumber': phoneNumber,
@@ -114,6 +119,7 @@ class ProfileModel {
     double? longitude,
     double? latitude,
     String? visibilityMode,
+    bool? showCharityCampaignLocations,
     String? avatarUrl,
     String? citizenId,
     String? phoneNumber,
@@ -135,6 +141,8 @@ class ProfileModel {
       longitude: longitude ?? this.longitude,
       latitude: latitude ?? this.latitude,
       visibilityMode: visibilityMode ?? this.visibilityMode,
+        showCharityCampaignLocations:
+          showCharityCampaignLocations ?? this.showCharityCampaignLocations,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       citizenId: citizenId ?? this.citizenId,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -189,6 +197,7 @@ class UpdateProfileDto {
   final double? curLongitude;
   final double? curLatitude;
   final String? visibilityMode;
+  final bool? showCharityCampaignLocations;
   final String? avatarUrl;
   final String? citizenId;
   final String? citizenIdCardImg;
@@ -206,6 +215,7 @@ class UpdateProfileDto {
     this.curLongitude,
     this.curLatitude,
     this.visibilityMode,
+    this.showCharityCampaignLocations,
     this.avatarUrl,
     this.citizenId,
     this.citizenIdCardImg,
@@ -225,6 +235,9 @@ class UpdateProfileDto {
     if (curLongitude != null) map['curLongitude'] = curLongitude;
     if (curLatitude != null) map['curLatitude'] = curLatitude;
     if (visibilityMode != null) map['visibilityMode'] = visibilityMode;
+    if (showCharityCampaignLocations != null) {
+      map['showCharityCampaignLocations'] = showCharityCampaignLocations;
+    }
     if (avatarUrl != null) map['avatarUrl'] = avatarUrl;
     if (citizenId != null) map['citizenId'] = citizenId;
     if (citizenIdCardImg != null) map['citizenIdCardImg'] = citizenIdCardImg;

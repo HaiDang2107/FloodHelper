@@ -8,6 +8,7 @@ import { Prisma, TransactionState } from '@prisma/client';
 import {
   CreateCampaignDto,
   QueryCampaignTransactionsDto,
+  UpdateCampaignLocationDto,
   UpdateCampaignDto,
 } from './dto';
 import { CommonCharityService } from '../common.service';
@@ -131,6 +132,35 @@ export class NoruserBenefCharityService {
 
   getCampaignDetail(campaignId: string) {
     return this.commonCharityService.getCampaignDetail(campaignId);
+  }
+
+  async listDistributingCampaignLocations() { // Lấy vị trí của các distributing campaign 
+    const campaigns = await this.prisma.charityCampaign.findMany({
+      where: {
+        state: {
+          equals: 'DISTRIBUTING',
+          mode: 'insensitive',
+        },
+        campaignLatitude: { not: null },
+        campaignLongitude: { not: null },
+      },
+      select: {
+        campaignId: true,
+        campaignName: true,
+        destination: true,
+        campaignLatitude: true,
+        campaignLongitude: true,
+      },
+      orderBy: [{ startedDistributionAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return campaigns.map((campaign) => ({
+      campaignId: campaign.campaignId,
+      campaignName: campaign.campaignName,
+      destination: campaign.destination,
+      latitude: Number(campaign.campaignLatitude),
+      longitude: Number(campaign.campaignLongitude),
+    }));
   }
 
   async listCampaignTransactions(
@@ -275,6 +305,59 @@ export class NoruserBenefCharityService {
     });
 
     return this.commonCharityService.getCampaignDetail(campaignId);
+  }
+
+  async updateCampaignLocation(
+    userId: string,
+    campaignId: string,
+    payload: UpdateCampaignLocationDto,
+  ) { // Update vị trí của campaign
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        organizedBy: true,
+        state: true,
+        destination: true,
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+    if (campaign.organizedBy !== userId) {
+      throw new ForbiddenException(
+        'You are not allowed to check in this campaign location',
+      );
+    }
+
+    const state = String(campaign.state).toUpperCase();
+    if (state !== 'DISTRIBUTING') {
+      throw new BadRequestException(
+        'Campaign location can only be checked in when campaign is DISTRIBUTING',
+      );
+    }
+
+    const updated = await this.prisma.charityCampaign.update({
+      where: { campaignId },
+      data: {
+        campaignLatitude: payload.latitude,
+        campaignLongitude: payload.longitude,
+      },
+      select: {
+        campaignId: true,
+        destination: true,
+        campaignLatitude: true,
+        campaignLongitude: true,
+      },
+    });
+
+    return {
+      campaignId: updated.campaignId,
+      destination: updated.destination,
+      latitude: Number(updated.campaignLatitude),
+      longitude: Number(updated.campaignLongitude),
+    };
   }
 
   async sendCampaignRequest(userId: string, campaignId: string) {

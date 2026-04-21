@@ -76,6 +76,37 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
   }
 
   @override
+  Future<void> updateCampaignLocation({
+    required String campaignId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    await _charityCampaignService.updateCampaignLocation(
+      campaignId: campaignId,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
+
+  @override
+  Future<List<CharityCampaignLocation>> getDistributingCampaignLocations() async {
+    final payload = await _charityCampaignService.getDistributingCampaignLocations();
+
+    return payload
+        .map(
+          (item) => CharityCampaignLocation(
+            campaignId: (item['campaignId'] ?? '').toString(),
+            campaignName: (item['campaignName'] ?? '').toString(),
+            destination: (item['destination'] ?? '').toString(),
+            latitude: double.tryParse(item['latitude']?.toString() ?? '') ?? 0,
+            longitude: double.tryParse(item['longitude']?.toString() ?? '') ?? 0,
+          ),
+        )
+        .where((item) => item.campaignId.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
   Future<DonateQrResult> createDonateQr({
     required String campaignId,
     required BigInt amount,

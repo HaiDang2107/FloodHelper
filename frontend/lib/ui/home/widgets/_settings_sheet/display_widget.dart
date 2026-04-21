@@ -3,15 +3,19 @@ import 'package:flutter/material.dart';
 class DisplayWidget extends StatefulWidget {
   final bool showStrangerLocation;
   final bool showPostLocation;
+  final bool showCharityCampaignLocations;
   final Function(bool) onShowStrangerLocationChanged;
   final Function(bool) onShowPostLocationChanged;
+  final Function(bool) onShowCharityCampaignLocationsChanged;
 
   const DisplayWidget({
     super.key,
     required this.showStrangerLocation,
     required this.showPostLocation,
+    required this.showCharityCampaignLocations,
     required this.onShowStrangerLocationChanged,
     required this.onShowPostLocationChanged,
+    required this.onShowCharityCampaignLocationsChanged,
   });
 
   @override
@@ -58,6 +62,18 @@ class _DisplayWidgetState extends State<DisplayWidget> {
             },
             title: const Text(
               'Show post locations',
+              style: TextStyle(color: Colors.black87),
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
+          CheckboxListTile(
+            value: widget.showCharityCampaignLocations,
+            onChanged: (value) {
+              widget.onShowCharityCampaignLocationsChanged(value ?? false);
+            },
+            title: const Text(
+              'Show charity campaign locations (distributing state)',
               style: TextStyle(color: Colors.black87),
             ),
             controlAffinity: ListTileControlAffinity.leading,

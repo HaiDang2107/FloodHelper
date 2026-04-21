@@ -304,6 +304,7 @@ export class AuthService {
           citizenId: user.citizenId,
           citizenIdCardImg: user.citizenIdCardImg,
           jobPosition: user.jobPosition,
+          showCharityCampaignLocations: user.showCharityCampaignLocations,
         },
         tokens: {
           accessToken: tokens.accessToken,

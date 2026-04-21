@@ -214,6 +214,15 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
                   .read(charityCampaignViewModelProvider.notifier)
                   .postAnnouncement(campaignId: campaignId, text: text);
             },
+            onCheckInLocation: (campaignId, latitude, longitude) {
+              return ref
+                  .read(charityCampaignViewModelProvider.notifier)
+                  .checkInCampaignLocation(
+                    campaignId: campaignId,
+                    latitude: latitude,
+                    longitude: longitude,
+                  );
+            },
           );
         },
       ),

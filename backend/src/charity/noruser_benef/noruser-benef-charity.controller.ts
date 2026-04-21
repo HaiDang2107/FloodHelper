@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -25,6 +26,7 @@ import {
   CreateSupplyDto,
   UpdateFinancialSupportDto,
   UpdateSupplyDto,
+  UpdateCampaignLocationDto,
 } from './dto';
 import { NoruserBenefAllocationService } from './noruser-benef-allocation.service';
 import { NoruserBenefCharityService } from './noruser-benef-charity.service';
@@ -73,6 +75,18 @@ export class NoruserBenefCharityController {
     return {
       success: true,
       message: 'My campaigns retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/distributing-locations')
+  async getDistributingCampaignLocations() {
+    const data =
+      await this.noruserBenefCharityService.listDistributingCampaignLocations();
+
+    return {
+      success: true,
+      message: 'Distributing campaign locations retrieved successfully',
       data,
     };
   }
@@ -135,6 +149,27 @@ export class NoruserBenefCharityController {
     return {
       success: true,
       message: 'Campaign updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Patch('campaigns/:campaignId/location')
+  async updateCampaignLocation(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: UpdateCampaignLocationDto,
+  ) {
+    const data = await this.noruserBenefCharityService.updateCampaignLocation(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign location check-in successful',
       data,
     };
   }

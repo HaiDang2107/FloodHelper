@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class PostLocationPin extends StatelessWidget {
+class CampaignLocationPin extends StatelessWidget {
   final String imageUrl;
   final double size;
   final VoidCallback? onTap;
 
-  const PostLocationPin({
+  const CampaignLocationPin({
     super.key,
     required this.imageUrl,
     this.size = 60.0,
@@ -36,7 +36,7 @@ class PostLocationPin extends StatelessWidget {
               right: 0,
               bottom: -20,
               child: CustomPaint(
-                painter: _PostPinPainter(
+                painter: _CampaignPinPainter(
                   size: size,
                   tailHeight: tailHeight,
                 ),
@@ -60,18 +60,27 @@ class PostLocationPin extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, stack) => Container(
-                    color: Colors.grey[300],
-                    child: Icon(
-                      Icons.image,
-                      size: size * 0.5,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
+                child: imageUrl.isEmpty
+                    ? Container(
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.campaign,
+                          size: size * 0.5,
+                          color: Colors.grey[700],
+                        ),
+                      )
+                    : Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => Container(
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.image,
+                            size: size * 0.5,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
               ),
             ),
 
@@ -107,11 +116,11 @@ class PostLocationPin extends StatelessWidget {
   }
 }
 
-class _PostPinPainter extends CustomPainter {
+class _CampaignPinPainter extends CustomPainter {
   final double size;
   final double tailHeight;
 
-  _PostPinPainter({
+  _CampaignPinPainter({
     required this.size,
     required this.tailHeight,
   });
