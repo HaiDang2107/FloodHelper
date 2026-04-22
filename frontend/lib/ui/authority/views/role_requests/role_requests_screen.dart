@@ -56,6 +56,19 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
     final viewModel = ref.read(roleRequestsViewModelProvider.notifier);
     final hasStatusSelection = _activeStatus != null;
 
+    final errorMessage = state.errorMessage;
+    if (errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+        viewModel.clearError();
+      });
+    }
+
     return AuthorityReviewFrame(
       title: 'Role requests',
       filters: hasStatusSelection

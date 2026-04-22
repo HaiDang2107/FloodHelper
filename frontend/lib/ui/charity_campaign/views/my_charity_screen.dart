@@ -24,6 +24,7 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
     CampaignStatus.rejected,
     CampaignStatus.donating,
     CampaignStatus.distributing,
+    CampaignStatus.suspended,
     CampaignStatus.finished,
   ];
 
@@ -98,53 +99,28 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
         Tab(text: 'Rejected'),
         Tab(text: 'Donating'),
         Tab(text: 'Distributing'),
+        Tab(text: 'Suspended'),
         Tab(text: 'Finished'),
       ],
       onTabChanged: _handleTabChanged,
-      tabViews: [
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[0]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[0]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[0]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[1]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[1]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[1]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[2]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[2]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[2]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[3]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[3]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[3]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[4]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[4]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[4]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[5]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[5]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[5]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-        _buildCampaignList(
-          campaigns: viewModel.mineByStatus(_tabStatuses[6]),
-          isLoading: viewModel.isMyStatusLoading(_tabStatuses[6]),
-          onRefresh: () => viewModel.refreshMyStatus(_tabStatuses[6]),
-          onLoadCampaignDetail: viewModel.loadCampaignDetail,
-        ),
-      ],
+      tabViews: List.generate(
+        _tabStatuses.length,
+        (index) => _buildCampaignTabView(viewModel, index),
+      ),
+    );
+  }
+
+  Widget _buildCampaignTabView(
+    CharityCampaignViewModel viewModel,
+    int index,
+  ) {
+    final status = _tabStatuses[index];
+
+    return _buildCampaignList(
+      campaigns: viewModel.mineByStatus(status),
+      isLoading: viewModel.isMyStatusLoading(status),
+      onRefresh: () => viewModel.refreshMyStatus(status),
+      onLoadCampaignDetail: viewModel.loadCampaignDetail,
     );
   }
 

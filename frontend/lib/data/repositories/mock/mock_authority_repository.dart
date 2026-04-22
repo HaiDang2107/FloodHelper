@@ -87,6 +87,34 @@ class MockAuthorityRepository implements AuthorityRepository {
       ),
       announcements: const [],
     ),
+    CharityCampaign(
+      id: 'CAMP-2004',
+      organizedBy: 'user-4',
+      checkedBy: 'authority-mock-id',
+      name: 'Suspended Riverbank Relief',
+      benefactorName: 'Vo Thi D',
+      purpose: 'Temporary relief pause pending review',
+      charityObject: 'Flood-affected families',
+      status: CampaignStatus.suspended,
+      bankInfo: const BankInfo(
+        accountNumber: '6677881122',
+        bankName: 'MBBank',
+        accountHolder: 'Vo Thi D',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(days: 4)),
+      respondedAt: DateTime.now().subtract(const Duration(days: 2)),
+      noteByAuthority: 'Campaign suspended due to missing verification documents.',
+      startedDonationAt: DateTime.now().subtract(const Duration(days: 1)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 6)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 7)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 12)),
+      reliefLocation: 'Quy Nhon, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().subtract(const Duration(days: 1)),
+        endDate: DateTime.now().add(const Duration(days: 12)),
+      ),
+      announcements: const [],
+    ),
   ];
 
   @override
@@ -256,7 +284,11 @@ class MockAuthorityRepository implements AuthorityRepository {
           ? campaign.status == status
           : campaign.status == CampaignStatus.pending ||
               campaign.status == CampaignStatus.approved ||
-              campaign.status == CampaignStatus.rejected;
+            campaign.status == CampaignStatus.rejected ||
+            campaign.status == CampaignStatus.donating ||
+            campaign.status == CampaignStatus.distributing ||
+            campaign.status == CampaignStatus.finished ||
+            campaign.status == CampaignStatus.suspended;
     }).toList(growable: false);
 
     filtered.sort((a, b) {
@@ -315,6 +347,22 @@ class MockAuthorityRepository implements AuthorityRepository {
       checkedBy: 'authority-mock-id',
       respondedAt: DateTime.now(),
       noteByAuthority: noteByAuthority ?? 'Rejected in mock mode.',
+    );
+    return updated;
+  }
+
+  @override
+  Future<CharityCampaign> suspendCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final updated = _updateCampaign(
+      campaignId,
+      status: CampaignStatus.suspended,
+      checkedBy: 'authority-mock-id',
+      respondedAt: DateTime.now(),
+      noteByAuthority: noteByAuthority ?? 'Suspended in mock mode.',
     );
     return updated;
   }

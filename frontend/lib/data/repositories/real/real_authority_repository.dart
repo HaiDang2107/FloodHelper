@@ -121,4 +121,17 @@ class RealAuthorityRepository implements AuthorityRepository {
     final data = body['data'] as Map<String, dynamic>? ?? {};
     return CharityCampaignMappers.campaignFromApi(data);
   }
+
+  @override
+  Future<CharityCampaign> suspendCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    final body = await _authorityService.suspendCharityCampaign(
+      campaignId,
+      noteByAuthority: noteByAuthority,
+    );
+    final data = body['data'] as Map<String, dynamic>? ?? {};
+    return CharityCampaignMappers.campaignFromApi(data);
+  }
 }

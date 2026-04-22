@@ -411,6 +411,8 @@ class CharityCampaignViewModel
         return campaign.startedDonationAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       case CampaignStatus.distributing:
         return campaign.startedDistributionAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      case CampaignStatus.suspended:
+        return campaign.respondedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       case CampaignStatus.finished:
         return campaign.finishedDistributionAt ?? DateTime.fromMillisecondsSinceEpoch(0);
     }

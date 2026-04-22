@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, TransactionState } from '@prisma/client';
+import { CampaignState, Prisma, TransactionState } from '@prisma/client';
 import {
   CreateCampaignDto,
   QueryCampaignTransactionsDto,
@@ -16,38 +16,35 @@ import { VietQrInternalService } from '../vietqr/vietqr-internal.service';
 import { VietQrService } from '../vietqr/vietqr.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
-type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
-  select: {
-    campaignId: true;
-    campaignName: true;
-    state: true;
-    createdAt: true;
-    requestedAt: true;
-    respondedAt: true;
-    organizer: {
-      select: {
-        userId: true;
-        fullname: true;
-        nickname: true;
-        placeOfResidence: true;
-      };
-    };
-  };
-}>;
+type CharityCampaignListItemPayload = {
+  campaignId: string;
+  campaignName: string;
+  state: CampaignState;
+  createdAt: Date;
+  requestedAt: Date | null;
+  respondedAt: Date | null;
+  organizer?: {
+    userId: string;
+    fullname: string;
+    nickname: string | null;
+    placeOfResidence: string | null;
+  } | null;
+};
 
 @Injectable()
 export class NoruserBenefCharityService {
-  private readonly allowedStates = new Set([
+  private readonly allowedStates = new Set<CampaignState>([
     'CREATED',
     'PENDING',
     'APPROVED',
     'REJECTED',
     'DONATING',
     'DISTRIBUTING',
+    'SUSPENDED',
     'FINISHED',
   ]);
 
-  private static readonly ALLOWED_TRANSACTION_STATES = new Set([
+  private static readonly ALLOWED_TRANSACTION_STATES = new Set<TransactionState>([
     'CREATED',
     'VERIFYING',
     'SUCCESS',
@@ -70,10 +67,7 @@ export class NoruserBenefCharityService {
 
     const campaigns = await this.prisma.charityCampaign.findMany({
       where: {
-        state: {
-          equals: normalizedState,
-          mode: 'insensitive',
-        },
+        state: normalizedState,
       },
       select: {
         campaignId: true,
@@ -103,10 +97,7 @@ export class NoruserBenefCharityService {
     const campaigns = await this.prisma.charityCampaign.findMany({
       where: {
         organizedBy: userId,
-        state: {
-          equals: normalizedState,
-          mode: 'insensitive',
-        },
+        state: normalizedState,
       },
       select: {
         campaignId: true,
@@ -137,10 +128,7 @@ export class NoruserBenefCharityService {
   async listDistributingCampaignLocations() { // Lấy vị trí của các distributing campaign 
     const campaigns = await this.prisma.charityCampaign.findMany({
       where: {
-        state: {
-          equals: 'DISTRIBUTING',
-          mode: 'insensitive',
-        },
+        state: 'DISTRIBUTING',
         campaignLatitude: { not: null },
         campaignLongitude: { not: null },
       },
@@ -167,7 +155,7 @@ export class NoruserBenefCharityService {
     campaignId: string,
     query: QueryCampaignTransactionsDto,
   ) {
-    const normalizedState = (query.state ?? 'SUCCESS').trim().toUpperCase();
+    const normalizedState = (query.state ?? 'SUCCESS').trim().toUpperCase() as TransactionState;
     if (!NoruserBenefCharityService.ALLOWED_TRANSACTION_STATES.has(normalizedState)) {
       throw new BadRequestException(
         'Invalid transaction state. Allowed values: CREATED, VERIFYING, SUCCESS, FAILED, EXPIRED',
@@ -466,25 +454,26 @@ export class NoruserBenefCharityService {
     );
   }
 
-  private normalizeAndValidateState(state: string): string {
+  private normalizeAndValidateState(state: string): CampaignState {
     if (!state) {
       throw new BadRequestException('state is required');
     }
 
     const normalized = state.trim().toUpperCase();
-    const mapped = normalized === 'ACCEPTED' ? 'APPROVED' : normalized;
+    const mapped: CampaignState =
+      normalized === 'ACCEPTED' ? 'APPROVED' : (normalized as CampaignState);
 
     if (!this.allowedStates.has(mapped)) {
       throw new BadRequestException(
-        'Invalid state. Allowed values: CREATED, PENDING, APPROVED, REJECTED, DONATING, DISTRIBUTING, FINISHED',
+        'Invalid state. Allowed values: CREATED, PENDING, APPROVED, REJECTED, DONATING, DISTRIBUTING, SUSPENDED, FINISHED',
       );
     }
 
-    return mapped;
+    return mapped as CampaignState;
   }
 
   private getOrderByForState(
-    state: string,
+    state: CampaignState,
   ): Prisma.CharityCampaignOrderByWithRelationInput[] {
     switch (state) {
       case 'PENDING':
@@ -498,6 +487,8 @@ export class NoruserBenefCharityService {
         return [{ startedDistributionAt: 'desc' }, { createdAt: 'desc' }];
       case 'FINISHED':
         return [{ finishedDistributionAt: 'desc' }, { createdAt: 'desc' }];
+      case 'SUSPENDED':
+        return [{ respondedAt: 'desc' }, { createdAt: 'desc' }];
       case 'CREATED':
       default:
         return [{ createdAt: 'desc' }];
@@ -508,7 +499,7 @@ export class NoruserBenefCharityService {
     return {
       id: campaign.campaignId,
       name: campaign.campaignName,
-      organizedBy: campaign.organizer?.userId,
+      organizedBy: campaign.organizer?.userId ?? null,
       organizerResidence: campaign.organizer?.placeOfResidence ?? null,
       benefactorName:
         campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,7 @@ async function main() {
   const organizerId1 = 'c2e07c6d-c526-4901-b00b-376503f411ea'; 
   const organizerId2 = 'ca56cc23-9f84-4fe7-b58e-175312fe6ff7'; 
 
-  const campaigns = [
+  const campaigns: Prisma.CharityCampaignUncheckedCreateInput[] = [
     {
       campaignName: 'Cứu trợ lũ lụt khẩn cấp tại Quảng Bình',
       organizedBy: organizerId1,

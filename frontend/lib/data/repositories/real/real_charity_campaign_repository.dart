@@ -17,6 +17,7 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
     CampaignStatus.rejected,
     CampaignStatus.donating,
     CampaignStatus.distributing,
+    CampaignStatus.suspended,
     CampaignStatus.finished,
   ];
 

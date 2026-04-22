@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/authority_theme.dart';
 import '../../view_models/authority_session_view_model.dart';
-import '../../widgets/authority_sidebar.dart';
+import '../../widgets/authority_sidebar/authority_sidebar.dart';
 import '../../../../routing/authority_router.dart';
 
 class AuthorityShell extends ConsumerStatefulWidget {

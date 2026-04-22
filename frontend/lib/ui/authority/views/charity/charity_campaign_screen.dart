@@ -27,6 +27,14 @@ class _CharityCampaignScreenState extends ConsumerState<CharityCampaignScreen> {
         return CampaignStatus.approved;
       case 'rejected':
         return CampaignStatus.rejected;
+      case 'donating':
+        return CampaignStatus.donating;
+      case 'distributing':
+        return CampaignStatus.distributing;
+      case 'finished':
+        return CampaignStatus.finished;
+      case 'suspended':
+        return CampaignStatus.suspended;
       default:
         return null;
     }
@@ -84,6 +92,9 @@ class _CharityCampaignScreenState extends ConsumerState<CharityCampaignScreen> {
           noteByAuthority: note,
         ),
         onReject: (note) => viewModel.rejectSelected(
+          noteByAuthority: note,
+        ),
+        onSuspend: (note) => viewModel.suspendSelected(
           noteByAuthority: note,
         ),
       ),

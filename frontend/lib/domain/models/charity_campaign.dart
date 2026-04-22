@@ -174,6 +174,9 @@ enum CampaignStatus {
   /// Distributing relief supplies
   distributing,
 
+  /// Temporarily suspended by authority
+  suspended,
+
   /// Campaign completed
   finished;
 
@@ -191,6 +194,8 @@ enum CampaignStatus {
         return 'Đang quyên góp';
       case CampaignStatus.distributing:
         return 'Đang phát hàng';
+      case CampaignStatus.suspended:
+        return 'Tạm dừng';
       case CampaignStatus.finished:
         return 'Hoàn thành';
     }
@@ -211,6 +216,8 @@ enum CampaignStatus {
         return CampaignStatus.donating;
       case 'distributing':
         return CampaignStatus.distributing;
+      case 'suspended':
+        return CampaignStatus.suspended;
       case 'finished':
         return CampaignStatus.finished;
       default:

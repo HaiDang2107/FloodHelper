@@ -229,6 +229,28 @@ class CharityCampaignRequestsViewModel
     }
   }
 
+  Future<void> suspendSelected({String? noteByAuthority}) async {
+    final campaign = state.selectedCampaign;
+    if (campaign == null) {
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repository = ref.read(authorityRepositoryProvider);
+      final updated = await repository.suspendCharityCampaign(
+        campaign.id,
+        noteByAuthority: noteByAuthority,
+      );
+      _replaceCampaign(campaign.id, updated);
+    } catch (error) {
+      state = state.copyWith(errorMessage: 'Failed to suspend campaign: $error');
+      rethrow;
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }

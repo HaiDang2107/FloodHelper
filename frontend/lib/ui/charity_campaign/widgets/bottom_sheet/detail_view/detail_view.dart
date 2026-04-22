@@ -144,6 +144,17 @@ class _DetailViewState extends State<DetailView> {
             label: 'Note by Authority',
             value: widget.campaign.noteByAuthority ?? 'Không có ghi chú',
           ),
+        if (widget.isOwner && widget.campaign.status == CampaignStatus.suspended)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Your campaign was suspended. Please contact your authority in your place of residence for more details',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         if (widget.isOwner && widget.campaign.status == CampaignStatus.created)
           Row(
             children: [

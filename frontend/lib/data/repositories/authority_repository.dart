@@ -53,4 +53,9 @@ abstract class AuthorityRepository {
     String campaignId, {
     String? noteByAuthority,
   });
+
+  Future<CharityCampaign> suspendCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  });
 }

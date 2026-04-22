@@ -97,7 +97,13 @@ class CharityCampaignRequestCard extends StatelessWidget {
         return const Color(0xFF157F3B);
       case CampaignStatus.rejected:
         return const Color(0xFFB42318);
-      default:
+      case CampaignStatus.suspended:
+        return const Color(0xFFB42318);
+      case CampaignStatus.donating:
+      case CampaignStatus.distributing:
+        return const Color(0xFF0F62FE);
+      case CampaignStatus.finished:
+      case CampaignStatus.created:
         return const Color(0xFF667085);
     }
   }

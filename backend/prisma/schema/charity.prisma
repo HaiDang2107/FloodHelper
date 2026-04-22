@@ -16,7 +16,7 @@ model CharityCampaign {
   campaignLatitude     Decimal?  @map("campaign_latitude") @db.Decimal(10, 7)
   campaignLongitude    Decimal?  @map("campaign_longitude") @db.Decimal(10, 7)
   charityObject        String    @map("charity_object")
-  state                String
+  state                CampaignState
   startedDonationAt  DateTime? @map("started_donation_at")
   finishedDonationAt DateTime? @map("finished_donation_at")
   startedDistributionAt  DateTime? @map("started_distribution_at")
@@ -33,6 +33,17 @@ model CharityCampaign {
   financialSupports FinancialSupport[]
 
   @@map("CharityCampaign")
+}
+
+enum CampaignState {
+  CREATED
+  PENDING
+  APPROVED
+  REJECTED
+  DONATING
+  DISTRIBUTING
+  SUSPENDED
+  FINISHED
 }
 
 model Transaction {

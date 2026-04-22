@@ -17,6 +17,7 @@ class RoleRequestsState {
     this.nextCursor,
     this.hasMore = true,
     this.endMessage,
+    this.errorMessage,
   });
 
   final List<RoleRequest> allRequests;
@@ -29,6 +30,7 @@ class RoleRequestsState {
   final String? nextCursor;
   final bool hasMore;
   final String? endMessage;
+  final String? errorMessage;
 
   RoleRequestsState copyWith({
     List<RoleRequest>? allRequests,
@@ -44,6 +46,8 @@ class RoleRequestsState {
     bool? hasMore,
     String? endMessage,
     bool clearEndMessage = false,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return RoleRequestsState(
       allRequests: allRequests ?? this.allRequests,
@@ -56,6 +60,7 @@ class RoleRequestsState {
       nextCursor: nextCursor ?? this.nextCursor,
       hasMore: hasMore ?? this.hasMore,
       endMessage: clearEndMessage ? null : (endMessage ?? this.endMessage),
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 
@@ -78,22 +83,29 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
   }
 
   Future<void> load() async {
-    state = state.copyWith(isLoading: true, clearEndMessage: true);
-    final repository = ref.read(authorityRepositoryProvider);
-    final page = await repository.fetchRoleRequests();
+    state = state.copyWith(isLoading: true, clearEndMessage: true, clearError: true);
+    try {
+      final repository = ref.read(authorityRepositoryProvider);
+      final page = await repository.fetchRoleRequests();
 
-    final allData = page.items;
-    final filtered = _applyFilters(allData);
+      final allData = page.items;
+      final filtered = _applyFilters(allData);
 
-    state = state.copyWith(
-      allRequests: allData,
-      requests: filtered,
-      isLoading: false,
-      selectedId: filtered.isNotEmpty ? filtered.first.id : null,
-      hasMore: page.hasMore,
-      nextCursor: page.nextCursor,
-      endMessage: filtered.isEmpty ? 'No requests to review.' : null,
-    );
+      state = state.copyWith(
+        allRequests: allData,
+        requests: filtered,
+        isLoading: false,
+        selectedId: filtered.isNotEmpty ? filtered.first.id : null,
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+        endMessage: filtered.isEmpty ? 'No requests to review.' : null,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load role requests: $error',
+      );
+    }
   }
 
   Future<void> loadMore() async {
@@ -102,21 +114,28 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
     }
 
     state = state.copyWith(isLoadingMore: true, clearEndMessage: true);
-    final repository = ref.read(authorityRepositoryProvider);
-    final page = await repository.fetchRoleRequests(
-      beforeCreatedAt: state.nextCursor,
-    );
+    try {
+      final repository = ref.read(authorityRepositoryProvider);
+      final page = await repository.fetchRoleRequests(
+        beforeCreatedAt: state.nextCursor,
+      );
 
-    final mergedAll = [...state.allRequests, ...page.items];
-    final filtered = _applyFilters(mergedAll);
-    state = state.copyWith(
-      allRequests: mergedAll,
-      requests: filtered,
-      isLoadingMore: false,
-      hasMore: page.hasMore,
-      nextCursor: page.nextCursor,
-      endMessage: page.hasMore ? null : 'No more requests.',
-    );
+      final mergedAll = [...state.allRequests, ...page.items];
+      final filtered = _applyFilters(mergedAll);
+      state = state.copyWith(
+        allRequests: mergedAll,
+        requests: filtered,
+        isLoadingMore: false,
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+        endMessage: page.hasMore ? null : 'No more requests.',
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoadingMore: false,
+        errorMessage: 'Failed to load more role requests: $error',
+      );
+    }
   }
 
   Future<void> setStatusFilter(RoleRequestStatus? status) async {
@@ -169,11 +188,15 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
     state = state.copyWith(selectedId: id);
   }
 
+  void clearError() {
+    state = state.copyWith(clearError: true);
+  }
+
   Future<void> approveSelected({String? note}) async {
     final request = state.selectedRequest;
     if (request == null) return;
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repository = ref.read(authorityRepositoryProvider);
       final updated = await repository.approveRoleRequest(request.id, note: note);
@@ -182,6 +205,8 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
         notes: updated.notes,
         respondedAt: updated.respondedAt ?? DateTime.now(),
       ));
+    } catch (error) {
+      state = state.copyWith(errorMessage: 'Failed to approve role request: $error');
     } finally {
       state = state.copyWith(isLoading: false);
     }
@@ -191,7 +216,7 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
     final request = state.selectedRequest;
     if (request == null) return;
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repository = ref.read(authorityRepositoryProvider);
       final updated = await repository.rejectRoleRequest(request.id, note: note);
@@ -200,6 +225,8 @@ class RoleRequestsViewModel extends _$RoleRequestsViewModel {
         notes: updated.notes,
         respondedAt: updated.respondedAt ?? DateTime.now(),
       ));
+    } catch (error) {
+      state = state.copyWith(errorMessage: 'Failed to reject role request: $error');
     } finally {
       state = state.copyWith(isLoading: false);
     }

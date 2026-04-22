@@ -103,4 +103,19 @@ class AuthorityService {
 
     return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
   }
+
+  Future<Map<String, dynamic>> suspendCharityCampaign(
+    String campaignId, {
+    String? noteByAuthority,
+  }) async {
+    final response = await _apiClient.patch(
+      '/authority/campaigns/$campaignId/suspend',
+      data: {
+        if (noteByAuthority != null && noteByAuthority.trim().isNotEmpty)
+          'noteByAuthority': noteByAuthority.trim(),
+      },
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
 }

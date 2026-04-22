@@ -86,4 +86,23 @@ export class AuthorityCharityController {
       data,
     };
   }
+
+  @Patch(':campaignId/suspend')
+  async suspendCampaign(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: RespondCampaignDto,
+  ) {
+    const data = await this.authorityCharityService.suspendCampaignForAuthority(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign suspended successfully',
+      data,
+    };
+  }
 }

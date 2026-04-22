@@ -7,7 +7,15 @@ export class ListAuthorityCampaignsDto {
   beforeRequestedAt?: string;
 
   @IsOptional()
-  @IsIn(['PENDING', 'APPROVED', 'REJECTED'])
+  @IsIn([
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
+    'DONATING',
+    'DISTRIBUTING',
+    'FINISHED',
+    'SUSPENDED',
+  ])
   state?: string;
 
   @IsOptional()
