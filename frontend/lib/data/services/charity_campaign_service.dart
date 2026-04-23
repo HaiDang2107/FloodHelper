@@ -343,18 +343,29 @@ class CharityCampaignService {
   }
 
   List<Map<String, dynamic>> _extractList(dynamic responseData) {
+    if (responseData is List) {
+      return responseData
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList(growable: false);
+    }
+
     if (responseData is! Map<String, dynamic>) {
       return [];
     }
 
     final success = responseData['success'] == true;
     final payload = responseData['data'];
-    if (!success || payload is! List) {
+    if (!success) {
       throw ApiException(
         message:
             responseData['message']?.toString() ??
             'Failed to load charity campaigns',
       );
+    }
+
+    if (payload is! List) {
+      return [];
     }
 
     return payload

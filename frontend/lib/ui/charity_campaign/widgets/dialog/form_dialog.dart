@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../data/providers/service_providers.dart';
 import '../../../../data/services/charity_campaign_service.dart';
 import '../../../../domain/models/bank_option.dart';
 import '../../../../domain/models/charity_campaign.dart';
 import '../../../core/common/widgets/location_selector.dart';
 
-class CreateCampaignDialog extends StatefulWidget {
+class CreateCampaignDialog extends ConsumerStatefulWidget {
   final CharityCampaign? campaignToEdit;
 
   const CreateCampaignDialog({super.key, this.campaignToEdit});
@@ -13,11 +15,12 @@ class CreateCampaignDialog extends StatefulWidget {
   bool get isUpdateMode => campaignToEdit != null;
 
   @override
-  State<CreateCampaignDialog> createState() => _CreateCampaignDialogState();
+  ConsumerState<CreateCampaignDialog> createState() =>
+      _CreateCampaignDialogState();
 }
 
-class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
-  final _charityCampaignService = CharityCampaignService();
+class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
+  late final CharityCampaignService _charityCampaignService;
   final nameController = TextEditingController();
   final purposeController = TextEditingController();
   final charityObjectController = TextEditingController();
@@ -45,6 +48,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
   @override
   void initState() {
     super.initState();
+    _charityCampaignService = ref.read(charityCampaignServiceProvider);
     final campaign = widget.campaignToEdit;
     if (campaign == null) {
       _loadBanks();
