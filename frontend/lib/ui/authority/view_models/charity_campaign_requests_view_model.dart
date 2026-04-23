@@ -54,7 +54,9 @@ class CharityCampaignRequestsState {
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isDetailLoading: isDetailLoading ?? this.isDetailLoading,
-      statusFilter: clearStatusFilter ? null : (statusFilter ?? this.statusFilter),
+      statusFilter: clearStatusFilter
+          ? null
+          : (statusFilter ?? this.statusFilter),
       selectedId: selectedId ?? this.selectedId,
       nextCursor: nextCursor ?? this.nextCursor,
       hasMore: hasMore ?? this.hasMore,
@@ -76,7 +78,7 @@ class CharityCampaignRequestsState {
 
 @riverpod
 class CharityCampaignRequestsViewModel
-  extends _$CharityCampaignRequestsViewModel {
+    extends _$CharityCampaignRequestsViewModel {
   @override
   CharityCampaignRequestsState build() {
     return const CharityCampaignRequestsState();
@@ -87,7 +89,11 @@ class CharityCampaignRequestsViewModel
       return;
     }
 
-    state = state.copyWith(isLoading: true, clearEndMessage: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearEndMessage: true,
+      clearError: true,
+    );
     try {
       final repository = ref.read(authorityRepositoryProvider);
       final page = await repository.fetchCharityCampaignRequests(
@@ -118,12 +124,10 @@ class CharityCampaignRequestsViewModel
   }
 
   Future<void> loadMore() async {
-    if (
-      state.statusFilter == null ||
-      state.isLoading ||
-      state.isLoadingMore ||
-      !state.hasMore
-    ) {
+    if (state.statusFilter == null ||
+        state.isLoading ||
+        state.isLoadingMore ||
+        !state.hasMore) {
       return;
     }
 
@@ -185,7 +189,7 @@ class CharityCampaignRequestsViewModel
     await _hydrateDetail(campaignId);
   }
 
-  Future<void> approveSelected({String? noteByAuthority}) async {
+  Future<void> approveSelected({String? noteForResponse}) async {
     final campaign = state.selectedCampaign;
     if (campaign == null) {
       return;
@@ -196,18 +200,20 @@ class CharityCampaignRequestsViewModel
       final repository = ref.read(authorityRepositoryProvider);
       final updated = await repository.approveCharityCampaign(
         campaign.id,
-        noteByAuthority: noteByAuthority,
+        noteForResponse: noteForResponse,
       );
       _replaceCampaign(campaign.id, updated);
     } catch (error) {
-      state = state.copyWith(errorMessage: 'Failed to approve campaign: $error');
+      state = state.copyWith(
+        errorMessage: 'Failed to approve campaign: $error',
+      );
       rethrow;
     } finally {
       state = state.copyWith(isLoading: false);
     }
   }
 
-  Future<void> rejectSelected({String? noteByAuthority}) async {
+  Future<void> rejectSelected({String? noteForResponse}) async {
     final campaign = state.selectedCampaign;
     if (campaign == null) {
       return;
@@ -218,7 +224,7 @@ class CharityCampaignRequestsViewModel
       final repository = ref.read(authorityRepositoryProvider);
       final updated = await repository.rejectCharityCampaign(
         campaign.id,
-        noteByAuthority: noteByAuthority,
+        noteForResponse: noteForResponse,
       );
       _replaceCampaign(campaign.id, updated);
     } catch (error) {
@@ -229,7 +235,7 @@ class CharityCampaignRequestsViewModel
     }
   }
 
-  Future<void> suspendSelected({String? noteByAuthority}) async {
+  Future<void> suspendSelected({String? noteForSuspension}) async {
     final campaign = state.selectedCampaign;
     if (campaign == null) {
       return;
@@ -240,11 +246,13 @@ class CharityCampaignRequestsViewModel
       final repository = ref.read(authorityRepositoryProvider);
       final updated = await repository.suspendCharityCampaign(
         campaign.id,
-        noteByAuthority: noteByAuthority,
+        noteForSuspension: noteForSuspension,
       );
       _replaceCampaign(campaign.id, updated);
     } catch (error) {
-      state = state.copyWith(errorMessage: 'Failed to suspend campaign: $error');
+      state = state.copyWith(
+        errorMessage: 'Failed to suspend campaign: $error',
+      );
       rethrow;
     } finally {
       state = state.copyWith(isLoading: false);
@@ -262,7 +270,9 @@ class CharityCampaignRequestsViewModel
       final detail = await repository.fetchCharityCampaignDetail(campaignId);
       _replaceCampaign(campaignId, detail);
     } catch (error) {
-      state = state.copyWith(errorMessage: 'Failed to load campaign detail: $error');
+      state = state.copyWith(
+        errorMessage: 'Failed to load campaign detail: $error',
+      );
     } finally {
       state = state.copyWith(isDetailLoading: false);
     }
@@ -291,9 +301,11 @@ class CharityCampaignRequestsViewModel
       return const [];
     }
 
-    return source.where((campaign) {
-      return campaign.status == currentState.statusFilter;
-    }).toList(growable: false);
+    return source
+        .where((campaign) {
+          return campaign.status == currentState.statusFilter;
+        })
+        .toList(growable: false);
   }
 
   String? _resolveSelectedId(
@@ -303,7 +315,8 @@ class CharityCampaignRequestsViewModel
     if (filtered.isEmpty) {
       return null;
     }
-    final hasSelected = currentSelectedId != null &&
+    final hasSelected =
+        currentSelectedId != null &&
         filtered.any((campaign) => campaign.id == currentSelectedId);
     return hasSelected ? currentSelectedId : filtered.first.id;
   }

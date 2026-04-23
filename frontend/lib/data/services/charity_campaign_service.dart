@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../domain/models/bank_option.dart';
 import '../../domain/models/charity_campaign.dart';
 import 'api_client.dart';
 
@@ -57,6 +58,29 @@ class CharityCampaignService {
             data['message']?.toString() ??
             'Failed to load charity campaign detail',
       );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<List<BankOption>> getBanks() async {
+    try {
+      final response = await _apiClient.get('/charity/banks');
+      final banks = _extractList(response.data);
+
+      return banks
+          .map((item) => Map<String, dynamic>.from(item))
+          .map(
+            (item) => BankOption(
+              id: int.tryParse(item['id']?.toString() ?? '') ?? 0,
+              shortName: (item['shortName'] ?? '').toString(),
+            ),
+          )
+          .where((bank) => bank.id > 0)
+          .toList(growable: false)
+        ..sort((left, right) => left.shortName.toLowerCase().compareTo(
+              right.shortName.toLowerCase(),
+            ));
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }

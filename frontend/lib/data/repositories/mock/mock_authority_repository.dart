@@ -47,7 +47,7 @@ class MockAuthorityRepository implements AuthorityRepository {
       ),
       requestedAt: DateTime.now().subtract(const Duration(days: 1)),
       respondedAt: DateTime.now().subtract(const Duration(hours: 20)),
-      noteByAuthority: 'Looks good, approved for rollout.',
+      noteForResponse: 'Looks good, approved for rollout.',
       startedDonationAt: DateTime.now().add(const Duration(days: 1)),
       finishedDonationAt: DateTime.now().add(const Duration(days: 8)),
       startedDistributionAt: DateTime.now().add(const Duration(days: 9)),
@@ -75,7 +75,7 @@ class MockAuthorityRepository implements AuthorityRepository {
       ),
       requestedAt: DateTime.now().subtract(const Duration(days: 2)),
       respondedAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
-      noteByAuthority: 'Missing timeline details.',
+      noteForResponse: 'Missing timeline details.',
       startedDonationAt: DateTime.now().add(const Duration(days: 3)),
       finishedDonationAt: DateTime.now().add(const Duration(days: 12)),
       startedDistributionAt: DateTime.now().add(const Duration(days: 13)),
@@ -103,7 +103,7 @@ class MockAuthorityRepository implements AuthorityRepository {
       ),
       requestedAt: DateTime.now().subtract(const Duration(days: 4)),
       respondedAt: DateTime.now().subtract(const Duration(days: 2)),
-      noteByAuthority: 'Campaign suspended due to missing verification documents.',
+      noteForResponse: 'Campaign suspended due to missing verification documents.',
       startedDonationAt: DateTime.now().subtract(const Duration(days: 1)),
       finishedDonationAt: DateTime.now().add(const Duration(days: 6)),
       startedDistributionAt: DateTime.now().add(const Duration(days: 7)),
@@ -150,7 +150,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 98 765 4321',
         address: 'District 7, Ho Chi Minh City',
         idNumber: '079203004531',
+        nickname: 'Duong',
+        placeOfOrigin: 'District 7, Ho Chi Minh City',
         placeOfResidence: 'District 7, Ho Chi Minh City',
+        originProvinceName: 'Ho Chi Minh City',
+        originWardName: 'Ward Tan Hung',
+        residenceProvinceName: 'Ho Chi Minh City',
+        residenceWardName: 'Ward Tan Phong',
+        dateOfIssue: '2024-05-12',
+        dateOfExpire: '2034-05-12',
         frontImageUrl:
             'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -167,7 +175,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 91 234 5678',
         address: 'Thu Duc City, Ho Chi Minh City',
         idNumber: '079203004532',
+        nickname: 'Vy',
+        placeOfOrigin: 'Thu Duc City, Ho Chi Minh City',
         placeOfResidence: 'Thu Duc City, Ho Chi Minh City',
+        originProvinceName: 'Ho Chi Minh City',
+        originWardName: 'Ward An Phu',
+        residenceProvinceName: 'Ho Chi Minh City',
+        residenceWardName: 'Ward Linh Trung',
+        dateOfIssue: '2023-09-18',
+        dateOfExpire: '2033-09-18',
         frontImageUrl:
             'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -184,7 +200,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 90 887 1234',
         address: 'Binh Thanh District, Ho Chi Minh City',
         idNumber: '079203004533',
+        nickname: 'Long',
+        placeOfOrigin: 'Binh Thanh District, Ho Chi Minh City',
         placeOfResidence: 'Binh Thanh District, Ho Chi Minh City',
+        originProvinceName: 'Ho Chi Minh City',
+        originWardName: 'Ward 19',
+        residenceProvinceName: 'Ho Chi Minh City',
+        residenceWardName: 'Ward 25',
+        dateOfIssue: '2022-11-03',
+        dateOfExpire: '2032-11-03',
         frontImageUrl:
             'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -201,7 +225,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 93 654 0987',
         address: 'Da Nang City',
         idNumber: '079203004534',
+        nickname: 'Han',
+        placeOfOrigin: 'Da Nang City',
         placeOfResidence: 'Da Nang City',
+        originProvinceName: 'Da Nang',
+        originWardName: 'Ward Hai Chau 1',
+        residenceProvinceName: 'Da Nang',
+        residenceWardName: 'Ward Hai Chau 2',
+        dateOfIssue: '2021-04-27',
+        dateOfExpire: '2031-04-27',
         frontImageUrl:
             'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -230,6 +262,9 @@ class MockAuthorityRepository implements AuthorityRepository {
       phone: '',
       address: '',
       idNumber: '',
+      nickname: 'Mock User',
+      placeOfOrigin: '',
+      placeOfResidence: '',
       frontImageUrl: '',
       backImageUrl: '',
       notes: note ?? '',
@@ -249,6 +284,9 @@ class MockAuthorityRepository implements AuthorityRepository {
       phone: '',
       address: '',
       idNumber: '',
+      nickname: 'Mock User',
+      placeOfOrigin: '',
+      placeOfResidence: '',
       frontImageUrl: '',
       backImageUrl: '',
       notes: note ?? '',
@@ -322,7 +360,7 @@ class MockAuthorityRepository implements AuthorityRepository {
   @override
   Future<CharityCampaign> approveCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final updated = _updateCampaign(
@@ -330,7 +368,7 @@ class MockAuthorityRepository implements AuthorityRepository {
       status: CampaignStatus.approved,
       checkedBy: 'authority-mock-id',
       respondedAt: DateTime.now(),
-      noteByAuthority: noteByAuthority ?? 'Approved in mock mode.',
+      noteForResponse: noteForResponse ?? 'Approved in mock mode.',
     );
     return updated;
   }
@@ -338,7 +376,7 @@ class MockAuthorityRepository implements AuthorityRepository {
   @override
   Future<CharityCampaign> rejectCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final updated = _updateCampaign(
@@ -346,7 +384,7 @@ class MockAuthorityRepository implements AuthorityRepository {
       status: CampaignStatus.rejected,
       checkedBy: 'authority-mock-id',
       respondedAt: DateTime.now(),
-      noteByAuthority: noteByAuthority ?? 'Rejected in mock mode.',
+      noteForResponse: noteForResponse ?? 'Rejected in mock mode.',
     );
     return updated;
   }
@@ -354,15 +392,15 @@ class MockAuthorityRepository implements AuthorityRepository {
   @override
   Future<CharityCampaign> suspendCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForSuspension,
   }) async {
     await Future.delayed(const Duration(milliseconds: 300));
     final updated = _updateCampaign(
       campaignId,
       status: CampaignStatus.suspended,
       checkedBy: 'authority-mock-id',
-      respondedAt: DateTime.now(),
-      noteByAuthority: noteByAuthority ?? 'Suspended in mock mode.',
+      suspendedAt: DateTime.now(),
+      noteForSuspension: noteForSuspension ?? 'Suspended in mock mode.',
     );
     return updated;
   }
@@ -372,7 +410,9 @@ class MockAuthorityRepository implements AuthorityRepository {
     CampaignStatus? status,
     String? checkedBy,
     DateTime? respondedAt,
-    String? noteByAuthority,
+    DateTime? suspendedAt,
+    String? noteForResponse,
+    String? noteForSuspension,
   }) {
     final index = _campaignRequests.indexWhere((campaign) => campaign.id == campaignId);
     if (index < 0) {
@@ -383,7 +423,9 @@ class MockAuthorityRepository implements AuthorityRepository {
       status: status,
       checkedBy: checkedBy,
       respondedAt: respondedAt,
-      noteByAuthority: noteByAuthority,
+      suspendedAt: suspendedAt,
+      noteForResponse: noteForResponse,
+      noteForSuspension: noteForSuspension,
     );
     _campaignRequests[index] = updated;
     return updated;

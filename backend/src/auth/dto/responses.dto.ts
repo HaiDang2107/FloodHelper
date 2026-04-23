@@ -36,6 +36,14 @@ export class SigninResponseDto {
       dob?: Date | null;
       placeOfOrigin?: string | null;
       placeOfResidence?: string | null;
+      originProvinceCode?: number | null;
+      originProvinceName?: string | null;
+      originWardCode?: number | null;
+      originWardName?: string | null;
+      residenceProvinceCode?: number | null;
+      residenceProvinceName?: string | null;
+      residenceWardCode?: number | null;
+      residenceWardName?: string | null;
       dateOfIssue?: Date | null;
       dateOfExpire?: Date | null;
       citizenId?: string | null;

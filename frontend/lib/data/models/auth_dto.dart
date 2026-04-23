@@ -28,8 +28,6 @@ class SignupRequestDto {
   final String? nickname;
   final String phoneNumber;
   final String? dob;
-  final String? placeOfOrigin;
-  final String? placeOfResidence;
   final String? dateOfIssue;
   final String? dateOfExpire;
   final String? jobPosition;
@@ -41,8 +39,6 @@ class SignupRequestDto {
     this.nickname,
     required this.phoneNumber,
     this.dob,
-    this.placeOfOrigin,
-    this.placeOfResidence,
     this.dateOfIssue,
     this.dateOfExpire,
     this.jobPosition,
@@ -55,8 +51,6 @@ class SignupRequestDto {
         if (nickname != null) 'nickname': nickname,
         'phoneNumber': phoneNumber,
         if (dob != null) 'dob': dob,
-        if (placeOfOrigin != null) 'placeOfOrigin': placeOfOrigin,
-        if (placeOfResidence != null) 'placeOfResidence': placeOfResidence,
         if (dateOfIssue != null) 'dateOfIssue': dateOfIssue,
         if (dateOfExpire != null) 'dateOfExpire': dateOfExpire,
         if (jobPosition != null) 'jobPosition': jobPosition,
@@ -167,6 +161,14 @@ class UserResponseDto {
   final String? dob;
   final String? placeOfOrigin;
   final String? placeOfResidence;
+  final int? originProvinceCode;
+  final String? originProvinceName;
+  final int? originWardCode;
+  final String? originWardName;
+  final int? residenceProvinceCode;
+  final String? residenceProvinceName;
+  final int? residenceWardCode;
+  final String? residenceWardName;
   final String? dateOfIssue;
   final String? dateOfExpire;
   final String? citizenId;
@@ -186,6 +188,14 @@ class UserResponseDto {
     this.dob,
     this.placeOfOrigin,
     this.placeOfResidence,
+    this.originProvinceCode,
+    this.originProvinceName,
+    this.originWardCode,
+    this.originWardName,
+    this.residenceProvinceCode,
+    this.residenceProvinceName,
+    this.residenceWardCode,
+    this.residenceWardName,
     this.dateOfIssue,
     this.dateOfExpire,
     this.citizenId,
@@ -207,6 +217,14 @@ class UserResponseDto {
       dob: json['dob']?.toString(),
       placeOfOrigin: json['placeOfOrigin'],
       placeOfResidence: json['placeOfResidence'],
+      originProvinceCode: json['originProvinceCode'] as int?,
+      originProvinceName: json['originProvinceName']?.toString(),
+      originWardCode: json['originWardCode'] as int?,
+      originWardName: json['originWardName']?.toString(),
+      residenceProvinceCode: json['residenceProvinceCode'] as int?,
+      residenceProvinceName: json['residenceProvinceName']?.toString(),
+      residenceWardCode: json['residenceWardCode'] as int?,
+      residenceWardName: json['residenceWardName']?.toString(),
       dateOfIssue: json['dateOfIssue']?.toString(),
       dateOfExpire: json['dateOfExpire']?.toString(),
       citizenId: json['citizenId'],

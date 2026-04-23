@@ -29,8 +29,22 @@ export class RoleRequestService {
         phoneNumber: true,
         jobPosition: true,
         citizenId: true,
-        placeOfOrigin: true,
-        placeOfResidence: true,
+        originProvinceCode: true,
+        originWardCode: true,
+        residenceProvinceCode: true,
+        residenceWardCode: true,
+        originProvince: {
+          select: { code: true, name: true },
+        },
+        originWard: {
+          select: { code: true, name: true },
+        },
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
         dateOfIssue: true,
         dateOfExpire: true,
       },
@@ -69,14 +83,14 @@ export class RoleRequestService {
     const authority = await this.prisma.user.findFirst({
       where: {
         role: { has: 'AUTHORITY' },
-        placeOfResidence: user.placeOfResidence,
+        residenceWardCode: user.residenceWardCode,
       },
       select: { userId: true },
     });
 
     if (!authority) {
       throw new NotFoundException(
-        'No authority found for your place of residence',
+        'No authority found for your residence ward',
       );
     }
 
@@ -125,14 +139,31 @@ export class RoleRequestService {
           select: {
             userId: true,
             fullname: true,
+            nickname: true,
             dob: true,
             gender: true,
             phoneNumber: true,
-            placeOfOrigin: true,
-            placeOfResidence: true,
+            originProvinceCode: true,
+            originWardCode: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            originProvince: {
+              select: { code: true, name: true },
+            },
+            originWard: {
+              select: { code: true, name: true },
+            },
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
             jobPosition: true,
             citizenId: true,
             citizenIdCardImg: true,
+            dateOfIssue: true,
+            dateOfExpire: true,
             role: true,
             account: {
               select: {
@@ -261,8 +292,10 @@ export class RoleRequestService {
       gender: user.gender,
       phoneNumber: user.phoneNumber,
       citizenId: user.citizenId,
-      placeOfOrigin: user.placeOfOrigin,
-      placeOfResidence: user.placeOfResidence,
+      originProvinceCode: user.originProvinceCode,
+      originWardCode: user.originWardCode,
+      residenceProvinceCode: user.residenceProvinceCode,
+      residenceWardCode: user.residenceWardCode,
       dateOfIssue: user.dateOfIssue,
       dateOfExpire: user.dateOfExpire,
     };

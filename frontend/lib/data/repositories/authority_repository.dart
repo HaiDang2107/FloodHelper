@@ -46,16 +46,16 @@ abstract class AuthorityRepository {
 
   Future<CharityCampaign> approveCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   });
 
   Future<CharityCampaign> rejectCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   });
 
   Future<CharityCampaign> suspendCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForSuspension,
   });
 }

@@ -55,6 +55,11 @@ class CharityCampaignMappers {
                 .toString(),
         bankName: (bankInfoJson?['bankName'] ?? json['bankName'] ?? '')
             .toString(),
+        bankId: _parseNullableInt(bankInfoJson?['bankId'] ?? json['bankId']),
+        bankCode: _nullableString(bankInfoJson?['bankCode'] ?? json['bankCode']),
+        bankShortName: _nullableString(
+          bankInfoJson?['bankShortName'] ?? json['bankShortName'],
+        ),
         accountHolder: _nullableString(
           bankInfoJson?['accountHolder'] ?? json['bankAccountName'],
         ),
@@ -62,16 +67,33 @@ class CharityCampaignMappers {
       bankStatementFileUrl: _nullableString(json['bankStatementFileUrl']),
       requestedAt: _parseOptionalDate(json['requestedAt']),
       respondedAt: _parseOptionalDate(json['respondedAt']),
+      suspendedAt: _parseOptionalDate(json['suspendedAt']),
       createdAt: _parseOptionalDate(json['createdAt']),
-      noteByAuthority: _nullableString(json['noteByAuthority']),
+      noteForResponse: _nullableString(json['noteForResponse']),
+      noteForSuspension: _nullableString(json['noteForSuspension']),
       startedDonationAt: _parseOptionalDate(json['startedDonationAt']),
       finishedDonationAt: _parseOptionalDate(json['finishedDonationAt']),
       startedDistributionAt: _parseOptionalDate(json['startedDistributionAt']),
       finishedDistributionAt: _parseOptionalDate(json['finishedDistributionAt']),
+      destinationProvinceCode: _parseNullableInt(
+        json['destinationProvinceCode'] ?? json['destination_province_code'],
+      ),
+      destinationProvinceName: _nullableString(
+        json['destinationProvinceName'] ?? json['destination_province_name'],
+      ),
+      destinationWardCode: _parseNullableInt(
+        json['destinationWardCode'] ?? json['destination_ward_code'],
+      ),
+      destinationWardName: _nullableString(
+        json['destinationWardName'] ?? json['destination_ward_name'],
+      ),
+      destinationDetail: _nullableString(
+        json['destinationDetail'] ?? json['destination_detail'],
+      ),
       reliefLocation: (json['reliefLocation'] ?? json['destination'] ?? '')
           .toString(),
-        latitude: _parseNullableDouble(json['latitude']),
-        longitude: _parseNullableDouble(json['longitude']),
+      latitude: _parseNullableDouble(json['latitude']),
+      longitude: _parseNullableDouble(json['longitude']),
       period: DateRange(startDate: startDate, endDate: endDate),
       announcements: _parseAnnouncements(json['announcements']),
       purchasedSupplies: _parseSupplies(json['purchasedSupplies']),
@@ -90,9 +112,19 @@ class CharityCampaignMappers {
     return {
       'campaignName': campaign.name,
       'purpose': campaign.purpose,
-      'destination': campaign.reliefLocation,
+      if (campaign.destinationProvinceCode != null)
+        'destinationProvinceCode': campaign.destinationProvinceCode,
+      if (campaign.destinationProvinceName != null)
+        'destinationProvinceName': campaign.destinationProvinceName,
+      if (campaign.destinationWardCode != null)
+        'destinationWardCode': campaign.destinationWardCode,
+      if (campaign.destinationWardName != null)
+        'destinationWardName': campaign.destinationWardName,
+      if (campaign.destinationDetail != null)
+        'destinationDetail': campaign.destinationDetail,
       'charityObject': campaign.charityObject,
       'bankAccountNumber': campaign.bankInfo.accountNumber,
+      if (campaign.bankInfo.bankId != null) 'bankId': campaign.bankInfo.bankId,
       'bankName': campaign.bankInfo.bankName,
       'bankAccountName': campaign.bankInfo.accountHolder,
       'bankStatementFileUrl': campaign.bankStatementFileUrl,
@@ -209,6 +241,16 @@ class CharityCampaignMappers {
       return value;
     }
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is int) {
+      return value;
+    }
+    return int.tryParse(value.toString());
   }
 
   static double _parseDouble(dynamic value) {

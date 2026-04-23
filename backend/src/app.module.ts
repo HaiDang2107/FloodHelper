@@ -9,6 +9,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { FriendModule } from './friend/friend.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { LocationModule } from './location/location.module';
 import { RoleRequestModule } from './role-request/role-request.module';
 import { SignalModule } from './signal/signal.module';
 import { CharityModule } from './charity/charity.module';
@@ -23,6 +24,7 @@ import { LoggingMiddleware } from './common/logging.middleware';
     AuthModule,
     FriendModule,
     FirebaseModule,
+    LocationModule,
     RoleRequestModule,
     SignalModule,
     CharityModule,

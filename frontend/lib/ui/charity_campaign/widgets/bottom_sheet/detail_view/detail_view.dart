@@ -78,14 +78,16 @@ class _DetailViewState extends State<DetailView> {
         widget.campaign.status == CampaignStatus.distributing &&
         widget.onCheckInLocation != null;
     final bool canShowFocusIcon =
-      !widget.isOwner &&
-      widget.campaign.latitude != null &&
-      widget.campaign.longitude != null &&
-      widget.onFocusCampaignLocation != null;
+        !widget.isOwner &&
+        widget.campaign.latitude != null &&
+        widget.campaign.longitude != null &&
+        widget.onFocusCampaignLocation != null;
     final bool showAuthorityNote = [
       CampaignStatus.approved,
       CampaignStatus.rejected,
     ].contains(widget.campaign.status);
+    final bool showSuspensionDetails =
+        widget.campaign.status == CampaignStatus.suspended;
 
     return Column(
       key: const ValueKey('details'),
@@ -133,28 +135,42 @@ class _DetailViewState extends State<DetailView> {
         ),
         CharityInfoRow(
           label: 'Start Distribution',
-          value: _formatDateOrPlaceholder(widget.campaign.startedDistributionAt),
+          value: _formatDateOrPlaceholder(
+            widget.campaign.startedDistributionAt,
+          ),
         ),
         CharityInfoRow(
           label: 'End Distribution',
-          value: _formatDateOrPlaceholder(widget.campaign.finishedDistributionAt),
+          value: _formatDateOrPlaceholder(
+            widget.campaign.finishedDistributionAt,
+          ),
         ),
         if (showAuthorityNote)
           CharityInfoRow(
-            label: 'Note by Authority',
-            value: widget.campaign.noteByAuthority ?? 'Không có ghi chú',
+            label: 'Note for Response',
+            value: widget.campaign.noteForResponse ?? 'Không có ghi chú',
           ),
-        if (widget.isOwner && widget.campaign.status == CampaignStatus.suspended)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              'Your campaign was suspended. Please contact your authority in your place of residence for more details',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.w600,
+        if (showSuspensionDetails) ...[
+          CharityInfoRow(
+            label: 'Suspended At',
+            value: _formatDateOrPlaceholder(widget.campaign.suspendedAt),
+          ),
+          CharityInfoRow(
+            label: 'Note for Suspension',
+            value: widget.campaign.noteForSuspension ?? 'Không có ghi chú',
+          ),
+          if (widget.isOwner)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Your campaign was suspended. Please contact your authority in your place of residence for more details',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
+        ],
         if (widget.isOwner && widget.campaign.status == CampaignStatus.created)
           Row(
             children: [

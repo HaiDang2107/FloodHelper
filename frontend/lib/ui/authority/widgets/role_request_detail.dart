@@ -132,11 +132,25 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
             _InfoRow(label: 'Phone', value: currentRequest.phone),
             _InfoRow(label: 'Gender', value: currentRequest.gender ?? '-'),
             _InfoRow(label: 'Date of birth', value: currentRequest.dob ?? '-'),
-            _InfoRow(label: 'Place of origin', value: currentRequest.placeOfOrigin ?? '-'),
-            _InfoRow(label: 'Address', value: currentRequest.address),
+            _InfoRow(
+              label: 'Origin province',
+              value: currentRequest.originProvinceName ?? '-',
+            ),
+            _InfoRow(
+              label: 'Origin ward',
+              value: currentRequest.originWardName ?? '-',
+            ),
             _InfoRow(label: 'Identity number', value: currentRequest.idNumber),
-            _InfoRow(label: 'Date of issue', value: currentRequest.dateOfIssue ?? '-'),
-            _InfoRow(label: 'Date of expire', value: currentRequest.dateOfExpire ?? '-'),
+            _InfoRow(
+              label: 'Residence province',
+              value: currentRequest.residenceProvinceName ?? '-',
+            ),
+            _InfoRow(
+              label: 'Residence ward',
+              value: currentRequest.residenceWardName ?? '-',
+            ),
+            _InfoRow(label: 'Date of issue', value: _formatText(currentRequest.dateOfIssue)),
+            _InfoRow(label: 'Date of expire', value: _formatText(currentRequest.dateOfExpire)),
             _InfoRow(label: 'Job position', value: currentRequest.jobPosition ?? '-'),
             if (currentRequest.status != RoleRequestStatus.pending) ...[
               const SizedBox(height: 16),
@@ -282,6 +296,14 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
       ),
     );
   }
+}
+
+String _formatText(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) {
+    return '-';
+  }
+  return trimmed;
 }
 
 class _StatusBadge extends StatelessWidget {

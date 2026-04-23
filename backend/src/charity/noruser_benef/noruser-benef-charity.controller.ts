@@ -91,6 +91,17 @@ export class NoruserBenefCharityController {
     };
   }
 
+  @Get('banks')
+  async getBanks() {
+    const data = await this.noruserBenefCharityService.listBanks();
+
+    return {
+      success: true,
+      message: 'Banks retrieved successfully',
+      data,
+    };
+  }
+
   @Get('campaigns/:campaignId')
   async getCampaignDetail(@Param('campaignId') campaignId: string) {
     const data = await this.noruserBenefCharityService.getCampaignDetail(campaignId);

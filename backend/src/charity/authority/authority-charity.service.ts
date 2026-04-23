@@ -9,6 +9,7 @@ import { CampaignState, Prisma } from '@prisma/client';
 import { ListAuthorityCampaignsDto, RespondCampaignDto } from './dto';
 import { CommonCharityService } from '../common.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { formatLocation } from '../../common/location-format.util';
 
 type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
   select: {
@@ -18,6 +19,9 @@ type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
     createdAt: true;
     requestedAt: true;
     respondedAt: true;
+    suspendedAt: true;
+    noteForResponse: true;
+    noteForSuspension: true;
     startedDonationAt: true;
     startedDistributionAt: true;
     finishedDistributionAt: true;
@@ -26,7 +30,14 @@ type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
         userId: true;
         fullname: true;
         nickname: true;
-        placeOfResidence: true;
+        residenceProvinceCode: true;
+        residenceWardCode: true;
+        residenceProvince: {
+          select: { code: true, name: true };
+        };
+        residenceWard: {
+          select: { code: true, name: true };
+        };
       };
     };
   };
@@ -36,6 +47,7 @@ type AuthorityCampaignCursorField =
   | 'createdAt'
   | 'requestedAt'
   | 'respondedAt'
+  | 'suspendedAt'
   | 'startedDonationAt'
   | 'startedDistributionAt'
   | 'finishedDistributionAt';
@@ -138,7 +150,7 @@ export class AuthorityCharityService {
         },
         {
           organizer: {
-            placeOfResidence: authorityResidence,
+            residenceWardCode: authorityResidence,
           },
         },
         {
@@ -162,6 +174,9 @@ export class AuthorityCharityService {
         createdAt: true,
         requestedAt: true,
         respondedAt: true,
+        suspendedAt: true,
+        noteForResponse: true,
+        noteForSuspension: true,
         startedDonationAt: true,
         startedDistributionAt: true,
         finishedDistributionAt: true,
@@ -170,7 +185,14 @@ export class AuthorityCharityService {
             userId: true,
             fullname: true,
             nickname: true,
-            placeOfResidence: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
           },
         },
       },
@@ -201,7 +223,14 @@ export class AuthorityCharityService {
       where: { userId: authorityUserId },
       select: {
         userId: true,
-        placeOfResidence: true,
+        residenceWardCode: true,
+        residenceProvinceCode: true,
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
         role: true,
       },
     });
@@ -212,13 +241,13 @@ export class AuthorityCharityService {
     if (!authority.role.includes('AUTHORITY')) {
       throw new ForbiddenException('Only authority users can access this resource');
     }
-    if (!authority.placeOfResidence) {
+    if (!authority.residenceWardCode) {
       throw new BadRequestException(
-        'Authority placeOfResidence is required to review campaigns',
+        'Authority residence ward is required to review campaigns',
       );
     }
 
-    return authority.placeOfResidence;
+    return authority.residenceWardCode;
   }
 
   private getAuthorityCursorField(
@@ -229,8 +258,9 @@ export class AuthorityCharityService {
         return 'requestedAt';
       case 'APPROVED':
       case 'REJECTED':
-      case 'SUSPENDED':
         return 'respondedAt';
+      case 'SUSPENDED':
+        return 'suspendedAt';
       case 'DONATING':
         return 'startedDonationAt';
       case 'DISTRIBUTING':
@@ -260,6 +290,8 @@ export class AuthorityCharityService {
         return campaign.requestedAt ?? campaign.createdAt;
       case 'respondedAt':
         return campaign.respondedAt ?? campaign.requestedAt ?? campaign.createdAt;
+      case 'suspendedAt':
+        return campaign.suspendedAt ?? campaign.respondedAt ?? campaign.createdAt;
       case 'startedDonationAt':
         return campaign.startedDonationAt ?? campaign.respondedAt ?? campaign.createdAt;
       case 'startedDistributionAt':
@@ -277,12 +309,18 @@ export class AuthorityCharityService {
       id: campaign.campaignId,
       name: campaign.campaignName,
       organizedBy: campaign.organizer?.userId,
-      organizerResidence: campaign.organizer?.placeOfResidence ?? null,
+      organizerResidence: formatLocation(
+        campaign.organizer?.residenceWard,
+        campaign.organizer?.residenceProvince,
+      ),
       benefactorName:
         campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
       state: String(campaign.state).toUpperCase(),
       requestedAt: campaign.requestedAt,
       respondedAt: campaign.respondedAt,
+      suspendedAt: campaign.suspendedAt,
+      noteForResponse: campaign.noteForResponse,
+      noteForSuspension: campaign.noteForSuspension,
       createdAt: campaign.createdAt,
     };
   }
@@ -306,10 +344,13 @@ export class AuthorityCharityService {
         campaignId: true,
         checkedBy: true,
         state: true,
-        noteByAuthority: true,
+        respondedAt: true,
+        suspendedAt: true,
+        noteForResponse: true,
+        noteForSuspension: true,
         organizer: {
           select: {
-            placeOfResidence: true,
+            residenceWardCode: true,
           },
         },
       },
@@ -319,7 +360,7 @@ export class AuthorityCharityService {
       throw new NotFoundException('Charity campaign not found');
     }
 
-    if (campaign.organizer?.placeOfResidence !== authorityPlace) {
+    if (campaign.organizer?.residenceWardCode !== authorityPlace) {
       throw new ForbiddenException(
         'You are not allowed to review campaigns outside your residence area',
       );
@@ -346,10 +387,16 @@ export class AuthorityCharityService {
     const currentState = reviewTarget.state;
     this.validateTransition(currentState, nextState);
 
-    const trimmedNote = dto.noteByAuthority?.trim();
-    if ((nextState === 'REJECTED' || nextState === 'SUSPENDED') && !trimmedNote) {
+    const trimmedResponseNote = dto.noteForResponse?.trim();
+    const trimmedSuspensionNote = dto.noteForSuspension?.trim();
+    if (nextState === 'REJECTED' && !trimmedResponseNote) {
       throw new BadRequestException(
-        'noteByAuthority is required when rejecting or suspending',
+        'noteForResponse is required when rejecting',
+      );
+    }
+    if (nextState === 'SUSPENDED' && !trimmedSuspensionNote) {
+      throw new BadRequestException(
+        'noteForSuspension is required when suspending',
       );
     }
 
@@ -357,8 +404,20 @@ export class AuthorityCharityService {
       where: { campaignId },
       data: {
         state: nextState,
-        respondedAt: new Date(),
-        noteByAuthority: trimmedNote ?? reviewTarget.noteByAuthority,
+        respondedAt:
+          nextState === 'APPROVED' || nextState === 'REJECTED'
+            ? new Date()
+            : reviewTarget.respondedAt,
+        suspendedAt:
+          nextState === 'SUSPENDED' ? new Date() : reviewTarget.suspendedAt,
+        noteForResponse:
+          nextState === 'APPROVED' || nextState === 'REJECTED'
+            ? trimmedResponseNote ?? reviewTarget.noteForResponse
+            : reviewTarget.noteForResponse,
+        noteForSuspension:
+          nextState === 'SUSPENDED'
+            ? trimmedSuspensionNote ?? reviewTarget.noteForSuspension
+            : reviewTarget.noteForSuspension,
       },
     });
 
@@ -388,6 +447,8 @@ export class AuthorityCharityService {
           'Only DONATING or DISTRIBUTING campaigns can be suspended',
         );
       }
+      return;
     }
   }
+
 }

@@ -10,6 +10,7 @@ import {
   UpdateVisibilityDto,
 } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { formatLocation } from '../common/location-format.util';
 
 @Injectable()
 export class UserService {
@@ -22,6 +23,10 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { userId },
       include: {
+        originProvince: true,
+        originWard: true,
+        residenceProvince: true,
+        residenceWard: true,
         account: {
           select: {
             username: true,
@@ -54,6 +59,22 @@ export class UserService {
         curLongitude: true,
         curLatitude: true,
         visibilityMode: true,
+        originProvinceCode: true,
+        originWardCode: true,
+        residenceProvinceCode: true,
+        residenceWardCode: true,
+        originProvince: {
+          select: { code: true, name: true },
+        },
+        originWard: {
+          select: { code: true, name: true },
+        },
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
       },
     });
 
@@ -97,8 +118,10 @@ export class UserService {
         nickname: updateUserDto.nickname,
         gender: updateUserDto.gender,
         dob: updateUserDto.dob ? new Date(updateUserDto.dob) : undefined,
-        placeOfOrigin: updateUserDto.placeOfOrigin,
-        placeOfResidence: updateUserDto.placeOfResidence,
+        originProvinceCode: updateUserDto.originProvinceCode,
+        originWardCode: updateUserDto.originWardCode,
+        residenceProvinceCode: updateUserDto.residenceProvinceCode,
+        residenceWardCode: updateUserDto.residenceWardCode,
         dateOfIssue: updateUserDto.dateOfIssue
           ? new Date(updateUserDto.dateOfIssue)
           : undefined,
@@ -172,6 +195,22 @@ export class UserService {
           avatarUrl: true,
           role: true,
           phoneNumber: true,
+          originProvinceCode: true,
+          originWardCode: true,
+          residenceProvinceCode: true,
+          residenceWardCode: true,
+          originProvince: {
+            select: { code: true, name: true },
+          },
+          originWard: {
+            select: { code: true, name: true },
+          },
+          residenceProvince: {
+            select: { code: true, name: true },
+          },
+          residenceWard: {
+            select: { code: true, name: true },
+          },
         },
         orderBy: { fullname: 'asc' },
       }),
@@ -223,6 +262,22 @@ export class UserService {
         role: true,
         curLongitude: true,
         curLatitude: true,
+        originProvinceCode: true,
+        originWardCode: true,
+        residenceProvinceCode: true,
+        residenceWardCode: true,
+        originProvince: {
+          select: { code: true, name: true },
+        },
+        originWard: {
+          select: { code: true, name: true },
+        },
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
       },
     });
 
@@ -263,8 +318,19 @@ export class UserService {
       nickname: user.nickname,
       gender: user.gender ?? null,
       dob: user.dob ? user.dob.toISOString().split('T')[0] : null,
-      placeOfOrigin: user.placeOfOrigin,
-      placeOfResidence: user.placeOfResidence,
+      placeOfOrigin: formatLocation(user.originWard, user.originProvince),
+      placeOfResidence: formatLocation(
+        user.residenceWard,
+        user.residenceProvince,
+      ),
+      originProvinceCode: user.originProvinceCode ?? null,
+      originProvinceName: user.originProvince?.name ?? null,
+      originWardCode: user.originWardCode ?? null,
+      originWardName: user.originWard?.name ?? null,
+      residenceProvinceCode: user.residenceProvinceCode ?? null,
+      residenceProvinceName: user.residenceProvince?.name ?? null,
+      residenceWardCode: user.residenceWardCode ?? null,
+      residenceWardName: user.residenceWard?.name ?? null,
       dateOfIssue: user.dateOfIssue
         ? user.dateOfIssue.toISOString().split('T')[0]
         : null,

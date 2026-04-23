@@ -99,11 +99,11 @@ class RealAuthorityRepository implements AuthorityRepository {
   @override
   Future<CharityCampaign> approveCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   }) async {
     final body = await _authorityService.approveCharityCampaign(
       campaignId,
-      noteByAuthority: noteByAuthority,
+      noteForResponse: noteForResponse,
     );
     final data = body['data'] as Map<String, dynamic>? ?? {};
     return CharityCampaignMappers.campaignFromApi(data);
@@ -112,11 +112,11 @@ class RealAuthorityRepository implements AuthorityRepository {
   @override
   Future<CharityCampaign> rejectCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   }) async {
     final body = await _authorityService.rejectCharityCampaign(
       campaignId,
-      noteByAuthority: noteByAuthority,
+      noteForResponse: noteForResponse,
     );
     final data = body['data'] as Map<String, dynamic>? ?? {};
     return CharityCampaignMappers.campaignFromApi(data);
@@ -125,11 +125,11 @@ class RealAuthorityRepository implements AuthorityRepository {
   @override
   Future<CharityCampaign> suspendCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForSuspension,
   }) async {
     final body = await _authorityService.suspendCharityCampaign(
       campaignId,
-      noteByAuthority: noteByAuthority,
+      noteForSuspension: noteForSuspension,
     );
     final data = body['data'] as Map<String, dynamic>? ?? {};
     return CharityCampaignMappers.campaignFromApi(data);

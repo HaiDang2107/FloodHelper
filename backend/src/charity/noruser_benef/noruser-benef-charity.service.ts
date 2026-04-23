@@ -15,6 +15,14 @@ import { CommonCharityService } from '../common.service';
 import { VietQrInternalService } from '../vietqr/vietqr-internal.service';
 import { VietQrService } from '../vietqr/vietqr.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { formatLocation } from '../../common/location-format.util';
+
+type ResolvedBank = {
+  id: number;
+  name: string;
+  code: string;
+  shortName: string;
+};
 
 type CharityCampaignListItemPayload = {
   campaignId: string;
@@ -27,7 +35,10 @@ type CharityCampaignListItemPayload = {
     userId: string;
     fullname: string;
     nickname: string | null;
-    placeOfResidence: string | null;
+    residenceProvinceCode: number | null;
+    residenceWardCode: number | null;
+    residenceProvince?: { code: number; name: string } | null;
+    residenceWard?: { code: number; name: string } | null;
   } | null;
 };
 
@@ -81,7 +92,14 @@ export class NoruserBenefCharityService {
             userId: true,
             fullname: true,
             nickname: true,
-            placeOfResidence: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
           },
         },
       },
@@ -111,7 +129,14 @@ export class NoruserBenefCharityService {
             userId: true,
             fullname: true,
             nickname: true,
-            placeOfResidence: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
           },
         },
       },
@@ -125,6 +150,10 @@ export class NoruserBenefCharityService {
     return this.commonCharityService.getCampaignDetail(campaignId);
   }
 
+  listBanks() {
+    return this.commonCharityService.listBanks();
+  }
+
   async listDistributingCampaignLocations() { // Lấy vị trí của các distributing campaign 
     const campaigns = await this.prisma.charityCampaign.findMany({
       where: {
@@ -135,7 +164,9 @@ export class NoruserBenefCharityService {
       select: {
         campaignId: true,
         campaignName: true,
-        destination: true,
+        destinationProvinceCode: true,
+        destinationWardCode: true,
+        destinationDetail: true,
         campaignLatitude: true,
         campaignLongitude: true,
       },
@@ -145,7 +176,7 @@ export class NoruserBenefCharityService {
     return campaigns.map((campaign) => ({
       campaignId: campaign.campaignId,
       campaignName: campaign.campaignName,
-      destination: campaign.destination,
+      destination: campaign.destinationDetail,
       latitude: Number(campaign.campaignLatitude),
       longitude: Number(campaign.campaignLongitude),
     }));
@@ -236,7 +267,10 @@ export class NoruserBenefCharityService {
         bankAccountId,
         campaignName: payload.campaignName.trim(),
         purpose: payload.purpose.trim(),
-        destination: payload.destination.trim(),
+          destinationProvinceCode: payload.destinationProvinceCode ?? null,
+          destinationWardCode: payload.destinationWardCode ?? null,
+          destinationDetail:
+            payload.destinationDetail?.trim() || payload.destination?.trim() || null,
         charityObject: payload.charityObject.trim(),
         state: 'CREATED',
         startedDonationAt: timeline.startedDonationAt,
@@ -282,7 +316,10 @@ export class NoruserBenefCharityService {
         bankAccountId,
         campaignName: payload.campaignName.trim(),
         purpose: payload.purpose.trim(),
-        destination: payload.destination.trim(),
+          destinationProvinceCode: payload.destinationProvinceCode ?? null,
+          destinationWardCode: payload.destinationWardCode ?? null,
+          destinationDetail:
+            payload.destinationDetail?.trim() || payload.destination?.trim() || null,
         charityObject: payload.charityObject.trim(),
         startedDonationAt: timeline.startedDonationAt,
         finishedDonationAt: timeline.finishedDonationAt,
@@ -306,7 +343,7 @@ export class NoruserBenefCharityService {
         campaignId: true,
         organizedBy: true,
         state: true,
-        destination: true,
+          destinationDetail: true,
       },
     });
 
@@ -334,7 +371,7 @@ export class NoruserBenefCharityService {
       },
       select: {
         campaignId: true,
-        destination: true,
+          destinationDetail: true,
         campaignLatitude: true,
         campaignLongitude: true,
       },
@@ -342,7 +379,7 @@ export class NoruserBenefCharityService {
 
     return {
       campaignId: updated.campaignId,
-      destination: updated.destination,
+        destination: updated.destinationDetail,
       latitude: Number(updated.campaignLatitude),
       longitude: Number(updated.campaignLongitude),
     };
@@ -361,7 +398,7 @@ export class NoruserBenefCharityService {
         finishedDistributionAt: true,
         organizer: {
           select: {
-            placeOfResidence: true,
+              residenceWardCode: true,
           },
         },
       },
@@ -379,15 +416,15 @@ export class NoruserBenefCharityService {
     if (!campaign.bankAccountId) {
       throw new BadRequestException('Campaign bank account is required');
     }
-    if (!campaign.organizer?.placeOfResidence) {
+      if (!campaign.organizer?.residenceWardCode) {
       throw new BadRequestException(
-        'Benefactor placeOfResidence is required before sending campaign request',
+          'Benefactor residence ward is required before sending campaign request',
       );
     }
 
     const assignedAuthority = await this.prisma.user.findFirst({
       where: {
-        placeOfResidence: campaign.organizer.placeOfResidence,
+          residenceWardCode: campaign.organizer.residenceWardCode,
         role: { has: 'AUTHORITY' },
       },
       select: {
@@ -500,7 +537,10 @@ export class NoruserBenefCharityService {
       id: campaign.campaignId,
       name: campaign.campaignName,
       organizedBy: campaign.organizer?.userId ?? null,
-      organizerResidence: campaign.organizer?.placeOfResidence ?? null,
+      organizerResidence: formatLocation(
+        campaign.organizer?.residenceWard,
+        campaign.organizer?.residenceProvince,
+      ),
       benefactorName:
         campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
       state: String(campaign.state).toUpperCase(),
@@ -511,31 +551,84 @@ export class NoruserBenefCharityService {
   }
 
   private normalizeBankPayload(payload: {
-    bankName: string;
+    bankId?: number;
+    bankName?: string;
     bankAccountNumber: string;
     bankAccountName?: string;
   }) {
     return {
-      bankName: payload.bankName.trim(),
+      bankId: payload.bankId,
+      bankName: payload.bankName?.trim(),
       bankAccountNumber: payload.bankAccountNumber.trim(),
       userBankName: payload.bankAccountName?.trim() || 'UNKNOWN',
-      bankCode: 'UNKNOWN',
     };
+  }
+
+  private async resolveBank(payload: {
+    bankId?: number;
+    bankName?: string;
+  }): Promise<ResolvedBank> {
+    if (payload.bankId) {
+      const bank = await this.prisma.bank.findUnique({
+        where: { id: payload.bankId },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          shortName: true,
+        },
+      });
+
+      if (!bank) {
+        throw new BadRequestException('Selected bank does not exist');
+      }
+
+      return bank;
+    }
+
+    const bankName = payload.bankName?.trim();
+    if (!bankName) {
+      throw new BadRequestException('bankId or bankName is required');
+    }
+
+    const bank = await this.prisma.bank.findFirst({
+      where: {
+        OR: [
+          { shortName: bankName },
+          { name: bankName },
+          { code: bankName },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        shortName: true,
+      },
+    });
+
+    if (!bank) {
+      throw new BadRequestException('Selected bank does not exist');
+    }
+
+    return bank;
   }
 
   private async resolveOrCreateBankAccountId(
     db: Prisma.TransactionClient | PrismaService,
     payload: {
-      bankName: string;
+      bankId?: number;
+      bankName?: string;
       bankAccountNumber: string;
       bankAccountName?: string;
     },
   ) {
     const normalized = this.normalizeBankPayload(payload);
+    const bank = await this.resolveBank(normalized);
     const existing = await db.bankAccount.findUnique({
       where: {
-        bankName_bankAccountNumber: {
-          bankName: normalized.bankName,
+        bankId_bankAccountNumber: {
+          bankId: bank.id,
           bankAccountNumber: normalized.bankAccountNumber,
         },
       },
@@ -550,10 +643,9 @@ export class NoruserBenefCharityService {
 
     const created = await db.bankAccount.create({
       data: {
-        bankName: normalized.bankName,
+        bankId: bank.id,
         bankAccountNumber: normalized.bankAccountNumber,
         userBankName: normalized.userBankName,
-        bankCode: normalized.bankCode,
       },
       select: {
         bankAccountId: true,

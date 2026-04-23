@@ -15,12 +15,19 @@ class CharityCampaign {
   final String? bankStatementFileUrl;
   final DateTime? requestedAt;
   final DateTime? respondedAt;
+  final DateTime? suspendedAt;
   final DateTime? createdAt;
-  final String? noteByAuthority;
+  final String? noteForResponse;
+  final String? noteForSuspension;
   final DateTime? startedDonationAt;
   final DateTime? finishedDonationAt;
   final DateTime? startedDistributionAt;
   final DateTime? finishedDistributionAt;
+  final int? destinationProvinceCode;
+  final String? destinationProvinceName;
+  final int? destinationWardCode;
+  final String? destinationWardName;
+  final String? destinationDetail;
   final String reliefLocation;
   final double? latitude;
   final double? longitude;
@@ -43,12 +50,19 @@ class CharityCampaign {
     this.bankStatementFileUrl,
     this.requestedAt,
     this.respondedAt,
+    this.suspendedAt,
     this.createdAt,
-    this.noteByAuthority,
+    this.noteForResponse,
+    this.noteForSuspension,
     this.startedDonationAt,
     this.finishedDonationAt,
     this.startedDistributionAt,
     this.finishedDistributionAt,
+    this.destinationProvinceCode,
+    this.destinationProvinceName,
+    this.destinationWardCode,
+    this.destinationWardName,
+    this.destinationDetail,
     required this.reliefLocation,
     this.latitude,
     this.longitude,
@@ -99,12 +113,19 @@ class CharityCampaign {
     String? bankStatementFileUrl,
     DateTime? requestedAt,
     DateTime? respondedAt,
+    DateTime? suspendedAt,
     DateTime? createdAt,
-    String? noteByAuthority,
+    String? noteForResponse,
+    String? noteForSuspension,
     DateTime? startedDonationAt,
     DateTime? finishedDonationAt,
     DateTime? startedDistributionAt,
     DateTime? finishedDistributionAt,
+    int? destinationProvinceCode,
+    String? destinationProvinceName,
+    int? destinationWardCode,
+    String? destinationWardName,
+    String? destinationDetail,
     String? reliefLocation,
     double? latitude,
     double? longitude,
@@ -127,12 +148,23 @@ class CharityCampaign {
       bankStatementFileUrl: bankStatementFileUrl ?? this.bankStatementFileUrl,
       requestedAt: requestedAt ?? this.requestedAt,
       respondedAt: respondedAt ?? this.respondedAt,
+      suspendedAt: suspendedAt ?? this.suspendedAt,
       createdAt: createdAt ?? this.createdAt,
-      noteByAuthority: noteByAuthority ?? this.noteByAuthority,
+      noteForResponse: noteForResponse ?? this.noteForResponse,
+      noteForSuspension: noteForSuspension ?? this.noteForSuspension,
       startedDonationAt: startedDonationAt ?? this.startedDonationAt,
       finishedDonationAt: finishedDonationAt ?? this.finishedDonationAt,
       startedDistributionAt: startedDistributionAt ?? this.startedDistributionAt,
       finishedDistributionAt: finishedDistributionAt ?? this.finishedDistributionAt,
+        destinationProvinceCode:
+          destinationProvinceCode ?? this.destinationProvinceCode,
+        destinationProvinceName:
+          destinationProvinceName ?? this.destinationProvinceName,
+        destinationWardCode:
+          destinationWardCode ?? this.destinationWardCode,
+        destinationWardName:
+          destinationWardName ?? this.destinationWardName,
+        destinationDetail: destinationDetail ?? this.destinationDetail,
       reliefLocation: reliefLocation ?? this.reliefLocation,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -230,11 +262,17 @@ enum CampaignStatus {
 class BankInfo {
   final String accountNumber;
   final String bankName;
+  final int? bankId;
+  final String? bankCode;
+  final String? bankShortName;
   final String? accountHolder;
 
   const BankInfo({
     required this.accountNumber,
     required this.bankName,
+    this.bankId,
+    this.bankCode,
+    this.bankShortName,
     this.accountHolder,
   });
 
@@ -247,11 +285,17 @@ class BankInfo {
   BankInfo copyWith({
     String? accountNumber,
     String? bankName,
+    int? bankId,
+    String? bankCode,
+    String? bankShortName,
     String? accountHolder,
   }) {
     return BankInfo(
       accountNumber: accountNumber ?? this.accountNumber,
       bankName: bankName ?? this.bankName,
+      bankId: bankId ?? this.bankId,
+      bankCode: bankCode ?? this.bankCode,
+      bankShortName: bankShortName ?? this.bankShortName,
       accountHolder: accountHolder ?? this.accountHolder,
     );
   }

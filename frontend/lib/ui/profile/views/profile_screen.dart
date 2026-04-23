@@ -8,6 +8,7 @@ import '../widgets/profile_header.dart';
 import '../widgets/profile_info.dart';
 import '../widgets/profile_role.dart';
 import '../widgets/profile_action_button.dart';
+import '../../core/common/widgets/location_selector.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -26,11 +27,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late final TextEditingController _dobController;
   late final TextEditingController _jobPositionController;
   late final TextEditingController _phoneController;
-  late final TextEditingController _placeOfOriginController;
-  late final TextEditingController _placeOfResidenceController;
   late final TextEditingController _citizenIdController;
   late final TextEditingController _dateOfIssueController;
   late final TextEditingController _dateOfExpiryController;
+
+  int? _originProvinceCode;
+  String? _originProvinceName;
+  int? _originWardCode;
+  String? _originWardName;
+  int? _residenceProvinceCode;
+  String? _residenceProvinceName;
+  int? _residenceWardCode;
+  String? _residenceWardName;
   
   bool _controllersInitialized = false;
 
@@ -45,8 +53,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _dobController = TextEditingController();
     _jobPositionController = TextEditingController();
     _phoneController = TextEditingController();
-    _placeOfOriginController = TextEditingController();
-    _placeOfResidenceController = TextEditingController();
     _citizenIdController = TextEditingController();
     _dateOfIssueController = TextEditingController();
     _dateOfExpiryController = TextEditingController();
@@ -61,8 +67,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _dobController.dispose();
     _jobPositionController.dispose();
     _phoneController.dispose();
-    _placeOfOriginController.dispose();
-    _placeOfResidenceController.dispose();
     _citizenIdController.dispose();
     _dateOfIssueController.dispose();
     _dateOfExpiryController.dispose();
@@ -73,9 +77,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _updateControllersFromProfile(ProfileState profileState) {
     final profile = profileState.profile;
     if (profile == null) return;
-    
-    // Only update if not already initialized or if profile changed
-    if (!_controllersInitialized) {
+
+    // Only avoid overwriting while the user is actively editing.
+    if (!_controllersInitialized || !profileState.isEditing) {
       _userIdController.text = profile.userId;
       _fullNameController.text = profile.name;
       _nicknameController.text = profile.displayName ?? '';
@@ -86,8 +90,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           : '';
       _jobPositionController.text = profile.jobPosition ?? '';
       _phoneController.text = profile.phoneNumber;
-      _placeOfOriginController.text = profile.address?.placeOfOrigin ?? '';
-      _placeOfResidenceController.text = profile.address?.placeOfResidence ?? '';
+      _syncLocationState(profile);
       _citizenIdController.text = profile.citizenInfo?.citizenId ?? '';
       _dateOfIssueController.text = profile.citizenInfo?.dateOfIssue != null
           ? profile.citizenInfo!.dateOfIssue!.toIso8601String().split('T')[0]
@@ -97,6 +100,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           : '';
       _controllersInitialized = true;
     }
+  }
+
+  void _syncLocationState(UserProfile profile) {
+    _originProvinceCode = profile.address?.originProvinceCode;
+    _originProvinceName = profile.address?.originProvinceName;
+    _originWardCode = profile.address?.originWardCode;
+    _originWardName = profile.address?.originWardName;
+    _residenceProvinceCode = profile.address?.residenceProvinceCode;
+    _residenceProvinceName = profile.address?.residenceProvinceName;
+    _residenceWardCode = profile.address?.residenceWardCode;
+    _residenceWardName = profile.address?.residenceWardName;
   }
 
   String _formatDate(DateTime date) {
@@ -147,8 +161,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         nickname: _nicknameController.text,
         gender: _selectedGender?.toBackendString(),
         dob: _dobController.text.isNotEmpty ? _dobController.text : null,
-        placeOfOrigin: _placeOfOriginController.text,
-        placeOfResidence: _placeOfResidenceController.text,
+        originProvinceCode: _originProvinceCode,
+        originProvinceName: _originProvinceName,
+        originWardCode: _originWardCode,
+        originWardName: _originWardName,
+        residenceProvinceCode: _residenceProvinceCode,
+        residenceProvinceName: _residenceProvinceName,
+        residenceWardCode: _residenceWardCode,
+        residenceWardName: _residenceWardName,
         dateOfIssue: _dateOfIssueController.text.isNotEmpty
             ? _dateOfIssueController.text
             : null,
@@ -305,11 +325,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     dobController: _dobController,
                     jobPositionController: _jobPositionController,
                     phoneController: _phoneController,
-                    placeOfOriginController: _placeOfOriginController,
-                    placeOfResidenceController: _placeOfResidenceController,
                     citizenIdController: _citizenIdController,
                     dateOfIssueController: _dateOfIssueController,
                     dateOfExpiryController: _dateOfExpiryController,
+                    originProvinceDisplay:
+                        profileState.profile?.address?.originProvinceName ?? '',
+                    originWardDisplay:
+                        profileState.profile?.address?.originWardName ?? '',
+                    residenceProvinceDisplay:
+                        profileState.profile?.address?.residenceProvinceName ?? '',
+                    residenceWardDisplay:
+                        profileState.profile?.address?.residenceWardName ?? '',
+                    originProvinceCode: _originProvinceCode,
+                    originWardCode: _originWardCode,
+                    residenceProvinceCode: _residenceProvinceCode,
+                    residenceWardCode: _residenceWardCode,
+                    onOriginLocationChanged: _updateOriginLocation,
+                    onResidenceLocationChanged: _updateResidenceLocation,
                     onDobTap: profileState.isEditing
                       ? () => _pickDate(
                           controller: _dobController,
@@ -365,5 +397,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
     );
+  }
+
+  void _updateOriginLocation(LocationSelection selection) {
+    setState(() {
+      _originProvinceCode = selection.province?.code;
+      _originProvinceName = selection.province?.name;
+      _originWardCode = selection.ward?.code;
+      _originWardName = selection.ward?.name;
+    });
+  }
+
+  void _updateResidenceLocation(LocationSelection selection) {
+    setState(() {
+      _residenceProvinceCode = selection.province?.code;
+      _residenceProvinceName = selection.province?.name;
+      _residenceWardCode = selection.ward?.code;
+      _residenceWardName = selection.ward?.name;
+    });
   }
 }

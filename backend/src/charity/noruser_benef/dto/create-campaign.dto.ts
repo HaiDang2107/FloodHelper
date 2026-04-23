@@ -1,4 +1,11 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreateCampaignDto {
   @IsNotEmpty()
@@ -9,9 +16,23 @@ export class CreateCampaignDto {
   @IsString()
   purpose!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  destinationProvinceCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  destinationWardCode?: number;
+
+  @IsOptional()
   @IsString()
-  destination!: string;
+  destinationDetail?: string;
+
+  @IsOptional()
+  @IsString()
+  destination?: string;
 
   @IsNotEmpty()
   @IsString()
@@ -21,8 +42,14 @@ export class CreateCampaignDto {
   @IsString()
   bankAccountNumber!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  bankId?: number;
+
+  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   bankName!: string;
 
   @IsOptional()

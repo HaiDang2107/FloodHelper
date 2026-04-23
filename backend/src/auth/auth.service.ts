@@ -13,6 +13,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { CachedOtp, JwtPayload } from './interfaces';
+import { formatLocation } from '../common/location-format.util';
 import {
   SignupDto,
   SigninDto,
@@ -72,8 +73,10 @@ export class AuthService {
         phoneNumber,
         nickname: rest.nickname,
         dob: rest.dob ? new Date(rest.dob) : undefined,
-        placeOfOrigin: rest.placeOfOrigin,
-        placeOfResidence: rest.placeOfResidence,
+        originProvinceCode: rest.originProvinceCode,
+        originWardCode: rest.originWardCode,
+        residenceProvinceCode: rest.residenceProvinceCode,
+        residenceWardCode: rest.residenceWardCode,
         dateOfIssue: rest.dateOfIssue ? new Date(rest.dateOfIssue) : undefined,
         dateOfExpire: rest.dateOfExpire
           ? new Date(rest.dateOfExpire)
@@ -150,7 +153,42 @@ export class AuthService {
 
     const account = await this.prisma.account.findUnique({
       where: { username },
-      include: { user: { select: { role: true } } },
+      include: {
+        user: {
+          select: {
+            role: true,
+            userId: true,
+            fullname: true,
+            nickname: true,
+            phoneNumber: true,
+            avatarUrl: true,
+            gender: true,
+            dob: true,
+            originProvinceCode: true,
+            originWardCode: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            originProvince: {
+              select: { code: true, name: true },
+            },
+            originWard: {
+              select: { code: true, name: true },
+            },
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
+            dateOfIssue: true,
+            dateOfExpire: true,
+            citizenId: true,
+            citizenIdCardImg: true,
+            jobPosition: true,
+            showCharityCampaignLocations: true,
+          },
+        },
+      },
     });
 
     if (!account) {
@@ -250,7 +288,42 @@ export class AuthService {
 
     const account = await this.prisma.account.findUnique({
       where: { username },
-      include: { user: true },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            fullname: true,
+            nickname: true,
+            phoneNumber: true,
+            avatarUrl: true,
+            gender: true,
+            dob: true,
+            originProvinceCode: true,
+            originWardCode: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            originProvince: {
+              select: { code: true, name: true },
+            },
+            originWard: {
+              select: { code: true, name: true },
+            },
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
+            dateOfIssue: true,
+            dateOfExpire: true,
+            citizenId: true,
+            citizenIdCardImg: true,
+            jobPosition: true,
+            showCharityCampaignLocations: true,
+            role: true,
+          },
+        },
+      },
     });
 
     if (!account) {
@@ -297,8 +370,22 @@ export class AuthService {
           avatarUrl: user.avatarUrl,
           gender: user.gender,
           dob: user.dob,
-          placeOfOrigin: user.placeOfOrigin,
-          placeOfResidence: user.placeOfResidence,
+          placeOfOrigin: formatLocation(
+            user.originWard,
+            user.originProvince,
+          ),
+          placeOfResidence: formatLocation(
+            user.residenceWard,
+            user.residenceProvince,
+          ),
+          originProvinceCode: user.originProvinceCode,
+          originProvinceName: user.originProvince?.name,
+          originWardCode: user.originWardCode,
+          originWardName: user.originWard?.name,
+          residenceProvinceCode: user.residenceProvinceCode,
+          residenceProvinceName: user.residenceProvince?.name,
+          residenceWardCode: user.residenceWardCode,
+          residenceWardName: user.residenceWard?.name,
           dateOfIssue: user.dateOfIssue,
           dateOfExpire: user.dateOfExpire,
           citizenId: user.citizenId,

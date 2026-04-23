@@ -2,7 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../domain/models/models.dart';
 import '../../../data/mappers/domain_mappers.dart';
-import '../../../data/models/profile_model.dart' show ProfileRoleRequestModel, UpdateProfileDto;
+import '../../../data/models/profile_model.dart'
+    show ProfileModel, ProfileRoleRequestModel, UpdateProfileDto;
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/global_session_provider.dart';
 import '../../../data/repositories/profile_repository.dart';
@@ -102,13 +103,7 @@ class ProfileViewModel extends _$ProfileViewModel {
       final profileModel = await _profileRepository.getProfile();
       final updatedProfile = profileModel.toDomain();
 
-      final authRepository = ref.read(authRepositoryProvider);
-      await authRepository.syncSessionUserFromProfile(profileModel);
-
-      final refreshedSession = await authRepository.getCurrentSession();
-      if (refreshedSession != null) {
-        ref.read(globalSessionManagerProvider.notifier).setSession(refreshedSession);
-      }
+      await _syncSessionFromProfile(profileModel);
 
       state = state.copyWith(
         roleRequests: requests,
@@ -158,6 +153,7 @@ class ProfileViewModel extends _$ProfileViewModel {
     
     try {
       final profileModel = await _profileRepository.getProfile();
+      await _syncSessionFromProfile(profileModel);
       // Convert data model to domain model
       final profile = profileModel.toDomain();
       state = state.copyWith(
@@ -190,8 +186,14 @@ class ProfileViewModel extends _$ProfileViewModel {
     String? nickname,
     String? gender,
     String? dob,
-    String? placeOfOrigin,
-    String? placeOfResidence,
+    int? originProvinceCode,
+    String? originProvinceName,
+    int? originWardCode,
+    String? originWardName,
+    int? residenceProvinceCode,
+    String? residenceProvinceName,
+    int? residenceWardCode,
+    String? residenceWardName,
     String? dateOfIssue,
     String? dateOfExpire,
     String? jobPosition,
@@ -209,8 +211,14 @@ class ProfileViewModel extends _$ProfileViewModel {
         nickname: nickname,
         gender: gender,
         dob: dob,
-        placeOfOrigin: placeOfOrigin,
-        placeOfResidence: placeOfResidence,
+        originProvinceCode: originProvinceCode,
+        originProvinceName: originProvinceName,
+        originWardCode: originWardCode,
+        originWardName: originWardName,
+        residenceProvinceCode: residenceProvinceCode,
+        residenceProvinceName: residenceProvinceName,
+        residenceWardCode: residenceWardCode,
+        residenceWardName: residenceWardName,
         dateOfIssue: dateOfIssue,
         dateOfExpire: dateOfExpire,
         jobPosition: jobPosition,
@@ -220,16 +228,22 @@ class ProfileViewModel extends _$ProfileViewModel {
       );
       
       final updatedProfileModel = await _profileRepository.updateProfile(dto);
-      final authRepository = ref.read(authRepositoryProvider);
-      await authRepository.syncSessionUserFromProfile(updatedProfileModel);
+      final normalizedProfileModel = _normalizeUpdatedProfileModel(
+        responseModel: updatedProfileModel,
+        fallbackOriginProvinceCode: originProvinceCode,
+        fallbackOriginProvinceName: originProvinceName,
+        fallbackOriginWardCode: originWardCode,
+        fallbackOriginWardName: originWardName,
+        fallbackResidenceProvinceCode: residenceProvinceCode,
+        fallbackResidenceProvinceName: residenceProvinceName,
+        fallbackResidenceWardCode: residenceWardCode,
+        fallbackResidenceWardName: residenceWardName,
+      );
 
-      final refreshedSession = await authRepository.getCurrentSession(); // Sau khi đồng bộ session trong local storage ==> đẩy lại lên Global Session
-      if (refreshedSession != null) {
-        ref.read(globalSessionManagerProvider.notifier).setSession(refreshedSession);
-      }
+      await _syncSessionFromProfile(normalizedProfileModel);
 
       // Convert to domain model
-      final updatedProfile = updatedProfileModel.toDomain();
+      final updatedProfile = normalizedProfileModel.toDomain();
       
       state = state.copyWith(
         profile: updatedProfile,
@@ -246,6 +260,81 @@ class ProfileViewModel extends _$ProfileViewModel {
       );
       return false;
     }
+  }
+
+  Future<void> _syncSessionFromProfile(ProfileModel profileModel) async {
+    final authRepository = ref.read(authRepositoryProvider);
+    await authRepository.syncSessionUserFromProfile(profileModel);
+
+    final refreshedSession = await authRepository.getCurrentSession();
+    if (refreshedSession != null) {
+      ref.read(globalSessionManagerProvider.notifier).setSession(refreshedSession);
+    }
+  }
+
+  ProfileModel _normalizeUpdatedProfileModel({
+    required ProfileModel responseModel,
+    required int? fallbackOriginProvinceCode,
+    required String? fallbackOriginProvinceName,
+    required int? fallbackOriginWardCode,
+    required String? fallbackOriginWardName,
+    required int? fallbackResidenceProvinceCode,
+    required String? fallbackResidenceProvinceName,
+    required int? fallbackResidenceWardCode,
+    required String? fallbackResidenceWardName,
+  }) {
+    return responseModel.copyWith(
+      originProvinceCode: _preferResponseInt(
+        responseModel.originProvinceCode,
+        fallbackOriginProvinceCode,
+      ),
+      originProvinceName: _preferResponseString(
+        responseModel.originProvinceName,
+        fallbackOriginProvinceName,
+      ),
+      originWardCode: _preferResponseInt(
+        responseModel.originWardCode,
+        fallbackOriginWardCode,
+      ),
+      originWardName: _preferResponseString(
+        responseModel.originWardName,
+        fallbackOriginWardName,
+      ),
+      residenceProvinceCode: _preferResponseInt(
+        responseModel.residenceProvinceCode,
+        fallbackResidenceProvinceCode,
+      ),
+      residenceProvinceName: _preferResponseString(
+        responseModel.residenceProvinceName,
+        fallbackResidenceProvinceName,
+      ),
+      residenceWardCode: _preferResponseInt(
+        responseModel.residenceWardCode,
+        fallbackResidenceWardCode,
+      ),
+      residenceWardName: _preferResponseString(
+        responseModel.residenceWardName,
+        fallbackResidenceWardName,
+      ),
+    );
+  }
+
+  int? _preferResponseInt(int? responseValue, int? fallbackValue) {
+    return responseValue ?? fallbackValue;
+  }
+
+  String? _preferResponseString(String? responseValue, String? fallbackValue) {
+    final normalizedResponse = responseValue?.trim();
+    if (normalizedResponse != null && normalizedResponse.isNotEmpty) {
+      return normalizedResponse;
+    }
+
+    final normalizedFallback = fallbackValue?.trim();
+    if (normalizedFallback != null && normalizedFallback.isNotEmpty) {
+      return normalizedFallback;
+    }
+
+    return fallbackValue;
   }
 
   /// Update location

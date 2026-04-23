@@ -183,10 +183,12 @@ export class VietQrService {
         campaignId: true,
         state: true,
         bankAccount: {
-          select: {
-            bankCode: true,
-            bankAccountNumber: true,
-            userBankName: true,
+          include: {
+            bank: {
+              select: {
+                code: true,
+              },
+            },
           },
         },
       },
@@ -202,7 +204,7 @@ export class VietQrService {
       );
     }
 
-    const bankCode = campaign.bankAccount?.bankCode?.trim();
+    const bankCode = campaign.bankAccount?.bank?.code?.trim();
     const bankAccount = campaign.bankAccount?.bankAccountNumber?.trim();
     const userBankName = campaign.bankAccount?.userBankName?.trim();
 

@@ -7,14 +7,25 @@ model User {
   fullname         String    @db.VarChar(255)
   nickname         String?   @db.VarChar(255)
   dob              DateTime? @db.Date
-  placeOfOrigin    String?   @map("place_of_origin")
-  placeOfResidence String?   @map("place_of_residence")
+
+  // --- Thay thế placeOfOrigin ---
+  originProvinceCode Int?      @map("origin_province_code")
+  originProvince     Province? @relation("OriginProvince", fields: [originProvinceCode], references: [code])
+  originWardCode Int?      @map("origin_Ward_code")
+  originWard     Ward? @relation("OriginWard", fields: [originWardCode], references: [code])
+
+  // --- Thay thế placeOfResidence ---
+  residenceProvinceCode Int?      @map("residence_province_code")
+  residenceProvince     Province? @relation("ResidenceProvince", fields: [residenceProvinceCode], references: [code])
+  residenceWardCode Int?      @map("residence_ward_code")
+  residenceWard     Ward? @relation("ResidenceWard", fields: [residenceWardCode], references: [code])
+
   dateOfIssue      DateTime? @map("date_of_issue") @db.Date
   dateOfExpire     DateTime? @map("date_of_expire") @db.Date
-  role             String[]  @default(["NORMAL_USER"]) // Array of roles, can have multiple
+  role             String[]  @default(["NORMAL_USER"]) 
   curLongitude     Decimal?  @map("cur_longitude") @db.Decimal(10, 7)
   curLatitude      Decimal?  @map("cur_latitude") @db.Decimal(10, 7)
-  visibilityMode   String    @default("JUST_FRIEND") @map("visibility_mode") @db.VarChar(20) // PUBLIC | JUST_FRIEND | NO_ONE
+  visibilityMode   String    @default("JUST_FRIEND") @map("visibility_mode") @db.VarChar(20) 
   showCharityCampaignLocations Boolean @default(false) @map("show_charity_campaign_locations")
   avatarUrl        String?   @map("avatar_url")
   citizenId        String?   @map("citizen_id")
@@ -24,13 +35,13 @@ model User {
   jobPosition      String?   @map("job_position")
   fcmToken         String?   @map("fcm_token")
 
-  // Relations
+  // Relations (Giữ nguyên)
   account              Account?
   posts                Post[]
-  organizedCampaigns   CharityCampaign[]      @relation("CampaignOrganizer")
-  checkedCampaigns     CharityCampaign[]      @relation("CampaignChecker")
-  signals              Signal[] @relation("SignalCreator")
-  handledSignals       Signal[] @relation("SignalHandler")
+  organizedCampaigns   CharityCampaign[]     @relation("CampaignOrganizer")
+  checkedCampaigns     CharityCampaign[]     @relation("CampaignChecker")
+  signals              Signal[]              @relation("SignalCreator")
+  handledSignals       Signal[]              @relation("SignalHandler")
   sentMessages         Message[]
   createdChatRooms     ChatRoom[]
   likes                Like[]
@@ -41,9 +52,8 @@ model User {
   friendRequestsSent   FriendMakingRequest[] @relation("FriendRequestSender")
   friendRequestsRcved  FriendMakingRequest[] @relation("FriendRequestReceiver")
   
-  // Quan hệ bạn bè (Self-relation many-to-many explicit)
-  friendshipsInitiated Friendship[] @relation("Friendship_User") // Phải nêu rõ relation nếu có 2 tham chiếu đến cùng 1 bảng
-  friendshipsReceived  Friendship[] @relation("Friendship_Friend")
+  friendshipsInitiated Friendship[]          @relation("Friendship_User") 
+  friendshipsReceived  Friendship[]          @relation("Friendship_Friend")
 
   @@map("User")
 }
@@ -94,4 +104,42 @@ model Provider {
   accounts Account[]
 
   @@map("Provider")
+}
+
+// ==============================
+// Province and Ward
+// ==============================
+
+model Province {
+  code         Int        @id
+  name         String
+  divisionType String     @map("division_type")
+  codename     String
+  phoneCode    Int        @map("phone_code")
+
+  wards    Ward[]
+
+  // Các relation trả ngược về bảng User và CharityCampaign
+  usersOrigin          User[]            @relation("OriginProvince")
+  usersResidence       User[]            @relation("ResidenceProvince")
+  campaignDestinations CharityCampaign[] @relation("CampaignDestinationProvince")
+
+  @@map("Province")
+}
+
+model Ward {
+  code         Int      @id
+  name         String
+  divisionType String   @map("division_type")
+  codename     String
+  
+  provinceCode Int      @map("province_code")
+  province     Province @relation(fields: [provinceCode], references: [code])
+
+  // Các relation trả ngược về bảng User và CharityCampaign
+  usersOrigin          User[]            @relation("OriginWard")
+  usersResidence       User[]            @relation("ResidenceWard")
+  campaignDestinations CharityCampaign[] @relation("CampaignDestinationWard")
+
+  @@map("Ward")
 }

@@ -149,10 +149,26 @@ class UserProfile {
 class Address {
   final String? placeOfOrigin;
   final String? placeOfResidence;
+  final int? originProvinceCode;
+  final String? originProvinceName;
+  final int? originWardCode;
+  final String? originWardName;
+  final int? residenceProvinceCode;
+  final String? residenceProvinceName;
+  final int? residenceWardCode;
+  final String? residenceWardName;
 
   const Address({
     this.placeOfOrigin,
     this.placeOfResidence,
+    this.originProvinceCode,
+    this.originProvinceName,
+    this.originWardCode,
+    this.originWardName,
+    this.residenceProvinceCode,
+    this.residenceProvinceName,
+    this.residenceWardCode,
+    this.residenceWardName,
   });
 
   String get fullAddress {
@@ -164,10 +180,26 @@ class Address {
   Address copyWith({
     String? placeOfOrigin,
     String? placeOfResidence,
+    int? originProvinceCode,
+    String? originProvinceName,
+    int? originWardCode,
+    String? originWardName,
+    int? residenceProvinceCode,
+    String? residenceProvinceName,
+    int? residenceWardCode,
+    String? residenceWardName,
   }) {
     return Address(
       placeOfOrigin: placeOfOrigin ?? this.placeOfOrigin,
       placeOfResidence: placeOfResidence ?? this.placeOfResidence,
+      originProvinceCode: originProvinceCode ?? this.originProvinceCode,
+      originProvinceName: originProvinceName ?? this.originProvinceName,
+      originWardCode: originWardCode ?? this.originWardCode,
+      originWardName: originWardName ?? this.originWardName,
+      residenceProvinceCode: residenceProvinceCode ?? this.residenceProvinceCode,
+      residenceProvinceName: residenceProvinceName ?? this.residenceProvinceName,
+      residenceWardCode: residenceWardCode ?? this.residenceWardCode,
+      residenceWardName: residenceWardName ?? this.residenceWardName,
     );
   }
 }

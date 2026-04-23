@@ -76,13 +76,13 @@ class AuthorityService {
 
   Future<Map<String, dynamic>> approveCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   }) async {
     final response = await _apiClient.patch(
       '/authority/campaigns/$campaignId/approve',
       data: {
-        if (noteByAuthority != null && noteByAuthority.trim().isNotEmpty)
-          'noteByAuthority': noteByAuthority.trim(),
+        if (noteForResponse != null && noteForResponse.trim().isNotEmpty)
+          'noteForResponse': noteForResponse.trim(),
       },
     );
 
@@ -91,13 +91,13 @@ class AuthorityService {
 
   Future<Map<String, dynamic>> rejectCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForResponse,
   }) async {
     final response = await _apiClient.patch(
       '/authority/campaigns/$campaignId/reject',
       data: {
-        if (noteByAuthority != null && noteByAuthority.trim().isNotEmpty)
-          'noteByAuthority': noteByAuthority.trim(),
+        if (noteForResponse != null && noteForResponse.trim().isNotEmpty)
+          'noteForResponse': noteForResponse.trim(),
       },
     );
 
@@ -106,13 +106,13 @@ class AuthorityService {
 
   Future<Map<String, dynamic>> suspendCharityCampaign(
     String campaignId, {
-    String? noteByAuthority,
+    String? noteForSuspension,
   }) async {
     final response = await _apiClient.patch(
       '/authority/campaigns/$campaignId/suspend',
       data: {
-        if (noteByAuthority != null && noteByAuthority.trim().isNotEmpty)
-          'noteByAuthority': noteByAuthority.trim(),
+        if (noteForSuspension != null && noteForSuspension.trim().isNotEmpty)
+          'noteForSuspension': noteForSuspension.trim(),
       },
     );
 

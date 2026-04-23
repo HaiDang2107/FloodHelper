@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { formatLocation } from '../common/location-format.util';
 
 type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
   include: {
@@ -9,9 +10,39 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
         userId: true;
         fullname: true;
         nickname: true;
+        residenceProvinceCode: true;
+        residenceWardCode: true;
+        residenceProvince: {
+          select: {
+            code: true;
+            name: true;
+          };
+        };
+        residenceWard: {
+          select: {
+            code: true;
+            name: true;
+          };
+        };
       };
     };
-    bankAccount: true;
+    destinationProvince: {
+      select: {
+        code: true;
+        name: true;
+      };
+    };
+    destinationWard: {
+      select: {
+        code: true;
+        name: true;
+      };
+    };
+    bankAccount: {
+      include: {
+        bank: true;
+      };
+    };
     transactions: true;
   };
 }>;
@@ -29,9 +60,33 @@ export class CommonCharityService {
             userId: true,
             fullname: true,
             nickname: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            residenceProvince: {
+              select: {
+                code: true,
+                name: true,
+              },
+            },
+            residenceWard: {
+              select: {
+                code: true,
+                name: true,
+              },
+            },
           },
         },
-        bankAccount: true,
+        destinationProvince: {
+          select: { code: true, name: true },
+        },
+        destinationWard: {
+          select: { code: true, name: true },
+        },
+        bankAccount: {
+          include: {
+            bank: true,
+          },
+        },
         transactions: {
           orderBy: { donateAt: 'desc' },
         },
@@ -48,6 +103,21 @@ export class CommonCharityService {
     });
 
     return this.mapCampaignDetail(campaign, announcements);
+  }
+
+  async listBanks() {
+    const banks = await this.prisma.bank.findMany({
+      select: {
+        id: true,
+        shortName: true,
+      },
+      orderBy: [{ shortName: 'asc' }, { name: 'asc' }],
+    });
+
+    return banks.map((bank) => ({
+      id: bank.id,
+      shortName: bank.shortName,
+    }));
   }
 
   private mapCampaignDetail(
@@ -75,11 +145,23 @@ export class CommonCharityService {
           ? 'APPROVED'
           : String(campaign.state).toUpperCase(),
       bankInfo: {
+        bankId: bank?.bankId ?? null,
         accountNumber: bank?.bankAccountNumber ?? '',
-        bankName: bank?.bankName ?? '',
+        bankName: bank?.bank?.name ?? bank?.bank?.shortName ?? '',
+        bankCode: bank?.bank?.code ?? '',
+        bankShortName: bank?.bank?.shortName ?? '',
         accountHolder: bank?.userBankName ?? null,
       },
-      reliefLocation: campaign.destination,
+      destinationProvinceCode: campaign.destinationProvinceCode ?? null,
+      destinationProvinceName: campaign.destinationProvince?.name ?? null,
+      destinationWardCode: campaign.destinationWardCode ?? null,
+      destinationWardName: campaign.destinationWard?.name ?? null,
+      destinationDetail: campaign.destinationDetail ?? null,
+      reliefLocation: formatLocation(
+        campaign.destinationWard,
+        campaign.destinationProvince,
+        campaign.destinationDetail,
+      ) ?? '',
       latitude: campaign.campaignLatitude ? Number(campaign.campaignLatitude) : null,
       longitude: campaign.campaignLongitude
         ? Number(campaign.campaignLongitude)
@@ -91,7 +173,9 @@ export class CommonCharityService {
       bankStatementFileUrl: campaign.bankStatementFileUrl,
       requestedAt: campaign.requestedAt,
       respondedAt: campaign.respondedAt,
-      noteByAuthority: campaign.noteByAuthority,
+      suspendedAt: campaign.suspendedAt,
+      noteForResponse: campaign.noteForResponse,
+      noteForSuspension: campaign.noteForSuspension,
       period: {
         startDate,
         endDate,
@@ -111,4 +195,5 @@ export class CommonCharityService {
       createdAt: campaign.createdAt,
     };
   }
+
 }

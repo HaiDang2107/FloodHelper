@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../domain/models/charity_campaign.dart';
 import '../../view_models/charity_campaign_requests_view_model.dart';
-import '../../widgets/charity_campaign_request_card.dart';
-import '../../widgets/charity_campaign_request_detail.dart';
+import '../../widgets/charity_campaign_card.dart';
+import '../../widgets/charity_campaign_detail/charity_campaign_detail.dart';
 import '../../widgets/request_review_frame.dart';
 
 class CharityCampaignScreen extends ConsumerStatefulWidget {
@@ -43,7 +43,9 @@ class _CharityCampaignScreenState extends ConsumerState<CharityCampaignScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(charityCampaignRequestsViewModelProvider);
-    final viewModel = ref.read(charityCampaignRequestsViewModelProvider.notifier);
+    final viewModel = ref.read(
+      charityCampaignRequestsViewModelProvider.notifier,
+    );
     final routeStatusFilter = _statusFromQuery(widget.statusQuery);
     final errorMessage = state.errorMessage;
     final hasStatusSelection = routeStatusFilter != null;
@@ -73,30 +75,27 @@ class _CharityCampaignScreenState extends ConsumerState<CharityCampaignScreen> {
       title: 'Charity campaign requests',
       filters: const [],
       listContent: !hasStatusSelection
-          ? const _StatusSelectionHint(message: 'Select a status from the sidebar to view campaign requests.')
+          ? const _StatusSelectionHint(
+              message:
+                  'Select a status from the sidebar to view campaign requests.',
+            )
           : state.isLoading && state.campaigns.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : _CampaignRequestList(
-                  campaigns: state.campaigns,
-                  selectedId: state.selectedId,
-                  onSelect: viewModel.selectCampaign,
-                  onReachEnd: viewModel.loadMore,
-                  isLoadingMore: state.isLoadingMore,
-                  endMessage: state.endMessage,
-                ),
+          ? const Center(child: CircularProgressIndicator())
+          : _CampaignRequestList(
+              campaigns: state.campaigns,
+              selectedId: state.selectedId,
+              onSelect: viewModel.selectCampaign,
+              onReachEnd: viewModel.loadMore,
+              isLoadingMore: state.isLoadingMore,
+              endMessage: state.endMessage,
+            ),
       detailPanel: CharityCampaignRequestDetail(
         campaign: hasStatusSelection ? state.selectedCampaign : null,
         isSubmitting: state.isLoading,
         isDetailLoading: hasStatusSelection ? state.isDetailLoading : false,
-        onApprove: (note) => viewModel.approveSelected(
-          noteByAuthority: note,
-        ),
-        onReject: (note) => viewModel.rejectSelected(
-          noteByAuthority: note,
-        ),
-        onSuspend: (note) => viewModel.suspendSelected(
-          noteByAuthority: note,
-        ),
+        onApprove: (note) => viewModel.approveSelected(noteForResponse: note),
+        onReject: (note) => viewModel.rejectSelected(noteForResponse: note),
+        onSuspend: (note) => viewModel.suspendSelected(noteForSuspension: note),
       ),
     );
   }
@@ -150,10 +149,9 @@ class _CampaignRequestList extends StatelessWidget {
                 child: Center(
                   child: Text(
                     endMessage!,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: const Color(0xFF667085)),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF667085),
+                    ),
                   ),
                 ),
               );
@@ -170,9 +168,9 @@ class _CampaignRequestList extends StatelessWidget {
                 child: Text(
                   section.label,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: const Color(0xFF475467),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: const Color(0xFF475467),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               ...section.items.asMap().entries.map((entry) {
@@ -180,7 +178,9 @@ class _CampaignRequestList extends StatelessWidget {
                 final position = entry.key.toDouble();
                 return TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 220 + (position * 70).toInt()),
+                  duration: Duration(
+                    milliseconds: 220 + (position * 70).toInt(),
+                  ),
                   builder: (context, value, child) {
                     return Opacity(
                       opacity: value,
@@ -257,9 +257,9 @@ List<_CampaignSection> _groupByDate(List<CharityCampaign> campaigns) {
 
 DateTime _groupingDateOf(CharityCampaign campaign) {
   return campaign.requestedAt ??
-    campaign.startedDonationAt ??
-    campaign.startedDistributionAt ??
-    campaign.finishedDonationAt ??
-    campaign.finishedDistributionAt ??
-    DateTime.fromMillisecondsSinceEpoch(0);
+      campaign.startedDonationAt ??
+      campaign.startedDistributionAt ??
+      campaign.finishedDonationAt ??
+      campaign.finishedDistributionAt ??
+      DateTime.fromMillisecondsSinceEpoch(0);
 }

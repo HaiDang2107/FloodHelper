@@ -4,5 +4,10 @@ export class RespondCampaignDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  noteByAuthority?: string;
+  noteForResponse?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  noteForSuspension?: string;
 }

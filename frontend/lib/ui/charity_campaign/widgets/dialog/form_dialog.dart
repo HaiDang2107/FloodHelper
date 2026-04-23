@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../data/services/charity_campaign_service.dart';
+import '../../../../domain/models/bank_option.dart';
 import '../../../../domain/models/charity_campaign.dart';
+import '../../../core/common/widgets/location_selector.dart';
 
 class CreateCampaignDialog extends StatefulWidget {
   final CharityCampaign? campaignToEdit;
@@ -14,13 +17,13 @@ class CreateCampaignDialog extends StatefulWidget {
 }
 
 class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
+  final _charityCampaignService = CharityCampaignService();
   final nameController = TextEditingController();
   final purposeController = TextEditingController();
   final charityObjectController = TextEditingController();
   final accountController = TextEditingController();
-  final bankController = TextEditingController();
   final bankStatementFileUrlController = TextEditingController();
-  final locationController = TextEditingController();
+  final destinationDetailController = TextEditingController();
   final startedDonationAtController = TextEditingController();
   final finishedDonationAtController = TextEditingController();
   final startedDistributionAtController = TextEditingController();
@@ -30,12 +33,21 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
   DateTime? _finishedDonationAt;
   DateTime? _startedDistributionAt;
   DateTime? _finishedDistributionAt;
+  List<BankOption> _banks = const [];
+  bool _isLoadingBanks = true;
+  String? _bankLoadError;
+  int? _selectedBankId;
+  int? _destinationProvinceCode;
+  String? _destinationProvinceName;
+  int? _destinationWardCode;
+  String? _destinationWardName;
 
   @override
   void initState() {
     super.initState();
     final campaign = widget.campaignToEdit;
     if (campaign == null) {
+      _loadBanks();
       return;
     }
 
@@ -43,9 +55,13 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     purposeController.text = campaign.purpose;
     charityObjectController.text = campaign.charityObject;
     accountController.text = campaign.bankInfo.accountNumber;
-    bankController.text = campaign.bankInfo.bankName;
+    _selectedBankId = campaign.bankInfo.bankId;
     bankStatementFileUrlController.text = campaign.bankStatementFileUrl ?? '';
-    locationController.text = campaign.reliefLocation;
+    destinationDetailController.text = campaign.destinationDetail ?? '';
+    _destinationProvinceCode = campaign.destinationProvinceCode;
+    _destinationProvinceName = campaign.destinationProvinceName;
+    _destinationWardCode = campaign.destinationWardCode;
+    _destinationWardName = campaign.destinationWardName;
 
     _startedDonationAt = campaign.startedDonationAt;
     _finishedDonationAt = campaign.finishedDonationAt;
@@ -56,6 +72,37 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     finishedDonationAtController.text = _formatDate(_finishedDonationAt);
     startedDistributionAtController.text = _formatDate(_startedDistributionAt);
     finishedDistributionAtController.text = _formatDate(_finishedDistributionAt);
+
+    _loadBanks();
+  }
+
+  Future<void> _loadBanks() async {
+    try {
+      final banks = await _charityCampaignService.getBanks();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _banks = banks;
+        _isLoadingBanks = false;
+        _bankLoadError = null;
+        if (_selectedBankId == null && widget.campaignToEdit != null) {
+          _selectedBankId = _resolveBankIdFromCampaign(
+            widget.campaignToEdit!.bankInfo,
+          );
+        }
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingBanks = false;
+        _bankLoadError = error.toString();
+      });
+    }
   }
 
   Future<void> _pickDate({
@@ -102,13 +149,40 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     return '$day/$month/$year';
   }
 
+  int? _resolveBankIdFromCampaign(BankInfo bankInfo) {
+    for (final bank in _banks) {
+      if (bankInfo.bankShortName != null &&
+          bank.shortName == bankInfo.bankShortName) {
+        return bank.id;
+      }
+      if (bankInfo.bankName == bank.shortName) {
+        return bank.id;
+      }
+    }
+
+    return null;
+  }
+
+  BankOption? _selectedBank() {
+    if (_selectedBankId == null) {
+      return null;
+    }
+
+    for (final bank in _banks) {
+      if (bank.id == _selectedBankId) {
+        return bank;
+      }
+    }
+
+    return null;
+  }
+
   String? _validateInputs() {
     if (nameController.text.trim().isEmpty ||
         purposeController.text.trim().isEmpty ||
         charityObjectController.text.trim().isEmpty ||
-        locationController.text.trim().isEmpty ||
         accountController.text.trim().isEmpty ||
-        bankController.text.trim().isEmpty ||
+        _selectedBank() == null ||
         _startedDonationAt == null ||
         _finishedDonationAt == null ||
         _startedDistributionAt == null ||
@@ -160,6 +234,7 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     final existing = widget.campaignToEdit;
     final startedDonationAt = _startedDonationAt!;
     final finishedDistributionAt = _finishedDistributionAt!;
+    final selectedBank = _selectedBank();
 
     final campaign = CharityCampaign(
       id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
@@ -170,9 +245,22 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
       purpose: purposeController.text.trim(),
       charityObject: charityObjectController.text.trim(),
       status: existing?.status ?? CampaignStatus.created,
+        destinationProvinceCode: _destinationProvinceCode,
+        destinationProvinceName: _destinationProvinceName,
+        destinationWardCode: _destinationWardCode,
+        destinationWardName: _destinationWardName,
+        destinationDetail: destinationDetailController.text.trim().isEmpty
+          ? null
+          : destinationDetailController.text.trim(),
       bankInfo: BankInfo(
         accountNumber: accountController.text.trim(),
-        bankName: bankController.text.trim(),
+        bankName: selectedBank?.shortName ??
+            existing?.bankInfo.bankShortName ??
+            existing?.bankInfo.bankName ??
+            'Unknown',
+        bankId: selectedBank?.id ?? existing?.bankInfo.bankId,
+        bankCode: existing?.bankInfo.bankCode,
+        bankShortName: selectedBank?.shortName ?? existing?.bankInfo.bankShortName,
         accountHolder: existing?.bankInfo.accountHolder,
       ),
       bankStatementFileUrl: bankStatementFileUrlController.text.trim().isEmpty
@@ -180,12 +268,12 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
           : bankStatementFileUrlController.text.trim(),
       requestedAt: existing?.requestedAt,
       respondedAt: existing?.respondedAt,
-      noteByAuthority: existing?.noteByAuthority,
+      noteForResponse: existing?.noteForResponse,
       startedDonationAt: _startedDonationAt,
       finishedDonationAt: _finishedDonationAt,
       startedDistributionAt: _startedDistributionAt,
       finishedDistributionAt: _finishedDistributionAt,
-      reliefLocation: locationController.text.trim(),
+      reliefLocation: _buildReliefLocation(),
       period: DateRange(
         startDate: startedDonationAt,
         endDate: finishedDistributionAt,
@@ -207,14 +295,28 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
     purposeController.dispose();
     charityObjectController.dispose();
     accountController.dispose();
-    bankController.dispose();
     bankStatementFileUrlController.dispose();
-    locationController.dispose();
+    destinationDetailController.dispose();
     startedDonationAtController.dispose();
     finishedDonationAtController.dispose();
     startedDistributionAtController.dispose();
     finishedDistributionAtController.dispose();
     super.dispose();
+  }
+
+  String _buildReliefLocation() {
+    final parts = <String>[];
+    final detail = destinationDetailController.text.trim();
+    if (detail.isNotEmpty) {
+      parts.add(detail);
+    }
+    if (_destinationWardName != null && _destinationWardName!.isNotEmpty) {
+      parts.add(_destinationWardName!);
+    }
+    if (_destinationProvinceName != null && _destinationProvinceName!.isNotEmpty) {
+      parts.add(_destinationProvinceName!);
+    }
+    return parts.join(', ');
   }
 
   @override
@@ -259,11 +361,26 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: locationController,
+              controller: destinationDetailController,
               decoration: const InputDecoration(
-                labelText: 'Relief Location *',
+                labelText: 'Location Detail (optional)',
                 border: OutlineInputBorder(),
               ),
+            ),
+            const SizedBox(height: 12),
+            LocationSelectorField(
+              provinceLabel: 'Destination Province *',
+              wardLabel: 'Destination Ward *',
+              initialProvinceCode: _destinationProvinceCode,
+              initialWardCode: _destinationWardCode,
+              onChanged: (selection) {
+                setState(() {
+                  _destinationProvinceCode = selection.province?.code;
+                  _destinationProvinceName = selection.province?.name;
+                  _destinationWardCode = selection.ward?.code;
+                  _destinationWardName = selection.ward?.name;
+                });
+              },
             ),
             const SizedBox(height: 12),
             TextField(
@@ -283,13 +400,44 @@ class _CreateCampaignDialogState extends State<CreateCampaignDialog> {
               ),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: bankController,
-              decoration: const InputDecoration(
-                labelText: 'Bank Name *',
-                border: OutlineInputBorder(),
+            if (_isLoadingBanks)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: LinearProgressIndicator(minHeight: 2),
+              )
+            else ...[
+              DropdownButtonFormField<int>(
+                value: _selectedBankId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Bank',
+                  border: OutlineInputBorder(),
+                ),
+                items: _banks
+                    .map(
+                      (bank) => DropdownMenuItem<int>(
+                        value: bank.id,
+                        child: Text(bank.displayLabel),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedBankId = value;
+                  });
+                },
               ),
-            ),
+              if (_bankLoadError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Bank list could not be loaded.',
+                  style: TextStyle(
+                    color: Colors.orange.shade800,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
             const SizedBox(height: 12),
             TextField(
               controller: accountController,

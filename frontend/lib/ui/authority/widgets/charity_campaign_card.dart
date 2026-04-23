@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/models/charity_campaign.dart';
 import '../theme/authority_theme.dart';
 
-class CharityCampaignRequestCard extends StatelessWidget {
+class CharityCampaignRequestCard extends StatelessWidget { // item bên danh sách
   const CharityCampaignRequestCard({
     super.key,
     required this.campaign,

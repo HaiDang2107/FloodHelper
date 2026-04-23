@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/authority_theme.dart';
 
-class AuthorityReviewFrame extends StatelessWidget {
+class AuthorityReviewFrame extends StatelessWidget { // Tạo layout tổng thể, chia làm 2 cột: danh sách và chi tiết
   const AuthorityReviewFrame({
     super.key,
     required this.title,

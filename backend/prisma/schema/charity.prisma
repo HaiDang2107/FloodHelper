@@ -3,34 +3,44 @@
 // ==============================
 
 model CharityCampaign {
-  campaignId           String    @id @default(uuid()) @db.Uuid @map("campaign_id")
-  organizedBy          String    @db.Uuid @map("organized_by")
-  bankAccountId        String?   @db.Uuid @map("bank_account_id")
-  checkedBy            String?   @db.Uuid @map("checked_by")
-  requestedAt          DateTime? @map("requested_at")
-  respondedAt          DateTime? @map("responded_at")
-  noteByAuthority      String?   @map("note_by_authority")
-  campaignName         String    @map("campaign_name")
-  purpose              String    @db.Text
-  destination          String
-  campaignLatitude     Decimal?  @map("campaign_latitude") @db.Decimal(10, 7)
-  campaignLongitude    Decimal?  @map("campaign_longitude") @db.Decimal(10, 7)
-  charityObject        String    @map("charity_object")
-  state                CampaignState
-  startedDonationAt  DateTime? @map("started_donation_at")
-  finishedDonationAt DateTime? @map("finished_donation_at")
+  campaignId             String    @id @default(uuid()) @db.Uuid @map("campaign_id")
+  organizedBy            String    @db.Uuid @map("organized_by")
+  bankAccountId          String?   @db.Uuid @map("bank_account_id")
+  checkedBy              String?   @db.Uuid @map("checked_by")
+  requestedAt            DateTime? @map("requested_at")
+  respondedAt            DateTime? @map("responded_at")
+  suspendedAt            DateTime? @map("suspended_at")
+  noteForResponse        String?   @map("note_for_response")
+  noteForSuspension      String?   @map("note_for_suspension")
+  campaignName           String    @map("campaign_name")
+  purpose                String    @db.Text
+  
+  // --- Thay thế destination cũ ---
+  destinationProvinceCode Int?      @map("destination_province_code")
+  destinationWardCode Int?      @map("destination_ward_code")
+  destinationDetail       String?   @map("destination_detail") // Dùng để lưu số nhà, tên đường, thôn/xã
+
+  campaignLatitude       Decimal?  @map("campaign_latitude") @db.Decimal(10, 7)
+  campaignLongitude      Decimal?  @map("campaign_longitude") @db.Decimal(10, 7)
+  charityObject          String    @map("charity_object")
+  state                  CampaignState
+  startedDonationAt      DateTime? @map("started_donation_at")
+  finishedDonationAt     DateTime? @map("finished_donation_at")
   startedDistributionAt  DateTime? @map("started_distribution_at")
   finishedDistributionAt DateTime? @map("finished_distribution_at")
-  bankStatementFileUrl String?   @map("bank_statement_file_url")
+  bankStatementFileUrl   String?   @map("bank_statement_file_url")
   
-  createdAt            DateTime  @default(now()) @map("created_at") 
+  createdAt              DateTime  @default(now()) @map("created_at") 
 
-  organizer         User               @relation("CampaignOrganizer", fields: [organizedBy], references: [userId])
-  bankAccount       BankAccount?       @relation(fields: [bankAccountId], references: [bankAccountId])
-  checker           User?              @relation("CampaignChecker", fields: [checkedBy], references: [userId])
-  transactions      Transaction[]
-  supplies          Supply[]
-  financialSupports FinancialSupport[]
+  // Relations
+  destinationProvince     Province? @relation("CampaignDestinationProvince", fields: [destinationProvinceCode], references: [code])
+  destinationWard     Ward? @relation("CampaignDestinationWard", fields: [destinationWardCode], references: [code])
+  organizer              User               @relation("CampaignOrganizer", fields: [organizedBy], references: [userId])
+  bankAccount            BankAccount?       @relation(fields: [bankAccountId], references: [bankAccountId])
+  checker                User?              @relation("CampaignChecker", fields: [checkedBy], references: [userId])
+  transactions           Transaction[]
+  supplies               Supply[]
+  financialSupports      FinancialSupport[]
 
   @@map("CharityCampaign")
 }
@@ -70,15 +80,27 @@ model Transaction {
 
 model BankAccount {
   bankAccountId     String @id @default(uuid()) @db.Uuid @map("bank_account_id")
-  bankName          String @map("bank_name")
   userBankName      String @map("user_bank_name") @default("UNKNOWN")
-  bankCode          String @map("bank_code") @default("UNKNOWN")
+  bankId            Int     @map("bank_id")
   bankAccountNumber String @map("bank_account_number")
   campaigns         CharityCampaign[]
 
-  @@unique([bankName, bankAccountNumber])
+  bank              Bank    @relation(fields: [bankId], references: [id])
+
+  @@unique([bankId, bankAccountNumber])
 
   @@map("BankAccount")
+}
+
+model Bank {
+  id        Int    @id
+  name      String
+  code      String
+  bin       String
+  shortName String
+
+  accounts  BankAccount[]
+  @@map("Bank") // Đặt tên bảng là "bank" trong database
 }
 
 model Supply {

@@ -5,8 +5,16 @@ class ProfileModel {
   final String? nickname;
   final String? gender;
   final String? dob; // Date of birth in 'YYYY-MM-DD' format
-  final String? placeOfOrigin;
-  final String? placeOfResidence;
+  // final String? placeOfOrigin;
+  // final String? placeOfResidence;
+  final int? originProvinceCode;
+  final String? originProvinceName;
+  final int? originWardCode;
+  final String? originWardName;
+  final int? residenceProvinceCode;
+  final String? residenceProvinceName;
+  final int? residenceWardCode;
+  final String? residenceWardName;
   final String? dateOfIssue;
   final String? dateOfExpire;
   final List<String> roles;
@@ -27,8 +35,16 @@ class ProfileModel {
     this.nickname,
     this.gender,
     this.dob,
-    this.placeOfOrigin,
-    this.placeOfResidence,
+    // this.placeOfOrigin,
+    // this.placeOfResidence,
+    this.originProvinceCode,
+    this.originProvinceName,
+    this.originWardCode,
+    this.originWardName,
+    this.residenceProvinceCode,
+    this.residenceProvinceName,
+    this.residenceWardCode,
+    this.residenceWardName,
     this.dateOfIssue,
     this.dateOfExpire,
     this.roles = const [],
@@ -44,10 +60,10 @@ class ProfileModel {
     this.account,
   });
 
-  /// Full address from village, district, country
-  String get fullAddress {
-    return placeOfResidence ?? '';
-  }
+  // /// Full address from village, ward, country
+  // String get fullAddress {
+  //   return placeOfResidence ?? '';
+  // }
 
   /// Get display name or fallback to name
   String get displayNameOrName => nickname ?? fullname;
@@ -59,8 +75,16 @@ class ProfileModel {
       nickname: json['nickname'] ?? json['displayName'],
       gender: json['gender'],
       dob: json['dob'],
-      placeOfOrigin: json['placeOfOrigin'] ?? json['village'],
-      placeOfResidence: json['placeOfResidence'] ?? json['district'] ?? json['country'],
+      // placeOfOrigin: json['placeOfOrigin'] ?? json['village'],
+      // placeOfResidence: json['placeOfResidence'] ?? json['Ward'] ?? json['country'],
+      originProvinceCode: _parseNullableInt(json['originProvinceCode']),
+      originProvinceName: json['originProvinceName']?.toString(),
+      originWardCode: _parseNullableInt(json['originWardCode']),
+      originWardName: json['originWardName']?.toString(),
+      residenceProvinceCode: _parseNullableInt(json['residenceProvinceCode']),
+      residenceProvinceName: json['residenceProvinceName']?.toString(),
+      residenceWardCode: _parseNullableInt(json['residenceWardCode']),
+      residenceWardName: json['residenceWardName']?.toString(),
       dateOfIssue: json['dateOfIssue'],
       dateOfExpire: json['dateOfExpire'],
       roles: List<String>.from(json['roles'] ?? []),
@@ -80,6 +104,14 @@ class ProfileModel {
     );
   }
 
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    return int.tryParse(value.toString());
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
@@ -87,8 +119,16 @@ class ProfileModel {
       'nickname': nickname,
       'gender': gender,
       'dob': dob,
-      'placeOfOrigin': placeOfOrigin,
-      'placeOfResidence': placeOfResidence,
+      // 'placeOfOrigin': placeOfOrigin,
+      // 'placeOfResidence': placeOfResidence,
+      'originProvinceCode': originProvinceCode,
+      'originProvinceName': originProvinceName,
+      'originWardCode': originWardCode,
+      'originWardName': originWardName,
+      'residenceProvinceCode': residenceProvinceCode,
+      'residenceProvinceName': residenceProvinceName,
+      'residenceWardCode': residenceWardCode,
+      'residenceWardName': residenceWardName,
       'dateOfIssue': dateOfIssue,
       'dateOfExpire': dateOfExpire,
       'roles': roles,
@@ -111,8 +151,16 @@ class ProfileModel {
     String? nickname,
     String? gender,
     String? dob,
-    String? placeOfOrigin,
-    String? placeOfResidence,
+    // String? placeOfOrigin,
+    // String? placeOfResidence,
+    int? originProvinceCode,
+    String? originProvinceName,
+    int? originWardCode,
+    String? originWardName,
+    int? residenceProvinceCode,
+    String? residenceProvinceName,
+    int? residenceWardCode,
+    String? residenceWardName,
     String? dateOfIssue,
     String? dateOfExpire,
     List<String>? roles,
@@ -133,8 +181,16 @@ class ProfileModel {
       nickname: nickname ?? this.nickname,
       gender: gender ?? this.gender,
       dob: dob ?? this.dob,
-      placeOfOrigin: placeOfOrigin ?? this.placeOfOrigin,
-      placeOfResidence: placeOfResidence ?? this.placeOfResidence,
+      // placeOfOrigin: placeOfOrigin ?? this.placeOfOrigin,
+      // placeOfResidence: placeOfResidence ?? this.placeOfResidence,
+      originProvinceCode: originProvinceCode ?? this.originProvinceCode,
+      originProvinceName: originProvinceName ?? this.originProvinceName,
+      originWardCode: originWardCode ?? this.originWardCode,
+      originWardName: originWardName ?? this.originWardName,
+      residenceProvinceCode: residenceProvinceCode ?? this.residenceProvinceCode,
+      residenceProvinceName: residenceProvinceName ?? this.residenceProvinceName,
+      residenceWardCode: residenceWardCode ?? this.residenceWardCode,
+      residenceWardName: residenceWardName ?? this.residenceWardName,
       dateOfIssue: dateOfIssue ?? this.dateOfIssue,
       dateOfExpire: dateOfExpire ?? this.dateOfExpire,
       roles: roles ?? this.roles,
@@ -190,8 +246,16 @@ class UpdateProfileDto {
   final String? nickname;
   final String? gender;
   final String? dob;
-  final String? placeOfOrigin;
-  final String? placeOfResidence;
+  // final String? placeOfOrigin;
+  // final String? placeOfResidence;
+  final int? originProvinceCode;
+  final String? originProvinceName;
+  final int? originWardCode;
+  final String? originWardName;
+  final int? residenceProvinceCode;
+  final String? residenceProvinceName;
+  final int? residenceWardCode;
+  final String? residenceWardName;
   final String? dateOfIssue;
   final String? dateOfExpire;
   final double? curLongitude;
@@ -208,8 +272,16 @@ class UpdateProfileDto {
     this.nickname,
     this.gender,
     this.dob,
-    this.placeOfOrigin,
-    this.placeOfResidence,
+    // this.placeOfOrigin,
+    // this.placeOfResidence,
+    this.originProvinceCode,
+    this.originProvinceName,
+    this.originWardCode,
+    this.originWardName,
+    this.residenceProvinceCode,
+    this.residenceProvinceName,
+    this.residenceWardCode,
+    this.residenceWardName,
     this.dateOfIssue,
     this.dateOfExpire,
     this.curLongitude,
@@ -228,8 +300,16 @@ class UpdateProfileDto {
     if (nickname != null) map['nickname'] = nickname;
     if (gender != null) map['gender'] = gender;
     if (dob != null) map['dob'] = dob;
-    if (placeOfOrigin != null) map['placeOfOrigin'] = placeOfOrigin;
-    if (placeOfResidence != null) map['placeOfResidence'] = placeOfResidence;
+    // if (placeOfOrigin != null) map['placeOfOrigin'] = placeOfOrigin;
+    // if (placeOfResidence != null) map['placeOfResidence'] = placeOfResidence;
+    if (originProvinceCode != null) map['originProvinceCode'] = originProvinceCode;
+    if (originProvinceName != null) map['originProvinceName'] = originProvinceName;
+    if (originWardCode != null) map['originWardCode'] = originWardCode;
+    if (originWardName != null) map['originWardName'] = originWardName;
+    if (residenceProvinceCode != null) map['residenceProvinceCode'] = residenceProvinceCode;
+    if (residenceProvinceName != null) map['residenceProvinceName'] = residenceProvinceName;
+    if (residenceWardCode != null) map['residenceWardCode'] = residenceWardCode;
+    if (residenceWardName != null) map['residenceWardName'] = residenceWardName;
     if (dateOfIssue != null) map['dateOfIssue'] = dateOfIssue;
     if (dateOfExpire != null) map['dateOfExpire'] = dateOfExpire;
     if (curLongitude != null) map['curLongitude'] = curLongitude;

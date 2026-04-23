@@ -30,6 +30,13 @@ class AuthorityMappers {
   static RoleRequest roleRequestFromApi(Map<String, dynamic> json) {
     final user = (json['user'] as Map<String, dynamic>?) ?? const {};
     final account = (user['account'] as Map<String, dynamic>?) ?? const {};
+    final originProvince = (user['originProvince'] as Map<String, dynamic>?) ??
+      const {};
+    final originWard = (user['originWard'] as Map<String, dynamic>?) ?? const {};
+    final residenceProvince =
+      (user['residenceProvince'] as Map<String, dynamic>?) ?? const {};
+    final residenceWard =
+      (user['residenceWard'] as Map<String, dynamic>?) ?? const {};
 
     final type = _asString(json['type']).toUpperCase();
     final state = _asString(json['state']).toUpperCase();
@@ -39,7 +46,37 @@ class AuthorityMappers {
     final requesterName = _asString(user['fullname']);
     final requesterEmail = _asString(account['username']);
     final citizenIdCardImg = _asString(user['citizenIdCardImg']);
-    final placeOfResidence = _asNullableString(user['placeOfResidence']);
+    final originProvinceCode = _asNullableInt(
+      user['originProvinceCode'] ?? originProvince['code'],
+    );
+    final originProvinceName = _asNullableString(
+      user['originProvinceName'] ?? originProvince['name'],
+    );
+    final originWardCode = _asNullableInt(user['originWardCode'] ?? originWard['code']);
+    final originWardName = _asNullableString(
+      user['originWardName'] ?? originWard['name'],
+    );
+    final residenceProvinceCode = _asNullableInt(
+      user['residenceProvinceCode'] ?? residenceProvince['code'],
+    );
+    final residenceProvinceName = _asNullableString(
+      user['residenceProvinceName'] ?? residenceProvince['name'],
+    );
+    final residenceWardCode = _asNullableInt(
+      user['residenceWardCode'] ?? residenceWard['code'],
+    );
+    final residenceWardName = _asNullableString(
+      user['residenceWardName'] ?? residenceWard['name'],
+    );
+
+    final placeOfOrigin = _formatLocation(
+      wardName: originWardName,
+      provinceName: originProvinceName,
+    );
+    final placeOfResidence = _formatLocation(
+      wardName: residenceWardName,
+      provinceName: residenceProvinceName,
+    );
 
     return RoleRequest(
       id: _asString(json['requestId']),
@@ -54,11 +91,19 @@ class AuthorityMappers {
       idNumber: _asString(user['citizenId']),
       nickname: _asNullableString(user['nickname']),
       gender: _asNullableString(user['gender']),
-      dob: _asNullableString(user['dob']),
-      placeOfOrigin: _asNullableString(user['placeOfOrigin']),
+      placeOfOrigin: placeOfOrigin,
       placeOfResidence: placeOfResidence,
-      dateOfIssue: _asNullableString(user['dateOfIssue']),
-      dateOfExpire: _asNullableString(user['dateOfExpire']),
+      originProvinceCode: originProvinceCode,
+      originProvinceName: originProvinceName,
+      originWardCode: originWardCode,
+      originWardName: originWardName,
+      residenceProvinceCode: residenceProvinceCode,
+      residenceProvinceName: residenceProvinceName,
+      residenceWardCode: residenceWardCode,
+      residenceWardName: residenceWardName,
+      dob: _normalizeDateText(user['dob']),
+      dateOfIssue: _normalizeDateText(user['dateOfIssue']),
+      dateOfExpire: _normalizeDateText(user['dateOfExpire']),
       jobPosition: _asNullableString(user['jobPosition']),
       avatarUrl: _asNullableString(user['avatarUrl']),
       frontImageUrl: citizenIdCardImg,
@@ -97,5 +142,63 @@ class AuthorityMappers {
       return null;
     }
     return text;
+  }
+
+  static int? _asNullableInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(value.toString());
+  }
+
+  static String? _formatLocation({
+    String? wardName,
+    String? provinceName,
+  }) {
+    final parts = [wardName, provinceName]
+        .where((part) => part != null && part.trim().isNotEmpty)
+        .map((part) => part!.trim())
+        .toList(growable: false);
+
+    if (parts.isEmpty) {
+      return null;
+    }
+
+    return parts.join(', ');
+  }
+
+  static String? _normalizeDateText(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return _formatDateOnly(value);
+    }
+
+    final text = value.toString().trim();
+    if (text.isEmpty) {
+      return null;
+    }
+
+    final parsed = DateTime.tryParse(text);
+    if (parsed != null) {
+      return _formatDateOnly(parsed);
+    }
+
+    final dateOnly = text.split('T').first;
+    return dateOnly.isEmpty ? null : dateOnly;
+  }
+
+  static String _formatDateOnly(DateTime dateTime) {
+    final year = dateTime.year.toString().padLeft(4, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 }
