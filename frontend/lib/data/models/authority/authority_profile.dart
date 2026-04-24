@@ -10,6 +10,14 @@ class AuthorityProfile {
     this.dob,
     this.placeOfOrigin,
     this.placeOfResidence,
+    this.originProvinceCode,
+    this.originProvinceName,
+    this.originWardCode,
+    this.originWardName,
+    this.residenceProvinceCode,
+    this.residenceProvinceName,
+    this.residenceWardCode,
+    this.residenceWardName,
     this.dateOfIssue,
     this.dateOfExpire,
     this.citizenId,
@@ -27,6 +35,14 @@ class AuthorityProfile {
   final String? dob;
   final String? placeOfOrigin;
   final String? placeOfResidence;
+  final int? originProvinceCode;
+  final String? originProvinceName;
+  final int? originWardCode;
+  final String? originWardName;
+  final int? residenceProvinceCode;
+  final String? residenceProvinceName;
+  final int? residenceWardCode;
+  final String? residenceWardName;
   final String? dateOfIssue;
   final String? dateOfExpire;
   final String? citizenId;

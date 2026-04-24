@@ -59,13 +59,6 @@ class _DetailCard extends StatelessWidget {
                     color: const Color(0xFF475467),
                   ),
                 ),
-                if (_showSuspensionDetails) ...[
-                  const SizedBox(height: 12),
-                  _InfoRow(
-                    label: 'Suspended at',
-                    value: formatDateTime(campaign.suspendedAt),
-                  ),
-                ],
               ],
               if (_showDecisionControls) ...[
                 const SizedBox(height: 20),
@@ -167,6 +160,7 @@ class _DetailCard extends StatelessWidget {
         _InfoRow(label: 'Purpose', value: campaign.purpose),
         _InfoRow(label: 'Charity object', value: campaign.charityObject),
         _InfoRow(label: 'Location', value: campaign.reliefLocation),
+        _InfoRow(label: 'Created at', value: formatDateTime(campaign.createdAt)),
         _InfoRow(
           label: 'Requested at',
           value: formatDateTime(campaign.requestedAt),
@@ -191,6 +185,11 @@ class _DetailCard extends StatelessWidget {
           label: 'Finish distribution',
           value: _formatDateOnly(campaign.finishedDistributionAt),
         ),
+        if (_showSuspensionDetails)
+          _InfoRow(
+            label: 'Suspended at',
+            value: formatDateTime(campaign.suspendedAt),
+          ),
         _InfoRow(label: 'Bank account', value: campaign.bankInfo.accountNumber),
         _InfoRow(label: 'Bank name', value: campaign.bankInfo.bankName),
         _InfoRow(
