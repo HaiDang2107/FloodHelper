@@ -177,19 +177,19 @@ class _DetailCard extends StatelessWidget {
         ),
         _InfoRow(
           label: 'Start donation',
-          value: formatDateTime(campaign.startedDonationAt),
+          value: _formatDateOnly(campaign.startedDonationAt),
         ),
         _InfoRow(
           label: 'Finish donation',
-          value: formatDateTime(campaign.finishedDonationAt),
+          value: _formatDateOnly(campaign.finishedDonationAt),
         ),
         _InfoRow(
           label: 'Start distribution',
-          value: formatDateTime(campaign.startedDistributionAt),
+          value: _formatDateOnly(campaign.startedDistributionAt),
         ),
         _InfoRow(
           label: 'Finish distribution',
-          value: formatDateTime(campaign.finishedDistributionAt),
+          value: _formatDateOnly(campaign.finishedDistributionAt),
         ),
         _InfoRow(label: 'Bank account', value: campaign.bankInfo.accountNumber),
         _InfoRow(label: 'Bank name', value: campaign.bankInfo.bankName),
@@ -199,6 +199,13 @@ class _DetailCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatDateOnly(DateTime? date) {
+    if (date == null) {
+      return '-';
+    }
+    return DateFormat('MMM d, yyyy').format(date);
   }
 
   Widget _buildPendingActions(BuildContext context) {

@@ -8,26 +8,26 @@ export class CharityCampaignStateScheduler {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  @Cron('0 0 * * *', { timeZone: 'Asia/Ho_Chi_Minh' }) // Vào lúc 0h mỗi ngày theo giờ VN, gọi hàm xử lý
+  // Chạy vào lúc 00:00:05 mỗi ngày theo giờ VN
+  @Cron('5 0 * * *', { timeZone: 'Asia/Ho_Chi_Minh' }) 
   async handleDailyCampaignStateTransition() {
     await this.transitionCampaignStatesByDate();
   }
 
-  async transitionCampaignStatesByDate(referenceDate = new Date()) {
-    const { tomorrowStartUtc } = this.getVietnamDateBounds(referenceDate); // Lấy date theo giờ việt nam, mốc 0h 
-
-    const [approvedToDonating, donatingToDistributing, donatingToFinished] =
+  // referenceDate mặc định là new Date() - thời điểm hàm được gọi (UTC)
+  async transitionCampaignStatesByDate(referenceDate = new Date()) { 
+    const [approvedToDonating, donatingToDistributing, distributingToFinished] =
       await this.prisma.$transaction([
         this.prisma.charityCampaign.updateMany({
           where: {
             state: 'APPROVED',
             startedDonationAt: {
               not: null,
-              lt: tomorrowStartUtc,
+              lte: referenceDate, // Nhỏ hơn hoặc bằng thời điểm hiện tại
             },
             finishedDonationAt: {
               not: null,
-              gte: tomorrowStartUtc,
+              gt: referenceDate,  // Lớn hơn thời điểm hiện tại
             },
           },
           data: {
@@ -39,11 +39,11 @@ export class CharityCampaignStateScheduler {
             state: 'DONATING',
             startedDistributionAt: {
               not: null,
-              lt: tomorrowStartUtc,
+              lte: referenceDate,
             },
             finishedDistributionAt: {
               not: null,
-              gte: tomorrowStartUtc,
+              gt: referenceDate,
             },
           },
           data: {
@@ -52,10 +52,10 @@ export class CharityCampaignStateScheduler {
         }),
         this.prisma.charityCampaign.updateMany({
           where: {
-            state: 'DONATING',
+            state: 'DISTRIBUTING',
             finishedDistributionAt: {
               not: null,
-              lt: tomorrowStartUtc,
+              lte: referenceDate,
             },
           },
           data: {
@@ -69,29 +69,8 @@ export class CharityCampaignStateScheduler {
         'Daily charity state transition completed',
         `APPROVED->DONATING: ${approvedToDonating.count}`,
         `DONATING->DISTRIBUTING: ${donatingToDistributing.count}`,
-        `DONATING->FINISHED: ${donatingToFinished.count}`,
+        `DISTRIBUTING->FINISHED: ${distributingToFinished.count}`,
       ].join(' | '),
     );
-  }
-
-  private getVietnamDateBounds(referenceDate: Date) { // convert từ refDate (UTC) sang giờ VN
-    const vietnamOffsetMs = 7 * 60 * 60 * 1000; // +7 giờ
-    const vietnamNow = new Date(referenceDate.getTime() + vietnamOffsetMs);
-
-    const year = vietnamNow.getUTCFullYear();
-    const month = vietnamNow.getUTCMonth();
-    const day = vietnamNow.getUTCDate();
-
-    const todayStartUtc = new Date(
-      Date.UTC(year, month, day, 0, 0, 0, 0) - vietnamOffsetMs,
-    );
-    const tomorrowStartUtc = new Date(
-      Date.UTC(year, month, day + 1, 0, 0, 0, 0) - vietnamOffsetMs,
-    );
-
-    return {
-      todayStartUtc,
-      tomorrowStartUtc,
-    };
   }
 }
