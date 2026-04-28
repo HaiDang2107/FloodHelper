@@ -36,6 +36,7 @@ import {
 } from './dto';
 import { NoruserBenefAllocationService } from './noruser-benef-allocation.service';
 import { NoruserBenefCharityService } from './noruser-benef-charity.service';
+import type { UploadedFilePayload } from '../../common/uploaded-file.type';
 
 @Controller('charity')
 @UseGuards(JwtAuthGuard)
@@ -171,7 +172,7 @@ export class NoruserBenefCharityController {
     @CurrentUser() user: any,
     @Param('campaignId') campaignId: string,
     @Body() body: CreateCampaignAnnouncementDto,
-    @UploadedFile() file?: Express.Multer.File, // Lấy ra file đã qua bộ lọc đầu vào
+    @UploadedFile() file?: UploadedFilePayload, // Lấy ra file đã qua bộ lọc đầu vào
   ) {
     if (!file) {
       throw new BadRequestException('Image is required');
@@ -187,6 +188,68 @@ export class NoruserBenefCharityController {
     return {
       success: true,
       message: 'Campaign announcement created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/bank-statement')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Only PDF, XLSX, or DOCX files are allowed'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadCampaignBankStatement(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @UploadedFile() file?: UploadedFilePayload,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Bank statement file is required');
+    }
+
+    const data = await this.noruserBenefCharityService.uploadCampaignBankStatement(
+      user.userId,
+      campaignId,
+      file,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign bank statement uploaded successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Delete('campaigns/:campaignId/bank-statement')
+  async deleteCampaignBankStatement(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+  ) {
+    const data = await this.noruserBenefCharityService.deleteCampaignBankStatement(
+      user.userId,
+      campaignId,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign bank statement deleted successfully',
       data,
     };
   }

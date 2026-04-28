@@ -203,6 +203,26 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
             onSendCampaignRequest: (campaignId) => ref
                 .read(charityCampaignViewModelProvider.notifier)
                 .sendCampaignRequest(campaignId),
+            onUploadBankStatement: (campaignId, {required bytes, required fileName, required mimeType, required onProgress}) {
+              return ref
+                  .read(charityCampaignViewModelProvider.notifier)
+                  .uploadBankStatement(
+                    campaignId: campaignId,
+                    bytes: bytes,
+                    fileName: fileName,
+                    mimeType: mimeType,
+                    onSendProgress: (sent, total) {
+                      if (total <= 0) {
+                        onProgress(0);
+                        return;
+                      }
+                      onProgress(sent / total);
+                    },
+                  );
+            },
+            onDeleteBankStatement: (campaignId) => ref
+                .read(charityCampaignViewModelProvider.notifier)
+                .deleteBankStatement(campaignId),
             onPostAnnouncement: (campaignId, payload) {
               return ref
                   .read(charityCampaignViewModelProvider.notifier)

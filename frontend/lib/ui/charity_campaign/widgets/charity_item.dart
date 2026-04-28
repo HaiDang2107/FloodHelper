@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
@@ -40,6 +42,15 @@ class CharityItem extends StatelessWidget {
     double longitude,
   )?
   onCheckInLocation;
+  final Future<CharityCampaign> Function(
+    String campaignId, {
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    required void Function(double progress) onProgress,
+  })?
+  onUploadBankStatement;
+  final Future<CharityCampaign> Function(String campaignId)? onDeleteBankStatement;
 
   const CharityItem({
     super.key,
@@ -58,6 +69,8 @@ class CharityItem extends StatelessWidget {
     this.onSendCampaignRequest,
     this.onFocusCampaignLocation,
     this.onCheckInLocation,
+    this.onUploadBankStatement,
+    this.onDeleteBankStatement,
   });
 
   Future<void> _showDetailsBottomSheet(BuildContext context) async {
@@ -78,6 +91,8 @@ class CharityItem extends StatelessWidget {
       onSendCampaignRequest: onSendCampaignRequest,
       onFocusCampaignLocation: onFocusCampaignLocation,
       onCheckInLocation: onCheckInLocation,
+      onUploadBankStatement: onUploadBankStatement,
+      onDeleteBankStatement: onDeleteBankStatement,
     );
   }
 
@@ -109,6 +124,15 @@ class CharityItem extends StatelessWidget {
       double longitude,
     )?
     onCheckInLocation,
+    Future<CharityCampaign> Function(
+      String campaignId, {
+      required Uint8List bytes,
+      required String fileName,
+      required String mimeType,
+      required void Function(double progress) onProgress,
+    })?
+    onUploadBankStatement,
+    Future<CharityCampaign> Function(String campaignId)? onDeleteBankStatement,
   }) async {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     final messenger = ScaffoldMessenger.of(rootNavigator.context);
@@ -259,6 +283,38 @@ class CharityItem extends StatelessWidget {
                     transactions: transactionItems,
                     isOwner: isOwner,
                     campaignStatus: detailCampaign.status,
+                    campaignId: detailCampaign.id,
+                    bankStatementFileUrl: detailCampaign.bankStatementFileUrl,
+                    onUploadBankStatement: onUploadBankStatement == null
+                        ? null
+                        : (
+                            String campaignId, {
+                            required Uint8List bytes,
+                            required String fileName,
+                            required String mimeType,
+                            required void Function(double progress) onProgress,
+                          }) async {
+                            final updated = await onUploadBankStatement(
+                              campaignId,
+                              bytes: bytes,
+                              fileName: fileName,
+                              mimeType: mimeType,
+                              onProgress: onProgress,
+                            );
+                            setSheetState(() {
+                              detailCampaign = updated;
+                            });
+                            return updated;
+                          },
+                    onDeleteBankStatement: onDeleteBankStatement == null
+                        ? null
+                        : (campaignId) async {
+                            final updated = await onDeleteBankStatement(campaignId);
+                            setSheetState(() {
+                              detailCampaign = updated;
+                            });
+                            return updated;
+                          },
                   ),
                 ],
               );

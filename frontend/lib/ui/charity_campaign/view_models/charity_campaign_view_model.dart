@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/providers/global_session_provider.dart';
@@ -439,6 +441,48 @@ class CharityCampaignViewModel extends _$CharityCampaignViewModel {
     return detail;
   }
 
+  Future<CharityCampaign> uploadBankStatement({
+    required String campaignId,
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    try {
+      final updated = await _repository.uploadCampaignBankStatement(
+        campaignId: campaignId,
+        bytes: bytes,
+        fileName: fileName,
+        mimeType: mimeType,
+        onSendProgress: onSendProgress,
+      );
+
+      _replaceCampaignDetail(updated);
+      return updated;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to upload bank statement: $e',
+      );
+      rethrow;
+    }
+  }
+
+  Future<CharityCampaign> deleteBankStatement(String campaignId) async {
+    try {
+      final updated = await _repository.deleteCampaignBankStatement(
+        campaignId: campaignId,
+      );
+
+      _replaceCampaignDetail(updated);
+      return updated;
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to delete bank statement: $e',
+      );
+      rethrow;
+    }
+  }
+
   Future<void> checkInCampaignLocation({
     required String campaignId,
     required double latitude,
@@ -607,5 +651,18 @@ class CharityCampaignViewModel extends _$CharityCampaignViewModel {
 
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  void _replaceCampaignDetail(CharityCampaign updated) {
+    List<CharityCampaign> replace(List<CharityCampaign> source) {
+      return source
+          .map((campaign) => campaign.id == updated.id ? updated : campaign)
+          .toList(growable: false);
+    }
+
+    state = state.copyWith(
+      existingCampaigns: replace(state.existingCampaigns),
+      myCampaigns: replace(state.myCampaigns),
+    );
   }
 }

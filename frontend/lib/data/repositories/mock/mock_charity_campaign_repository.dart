@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../../domain/models/charity_campaign.dart';
 import '../charity_campaign_repository.dart';
 
@@ -401,6 +403,62 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
     }
 
     return announcement;
+  }
+
+  @override
+  Future<CharityCampaign> uploadCampaignBankStatement({
+    required String campaignId,
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final updated = await getCampaignDetail(campaignId).then(
+      (campaign) => campaign.copyWith(
+        bankStatementFileUrl: 'mock://$fileName',
+      ),
+    );
+
+    final existingIndex = _existingCampaigns.indexWhere(
+      (item) => item.id == campaignId,
+    );
+    if (existingIndex >= 0) {
+      _existingCampaigns[existingIndex] = updated;
+      return updated;
+    }
+
+    final myIndex = _myCampaigns.indexWhere((item) => item.id == campaignId);
+    if (myIndex >= 0) {
+      _myCampaigns[myIndex] = updated;
+      return updated;
+    }
+
+    return updated;
+  }
+
+  @override
+  Future<CharityCampaign> deleteCampaignBankStatement({
+    required String campaignId,
+  }) async {
+    final updated = await getCampaignDetail(campaignId).then(
+      (campaign) => campaign.copyWith(bankStatementFileUrl: null),
+    );
+
+    final existingIndex = _existingCampaigns.indexWhere(
+      (item) => item.id == campaignId,
+    );
+    if (existingIndex >= 0) {
+      _existingCampaigns[existingIndex] = updated;
+      return updated;
+    }
+
+    final myIndex = _myCampaigns.indexWhere((item) => item.id == campaignId);
+    if (myIndex >= 0) {
+      _myCampaigns[myIndex] = updated;
+      return updated;
+    }
+
+    return updated;
   }
 
   @override

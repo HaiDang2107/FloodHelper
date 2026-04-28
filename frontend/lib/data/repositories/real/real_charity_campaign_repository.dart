@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../../domain/models/charity_campaign.dart';
 import '../../mappers/charity_campaign_mappers.dart';
 import '../../services/charity_campaign_service.dart';
@@ -191,6 +193,36 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
     );
 
     return CharityCampaignMappers.announcementFromApi(payload);
+  }
+
+  @override
+  Future<CharityCampaign> uploadCampaignBankStatement({
+    required String campaignId,
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final payload = await _charityCampaignService.uploadCampaignBankStatement(
+      campaignId: campaignId,
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: mimeType,
+      onSendProgress: onSendProgress,
+    );
+
+    return CharityCampaignMappers.campaignFromApi(payload);
+  }
+
+  @override
+  Future<CharityCampaign> deleteCampaignBankStatement({
+    required String campaignId,
+  }) async {
+    final payload = await _charityCampaignService.deleteCampaignBankStatement(
+      campaignId,
+    );
+
+    return CharityCampaignMappers.campaignFromApi(payload);
   }
 
   @override

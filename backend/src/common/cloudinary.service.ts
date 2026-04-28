@@ -18,13 +18,40 @@ export class CloudinaryService {
       publicId?: string;
     },
   ): Promise<string> {
-    if (
-      !process.env.CLOUDINARY_NAME ||
-      !process.env.CLOUDINARY_API_KEY ||
-      !process.env.CLOUDINARY_API_SECRET
-    ) {
-      throw new InternalServerErrorException('Cloudinary config is missing');
-    }
+    return this.uploadBuffer(buffer, {
+      folder: options.folder,
+      publicId: options.publicId,
+      resourceType: 'image',
+    });
+  }
+
+  async uploadRawFile(
+    buffer: Buffer,
+    options: {
+      folder: string;
+      publicId?: string;
+    },
+  ): Promise<string> {
+    return this.uploadBuffer(buffer, {
+      folder: options.folder,
+      publicId: options.publicId,
+      resourceType: 'raw',
+    });
+  }
+
+  async deleteRawFile(publicId: string): Promise<void> {
+    await this.deleteBuffer(publicId, 'raw');
+  }
+
+  private async uploadBuffer(
+    buffer: Buffer,
+    options: {
+      folder: string;
+      publicId?: string;
+      resourceType: 'image' | 'raw';
+    },
+  ): Promise<string> {
+    this.assertConfigured();
 
     try {
       return await new Promise<string>((resolve, reject) => {
@@ -32,7 +59,7 @@ export class CloudinaryService {
           {
             folder: options.folder,
             public_id: options.publicId,
-            resource_type: 'image',
+            resource_type: options.resourceType,
           },
           (error, result) => {
             if (error || !result?.secure_url) {
@@ -46,9 +73,32 @@ export class CloudinaryService {
         upload.end(buffer);
       });
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to upload image to Cloudinary',
-      );
+      throw new InternalServerErrorException('Failed to upload file to Cloudinary');
+    }
+  }
+
+  private async deleteBuffer(
+    publicId: string,
+    resourceType: 'image' | 'raw',
+  ): Promise<void> {
+    this.assertConfigured();
+
+    try {
+      await cloudinary.uploader.destroy(publicId, {
+        resource_type: resourceType,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to delete file from Cloudinary');
+    }
+  }
+
+  private assertConfigured() {
+    if (
+      !process.env.CLOUDINARY_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      throw new InternalServerErrorException('Cloudinary config is missing');
     }
   }
 }

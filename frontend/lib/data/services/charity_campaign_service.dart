@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 
 import '../../domain/models/bank_option.dart';
 import '../../domain/models/charity_campaign.dart';
@@ -254,6 +255,52 @@ class CharityCampaignService {
       return _extractMap(
         response.data,
         fallbackMessage: 'Failed to post campaign announcement',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> uploadCampaignBankStatement({
+    required String campaignId,
+    required List<int> bytes,
+    required String fileName,
+    required String mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/charity/campaigns/$campaignId/bank-statement',
+        data: FormData.fromMap({
+          'file': MultipartFile.fromBytes(
+            bytes,
+            filename: fileName,
+            contentType: MediaType.parse(mimeType),
+          ),
+        }),
+        onSendProgress: onSendProgress,
+      );
+
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to upload campaign bank statement',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteCampaignBankStatement(
+    String campaignId,
+  ) async {
+    try {
+      final response = await _apiClient.delete(
+        '/charity/campaigns/$campaignId/bank-statement',
+      );
+
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to delete campaign bank statement',
       );
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);

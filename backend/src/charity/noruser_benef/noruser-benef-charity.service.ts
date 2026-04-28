@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CampaignState, Prisma, TransactionState } from '@prisma/client';
+import { extname } from 'node:path';
 import {
   CreateCampaignDto,
   QueryCampaignAnnouncementsDto,
@@ -18,6 +19,7 @@ import { VietQrService } from '../vietqr/vietqr.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { formatLocation } from '../../common/location-format.util';
 import { CloudinaryService } from '../../common/cloudinary.service';
+import { UploadedFilePayload } from '../../common/uploaded-file.type';
 
 type ResolvedBank = {
   id: number;
@@ -323,7 +325,7 @@ export class NoruserBenefCharityService {
     userId: string,
     campaignId: string,
     caption: string,
-    file: Express.Multer.File,
+    file: UploadedFilePayload,
   ) {
     await this.assertCampaignAnnouncementAllowed(userId, campaignId);
 
@@ -348,6 +350,87 @@ export class NoruserBenefCharityService {
     };
   }
 
+  async uploadCampaignBankStatement(
+    userId: string,
+    campaignId: string,
+    file: UploadedFilePayload,
+  ) {
+    await this.assertCampaignBankStatementAllowed(userId, campaignId);
+
+    const fileExtension = this.getFileExtension(file.originalname);
+    const fileUrl = await this.cloudinaryService.uploadRawFile(file.buffer, {
+      folder: `floodhelper/bank-statements/${campaignId}`,
+      publicId: `statement${fileExtension}`,
+    });
+
+    await this.prisma.charityCampaign.update({
+      where: { campaignId },
+      data: {
+        bankStatementFileUrl: fileUrl,
+      },
+    });
+
+    return this.commonCharityService.getCampaignDetail(campaignId);
+  }
+
+  async deleteCampaignBankStatement(userId: string, campaignId: string) {
+    await this.assertCampaignBankStatementAllowed(userId, campaignId);
+
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        bankStatementFileUrl: true,
+      },
+    });
+
+    const publicId = this.getBankStatementPublicId(
+      campaign?.bankStatementFileUrl,
+      campaignId,
+    );
+
+    await this.cloudinaryService.deleteRawFile(publicId);
+
+    await this.prisma.charityCampaign.update({
+      where: { campaignId },
+      data: {
+        bankStatementFileUrl: null,
+      },
+    });
+
+    return this.commonCharityService.getCampaignDetail(campaignId);
+  }
+
+  private getFileExtension(fileName: string) {
+    const extension = extname(fileName).trim().toLowerCase();
+    if (!extension) {
+      throw new BadRequestException('Bank statement file must have an extension');
+    }
+
+    return extension;
+  }
+
+  private getBankStatementPublicId(fileUrl: string | null | undefined, campaignId: string) { // Lấy relative path trên cloudinary
+    const fallbackPublicId = `floodhelper/bank-statements/${campaignId}/statement`;
+
+    if (!fileUrl) {
+      return fallbackPublicId;
+    }
+
+    try {
+      const url = new URL(fileUrl);
+      const uploadIndex = url.pathname.indexOf('/upload/');
+      if (uploadIndex === -1) {
+        return fallbackPublicId;
+      }
+
+      const publicIdWithVersion = url.pathname.slice(uploadIndex + '/upload/'.length);
+      const publicId = publicIdWithVersion.replace(/^v\d+\//, '');
+      return publicId || fallbackPublicId;
+    } catch {
+      return fallbackPublicId;
+    }
+  }
+
   private async assertCampaignAnnouncementAllowed(userId: string, campaignId: string) {
     const campaign = await this.prisma.charityCampaign.findUnique({
       where: { campaignId },
@@ -370,6 +453,32 @@ export class NoruserBenefCharityService {
     if (state !== 'DONATING' && state !== 'DISTRIBUTING' && state !== 'FINISHED') {
       throw new BadRequestException(
         'Announcements can only be posted when campaign is DONATING, DISTRIBUTING or FINISHED',
+      );
+    }
+  }
+
+  private async assertCampaignBankStatementAllowed(userId: string, campaignId: string) {
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        organizedBy: true,
+        state: true,
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    if (campaign.organizedBy !== userId) {
+      throw new ForbiddenException('You are not allowed to update bank statement');
+    }
+
+    const state = String(campaign.state).toUpperCase();
+    if (state === 'DONATING' || state === 'DISTRIBUTING') {
+      throw new BadRequestException(
+        'Bank statement can only be updated when campaign is not in DONATING or DISTRIBUTING',
       );
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../domain/models/charity_campaign.dart';
 import '../models/campaign_announcement_page.dart';
 
@@ -47,6 +49,18 @@ abstract class CharityCampaignRepository {
     required String caption,
     required String imagePath,
     String? imageName,
+  });
+
+  Future<CharityCampaign> uploadCampaignBankStatement({
+    required String campaignId,
+    required Uint8List bytes,
+    required String fileName,
+    required String mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  });
+
+  Future<CharityCampaign> deleteCampaignBankStatement({
+    required String campaignId,
   });
 
   Future<List<PurchasedSupply>> getCampaignSupplies({
