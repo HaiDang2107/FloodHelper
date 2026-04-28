@@ -1,30 +1,30 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'account_creation.dart';
+part of 'charity_campaign_view_model.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$accountCreationViewModelHash() =>
-    r'85166a60e6176bbf0e05d59a5b9d638999debac9';
+String _$charityCampaignViewModelHash() =>
+    r'd4e021d166a7028c2e96475d468e1f2460c0ceb0';
 
-/// See also [AccountCreationViewModel].
-@ProviderFor(AccountCreationViewModel)
-final accountCreationViewModelProvider =
+/// See also [CharityCampaignViewModel].
+@ProviderFor(CharityCampaignViewModel)
+final charityCampaignViewModelProvider =
     AutoDisposeNotifierProvider<
-      AccountCreationViewModel,
-      AccountCreationState
+      CharityCampaignViewModel,
+      CharityCampaignState
     >.internal(
-      AccountCreationViewModel.new,
-      name: r'accountCreationViewModelProvider',
+      CharityCampaignViewModel.new,
+      name: r'charityCampaignViewModelProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$accountCreationViewModelHash,
+          : _$charityCampaignViewModelHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$AccountCreationViewModel = AutoDisposeNotifier<AccountCreationState>;
+typedef _$CharityCampaignViewModel = AutoDisposeNotifier<CharityCampaignState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

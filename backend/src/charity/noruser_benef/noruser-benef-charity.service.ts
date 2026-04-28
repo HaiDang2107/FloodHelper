@@ -7,6 +7,7 @@ import {
 import { CampaignState, Prisma, TransactionState } from '@prisma/client';
 import {
   CreateCampaignDto,
+  QueryCampaignAnnouncementsDto,
   QueryCampaignTransactionsDto,
   UpdateCampaignLocationDto,
   UpdateCampaignDto,
@@ -16,6 +17,7 @@ import { VietQrInternalService } from '../vietqr/vietqr-internal.service';
 import { VietQrService } from '../vietqr/vietqr.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { formatLocation } from '../../common/location-format.util';
+import { CloudinaryService } from '../../common/cloudinary.service';
 
 type ResolvedBank = {
   id: number;
@@ -68,6 +70,7 @@ export class NoruserBenefCharityService {
     private readonly commonCharityService: CommonCharityService,
     private readonly vietQrService: VietQrService,
     private readonly vietQrInternalService: VietQrInternalService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async listExistingCampaignsByState(state: string) {
@@ -252,6 +255,123 @@ export class NoruserBenefCharityService {
       date: transaction.transactionTime ?? transaction.donateAt,
       message: transaction.content,
     }));
+  }
+
+  async listCampaignAnnouncements(
+    campaignId: string,
+    query: QueryCampaignAnnouncementsDto,
+  ) {
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: { campaignId: true },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    const rawLimit = Number(query.limit ?? 10);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(Math.floor(rawLimit), 1), 50)
+      : 10;
+    const beforePostedAt = query.beforePostedAt
+      ? new Date(query.beforePostedAt)
+      : null;
+
+    const announcements = await this.prisma.announcementFromBenefactor.findMany({
+      where: {
+        campaignId,
+        ...(beforePostedAt
+          ? {
+              postedAt: {
+                lt: beforePostedAt,
+              },
+            }
+          : {}),
+      },
+      select: {
+        announcementId: true,
+        caption: true,
+        imageUrl: true,
+        postedAt: true,
+      },
+      orderBy: [{ postedAt: 'desc' }, { announcementId: 'desc' }],
+      take: limit + 1,
+    });
+
+    const hasMore = announcements.length > limit;
+    const items = hasMore ? announcements.slice(0, limit) : announcements;
+    const nextCursor = hasMore && items.length > 0
+      ? items[items.length - 1].postedAt.toISOString()
+      : null;
+
+    return {
+      items: items.map((announcement) => ({
+        announcementId: announcement.announcementId,
+        caption: announcement.caption,
+        imageUrl: announcement.imageUrl,
+        postedAt: announcement.postedAt,
+      })),
+      pagination: {
+        hasMore,
+        nextCursor,
+      },
+    };
+  }
+
+  async createCampaignAnnouncement(
+    userId: string,
+    campaignId: string,
+    caption: string,
+    file: Express.Multer.File,
+  ) {
+    await this.assertCampaignAnnouncementAllowed(userId, campaignId);
+
+    const imageUrl = await this.cloudinaryService.uploadImage(file.buffer, {
+      folder: `floodhelper/announcements/${campaignId}`,
+    });
+
+    const announcement = await this.prisma.announcementFromBenefactor.create({
+      data: {
+        campaignId,
+        caption: caption.trim(),
+        imageUrl,
+        postedAt: new Date(),
+      },
+    });
+
+    return {
+      announcementId: announcement.announcementId,
+      caption: announcement.caption,
+      imageUrl: announcement.imageUrl,
+      postedAt: announcement.postedAt,
+    };
+  }
+
+  private async assertCampaignAnnouncementAllowed(userId: string, campaignId: string) {
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { campaignId },
+      select: {
+        campaignId: true,
+        organizedBy: true,
+        state: true,
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Charity campaign not found');
+    }
+
+    if (campaign.organizedBy !== userId) {
+      throw new ForbiddenException('You are not allowed to post announcements');
+    }
+
+    const state = String(campaign.state).toUpperCase();
+    if (state !== 'DONATING' && state !== 'DISTRIBUTING' && state !== 'FINISHED') {
+      throw new BadRequestException(
+        'Announcements can only be posted when campaign is DONATING, DISTRIBUTING or FINISHED',
+      );
+    }
   }
 
   async createCampaign(userId: string, payload: CreateCampaignDto) {

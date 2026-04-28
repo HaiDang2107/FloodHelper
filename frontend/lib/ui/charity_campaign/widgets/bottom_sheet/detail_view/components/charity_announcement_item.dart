@@ -6,8 +6,13 @@ class CharityAnnouncementItem extends StatelessWidget {
 
   const CharityAnnouncementItem({super.key, required this.announcement});
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  String _formatDateTime(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute $day/$month/$year';
   }
 
   @override
@@ -28,7 +33,7 @@ class CharityAnnouncementItem extends StatelessWidget {
               const Icon(Icons.campaign, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
               Text(
-                _formatDate(announcement.date),
+                _formatDateTime(announcement.date),
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
@@ -46,7 +51,7 @@ class CharityAnnouncementItem extends StatelessWidget {
                 announcement.imageUrl!,
                 height: 150,
                 width: double.infinity,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) =>
                     const SizedBox.shrink(),
               ),

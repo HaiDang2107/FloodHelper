@@ -209,6 +209,57 @@ class CharityCampaignService {
     }
   }
 
+  Future<Map<String, dynamic>> getCampaignAnnouncements({
+    required String campaignId,
+    int limit = 10,
+    String? beforePostedAt,
+  }) async {
+    try {
+      final response = await _apiClient.get(
+        '/charity/campaigns/$campaignId/announcements',
+        queryParameters: {
+          'limit': limit,
+          if (beforePostedAt != null && beforePostedAt.trim().isNotEmpty)
+            'beforePostedAt': beforePostedAt,
+        },
+      );
+
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to load campaign announcements',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createCampaignAnnouncement({
+    required String campaignId,
+    required String caption,
+    required String imagePath,
+    String? imageName,
+  }) async {
+    try {
+      final fileName = imageName ?? imagePath.split('/').last;
+      final formData = FormData.fromMap({
+        'caption': caption,
+        'image': await MultipartFile.fromFile(imagePath, filename: fileName),
+      });
+
+      final response = await _apiClient.post(
+        '/charity/campaigns/$campaignId/announcements',
+        data: formData,
+      );
+
+      return _extractMap(
+        response.data,
+        fallbackMessage: 'Failed to post campaign announcement',
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getCampaignSupplies({
     required String campaignId,
   }) async {

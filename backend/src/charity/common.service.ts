@@ -99,7 +99,7 @@ export class CommonCharityService {
 
     const announcements = await this.prisma.announcementFromBenefactor.findMany({
       where: { campaignId },
-      orderBy: { announcementId: 'desc' },
+      orderBy: [{ postedAt: 'desc' }, { announcementId: 'desc' }],
     });
 
     return this.mapCampaignDetail(campaign, announcements);
@@ -122,7 +122,11 @@ export class CommonCharityService {
 
   private mapCampaignDetail(
     campaign: CharityCampaignDetailPayload,
-    announcements: Array<{ textContent: string | null; imageUrl: string | null }>,
+    announcements: Array<{
+      caption: string | null;
+      imageUrl: string | null;
+      postedAt: Date;
+    }>,
   ) {
     const bank = campaign.bankAccount;
 
@@ -181,9 +185,11 @@ export class CommonCharityService {
         endDate,
       },
       announcements: announcements.map((announcement) => ({
-        textContent: announcement.textContent,
+        caption: announcement.caption,
+        textContent: announcement.caption,
         imageUrl: announcement.imageUrl,
-        createdAt: campaign.createdAt,
+        postedAt: announcement.postedAt,
+        createdAt: announcement.postedAt,
       })),
       donations: campaign.transactions.map((transaction) => ({
         transferType: transaction.transType,

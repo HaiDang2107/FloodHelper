@@ -197,6 +197,24 @@ class _ExistingCharityScreenState extends ConsumerState<ExistingCharityScreen> {
           return CharityItem(
             campaign: campaigns[index],
             onLoadCampaignDetail: onLoadCampaignDetail,
+            onLoadInitialAnnouncements: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .loadInitialAnnouncements,
+            onLoadMoreAnnouncements: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .loadMoreAnnouncements,
+            announcementsSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .announcementsForCampaign,
+            isAnnouncementsLoadingSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .isAnnouncementsLoading,
+            isAnnouncementsLoadingMoreSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .isAnnouncementsLoadingMore,
+            hasMoreAnnouncementsSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .hasMoreAnnouncements,
             onLoadCampaignTransactions: ref
                 .read(charityCampaignViewModelProvider.notifier)
                 .loadSuccessTransactions,

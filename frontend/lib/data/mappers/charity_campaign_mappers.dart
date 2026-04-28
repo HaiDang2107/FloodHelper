@@ -143,15 +143,25 @@ class CharityCampaignMappers {
     return value
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
-        .map(
-          (item) => CampaignAnnouncement(
-            text: (item['text'] ?? item['textContent'] ?? item['content'] ?? '')
-                .toString(),
-            imageUrl: _nullableString(item['imageUrl']),
-            date: _parseDate(item['date'] ?? item['createdAt']),
-          ),
-        )
+        .map(_announcementFromMap)
         .toList(growable: false);
+  }
+
+  static List<CampaignAnnouncement> announcementsFromApiList(dynamic value) {
+    return _parseAnnouncements(value);
+  }
+
+  static CampaignAnnouncement announcementFromApi(Map<String, dynamic> item) {
+    return _announcementFromMap(item);
+  }
+
+  static CampaignAnnouncement _announcementFromMap(Map<String, dynamic> item) {
+    return CampaignAnnouncement(
+      text: (item['caption'] ?? item['text'] ?? item['textContent'] ?? item['content'] ?? '')
+          .toString(),
+      imageUrl: _nullableString(item['imageUrl']),
+      date: _parseDate(item['postedAt'] ?? item['date'] ?? item['createdAt']),
+    );
   }
 
   static List<PurchasedSupply> _parseSupplies(dynamic value) {

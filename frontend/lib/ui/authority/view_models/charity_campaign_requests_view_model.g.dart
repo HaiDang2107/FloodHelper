@@ -7,7 +7,7 @@ part of 'charity_campaign_requests_view_model.dart';
 // **************************************************************************
 
 String _$charityCampaignRequestsViewModelHash() =>
-    r'fd7d49c9ca9ac89274ba81407572e087aab3c13b';
+    r'd01778fce9edbbf8820de8f33f8a6db738c1f6fc';
 
 /// See also [CharityCampaignRequestsViewModel].
 @ProviderFor(CharityCampaignRequestsViewModel)

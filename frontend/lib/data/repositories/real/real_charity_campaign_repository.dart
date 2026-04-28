@@ -155,6 +155,45 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
   }
 
   @override
+  Future<CampaignAnnouncementPage> getCampaignAnnouncements({
+    required String campaignId,
+    int limit = 10,
+    String? beforePostedAt,
+  }) async {
+    final payload = await _charityCampaignService.getCampaignAnnouncements(
+      campaignId: campaignId,
+      limit: limit,
+      beforePostedAt: beforePostedAt,
+    );
+
+    final items = CharityCampaignMappers.announcementsFromApiList(payload['items']);
+    final pagination = payload['pagination'] as Map<String, dynamic>? ?? const {};
+
+    return CampaignAnnouncementPage(
+      items: items,
+      hasMore: pagination['hasMore'] == true,
+      nextCursor: pagination['nextCursor']?.toString(),
+    );
+  }
+
+  @override
+  Future<CampaignAnnouncement> createCampaignAnnouncement({
+    required String campaignId,
+    required String caption,
+    required String imagePath,
+    String? imageName,
+  }) async {
+    final payload = await _charityCampaignService.createCampaignAnnouncement(
+      campaignId: campaignId,
+      caption: caption,
+      imagePath: imagePath,
+      imageName: imageName,
+    );
+
+    return CharityCampaignMappers.announcementFromApi(payload);
+  }
+
+  @override
   Future<List<PurchasedSupply>> getCampaignSupplies({
     required String campaignId,
   }) async {

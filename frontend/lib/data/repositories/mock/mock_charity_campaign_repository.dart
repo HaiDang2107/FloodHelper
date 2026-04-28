@@ -340,6 +340,70 @@ class MockCharityCampaignRepository implements CharityCampaignRepository {
   }
 
   @override
+  Future<CampaignAnnouncementPage> getCampaignAnnouncements({
+    required String campaignId,
+    int limit = 10,
+    String? beforePostedAt,
+  }) async {
+    final campaign = await getCampaignDetail(campaignId);
+    final sorted = [...campaign.announcements]
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    final beforeDate =
+        beforePostedAt == null ? null : DateTime.tryParse(beforePostedAt);
+    final filtered = beforeDate == null
+        ? sorted
+        : sorted.where((item) => item.date.isBefore(beforeDate)).toList();
+
+    final hasMore = filtered.length > limit;
+    final items = hasMore ? filtered.take(limit).toList() : filtered;
+    final nextCursor = hasMore && items.isNotEmpty
+        ? items.last.date.toIso8601String()
+        : null;
+
+    return CampaignAnnouncementPage(
+      items: items,
+      hasMore: hasMore,
+      nextCursor: nextCursor,
+    );
+  }
+
+  @override
+  Future<CampaignAnnouncement> createCampaignAnnouncement({
+    required String campaignId,
+    required String caption,
+    required String imagePath,
+    String? imageName,
+  }) async {
+    final announcement = CampaignAnnouncement(
+      text: caption,
+      date: DateTime.now(),
+      imageUrl: imageName == null ? null : 'mock://$imageName',
+    );
+
+    final all = [..._existingCampaigns, ..._myCampaigns];
+    final index = all.indexWhere((item) => item.id == campaignId);
+    if (index >= 0) {
+      final current = all[index];
+      final updated = current.copyWith(
+        announcements: [announcement, ...current.announcements],
+      );
+      final existingIndex = _existingCampaigns.indexWhere(
+        (item) => item.id == campaignId,
+      );
+      final myIndex = _myCampaigns.indexWhere((item) => item.id == campaignId);
+      if (existingIndex >= 0) {
+        _existingCampaigns[existingIndex] = updated;
+      }
+      if (myIndex >= 0) {
+        _myCampaigns[myIndex] = updated;
+      }
+    }
+
+    return announcement;
+  }
+
+  @override
   Future<List<PurchasedSupply>> getCampaignSupplies({
     required String campaignId,
   }) async {

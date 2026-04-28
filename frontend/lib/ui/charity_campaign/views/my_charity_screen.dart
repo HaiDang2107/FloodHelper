@@ -178,6 +178,24 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
             campaign: campaigns[index],
             isOwner: true,
             onLoadCampaignDetail: onLoadCampaignDetail,
+            onLoadInitialAnnouncements: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .loadInitialAnnouncements,
+            onLoadMoreAnnouncements: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .loadMoreAnnouncements,
+            announcementsSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .announcementsForCampaign,
+            isAnnouncementsLoadingSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .isAnnouncementsLoading,
+            isAnnouncementsLoadingMoreSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .isAnnouncementsLoadingMore,
+            hasMoreAnnouncementsSelector: ref
+              .read(charityCampaignViewModelProvider.notifier)
+              .hasMoreAnnouncements,
             onLoadCampaignTransactions: ref
                 .read(charityCampaignViewModelProvider.notifier)
                 .loadSuccessTransactions,
@@ -185,10 +203,15 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
             onSendCampaignRequest: (campaignId) => ref
                 .read(charityCampaignViewModelProvider.notifier)
                 .sendCampaignRequest(campaignId),
-            onPostAnnouncement: (campaignId, text) {
+            onPostAnnouncement: (campaignId, payload) {
               return ref
                   .read(charityCampaignViewModelProvider.notifier)
-                  .postAnnouncement(campaignId: campaignId, text: text);
+                  .postAnnouncement(
+                    campaignId: campaignId,
+                    caption: payload.caption,
+                    imagePath: payload.image.path,
+                    imageName: payload.image.name,
+                  );
             },
             onCheckInLocation: (campaignId, latitude, longitude) {
               return ref

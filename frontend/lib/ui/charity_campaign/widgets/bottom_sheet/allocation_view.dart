@@ -77,7 +77,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
         return;
       }
 
-      final viewModel = ref.read(allocationViewModelProvider(_seed));
+      final viewModel = ref.read(allocationViewModelProvider(_seed).notifier);
       _ensureSuppliesLoaded(viewModel);
     });
   }
@@ -212,7 +212,8 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = ref.watch(allocationViewModelProvider(_seed));
+    final state = ref.watch(allocationViewModelProvider(_seed));
+    final viewModel = ref.read(allocationViewModelProvider(_seed).notifier);
 
     final suppliesTotal = viewModel.suppliesTotal;
     final supportsTotal = viewModel.supportsTotal;
@@ -235,8 +236,8 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
             const Spacer(),
             if (widget.isOwner)
               FilledButton.icon(
-                onPressed: viewModel.isSaving ? null : () => _saveActiveTab(viewModel),
-                icon: viewModel.isSaving
+                onPressed: state.isSaving ? null : () => _saveActiveTab(viewModel),
+                icon: state.isSaving
                     ? const SizedBox(
                         width: 14,
                         height: 14,
@@ -280,7 +281,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
               icon: Icon(Icons.volunteer_activism_outlined),
             ),
           ],
-          selected: <AllocationTab>{viewModel.activeTab},
+          selected: <AllocationTab>{state.activeTab},
           onSelectionChanged: (selection) {
             if (selection.isEmpty) {
               return;
@@ -293,7 +294,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
           },
         ),
         const SizedBox(height: 16),
-        if (viewModel.activeTab == AllocationTab.supplies) ...[
+        if (state.activeTab == AllocationTab.supplies) ...[
           KeyedSubtree(
             key: const ValueKey('allocation-supply-tab'),
             child: Column(

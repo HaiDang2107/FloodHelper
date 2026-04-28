@@ -1,4 +1,7 @@
 import '../../domain/models/charity_campaign.dart';
+import '../models/campaign_announcement_page.dart';
+
+export '../models/campaign_announcement_page.dart';
 
 abstract class CharityCampaignRepository {
   Future<List<CharityCampaign>> getExistingCampaigns({CampaignStatus? status});
@@ -31,6 +34,19 @@ abstract class CharityCampaignRepository {
   Future<List<Donation>> getCampaignTransactions({
     required String campaignId,
     String state,
+  });
+
+  Future<CampaignAnnouncementPage> getCampaignAnnouncements({
+    required String campaignId,
+    int limit,
+    String? beforePostedAt,
+  });
+
+  Future<CampaignAnnouncement> createCampaignAnnouncement({
+    required String campaignId,
+    required String caption,
+    required String imagePath,
+    String? imageName,
   });
 
   Future<List<PurchasedSupply>> getCampaignSupplies({

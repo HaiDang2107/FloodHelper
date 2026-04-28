@@ -9,8 +9,12 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -22,8 +26,10 @@ import { QueryCampaignsByStateDto } from './dto/query-campaigns-by-state.dto';
 import { UpdateCampaignDto } from './dto/update-campaign.dto';
 import { CreateDonateQrDto } from '../vietqr/dto';
 import {
+  CreateCampaignAnnouncementDto,
   CreateFinancialSupportDto,
   CreateSupplyDto,
+  QueryCampaignAnnouncementsDto,
   UpdateFinancialSupportDto,
   UpdateSupplyDto,
   UpdateCampaignLocationDto,
@@ -123,6 +129,64 @@ export class NoruserBenefCharityController {
     return {
       success: true,
       message: 'Campaign transactions retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/announcements')
+  async getCampaignAnnouncements(
+    @Param('campaignId') campaignId: string,
+    @Query() query: QueryCampaignAnnouncementsDto,
+  ) {
+    const data = await this.noruserBenefCharityService.listCampaignAnnouncements(
+      campaignId,
+      query,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign announcements retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/announcements')
+  @UseInterceptors( // Sử dụng Multer để lấy file trong request
+    FileInterceptor('image', {
+      storage: memoryStorage(), // Lưu tạm file trong RAM 
+      limits: { fileSize: 5 * 1024 * 1024 }, // Dung lượng
+      fileFilter: (_req, file, cb) => { // Bộ lọc kiểm tra định dạng file
+        const allowed = ['image/jpeg', 'image/png'];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Only JPG/PNG images are allowed'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async createCampaignAnnouncement(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateCampaignAnnouncementDto,
+    @UploadedFile() file?: Express.Multer.File, // Lấy ra file đã qua bộ lọc đầu vào
+  ) {
+    if (!file) {
+      throw new BadRequestException('Image is required');
+    }
+
+    const data = await this.noruserBenefCharityService.createCampaignAnnouncement(
+      user.userId,
+      campaignId,
+      body.caption,
+      file,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign announcement created successfully',
       data,
     };
   }

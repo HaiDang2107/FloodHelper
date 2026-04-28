@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { CommonModule } from '../common/common.module';
 import { AuthorityCharityController } from './authority/authority-charity.controller';
 import { AuthorityCharityService } from './authority/authority-charity.service';
 import { CharityCampaignStateScheduler } from './charity-campaign-state.scheduler';
@@ -14,6 +15,7 @@ import { VietQrService } from './vietqr/vietqr.service';
 
 @Module({
   imports: [
+    CommonModule,
     JwtModule.register({
       secret:
         process.env.VIETQR_WEBHOOK_SECRET ??

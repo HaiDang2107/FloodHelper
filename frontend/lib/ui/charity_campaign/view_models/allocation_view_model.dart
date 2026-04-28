@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/repositories/charity_campaign_repository.dart';
 import '../../../domain/models/charity_campaign.dart';
+
+part 'allocation_view_model.g.dart';
 
 enum AllocationTab { supplies, financial }
 
@@ -18,16 +19,6 @@ class AllocationViewModelSeed {
     required this.financialSupports,
   });
 }
-
-final allocationViewModelProvider = ChangeNotifierProvider.autoDispose
-    .family<AllocationViewModel, AllocationViewModelSeed>((ref, seed) {
-      return AllocationViewModel(
-        repository: ref.read(charityCampaignRepositoryProvider),
-        campaignId: seed.campaignId,
-        supplies: seed.supplies,
-        financialSupports: seed.financialSupports,
-      );
-    });
 
 class EditableSupply {
   String? supplyId;
@@ -126,62 +117,71 @@ class EditableSupport {
   }
 }
 
-class AllocationViewModel extends ChangeNotifier {
-  final CharityCampaignRepository _repository;
-  final String _campaignId;
+@riverpod
+class AllocationViewModel extends _$AllocationViewModel {
+  late final CharityCampaignRepository _repository = ref.read(
+    charityCampaignRepositoryProvider,
+  );
+  late final String _campaignId;
 
-  AllocationTab _activeTab = AllocationTab.supplies;
-  bool _isSaving = false;
-
-  late List<EditableSupply> _supplies;
   late List<EditableSupply> _initialSupplies;
   final Set<String> _deletedSupplyIds = <String>{};
 
-  late List<EditableSupport> _supports;
   late List<EditableSupport> _initialSupports;
   final Set<String> _deletedSupportIds = <String>{};
 
-  AllocationViewModel({
-    required CharityCampaignRepository repository,
-    required String campaignId,
-    required List<PurchasedSupply> supplies,
-    required List<FinancialSupportAllocation> financialSupports,
-  }) : _repository = repository,
-       _campaignId = campaignId {
-    _supplies = supplies.map(EditableSupply.fromModel).toList(growable: true);
-    _initialSupplies = _cloneSupplies(_supplies);
-    _supports = financialSupports.map(EditableSupport.fromModel).toList(growable: true);
-    _initialSupports = _cloneSupports(_supports);
+  @override
+  AllocationState build(AllocationViewModelSeed seed) {
+    _campaignId = seed.campaignId;
+
+    final supplies = seed.supplies
+        .map(EditableSupply.fromModel)
+        .toList(growable: true);
+    final supports = seed.financialSupports
+        .map(EditableSupport.fromModel)
+        .toList(growable: true);
+
+    _initialSupplies = _cloneSupplies(supplies);
+    _initialSupports = _cloneSupports(supports);
+    _deletedSupplyIds.clear();
+    _deletedSupportIds.clear();
+
+    return AllocationState(
+      activeTab: AllocationTab.supplies,
+      isSaving: false,
+      supplies: supplies,
+      supports: supports,
+    );
   }
 
-  AllocationTab get activeTab => _activeTab;
-  bool get isSaving => _isSaving;
-  List<EditableSupply> get supplies => List.unmodifiable(_supplies);
-  List<EditableSupport> get supports => List.unmodifiable(_supports);
+  AllocationTab get activeTab => state.activeTab;
+  bool get isSaving => state.isSaving;
+  List<EditableSupply> get supplies => List.unmodifiable(state.supplies);
+  List<EditableSupport> get supports => List.unmodifiable(state.supports);
 
   List<PurchasedSupply> get currentSupplies {
-    return _supplies
+    return state.supplies
         .map((item) => item.toModel())
         .whereType<PurchasedSupply>()
         .toList(growable: false);
   }
 
   List<FinancialSupportAllocation> get currentFinancialSupports {
-    return _supports
+    return state.supports
         .map((item) => item.toModel())
         .whereType<FinancialSupportAllocation>()
         .toList(growable: false);
   }
 
   double get suppliesTotal {
-    return _supplies
+    return state.supplies
         .map((item) => item.toModel())
         .whereType<PurchasedSupply>()
         .fold<double>(0, (sum, item) => sum + item.totalPrice);
   }
 
   double get supportsTotal {
-    return _supports
+    return state.supports
         .map((item) => item.toModel())
         .whereType<FinancialSupportAllocation>()
         .fold<double>(0, (sum, item) => sum + item.amount);
@@ -189,31 +189,32 @@ class AllocationViewModel extends ChangeNotifier {
 
   bool get hasUnsavedChanges {
     return _deletedSupplyIds.isNotEmpty ||
-        _deletedSupportIds.isNotEmpty ||
-        !_listEqualsSupply(_supplies, _initialSupplies) ||
-        !_listEqualsSupport(_supports, _initialSupports);
+      _deletedSupportIds.isNotEmpty ||
+      !_listEqualsSupply(state.supplies, _initialSupplies) ||
+      !_listEqualsSupport(state.supports, _initialSupports);
   }
 
   void setActiveTab(AllocationTab tab) {
-    if (_activeTab == tab) {
+    if (state.activeTab == tab) {
       return;
     }
-    _activeTab = tab;
-    notifyListeners();
+    state = state.copyWith(activeTab: tab);
   }
 
   void replaceSupplies(List<PurchasedSupply> supplies) {
-    _supplies = supplies.map(EditableSupply.fromModel).toList(growable: true);
-    _initialSupplies = _cloneSupplies(_supplies);
+    final nextSupplies =
+      supplies.map(EditableSupply.fromModel).toList(growable: true);
+    state = state.copyWith(supplies: nextSupplies);
+    _initialSupplies = _cloneSupplies(nextSupplies);
     _deletedSupplyIds.clear();
-    notifyListeners();
   }
 
   void replaceFinancialSupports(List<FinancialSupportAllocation> supports) {
-    _supports = supports.map(EditableSupport.fromModel).toList(growable: true);
-    _initialSupports = _cloneSupports(_supports);
+    final nextSupports =
+      supports.map(EditableSupport.fromModel).toList(growable: true);
+    state = state.copyWith(supports: nextSupports);
+    _initialSupports = _cloneSupports(nextSupports);
     _deletedSupportIds.clear();
-    notifyListeners();
   }
 
   Future<List<PurchasedSupply>> loadSupplies() async {
@@ -229,102 +230,120 @@ class AllocationViewModel extends ChangeNotifier {
   }
 
   void addSupplyRow() {
-    _supplies.insert(
-      0,
-      EditableSupply(
-        supplyId: null,
-        productName: '',
-        quantity: '1',
-        unitPrice: '0',
-        isEditing: true,
-      ),
-    );
-    notifyListeners();
+    final nextSupplies = [...state.supplies]
+      ..insert(
+        0,
+        EditableSupply(
+          supplyId: null,
+          productName: '',
+          quantity: '1',
+          unitPrice: '0',
+          isEditing: true,
+        ),
+      );
+    state = state.copyWith(supplies: nextSupplies);
   }
 
   void addSupportRow() {
-    _supports.insert(
-      0,
-      EditableSupport(
-        financialSupportId: null,
-        householdName: '',
-        amount: '0',
-        isEditing: true,
-      ),
-    );
-    notifyListeners();
+    final nextSupports = [...state.supports]
+      ..insert(
+        0,
+        EditableSupport(
+          financialSupportId: null,
+          householdName: '',
+          amount: '0',
+          isEditing: true,
+        ),
+      );
+    state = state.copyWith(supports: nextSupports);
   }
 
   void updateSupplyProductName(int index, String value) {
-    _supplies[index].productName = value;
-    notifyListeners();
+    final nextSupplies = [...state.supplies];
+    nextSupplies[index] = nextSupplies[index].copyWith()
+      ..productName = value;
+    state = state.copyWith(supplies: nextSupplies);
   }
 
   void updateSupplyQuantity(int index, String value) {
-    _supplies[index].quantity = value;
-    notifyListeners();
+    final nextSupplies = [...state.supplies];
+    nextSupplies[index] = nextSupplies[index].copyWith()
+      ..quantity = value;
+    state = state.copyWith(supplies: nextSupplies);
   }
 
   void updateSupplyUnitPrice(int index, String value) {
-    _supplies[index].unitPrice = value;
-    notifyListeners();
+    final nextSupplies = [...state.supplies];
+    nextSupplies[index] = nextSupplies[index].copyWith()
+      ..unitPrice = value;
+    state = state.copyWith(supplies: nextSupplies);
   }
 
   void toggleSupplyEdit(int index) {
-    _supplies[index].isEditing = !_supplies[index].isEditing;
-    notifyListeners();
+    final nextSupplies = [...state.supplies];
+    final updated = nextSupplies[index].copyWith();
+    updated.isEditing = !updated.isEditing;
+    nextSupplies[index] = updated;
+    state = state.copyWith(supplies: nextSupplies);
   }
 
   void removeSupplyAt(int index) {
-    final row = _supplies[index];
+    final nextSupplies = [...state.supplies];
+    final row = nextSupplies[index];
     if (row.supplyId != null && row.supplyId!.isNotEmpty) {
       _deletedSupplyIds.add(row.supplyId!);
     }
-    _supplies.removeAt(index);
-    notifyListeners();
+    nextSupplies.removeAt(index);
+    state = state.copyWith(supplies: nextSupplies);
   }
 
   void updateSupportHouseholdName(int index, String value) {
-    _supports[index].householdName = value;
-    notifyListeners();
+    final nextSupports = [...state.supports];
+    nextSupports[index] = nextSupports[index].copyWith()
+      ..householdName = value;
+    state = state.copyWith(supports: nextSupports);
   }
 
   void updateSupportAmount(int index, String value) {
-    _supports[index].amount = value;
-    notifyListeners();
+    final nextSupports = [...state.supports];
+    nextSupports[index] = nextSupports[index].copyWith()
+      ..amount = value;
+    state = state.copyWith(supports: nextSupports);
   }
 
   void toggleSupportEdit(int index) {
-    _supports[index].isEditing = !_supports[index].isEditing;
-    notifyListeners();
+    final nextSupports = [...state.supports];
+    final updated = nextSupports[index].copyWith();
+    updated.isEditing = !updated.isEditing;
+    nextSupports[index] = updated;
+    state = state.copyWith(supports: nextSupports);
   }
 
   void removeSupportAt(int index) {
-    final row = _supports[index];
+    final nextSupports = [...state.supports];
+    final row = nextSupports[index];
     if (row.financialSupportId != null && row.financialSupportId!.isNotEmpty) {
       _deletedSupportIds.add(row.financialSupportId!);
     }
-    _supports.removeAt(index);
-    notifyListeners();
+    nextSupports.removeAt(index);
+    state = state.copyWith(supports: nextSupports);
   }
 
   Future<void> saveActiveTab() async {
-    if (_isSaving) {
+    if (state.isSaving) {
       return;
     }
 
-    _isSaving = true;
-    notifyListeners();
+    state = state.copyWith(isSaving: true);
 
     try {
-      if (_activeTab == AllocationTab.supplies) {
+      if (state.activeTab == AllocationTab.supplies) {
         await _saveSupplies();
       } else {
         await _saveFinancialSupports();
       }
     } finally {
-      _isSaving = false;
-      notifyListeners();
+      state = state.copyWith(isSaving: false);
     }
   }
 
@@ -342,7 +361,7 @@ class AllocationViewModel extends ChangeNotifier {
     }
 
     final saved = <EditableSupply>[];
-    for (final row in _supplies) {
+    for (final row in state.supplies) {
       final parsed = row.toModel();
       if (parsed == null) {
         throw Exception('Supply rows must have valid name, quantity and unit price');
@@ -370,7 +389,7 @@ class AllocationViewModel extends ChangeNotifier {
       }
     }
 
-    _supplies = saved;
+    state = state.copyWith(supplies: saved);
     _initialSupplies = _cloneSupplies(saved);
     _deletedSupplyIds.clear();
   }
@@ -389,7 +408,7 @@ class AllocationViewModel extends ChangeNotifier {
     }
 
     final saved = <EditableSupport>[];
-    for (final row in _supports) {
+    for (final row in state.supports) {
       final parsed = row.toModel();
       if (parsed == null) {
         throw Exception('Financial support rows must have valid household and amount');
@@ -417,7 +436,7 @@ class AllocationViewModel extends ChangeNotifier {
       }
     }
 
-    _supports = saved;
+    state = state.copyWith(supports: saved);
     _initialSupports = _cloneSupports(saved);
     _deletedSupportIds.clear();
   }
@@ -484,5 +503,33 @@ class AllocationViewModel extends ChangeNotifier {
 
   List<EditableSupport> _cloneSupports(List<EditableSupport> items) {
     return items.map((item) => item.copyWith()).toList(growable: true);
+  }
+}
+
+class AllocationState {
+  final AllocationTab activeTab;
+  final bool isSaving;
+  final List<EditableSupply> supplies;
+  final List<EditableSupport> supports;
+
+  const AllocationState({
+    required this.activeTab,
+    required this.isSaving,
+    required this.supplies,
+    required this.supports,
+  });
+
+  AllocationState copyWith({
+    AllocationTab? activeTab,
+    bool? isSaving,
+    List<EditableSupply>? supplies,
+    List<EditableSupport>? supports,
+  }) {
+    return AllocationState(
+      activeTab: activeTab ?? this.activeTab,
+      isSaving: isSaving ?? this.isSaving,
+      supplies: supplies ?? this.supplies,
+      supports: supports ?? this.supports,
+    );
   }
 }

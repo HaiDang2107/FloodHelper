@@ -10,9 +10,14 @@ import '../../dialog/post_announcement_dialog.dart';
 class DetailView extends StatefulWidget {
   final CharityCampaign campaign;
   final bool isOwner;
+  final List<CampaignAnnouncement> announcements;
+  final bool isAnnouncementsLoading;
+  final bool isAnnouncementsLoadingMore;
+  final bool hasMoreAnnouncements;
+  final Future<void> Function()? onLoadMoreAnnouncements;
   final VoidCallback onPurchasedSupplies;
   final Future<void> Function() onTransaction;
-  final Future<void> Function(String text)? onPostAnnouncement;
+  final Future<void> Function(PostAnnouncementPayload payload)? onPostAnnouncement;
   final Future<void> Function()? onUpdateInformation;
   final Future<void> Function()? onSendRequest;
   final Future<void> Function()? onCheckInLocation;
@@ -22,6 +27,11 @@ class DetailView extends StatefulWidget {
     super.key,
     required this.campaign,
     required this.isOwner,
+    this.announcements = const [],
+    this.isAnnouncementsLoading = false,
+    this.isAnnouncementsLoadingMore = false,
+    this.hasMoreAnnouncements = false,
+    this.onLoadMoreAnnouncements,
     required this.onPurchasedSupplies,
     required this.onTransaction,
     this.onPostAnnouncement,
@@ -36,16 +46,6 @@ class DetailView extends StatefulWidget {
 }
 
 class _DetailViewState extends State<DetailView> {
-  late List<CampaignAnnouncement> _announcements;
-
-  @override
-  void initState() {
-    super.initState();
-    _announcements = List<CampaignAnnouncement>.from(
-      widget.campaign.announcements,
-    );
-  }
-
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -59,8 +59,10 @@ class _DetailViewState extends State<DetailView> {
     return _formatDate(date);
   }
 
-  Future<String?> _showPostAnnouncementDialog(BuildContext context) async {
-    return showDialog<String>(
+  Future<PostAnnouncementPayload?> _showPostAnnouncementDialog(
+    BuildContext context,
+  ) async {
+    return showDialog<PostAnnouncementPayload>(
       context: context,
       builder: (context) => const PostAnnouncementDialog(),
     );
@@ -217,18 +219,9 @@ class _DetailViewState extends State<DetailView> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  final text = await _showPostAnnouncementDialog(context);
-                  if (text != null && text.isNotEmpty) {
-                    final newAnnouncement = CampaignAnnouncement(
-                      text: text,
-                      date: DateTime.now(),
-                    );
-
-                    setState(() {
-                      _announcements.insert(0, newAnnouncement);
-                    });
-
-                    await widget.onPostAnnouncement?.call(text);
+                  final payload = await _showPostAnnouncementDialog(context);
+                  if (payload != null) {
+                    await widget.onPostAnnouncement?.call(payload);
                   }
                 },
                 icon: const Icon(Icons.post_add),
@@ -250,9 +243,34 @@ class _DetailViewState extends State<DetailView> {
             ),
           ),
           const SizedBox(height: 16),
-          ..._announcements.map(
+          if (widget.isAnnouncementsLoading && widget.announcements.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (widget.announcements.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('No announcements yet.'),
+            )
+          else ...widget.announcements.map(
             (a) => CharityAnnouncementItem(announcement: a),
           ),
+          if (widget.isAnnouncementsLoadingMore)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2.2)),
+            )
+          else if (widget.hasMoreAnnouncements)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Center(
+                child: TextButton(
+                  onPressed: widget.onLoadMoreAnnouncements,
+                  child: const Text('Load more announcements'),
+                ),
+              ),
+            ),
         ],
         const SizedBox(height: 32),
       ],

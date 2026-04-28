@@ -41,6 +41,7 @@ model CharityCampaign {
   transactions           Transaction[]
   supplies               Supply[]
   financialSupports      FinancialSupport[]
+  announcements          AnnouncementFromBenefactor[]
 
   @@map("CharityCampaign")
 }
@@ -122,8 +123,11 @@ model Supply {
 model AnnouncementFromBenefactor {
   announcementId String @id @default(uuid()) @db.Uuid @map("announcement_id")
   campaignId     String @db.Uuid @map("campaign_id")
-  textContent    String? @map("text_content")
+  caption        String? @map("caption")
   imageUrl       String? @map("image_url")
+  postedAt       DateTime @default(now()) @map("posted_at")
+
+  campaign CharityCampaign @relation(fields: [campaignId], references: [campaignId])
   
   @@map("AnnouncementFromBenefactor")
 }

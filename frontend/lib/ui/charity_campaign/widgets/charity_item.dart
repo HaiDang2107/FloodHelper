@@ -5,6 +5,7 @@ import '../../../domain/models/charity_campaign.dart';
 import 'bottom_sheet/allocation_view.dart';
 import 'bottom_sheet/transaction_list_view.dart';
 import 'bottom_sheet/detail_view/detail_view.dart';
+import 'dialog/post_announcement_dialog.dart';
 
 // Defines the views inside the bottom sheet
 enum _SheetView { details, supplies, transactions }
@@ -14,7 +15,17 @@ class CharityItem extends StatelessWidget {
   final bool isOwner;
   final Future<CharityCampaign> Function(String campaignId)? onLoadCampaignDetail;
   final Future<List<Donation>> Function(String campaignId)? onLoadCampaignTransactions;
-  final Future<void> Function(String campaignId, String text)? onPostAnnouncement;
+  final Future<void> Function(String campaignId)? onLoadInitialAnnouncements;
+  final Future<void> Function(String campaignId)? onLoadMoreAnnouncements;
+  final List<CampaignAnnouncement> Function(String campaignId)? announcementsSelector;
+  final bool Function(String campaignId)? isAnnouncementsLoadingSelector;
+  final bool Function(String campaignId)? isAnnouncementsLoadingMoreSelector;
+  final bool Function(String campaignId)? hasMoreAnnouncementsSelector;
+  final Future<void> Function(
+    String campaignId,
+    PostAnnouncementPayload payload,
+  )?
+  onPostAnnouncement;
   final Future<void> Function(CharityCampaign campaign)? onUpdateCampaign;
   final Future<void> Function(String campaignId)? onSendCampaignRequest;
   final Future<void> Function(
@@ -36,6 +47,12 @@ class CharityItem extends StatelessWidget {
     this.isOwner = false,
     this.onLoadCampaignDetail,
     this.onLoadCampaignTransactions,
+    this.onLoadInitialAnnouncements,
+    this.onLoadMoreAnnouncements,
+    this.announcementsSelector,
+    this.isAnnouncementsLoadingSelector,
+    this.isAnnouncementsLoadingMoreSelector,
+    this.hasMoreAnnouncementsSelector,
     this.onPostAnnouncement,
     this.onUpdateCampaign,
     this.onSendCampaignRequest,
@@ -50,6 +67,12 @@ class CharityItem extends StatelessWidget {
       isOwner: isOwner,
       onLoadCampaignDetail: onLoadCampaignDetail,
       onLoadCampaignTransactions: onLoadCampaignTransactions,
+      onLoadInitialAnnouncements: onLoadInitialAnnouncements,
+      onLoadMoreAnnouncements: onLoadMoreAnnouncements,
+      announcementsSelector: announcementsSelector,
+      isAnnouncementsLoadingSelector: isAnnouncementsLoadingSelector,
+      isAnnouncementsLoadingMoreSelector: isAnnouncementsLoadingMoreSelector,
+      hasMoreAnnouncementsSelector: hasMoreAnnouncementsSelector,
       onPostAnnouncement: onPostAnnouncement,
       onUpdateCampaign: onUpdateCampaign,
       onSendCampaignRequest: onSendCampaignRequest,
@@ -64,7 +87,14 @@ class CharityItem extends StatelessWidget {
     bool isOwner = false,
     Future<CharityCampaign> Function(String campaignId)? onLoadCampaignDetail,
     Future<List<Donation>> Function(String campaignId)? onLoadCampaignTransactions,
-    Future<void> Function(String campaignId, String text)? onPostAnnouncement,
+    Future<void> Function(String campaignId)? onLoadInitialAnnouncements,
+    Future<void> Function(String campaignId)? onLoadMoreAnnouncements,
+    List<CampaignAnnouncement> Function(String campaignId)? announcementsSelector,
+    bool Function(String campaignId)? isAnnouncementsLoadingSelector,
+    bool Function(String campaignId)? isAnnouncementsLoadingMoreSelector,
+    bool Function(String campaignId)? hasMoreAnnouncementsSelector,
+    Future<void> Function(String campaignId, PostAnnouncementPayload payload)?
+    onPostAnnouncement,
     Future<void> Function(CharityCampaign campaign)? onUpdateCampaign,
     Future<void> Function(String campaignId)? onSendCampaignRequest,
     Future<void> Function(
@@ -148,6 +178,20 @@ class CharityItem extends StatelessWidget {
       return;
     }
 
+    final shouldLoadAnnouncements = [
+      CampaignStatus.donating,
+      CampaignStatus.distributing,
+      CampaignStatus.finished,
+    ].contains(detailCampaign.status);
+
+    if (shouldLoadAnnouncements && onLoadInitialAnnouncements != null) {
+      try {
+        await onLoadInitialAnnouncements(detailCampaign.id);
+      } catch (_) {
+        // Ignore initial announcement load errors here; screen-level error handling already exists.
+      }
+    }
+
     var currentView = _SheetView.details;
     var transactionItems = detailCampaign.donations;
 
@@ -228,6 +272,18 @@ class CharityItem extends StatelessWidget {
                 key: const ValueKey('details'),
                 campaign: detailCampaign,
                 isOwner: isOwner,
+                announcements:
+                  announcementsSelector?.call(detailCampaign.id) ??
+                  detailCampaign.announcements,
+                isAnnouncementsLoading:
+                  isAnnouncementsLoadingSelector?.call(detailCampaign.id) ?? false,
+                isAnnouncementsLoadingMore:
+                  isAnnouncementsLoadingMoreSelector?.call(detailCampaign.id) ?? false,
+                hasMoreAnnouncements:
+                  hasMoreAnnouncementsSelector?.call(detailCampaign.id) ?? false,
+                onLoadMoreAnnouncements: onLoadMoreAnnouncements == null
+                  ? null
+                  : () => onLoadMoreAnnouncements(detailCampaign.id),
                 onPurchasedSupplies: () =>
                     setSheetState(() => currentView = _SheetView.supplies),
                 onTransaction: () async {
@@ -253,8 +309,21 @@ class CharityItem extends StatelessWidget {
                       setSheetState(() => currentView = _SheetView.transactions);
                     },
                 onPostAnnouncement: postAnnouncement == null
-                    ? null
-                    : (text) => postAnnouncement(detailCampaign.id, text),
+                  ? null
+                    : (payload) async {
+                        try {
+                          await postAnnouncement(detailCampaign.id, payload);
+                          showTopSnackBar(
+                            'Announcement posted successfully.',
+                            isError: false,
+                          );
+                        } catch (error) {
+                          showTopSnackBar(
+                            'Post failed: $error',
+                            isError: true,
+                          );
+                        }
+                      },
                 onUpdateInformation: updateCampaign == null
                     ? null
                     : () async {
@@ -353,6 +422,14 @@ class CharityItem extends StatelessWidget {
 
           return CustomBottomSheet(
             title: campaign.name,
+            onReachBottom: currentView == _SheetView.details && shouldLoadAnnouncements
+                ? () {
+                    final loadMore = onLoadMoreAnnouncements;
+                    if (loadMore != null) {
+                      loadMore(detailCampaign.id);
+                    }
+                  }
+                : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: AnimatedSwitcher(
