@@ -119,6 +119,7 @@ export class FriendService {
           senderId: senderId,
           senderName: senderName,
         },
+        'friend-request',
       );
     }
 

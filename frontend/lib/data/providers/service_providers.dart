@@ -72,7 +72,7 @@ MqttService mqttService(Ref ref) {
 
 /// FirebaseMessagingService provider (keepAlive: true for FCM token management)
 /// Manages singleton instance throughout app lifecycle.
-@Riverpod(keepAlive: true)
+@Riverpod(keepAlive: true) // keepAlive để tránh auto dispose (khi mà không có ai listen hay watch)
 FirebaseMessagingService firebaseMessagingService(Ref ref) {
   return FirebaseMessagingService(apiClient: ref.watch(apiClientProvider));
 }

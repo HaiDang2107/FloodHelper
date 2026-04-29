@@ -22,12 +22,11 @@ export class FirebaseService implements OnModuleInit {
         credential: admin.credential.cert({
           projectId,
           clientEmail,
-          // Private key in .env is usually stored with escaped newlines.
           privateKey: privateKey.replace(/\\n/g, '\n'),
         }),
       });
 
-      this.logger.log('Firebase Admin SDK initialized from environment');
+      this.logger.log('🔥 Firebase Admin SDK initialized');
     }
   }
 
@@ -39,19 +38,17 @@ export class FirebaseService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
+    channelId: string = 'default', // Thêm tham số channelId
   ): Promise<boolean> {
     try {
       const message: admin.messaging.Message = {
         token: fcmToken,
-        notification: {
-          title,
-          body,
-        },
+        notification: { title, body },
         data: data || {},
         android: {
           priority: 'high',
           notification: {
-            channelId: 'friend_requests',
+            channelId: channelId, // Dùng biến động
             priority: 'high',
             sound: 'default',
           },
@@ -69,27 +66,26 @@ export class FirebaseService implements OnModuleInit {
 
   /**
    * Send notification to multiple devices
+   * Trả về mảng các token lỗi để hệ thống tự động xóa khỏi DB
    */
   async sendMulticastNotification(
     fcmTokens: string[],
     title: string,
     body: string,
     data?: Record<string, string>,
-  ): Promise<void> {
-    if (fcmTokens.length === 0) return;
+    channelId: string = 'default', // Thêm tham số channelId
+  ): Promise<{ successCount: number; failedTokens: string[] }> {
+    if (fcmTokens.length === 0) return { successCount: 0, failedTokens: [] };
 
     try {
       const message: admin.messaging.MulticastMessage = {
         tokens: fcmTokens,
-        notification: {
-          title,
-          body,
-        },
+        notification: { title, body },
         data: data || {},
         android: {
           priority: 'high',
           notification: {
-            channelId: 'friend_requests',
+            channelId: channelId,
             priority: 'high',
             sound: 'default',
           },
@@ -100,10 +96,24 @@ export class FirebaseService implements OnModuleInit {
       this.logger.log(
         `Multicast sent: ${response.successCount} success, ${response.failureCount} failures`,
       );
+
+      // Lọc ra các token không còn tồn tại hoặc lỗi
+      const failedTokens: string[] = [];
+      if (response.failureCount > 0) {
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            failedTokens.push(fcmTokens[idx]);
+          }
+        });
+      }
+
+      return {
+        successCount: response.successCount,
+        failedTokens,
+      };
     } catch (error) {
-      this.logger.error(
-        `Failed to send multicast notification: ${error.message}`,
-      );
+      this.logger.error(`Failed to send multicast notification: ${error.message}`);
+      return { successCount: 0, failedTokens: [] };
     }
   }
 }
