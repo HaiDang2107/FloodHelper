@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/location_option.dart';
 import 'api_client.dart';
 
-class LocationService {
+class LocationService { // Liên quan đến Ward và Province
   final ApiClient _apiClient;
 
   LocationService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();

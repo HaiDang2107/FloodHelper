@@ -28,10 +28,20 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       _locationTrackingService.setUiIsActive(true);
       _locationTrackingService.setSosStatus(state.isSosBroadcasting);
 
-      final initialLatLng = LatLng(
-        initialUpdate.latitude,
-        initialUpdate.longitude,
-      );
+      LatLng initialLatLng;
+      
+      if (initialUpdate != null) {
+        // Có dữ liệu GPS ngay lập tức
+        initialLatLng = LatLng(
+          initialUpdate.latitude,
+          initialUpdate.longitude,
+        );
+      } else {
+        // Fallback: Lấy GPS quá 5 giây bị timeout. 
+        // Đặt tạm Camera bản đồ ở một vị trí mặc định (Ví dụ: Trung tâm Hà Nội)
+        initialLatLng = const LatLng(21.028511, 105.804817); 
+      }
+
       state = state.copyWith(currentPosition: initialLatLng, isLoading: false);
       mapController.move(initialLatLng, 15.0);
 

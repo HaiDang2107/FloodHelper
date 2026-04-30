@@ -196,58 +196,27 @@ class LocationTrackingService {
   // -------------------- Start / Stop --------------------
 
   /// Start the background service, get initial position, begin tracking.
-  Future<LocationUpdate> start(
+  Future<LocationUpdate?> start(
     String userId, {
     String? fullname,
     List<String> allowedFriendIds = const [],
     bool isRescuer = false,
   }) async {
-    // 1. Check permissions
+    // 1. Check permissions and start background
     await _ensureLocationPermission();
-
-    // 2. Get initial position on UI thread with timeout/fallback so app entry
-    // is not blocked when GPS takes too long.
-    Position? initialPosition;
-    try {
-      initialPosition = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      ).timeout(const Duration(seconds: 6));
-    } catch (_) {
-      initialPosition = await Geolocator.getLastKnownPosition();
-    }
-
-    if (initialPosition == null) {
-      throw Exception('Unable to get initial location quickly. Please enable GPS.');
-    }
-
-    final initialUpdate = LocationUpdate(
-      latitude: initialPosition.latitude,
-      longitude: initialPosition.longitude,
-      timestamp: DateTime.now(),
-    );
-    _locationController.add(initialUpdate);
-
-    // 3. Start the background isolate (đánh thức hàm onStart()) only if needed.
     final serviceRunning = await _service.isRunning();
     if (!serviceRunning) {
       await _service.startService();
-      if (kDebugMode) {
-        print('📍 Background service started from UI');
-      }
+      await Future.delayed(const Duration(milliseconds: 500));
+      // if (kDebugMode) {
+      //   print('📍 Background service started from UI');
+      // }
     } else if (kDebugMode) {
-      print('📍 Background service already running, skip startService()');
+      // print('📍 Background service already running, skip startService()');
     }
 
-    // 4. Send userId so background isolate can connect MQTT (with retry handshake)
-    await _bindUserIdWithRetry(userId, fullname: fullname);
 
-    // 4b. Send initial allowed friends list
-    _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
-
-    // 4c. Send rescuer role flag to background isolate
-    _service.invoke('setRescuerMode', {'isRescuer': isRescuer});
-
-    // 5. Listen for location updates coming back from background
+    // 2. Listen for location updates coming back from background
     // Khi gọi hàm .listen(...), ta đang ra lệnh cho hệ thống: "Hãy mở một luồng liên tục chạy ngầm trong RAM để nghe ngóng tin tức từ kênh onLocationUpdate
     // lưu vào _bgSubscription để dễ quản lý (có thể hủy bất cứ lúc nào)
     _bgSubscription = _service.on('onLocationUpdate').listen((event) {
@@ -322,14 +291,31 @@ class LocationTrackingService {
       );
     });
 
-    if (kDebugMode) {
-      print(
-        '📍 Background service started '
-        '(every ${AppConfig.locationPublishIntervalSeconds}s)',
-      );
-    }
+    // 3. Send userId so background isolate can connect MQTT (with retry handshake)
+    // Đồng bộ cấu hình xuống background 
+    await _bindUserIdWithRetry(userId, fullname: fullname);
+    _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
+    _service.invoke('setRescuerMode', {'isRescuer': isRescuer});
 
-    return initialUpdate;
+    // 4. Lấy vị trí hiện tại từ background
+    _service.invoke('requestImmediateLocation'); // Dữ liệu vị trí được bắn ngược lên (xem handler để rõ hơn)
+    // Chờ hứng cục dữ liệu đầu tiên để trả về cho UI vẽ bản đồ
+    try {
+      // Lắng nghe stream và chỉ lấy phần tử đầu tiên (first). Quá 5 giây sẽ quăng lỗi Timeout
+      final firstLocation = await locationStream.first.timeout(
+        const Duration(seconds: 5),
+      );
+      if (kDebugMode) {
+        print('📍 [UI] Đã nhận tọa độ khởi tạo từ Background!');
+      }
+      return firstLocation;
+    } catch (e) {
+      if (kDebugMode) {
+        print('📍 [UI] Chờ Background lấy tọa độ bị Timeout. App vẫn tiếp tục mở: $e');
+      }
+      // Trả về null để app vượt qua được Splash Screen, không bị kẹt nữa
+      return null; 
+    }
   }
 
   /// Stop the background service.
