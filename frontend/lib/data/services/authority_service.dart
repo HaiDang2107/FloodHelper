@@ -1,3 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+
 import 'api_client.dart';
 
 class AuthorityService {
@@ -116,6 +121,67 @@ class AuthorityService {
       },
     );
 
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> getAuthorityAnnouncements({
+    String? beforeCreatedAt,
+    int limit = 10,
+  }) async {
+    final query = <String, dynamic>{'limit': limit};
+    if (beforeCreatedAt != null) {
+      query['beforeCreatedAt'] = beforeCreatedAt;
+    }
+
+    final response = await _apiClient.get(
+      '/announcements/authority',
+      queryParameters: query,
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> getAuthorityAnnouncementDetail(
+    String announcementId,
+  ) async {
+    final response = await _apiClient.get('/announcements/authority/$announcementId');
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> publishAuthorityAnnouncement({
+    required String title,
+    required String caption,
+    Uint8List? bytes,
+    String? fileName,
+    String? mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final formMap = <String, dynamic>{
+      'title': title,
+      'caption': caption,
+    };
+
+    if (bytes != null && fileName != null && mimeType != null) {
+      formMap['file'] = MultipartFile.fromBytes(
+        bytes,
+        filename: fileName,
+        contentType: MediaType.parse(mimeType),
+      );
+    }
+
+    final response = await _apiClient.post(
+      '/announcements/authority',
+      data: FormData.fromMap(formMap),
+      onSendProgress: onSendProgress,
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> deleteAuthorityAnnouncement(
+    String announcementId,
+  ) async {
+    final response = await _apiClient.delete('/announcements/authority/$announcementId');
     return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
   }
 }

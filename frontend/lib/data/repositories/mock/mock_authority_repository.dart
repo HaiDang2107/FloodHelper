@@ -1,9 +1,43 @@
+import 'dart:typed_data';
+
 import '../../models/authority/authority_profile.dart';
+import '../../models/authority/announcement.dart';
 import '../../models/authority/role_request.dart';
+import '../../../domain/models/announcement.dart';
 import '../../../domain/models/charity_campaign.dart';
 import '../authority_repository.dart';
 
 class MockAuthorityRepository implements AuthorityRepository {
+  final List<AuthorityAnnouncement> _announcements = [
+    AuthorityAnnouncement(
+      id: 'ANN-1003',
+      title: 'Flood warning update',
+      caption: 'Heavy rain is expected in the next 24 hours. Residents should prepare evacuation supplies.',
+      documentUrl: 'https://example.com/announcements/flood-warning-update.pdf',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      publishedBy: 'authority-mock-id',
+    ),
+    AuthorityAnnouncement(
+      id: 'ANN-1002',
+      title: 'Relief center schedule',
+      caption: 'Updated operating hours for the temporary relief center in Ward 5.',
+      documentUrl: 'https://example.com/announcements/relief-center-schedule.docx',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+      publishedBy: 'authority-mock-id',
+    ),
+    AuthorityAnnouncement(
+      id: 'ANN-1001',
+      title: 'Donation receipt template',
+      caption: 'Use the attached template to issue donation receipts to sponsors.',
+      documentUrl: 'https://example.com/announcements/donation-receipt-template.xlsx',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now().subtract(const Duration(days: 2, hours: 4)),
+      publishedBy: 'authority-mock-id',
+    ),
+  ];
+
   final List<CharityCampaign> _campaignRequests = [
     CharityCampaign(
       id: 'CAMP-2001',
@@ -429,5 +463,92 @@ class MockAuthorityRepository implements AuthorityRepository {
     );
     _campaignRequests[index] = updated;
     return updated;
+  }
+
+  @override
+  Future<AuthorityAnnouncementPage> fetchAuthorityAnnouncements({
+    String? beforeCreatedAt,
+    int limit = 10,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    final cutoff = beforeCreatedAt == null ? null : DateTime.tryParse(beforeCreatedAt);
+
+    final filtered = _announcements.where((announcement) {
+      if (cutoff == null) {
+        return true;
+      }
+      return announcement.createdAt.isBefore(cutoff);
+    }).toList(growable: false);
+
+    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final pageItems = filtered.take(limit).toList(growable: false);
+    final nextCursor = pageItems.length < filtered.length
+        ? pageItems.last.createdAt.toIso8601String()
+        : null;
+
+    return AuthorityAnnouncementPage(
+      items: pageItems,
+      hasMore: pageItems.length < filtered.length,
+      nextCursor: nextCursor,
+    );
+  }
+
+  @override
+  Future<AuthorityAnnouncement> fetchAuthorityAnnouncementDetail(
+    String announcementId,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 250));
+    return _announcements.firstWhere((announcement) => announcement.id == announcementId);
+  }
+
+  @override
+  Future<AuthorityAnnouncement> publishAuthorityAnnouncement({
+    required String title,
+    required String caption,
+    Uint8List? bytes,
+    String? fileName,
+    String? mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (bytes != null) {
+      onSendProgress?.call(bytes.length, bytes.length);
+    }
+
+    final created = AuthorityAnnouncement(
+      id: 'ANN-${1000 + _announcements.length + 1}',
+      title: title,
+      caption: caption,
+      documentUrl: fileName == null
+          ? null
+          : 'https://example.com/announcements/${_slugify(fileName)}',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now(),
+      publishedBy: 'authority-mock-id',
+    );
+
+    _announcements.insert(0, created);
+    return created;
+  }
+
+  @override
+  Future<AuthorityAnnouncement> deleteAuthorityAnnouncement(
+    String announcementId,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 250));
+
+    final index = _announcements.indexWhere((announcement) => announcement.id == announcementId);
+    if (index < 0) {
+      throw Exception('Announcement not found');
+    }
+
+    return _announcements.removeAt(index);
+  }
+
+  String _slugify(String input) {
+    final cleaned = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return cleaned.replaceAll(RegExp(r'-+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
   }
 }

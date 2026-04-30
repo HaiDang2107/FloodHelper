@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import '../../models/authority/authority_profile.dart';
+import '../../models/authority/announcement.dart';
 import '../../models/authority/role_request.dart';
 import '../../mappers/authority_mappers.dart';
 import '../../mappers/charity_campaign_mappers.dart';
@@ -134,4 +137,61 @@ class RealAuthorityRepository implements AuthorityRepository {
     final data = body['data'] as Map<String, dynamic>? ?? {};
     return CharityCampaignMappers.campaignFromApi(data);
   }
+
+  @override
+  Future<AuthorityAnnouncementPage> fetchAuthorityAnnouncements({
+    String? beforeCreatedAt,
+    int limit = 10,
+  }) async {
+    final body = await _authorityService.getAuthorityAnnouncements(
+      beforeCreatedAt: beforeCreatedAt,
+      limit: limit,
+    );
+
+    return AuthorityMappers.announcementPageFromApi(body);
+  }
+
+  @override
+  Future<AuthorityAnnouncement> fetchAuthorityAnnouncementDetail(
+    String announcementId,
+  ) async {
+    final body = await _authorityService.getAuthorityAnnouncementDetail(
+      announcementId,
+    );
+    final data = body['data'] as Map<String, dynamic>? ?? {};
+    return AuthorityMappers.announcementFromApi(data);
+  }
+
+  @override
+  Future<AuthorityAnnouncement> publishAuthorityAnnouncement({
+    required String title,
+    required String caption,
+    Uint8List? bytes,
+    String? fileName,
+    String? mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    final body = await _authorityService.publishAuthorityAnnouncement(
+      title: title,
+      caption: caption,
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: mimeType,
+      onSendProgress: onSendProgress,
+    );
+    final data = body['data'] as Map<String, dynamic>? ?? {};
+    return AuthorityMappers.announcementFromApi(data);
+  }
+
+  @override
+  Future<AuthorityAnnouncement> deleteAuthorityAnnouncement(
+    String announcementId,
+  ) async {
+    final body = await _authorityService.deleteAuthorityAnnouncement(
+      announcementId,
+    );
+    final data = body['data'] as Map<String, dynamic>? ?? {};
+    return AuthorityMappers.announcementFromApi(data);
+  }
+
 }

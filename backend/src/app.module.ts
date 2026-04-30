@@ -13,6 +13,7 @@ import { LocationModule } from './location/location.module';
 import { RoleRequestModule } from './role-request/role-request.module';
 import { SignalModule } from './signal/signal.module';
 import { CharityModule } from './charity/charity.module';
+import { AnnouncementModule } from './announcement/announcement.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { LoggingMiddleware } from './common/logging.middleware';
 
@@ -28,6 +29,7 @@ import { LoggingMiddleware } from './common/logging.middleware';
     RoleRequestModule,
     SignalModule,
     CharityModule,
+    AnnouncementModule,
     CacheModule.register({
       isGlobal: true, // Để dùng ở mọi nơi không cần import lại
       store: redisStore,

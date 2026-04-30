@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../domain/models/charity_campaign.dart';
-import '../../theme/authority_theme.dart';
+import '../../../../../domain/models/charity_campaign.dart';
+import '../../../theme/authority_theme.dart';
 
 part '_detail_card.dart';
 part '_status_badge.dart';

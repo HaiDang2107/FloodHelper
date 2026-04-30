@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 
 import '../../../../data/models/authority/role_request.dart';
 import '../../view_models/role_requests_view_model.dart';
-import '../../widgets/request_review_frame.dart';
-import '../../widgets/role_request_card.dart';
-import '../../widgets/role_request_detail.dart';
+import '../../widgets/review_frame.dart';
+import '../../widgets/role_requests/role_request_card.dart';
+import '../../widgets/role_requests/role_request_detail.dart';
 
 class RoleRequestsScreen extends ConsumerStatefulWidget {
   const RoleRequestsScreen({

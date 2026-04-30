@@ -1,5 +1,7 @@
 import '../models/authority/authority_profile.dart';
+import '../models/authority/announcement.dart';
 import '../models/authority/role_request.dart';
+import '../../domain/models/announcement.dart';
 
 class AuthorityMappers {
   static AuthorityProfile profileFromSession(Map<String, dynamic> userData) {
@@ -127,6 +129,38 @@ class AuthorityMappers {
     );
   }
 
+  static AuthorityAnnouncementPage announcementPageFromApi(
+    Map<String, dynamic> json,
+  ) {
+    final payload = _asMap(json['data']) ?? json;
+    final items = (payload['items'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(announcementFromApi)
+        .toList(growable: false);
+    final pagination = _asMap(payload['pagination']) ?? const {};
+
+    return AuthorityAnnouncementPage(
+      items: items,
+      hasMore: pagination['hasMore'] == true,
+      nextCursor: pagination['nextCursor']?.toString(),
+    );
+  }
+
+  static AuthorityAnnouncement announcementFromApi(Map<String, dynamic> json) {
+    final payload = _asMap(json['data']) ?? json;
+    return AuthorityAnnouncement(
+      id: _asString(payload['announcementId'] ?? payload['id']),
+      title: _asString(payload['title']),
+      caption: _asNullableString(
+        payload['caption'] ?? payload['textContent'] ?? payload['content'],
+      ),
+      documentUrl: _asNullableString(payload['documentUrl']),
+      type: AnnouncementType.fromString(_asString(payload['type'])),
+      createdAt: DateTime.tryParse(_asString(payload['createdAt'])) ?? DateTime.now(),
+      publishedBy: _asString(payload['publishedBy'] ?? payload['publisherId']),
+    );
+  }
+
   static RoleRequestStatus _mapApiStateToStatus(String state) {
     switch (state) {
       case 'APPROVED':
@@ -168,6 +202,10 @@ class AuthorityMappers {
     }
 
     return int.tryParse(value.toString());
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    return value is Map<String, dynamic> ? value : null;
   }
 
   static String? _formatLocation({

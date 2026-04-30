@@ -10,3 +10,4 @@ export 'profile_model.dart';
 export 'friend_request_model.dart';
 export 'authority/authority_profile.dart';
 export 'authority/role_request.dart';
+export 'authority/announcement.dart';

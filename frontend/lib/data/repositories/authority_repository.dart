@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import '../models/authority/authority_profile.dart';
+import '../models/authority/announcement.dart';
 import '../models/authority/role_request.dart';
 import '../../domain/models/charity_campaign.dart';
 
@@ -58,4 +61,26 @@ abstract class AuthorityRepository {
     String campaignId, {
     String? noteForSuspension,
   });
+
+  Future<AuthorityAnnouncementPage> fetchAuthorityAnnouncements({
+    String? beforeCreatedAt,
+    int limit,
+  });
+
+  Future<AuthorityAnnouncement> fetchAuthorityAnnouncementDetail(
+    String announcementId,
+  );
+
+  Future<AuthorityAnnouncement> publishAuthorityAnnouncement({
+    required String title,
+    required String caption,
+    Uint8List? bytes,
+    String? fileName,
+    String? mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  });
+
+  Future<AuthorityAnnouncement> deleteAuthorityAnnouncement(
+    String announcementId,
+  );
 }

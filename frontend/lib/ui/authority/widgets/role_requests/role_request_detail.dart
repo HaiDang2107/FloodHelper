@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../data/models/authority/role_request.dart';
-import '../theme/authority_theme.dart';
+import '../../../../data/models/authority/role_request.dart';
+import '../../theme/authority_theme.dart';
 
 class RoleRequestDetail extends StatefulWidget {
   const RoleRequestDetail({

@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 
 import '../../../../domain/models/charity_campaign.dart';
 import '../../view_models/charity_campaign_requests_view_model.dart';
-import '../../widgets/charity_campaign_card.dart';
-import '../../widgets/charity_campaign_detail/charity_campaign_detail.dart';
-import '../../widgets/request_review_frame.dart';
+import '../../widgets/charity/charity_campaign_card.dart';
+import '../../widgets/charity/charity_campaign_detail/charity_campaign_detail.dart';
+import '../../widgets/review_frame.dart';
 
 class CharityCampaignScreen extends ConsumerStatefulWidget {
   const CharityCampaignScreen({super.key, this.statusQuery});

@@ -13,6 +13,12 @@ enum RoleRequestState {
   REJECTED
 }
 
+enum PublicAnnouncementType {
+  DAILY
+  AUTHORITY
+  APP
+}
+
 model RoleUpdatingRequest {
   requestId   String    @id @default(uuid()) @db.Uuid @map("request_id")
   createdBy   String    @db.Uuid @map("created_by")
@@ -31,9 +37,14 @@ model RoleUpdatingRequest {
 
 model PublicAnnouncement {
   announcementId String @id @default(uuid()) @db.Uuid @map("announcement_id")
-  publisherId    String @map("publisher_id")
+  title          String  @db.VarChar(255)
+  caption        String? @map("text_content")
   documentUrl    String? @map("document_url")
-  textContent    String? @map("text_content")
+  publishedBy    String  @db.Uuid @map("publisher_id")
+  type           PublicAnnouncementType
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  publisher User @relation("PublicAnnouncementPublisher", fields: [publishedBy], references: [userId])
 
   @@map("PublicAnnouncement")
 }

@@ -5,6 +5,7 @@ import '../../../../../routing/authority_router.dart';
 
 part '_role_requests_menu.dart';
 part '_charity_campaign_menu.dart';
+part '_announcements_menu.dart';
 part '_sidebar_header.dart';
 part '_sidebar_item.dart';
 part '_subsidebar_item.dart';
@@ -69,12 +70,9 @@ class AuthoritySidebar extends StatelessWidget {
                   isCollapsed: isCollapsed,
                   currentLocation: currentLocation,
                 ),
-                _SidebarItem(
-                  icon: Icons.announcement_outlined,
-                  label: 'Announcements',
+                _AnnouncementsMenu(
                   isCollapsed: isCollapsed,
-                  isActive: currentPath == AuthorityRoutes.announcements,
-                  onTap: () => _navigate(context, AuthorityRoutes.announcements),
+                  currentLocation: currentLocation,
                 ),
               ],
             ),

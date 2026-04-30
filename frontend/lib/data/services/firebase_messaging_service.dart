@@ -86,8 +86,16 @@ class FirebaseMessagingService {
     // Kênh 1: Lời mời kết bạn (Bình thường)
     const AndroidNotificationChannel friendRequestChannel = AndroidNotificationChannel(
       'friend_requests', // ID phải KHỚP 100% với chuỗi gửi từ NestJS
-      'Lời mời kết bạn',  // Tên hiển thị trong mục Cài đặt của Android
+      'Friend Request',  // Tên hiển thị trong mục Cài đặt của Android
       description: 'Thông báo khi có người muốn kết bạn với bạn',
+      importance: Importance.high,
+    );
+
+    // Kênh 2: Thông báo từ Authority
+    const AndroidNotificationChannel announcementFromAuthorityChannel = AndroidNotificationChannel(
+      'announcements_from_authority', // ID phải KHỚP 100% với chuỗi gửi từ NestJS
+      'Announcements From Authority',  // Tên hiển thị trong mục Cài đặt của Android
+      description: 'Thông báo khi Authority publish announcement',
       importance: Importance.high,
     );
 
@@ -96,6 +104,11 @@ class FirebaseMessagingService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(friendRequestChannel);
+    
+    await _localNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(announcementFromAuthorityChannel);
   }
 
   /// Gửi Token lên Backend có cơ chế Cache

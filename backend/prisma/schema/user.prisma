@@ -49,6 +49,7 @@ model User {
   roomMemberships      RoomMember[]
   roleRequestsCreated  RoleUpdatingRequest[] @relation("RoleRequestCreator")
   roleRequestsReceived RoleUpdatingRequest[] @relation("RoleRequestChecker")
+  publicAnnouncements  PublicAnnouncement[]  @relation("PublicAnnouncementPublisher")
   friendRequestsSent   FriendMakingRequest[] @relation("FriendRequestSender")
   friendRequestsRcved  FriendMakingRequest[] @relation("FriendRequestReceiver")
   

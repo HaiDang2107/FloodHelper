@@ -71,7 +71,9 @@ final authorityRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AuthorityRoutes.announcements,
-            builder: (context, state) => const AnnouncementsScreen(),
+            builder: (context, state) => AnnouncementsScreen(
+              sectionQuery: state.uri.queryParameters['section'],
+            ),
           ),
         ],
       ),

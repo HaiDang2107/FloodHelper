@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../data/models/authority/role_request.dart';
-import '../theme/authority_theme.dart';
+import '../../../../domain/models/charity_campaign.dart';
+import '../../theme/authority_theme.dart';
 
-class RoleRequestCard extends StatelessWidget {
-  const RoleRequestCard({
+class CharityCampaignRequestCard extends StatelessWidget { // item bên danh sách
+  const CharityCampaignRequestCard({
     super.key,
-    required this.request,
+    required this.campaign,
     required this.isSelected,
     required this.onTap,
   });
 
-  final RoleRequest request;
+  final CharityCampaign campaign;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -39,8 +39,8 @@ class RoleRequestCard extends StatelessWidget {
               CircleAvatar(
                 backgroundColor: AuthorityTheme.brandBlue.withValues(alpha: 0.12),
                 child: Text(
-                  request.requesterName.isNotEmpty
-                      ? request.requesterName.substring(0, 1)
+                  campaign.benefactorName.isNotEmpty
+                      ? campaign.benefactorName.substring(0, 1)
                       : '?',
                   style: const TextStyle(color: AuthorityTheme.brandBlue),
                 ),
@@ -51,14 +51,14 @@ class RoleRequestCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      request.requesterName,
+                      campaign.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      request.requestedRole.label,
+                      campaign.benefactorName,
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
@@ -70,13 +70,13 @@ class RoleRequestCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _statusColor(request.status).withValues(alpha: 0.16),
+                  color: _statusColor(campaign.status).withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  request.status.label,
+                  campaign.status.name.toUpperCase(),
                   style: TextStyle(
-                    color: _statusColor(request.status),
+                    color: _statusColor(campaign.status),
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -89,14 +89,22 @@ class RoleRequestCard extends StatelessWidget {
     );
   }
 
-  Color _statusColor(RoleRequestStatus status) {
+  Color _statusColor(CampaignStatus status) {
     switch (status) {
-      case RoleRequestStatus.pending:
+      case CampaignStatus.pending:
         return const Color(0xFFCC7A00);
-      case RoleRequestStatus.approved:
+      case CampaignStatus.approved:
         return const Color(0xFF157F3B);
-      case RoleRequestStatus.rejected:
+      case CampaignStatus.rejected:
         return const Color(0xFFB42318);
+      case CampaignStatus.suspended:
+        return const Color(0xFFB42318);
+      case CampaignStatus.donating:
+      case CampaignStatus.distributing:
+        return const Color(0xFF0F62FE);
+      case CampaignStatus.finished:
+      case CampaignStatus.created:
+        return const Color(0xFF667085);
     }
   }
 }
