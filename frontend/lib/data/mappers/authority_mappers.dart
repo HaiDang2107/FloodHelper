@@ -156,7 +156,7 @@ class AuthorityMappers {
       ),
       documentUrl: _asNullableString(payload['documentUrl']),
       type: AnnouncementType.fromString(_asString(payload['type'])),
-      createdAt: DateTime.tryParse(_asString(payload['createdAt'])) ?? DateTime.now(),
+      createdAt: _asLocalDateTime(payload['createdAt']) ?? DateTime.now(),
       publishedBy: _asString(payload['publishedBy'] ?? payload['publisherId']),
     );
   }
@@ -206,6 +206,19 @@ class AuthorityMappers {
 
   static Map<String, dynamic>? _asMap(dynamic value) {
     return value is Map<String, dynamic> ? value : null;
+  }
+
+  static DateTime? _asLocalDateTime(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return value.toLocal();
+    }
+
+    final parsed = DateTime.tryParse(value.toString());
+    return parsed?.toLocal();
   }
 
   static String? _formatLocation({
