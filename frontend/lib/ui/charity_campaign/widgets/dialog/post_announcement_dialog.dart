@@ -3,7 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 class PostAnnouncementPayload {
   final String caption;
-  final XFile image;
+  final XFile? image;
 
   const PostAnnouncementPayload({
     required this.caption,
@@ -23,7 +23,7 @@ class _PostAnnouncementDialogState extends State<PostAnnouncementDialog> {
   XFile? _selectedImage;
 
   bool get _canSubmit {
-    return _captionController.text.trim().isNotEmpty && _selectedImage != null;
+    return _captionController.text.trim().isNotEmpty;
   }
 
   @override
@@ -88,7 +88,7 @@ class _PostAnnouncementDialogState extends State<PostAnnouncementDialog> {
           OutlinedButton.icon(
             onPressed: _pickImage,
             icon: const Icon(Icons.image),
-            label: const Text('Attach Image'),
+            label: const Text('Attach Image (optional)'),
           ),
           if (_selectedImage != null) ...[
             const SizedBox(height: 8),
@@ -110,7 +110,7 @@ class _PostAnnouncementDialogState extends State<PostAnnouncementDialog> {
                     context,
                     PostAnnouncementPayload(
                       caption: _captionController.text.trim(),
-                      image: _selectedImage!,
+                      image: _selectedImage,
                     ),
                   )
               : null,

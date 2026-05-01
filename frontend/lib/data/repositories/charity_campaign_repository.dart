@@ -47,7 +47,7 @@ abstract class CharityCampaignRepository {
   Future<CampaignAnnouncement> createCampaignAnnouncement({
     required String campaignId,
     required String caption,
-    required String imagePath,
+    String? imagePath,
     String? imageName,
   });
 

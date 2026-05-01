@@ -174,10 +174,6 @@ export class NoruserBenefCharityController {
     @Body() body: CreateCampaignAnnouncementDto,
     @UploadedFile() file?: UploadedFilePayload, // Lấy ra file đã qua bộ lọc đầu vào
   ) {
-    if (!file) {
-      throw new BadRequestException('Image is required');
-    }
-
     const data = await this.noruserBenefCharityService.createCampaignAnnouncement(
       user.userId,
       campaignId,

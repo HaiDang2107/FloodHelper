@@ -229,8 +229,8 @@ class _MyCharityScreenState extends ConsumerState<MyCharityScreen> {
                   .postAnnouncement(
                     campaignId: campaignId,
                     caption: payload.caption,
-                    imagePath: payload.image.path,
-                    imageName: payload.image.name,
+                    imagePath: payload.image?.path,
+                    imageName: payload.image?.name,
                   );
             },
             onCheckInLocation: (campaignId, latitude, longitude) {

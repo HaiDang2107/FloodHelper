@@ -325,13 +325,15 @@ export class NoruserBenefCharityService {
     userId: string,
     campaignId: string,
     caption: string,
-    file: UploadedFilePayload,
+    file?: UploadedFilePayload,
   ) {
     await this.assertCampaignAnnouncementAllowed(userId, campaignId);
 
-    const imageUrl = await this.cloudinaryService.uploadImage(file.buffer, {
-      folder: `floodhelper/announcements/${campaignId}`,
-    });
+    const imageUrl = file
+      ? await this.cloudinaryService.uploadImage(file.buffer, {
+          folder: `floodhelper/announcements/${campaignId}`,
+        })
+      : null;
 
     const announcement = await this.prisma.announcementFromBenefactor.create({
       data: {

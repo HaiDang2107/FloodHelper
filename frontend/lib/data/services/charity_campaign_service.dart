@@ -237,20 +237,25 @@ class CharityCampaignService {
   Future<Map<String, dynamic>> createCampaignAnnouncement({
     required String campaignId,
     required String caption,
-    required String imagePath,
+    String? imagePath,
     String? imageName,
   }) async {
     try {
-      final fileName = imageName ?? imagePath.split('/').last;
-      final formData = FormData.fromMap({
-        'caption': caption,
-        'image': await MultipartFile.fromFile(imagePath, filename: fileName),
-      });
-
-      final response = await _apiClient.post(
-        '/charity/campaigns/$campaignId/announcements',
-        data: formData,
-      );
+      final response = imagePath == null || imagePath.trim().isEmpty
+          ? await _apiClient.post(
+              '/charity/campaigns/$campaignId/announcements',
+              data: {'caption': caption},
+            )
+          : await _apiClient.post(
+              '/charity/campaigns/$campaignId/announcements',
+              data: FormData.fromMap({
+                'caption': caption,
+                'image': await MultipartFile.fromFile(
+                  imagePath,
+                  filename: imageName ?? imagePath.split('/').last,
+                ),
+              }),
+            );
 
       return _extractMap(
         response.data,

@@ -182,7 +182,7 @@ class RealCharityCampaignRepository implements CharityCampaignRepository {
   Future<CampaignAnnouncement> createCampaignAnnouncement({
     required String campaignId,
     required String caption,
-    required String imagePath,
+    String? imagePath,
     String? imageName,
   }) async {
     final payload = await _charityCampaignService.createCampaignAnnouncement(

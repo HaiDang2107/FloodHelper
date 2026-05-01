@@ -506,15 +506,11 @@ class CharityCampaignViewModel extends _$CharityCampaignViewModel {
   Future<void> postAnnouncement({
     required String campaignId,
     required String caption,
-    required String imagePath,
+    String? imagePath,
     String? imageName,
   }) async { // post + cập nhật announcements trên UI sau khi user post thông báo
     final trimmed = caption.trim();
     if (trimmed.isEmpty) {
-      return;
-    }
-
-    if (imagePath.trim().isEmpty) {
       return;
     }
 
