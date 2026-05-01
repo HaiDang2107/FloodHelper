@@ -66,7 +66,7 @@ final postRepositoryProvider = AutoDisposeProvider<PostRepository>.internal(
 // ignore: unused_element
 typedef PostRepositoryRef = AutoDisposeProviderRef<PostRepository>;
 String _$announcementRepositoryHash() =>
-    r'e8568e43e005c05f77c44d13ba049e600cdafa7a';
+    r'8ffcde047ba705b74b7ee09a098df252eaf0f1bc';
 
 /// Provider for AnnouncementRepository
 /// Automatically switches between mock and real implementation

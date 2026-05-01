@@ -13,9 +13,14 @@ import '../../widgets/announcements/published_announcements_list.dart';
 import '../../view_models/announcements_view_model.dart';
 
 class AnnouncementsScreen extends ConsumerStatefulWidget {
-  const AnnouncementsScreen({super.key, this.sectionQuery});
+  const AnnouncementsScreen({
+    super.key,
+    this.sectionQuery,
+    this.reloadQuery,
+  });
 
   final String? sectionQuery;
+  final String? reloadQuery;
 
   @override
   ConsumerState<AnnouncementsScreen> createState() => _AnnouncementsScreenState();
@@ -24,6 +29,7 @@ class AnnouncementsScreen extends ConsumerStatefulWidget {
 class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _captionController;
+  String? _lastHandledPublishedReloadQuery;
   String? _fileName;
   String? _mimeType;
   Uint8List? _fileBytes;
@@ -61,7 +67,22 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
     final state = ref.watch(authorityAnnouncementsViewModelProvider);
     final viewModel = ref.read(authorityAnnouncementsViewModelProvider.notifier);
 
+    final shouldForceReloadPublished =
+        _isPublishedSection &&
+        _lastHandledPublishedReloadQuery != widget.reloadQuery;
+
+    if (shouldForceReloadPublished) {
+      _lastHandledPublishedReloadQuery = widget.reloadQuery;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        viewModel.load(force: true);
+      });
+    }
+
     if (_isPublishedSection &&
+        !shouldForceReloadPublished &&
         !state.isLoading &&
         state.announcements.isEmpty &&
         state.endMessage == null) {

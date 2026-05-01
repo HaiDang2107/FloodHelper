@@ -1,9 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/models/authority/announcement.dart';
 import '../../../data/providers/authority_providers.dart';
+
+part 'announcements_view_model.g.dart';
 
 class AuthorityAnnouncementsState {
   const AuthorityAnnouncementsState({
@@ -79,17 +82,13 @@ class AuthorityAnnouncementsState {
   }
 }
 
-final authorityAnnouncementsViewModelProvider =
-    StateNotifierProvider<AuthorityAnnouncementsViewModel, AuthorityAnnouncementsState>(
-  (ref) => AuthorityAnnouncementsViewModel(ref),
-);
-
+@riverpod
 class AuthorityAnnouncementsViewModel
-    extends StateNotifier<AuthorityAnnouncementsState> {
-  AuthorityAnnouncementsViewModel(this.ref)
-      : super(const AuthorityAnnouncementsState());
-
-  final Ref ref;
+    extends _$AuthorityAnnouncementsViewModel {
+  @override
+  AuthorityAnnouncementsState build() {
+    return const AuthorityAnnouncementsState();
+  }
 
   Future<void> load({bool force = false}) async {
     if (state.isLoading || state.isLoadingMore) {

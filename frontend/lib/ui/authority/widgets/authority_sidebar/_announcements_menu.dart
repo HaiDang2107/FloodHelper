@@ -68,7 +68,12 @@ class _AnnouncementsMenuState extends State<_AnnouncementsMenu> {
           _SubSidebarItem(
             label: 'Published Announcements',
             isActive: parentActive && section == 'published',
-            onTap: () => context.go('${AuthorityRoutes.announcements}?section=published'),
+            onTap: () {
+              final reload = DateTime.now().millisecondsSinceEpoch;
+              context.go(
+                '${AuthorityRoutes.announcements}?section=published&reload=$reload',
+              );
+            },
           ),
           const SizedBox(height: 6),
         ],
