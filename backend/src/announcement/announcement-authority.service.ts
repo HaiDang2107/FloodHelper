@@ -18,8 +18,8 @@ type AnnouncementListPayload = {
 };
 
 @Injectable()
-export class AnnouncementService {
-  private readonly logger = new Logger(AnnouncementService.name);
+export class AnnouncementAuthorityService {
+  private readonly logger = new Logger(AnnouncementAuthorityService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -201,7 +201,7 @@ export class AnnouncementService {
 
   private async notifyWardUsers(
     authorityUserId: string,
-    announcement: ReturnType<AnnouncementService['toResponse']>,
+    announcement: ReturnType<AnnouncementAuthorityService['toResponse']>,
   ) {
     const authority = await this.prisma.user.findUnique({
       where: { userId: authorityUserId },

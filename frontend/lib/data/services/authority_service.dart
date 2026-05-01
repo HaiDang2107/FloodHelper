@@ -141,6 +141,33 @@ class AuthorityService {
     return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
   }
 
+  Future<Map<String, dynamic>> getPublicAnnouncements({
+    required String type,
+    String? beforeCreatedAt,
+    int limit = 20,
+    int? wardId,
+  }) async {
+    final query = <String, dynamic>{
+      'type': type,
+      'limit': limit,
+    };
+
+    if (beforeCreatedAt != null) {
+      query['beforeCreatedAt'] = beforeCreatedAt;
+    }
+
+    if (wardId != null) {
+      query['wardId'] = wardId;
+    }
+
+    final response = await _apiClient.get(
+      '/announcements/public',
+      queryParameters: query,
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
   Future<Map<String, dynamic>> getAuthorityAnnouncementDetail(
     String announcementId,
   ) async {

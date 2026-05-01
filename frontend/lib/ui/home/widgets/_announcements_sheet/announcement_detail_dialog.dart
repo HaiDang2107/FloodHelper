@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class AnnouncementDetailDialog extends StatelessWidget {
   final String title;
   final String content;
+  final String? documentFileName;
+  final VoidCallback? onOpenDocument;
 
   const AnnouncementDetailDialog({
     super.key,
     required this.title,
     required this.content,
+    this.documentFileName,
+    this.onOpenDocument,
   });
 
   @override
@@ -55,17 +59,29 @@ class AnnouncementDetailDialog extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
-                child: Text(
-                  content,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      content,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
+                    ),
+                    if (documentFileName != null && onOpenDocument != null) ...[
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: onOpenDocument,
+                        icon: const Icon(Icons.attach_file),
+                        label: Text(documentFileName!),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
-            // Footer
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: SizedBox(

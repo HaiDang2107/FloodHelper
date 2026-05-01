@@ -52,9 +52,10 @@ AnnouncementRepository announcementRepository(Ref ref) {
   if (useMockData) {
     return MockAnnouncementRepository();
   }
-  // TODO: Return real implementation when backend is ready
-  // return RealAnnouncementRepository(ref.read(dioProvider));
-  return MockAnnouncementRepository();
+  return RealAnnouncementRepository(
+    authorityService: ref.read(authorityServiceProvider),
+    profileRepository: ref.read(profileRepositoryProvider),
+  );
 }
 
 /// Provider for ProfileRepository

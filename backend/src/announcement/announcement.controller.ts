@@ -18,14 +18,22 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../common/enum/userRole.enum';
-import { CreateAnnouncementDto, QueryAnnouncementsDto } from './dto';
-import { AnnouncementService } from './announcement.service';
+import {
+  CreateAnnouncementDto,
+  QueryAnnouncementsDto,
+  QueryPublicAnnouncementsDto,
+} from './dto';
+import { AnnouncementAuthorityService } from './announcement-authority.service';
+import { AnnouncementNoruserService } from './announcement-noruser.service';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
 
 @Controller('announcements')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AnnouncementController {
-  constructor(private readonly announcementService: AnnouncementService) {}
+  constructor(
+    private readonly announcementService: AnnouncementAuthorityService,
+    private readonly announcementNoruserService: AnnouncementNoruserService,
+  ) {}
 
   @Roles(UserRole.AUTHORITY)
   @Post('authority')
@@ -81,6 +89,23 @@ export class AnnouncementController {
     return {
       success: true,
       message: 'Authority announcements retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('public')
+  async listPublicAnnouncements(
+    @CurrentUser() user: any,
+    @Query() query: QueryPublicAnnouncementsDto,
+  ) {
+    const data = await this.announcementNoruserService.listPublicAnnouncementsForUser(
+      user.userId,
+      query,
+    );
+
+    return {
+      success: true,
+      message: 'Public announcements retrieved successfully',
       data,
     };
   }

@@ -3,6 +3,16 @@ part of 'home_view_model.dart';
 mixin HomeUiFeedbackMixin on _HomeViewModelBase {
   void _handleForegroundMessage(RemoteMessage message) {
     final data = message.data;
+
+    if (data['announcementType'] == 'AUTHORITY' ||
+        data['type'] == 'ANNOUNCEMENT_FROM_AUTHORITY') {
+      _emitUiEvent(
+        'Authority posted a new announcement',
+        HomeUiEventType.info,
+      );
+      return;
+    }
+
     switch (data['type']) {
       case 'FRIEND_REQUEST':
         unawaited(ref.read(friendViewModelProvider.notifier).loadRequests());

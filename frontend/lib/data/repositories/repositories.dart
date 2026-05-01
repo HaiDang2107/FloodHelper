@@ -23,4 +23,5 @@ export 'real/real_user_repository.dart';
 export 'real/real_profile_repository.dart';
 export 'real/real_friend_repository.dart';
 export 'real/real_authority_repository.dart';
+export 'real/real_announcement_repository.dart';
 export 'real/real_charity_campaign_repository.dart';
