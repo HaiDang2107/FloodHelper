@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/user_profile.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/common/widgets/location_selector.dart';
+import 'citizen_id_card_picker.dart';
 
 class ProfileInfo extends StatelessWidget {
   final bool isEditing;
@@ -36,6 +38,15 @@ class ProfileInfo extends StatelessWidget {
   final VoidCallback? onDobTap;
   final VoidCallback? onDateOfIssueTap;
   final VoidCallback? onDateOfExpiryTap;
+  // ID Card image support
+  final String? currentFrontCitizenIdUrl;
+  final String? currentBackCitizenIdUrl;
+  final XFile? tempFrontImage;
+  final XFile? tempBackImage;
+  final ValueChanged<XFile?>? onFrontImageSelected;
+  final ValueChanged<XFile?>? onBackImageSelected;
+  final VoidCallback? onViewFront;
+  final VoidCallback? onViewBack;
 
   const ProfileInfo({
     super.key,
@@ -65,6 +76,14 @@ class ProfileInfo extends StatelessWidget {
     this.onDobTap,
     this.onDateOfIssueTap,
     this.onDateOfExpiryTap,
+    this.currentFrontCitizenIdUrl,
+    this.currentBackCitizenIdUrl,
+    this.tempFrontImage,
+    this.tempBackImage,
+    this.onFrontImageSelected,
+    this.onBackImageSelected,
+    this.onViewFront,
+    this.onViewBack,
   });
 
   @override
@@ -156,25 +175,16 @@ class ProfileInfo extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        Text(
-          'ID Card Images',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildImageUploadBox('Front Side'),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildImageUploadBox('Back Side'),
-            ),
-          ],
+        CitizenIdCardPicker(
+          currentFrontUrl: currentFrontCitizenIdUrl,
+          currentBackUrl: currentBackCitizenIdUrl,
+          selectedFrontImage: tempFrontImage,
+          selectedBackImage: tempBackImage,
+          onFrontImageSelected: onFrontImageSelected,
+          onBackImageSelected: onBackImageSelected,
+          onViewFront: onViewFront,
+          onViewBack: onViewBack,
+          isEditing: isEditing,
         ),
         const SizedBox(height: 16),
 
@@ -286,30 +296,30 @@ class ProfileInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildImageUploadBox(String label) {
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[50],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.add_a_photo, color: Colors.grey[400]),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildImageUploadBox(String label) {
+  //   return Container(
+  //     height: 100,
+  //     decoration: BoxDecoration(
+  //       border: Border.all(color: Colors.grey[300]!),
+  //       borderRadius: BorderRadius.circular(8),
+  //       color: Colors.grey[50],
+  //     ),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(Icons.add_a_photo, color: Colors.grey[400]),
+  //         const SizedBox(height: 4),
+  //         Text(
+  //           label,
+  //           style: TextStyle(
+  //             fontSize: 12,
+  //             color: Colors.grey[600],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildTextField({
     required TextEditingController controller,

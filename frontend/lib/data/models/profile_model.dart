@@ -26,6 +26,8 @@ class ProfileModel {
   final String? citizenId;
   final String phoneNumber;
   final String? citizenIdCardImg;
+  final String? frontCitizenIdCardImageUrl;
+  final String? backCitizenIdCardImageUrl;
   final String? jobPosition;
   final AccountInfo? account;
 
@@ -56,6 +58,8 @@ class ProfileModel {
     this.citizenId,
     required this.phoneNumber,
     this.citizenIdCardImg,
+    this.frontCitizenIdCardImageUrl,
+    this.backCitizenIdCardImageUrl,
     this.jobPosition,
     this.account,
   });
@@ -97,6 +101,8 @@ class ProfileModel {
       citizenId: json['citizenId'],
       phoneNumber: json['phoneNumber'] ?? '',
       citizenIdCardImg: json['citizenIdCardImg'],
+      frontCitizenIdCardImageUrl: json['frontCitizenIdCardImageUrl'],
+      backCitizenIdCardImageUrl: json['backCitizenIdCardImageUrl'],
       jobPosition: json['jobPosition'],
       account: json['account'] != null 
           ? AccountInfo.fromJson(json['account']) 
@@ -140,6 +146,8 @@ class ProfileModel {
       'citizenId': citizenId,
       'phoneNumber': phoneNumber,
       'citizenIdCardImg': citizenIdCardImg,
+      'frontCitizenIdCardImageUrl': frontCitizenIdCardImageUrl,
+      'backCitizenIdCardImageUrl': backCitizenIdCardImageUrl,
       'jobPosition': jobPosition,
       'account': account?.toJson(),
     };
@@ -172,6 +180,8 @@ class ProfileModel {
     String? citizenId,
     String? phoneNumber,
     String? citizenIdCardImg,
+    String? frontCitizenIdCardImageUrl,
+    String? backCitizenIdCardImageUrl,
     String? jobPosition,
     AccountInfo? account,
   }) {
@@ -197,12 +207,16 @@ class ProfileModel {
       longitude: longitude ?? this.longitude,
       latitude: latitude ?? this.latitude,
       visibilityMode: visibilityMode ?? this.visibilityMode,
-        showCharityCampaignLocations:
+      showCharityCampaignLocations:
           showCharityCampaignLocations ?? this.showCharityCampaignLocations,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       citizenId: citizenId ?? this.citizenId,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       citizenIdCardImg: citizenIdCardImg ?? this.citizenIdCardImg,
+      frontCitizenIdCardImageUrl:
+          frontCitizenIdCardImageUrl ?? this.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl:
+          backCitizenIdCardImageUrl ?? this.backCitizenIdCardImageUrl,
       jobPosition: jobPosition ?? this.jobPosition,
       account: account ?? this.account,
     );
@@ -265,6 +279,8 @@ class UpdateProfileDto {
   final String? avatarUrl;
   final String? citizenId;
   final String? citizenIdCardImg;
+  final String? frontCitizenIdCardImageUrl;
+  final String? backCitizenIdCardImageUrl;
   final String? jobPosition;
 
   const UpdateProfileDto({
@@ -291,6 +307,8 @@ class UpdateProfileDto {
     this.avatarUrl,
     this.citizenId,
     this.citizenIdCardImg,
+    this.frontCitizenIdCardImageUrl,
+    this.backCitizenIdCardImageUrl,
     this.jobPosition,
   });
 
@@ -321,6 +339,12 @@ class UpdateProfileDto {
     if (avatarUrl != null) map['avatarUrl'] = avatarUrl;
     if (citizenId != null) map['citizenId'] = citizenId;
     if (citizenIdCardImg != null) map['citizenIdCardImg'] = citizenIdCardImg;
+    if (frontCitizenIdCardImageUrl != null) {
+      map['frontCitizenIdCardImageUrl'] = frontCitizenIdCardImageUrl;
+    }
+    if (backCitizenIdCardImageUrl != null) {
+      map['backCitizenIdCardImageUrl'] = backCitizenIdCardImageUrl;
+    }
     if (jobPosition != null) map['jobPosition'] = jobPosition;
     return map;
   }

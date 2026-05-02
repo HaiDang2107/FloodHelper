@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../routing/routes.dart';
 import '../../../domain/models/user_profile.dart';
+import 'package:image_picker/image_picker.dart';
 import '../view_models/profile_view_model.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_info.dart';
 import '../widgets/profile_role.dart';
 import '../widgets/profile_action_button.dart';
+import '../widgets/fullscreen_image_viewer.dart';
 import '../../core/common/widgets/location_selector.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -301,13 +303,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     isEditing: profileState.isEditing,
                     onEditPressed: profileState.isSaving ? null : _toggleEdit,
                     onMyQRPressed: () {},
-                    onAvatarTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Change avatar feature coming soon!')),
-                      );
+                    onAvatarTap: () async {
+                      if (profileState.isEditing) {
+                        // Edit mode: pick new image
+                        final picker = ImagePicker();
+                        final messenger = ScaffoldMessenger.of(context);
+                        try {
+                          final file = await picker.pickImage(source: ImageSource.gallery);
+                          if (file == null) return;
+                          if (!mounted) return;
+
+                          final vm = ref.read(profileViewModelProvider.notifier);
+                          vm.setTempAvatarImage(file);
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('Avatar selected. Press Save Profile to upload.'),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Failed to pick avatar: ${e.toString()}')),
+                          );
+                        }
+                      } else {
+                        // View mode: show fullscreen
+                        if (!mounted) return;
+                        showFullscreenImageViewer(
+                          context: context,
+                          networkUrl: profileState.profile?.avatarUrl,
+                          localFilePath: null,
+                          title: 'Avatar',
+                        );
+                      }
                     },
                     avatarUrl: profileState.profile?.avatarUrl,
                     displayName: profileState.profile?.effectiveDisplayName ?? 'User',
+                    tempAvatarImage: profileState.tempAvatarImage,
                   ),
                   const SizedBox(height: 24),
                   const Divider(),
@@ -363,6 +395,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           lastDate: DateTime(2100),
                         )
                       : null,
+                    // Image picker wiring
+                    currentFrontCitizenIdUrl: profileState.profile?.citizenInfo?.frontCitizenIdCardImageUrl,
+                    currentBackCitizenIdUrl: profileState.profile?.citizenInfo?.backCitizenIdCardImageUrl,
+                    tempFrontImage: profileState.tempFrontCitizenIdImage,
+                    tempBackImage: profileState.tempBackCitizenIdImage,
+                    onFrontImageSelected: (xfile) async {
+                      final vm = ref.read(profileViewModelProvider.notifier);
+                      vm.setTempFrontCitizenIdImage(xfile);
+                      if (xfile != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Front ID selected. Press Save Profile to upload.'),
+                          ),
+                        );
+                      }
+                    },
+                    onBackImageSelected: (xfile) async {
+                      final vm = ref.read(profileViewModelProvider.notifier);
+                      vm.setTempBackCitizenIdImage(xfile);
+                      if (xfile != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Back ID selected. Press Save Profile to upload.'),
+                          ),
+                        );
+                      }
+                    },
+                    onViewFront: () {
+                      if (!profileState.isEditing) {
+                        showFullscreenImageViewer(
+                          context: context,
+                          networkUrl: profileState.profile?.citizenInfo?.frontCitizenIdCardImageUrl,
+                          localFilePath: null,
+                          title: 'Front ID Card',
+                        );
+                      }
+                    },
+                    onViewBack: () {
+                      if (!profileState.isEditing) {
+                        showFullscreenImageViewer(
+                          context: context,
+                          networkUrl: profileState.profile?.citizenInfo?.backCitizenIdCardImageUrl,
+                          localFilePath: null,
+                          title: 'Back ID Card',
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(height: 24),
                   const Divider(),
@@ -371,6 +450,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     roles: profileState.profile?.roles ?? [],
                     requests: profileState.roleRequests,
                     isLoadingRequests: profileState.isLoadingRoleRequests,
+                    canSubmitRoleRequest: profileState.canSubmitRoleRequest,
+                    roleRequestBlockedReason: profileState.canSubmitRoleRequest
+                        ? null
+                        : 'Missing fields: ${profileState.missingFieldsForRoleRequest.join(', ')}',
                     onAddRole: (role) async {
                       await ref.read(profileViewModelProvider.notifier).submitRoleRequest(role);
                     },

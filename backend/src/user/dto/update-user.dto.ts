@@ -95,5 +95,13 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   @IsOptional()
   @IsString()
+  frontCitizenIdCardImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  backCitizenIdCardImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
   jobPosition?: string;
 }

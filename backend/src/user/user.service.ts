@@ -10,11 +10,16 @@ import {
   UpdateVisibilityDto,
 } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from '../common/cloudinary.service';
 import { formatLocation } from '../common/location-format.util';
+import type { UploadedFilePayload } from '../common/uploaded-file.type';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   /**
    * Get current user profile by userId (from JWT)
@@ -102,7 +107,15 @@ export class UserService {
   /**
    * Update user profile
    */
-  async update(userId: string, updateUserDto: UpdateUserDto) {
+  async update(
+    userId: string,
+    updateUserDto: UpdateUserDto = {},
+    avatarFile?: UploadedFilePayload,
+    citizenFrontFile?: UploadedFilePayload,
+    citizenBackFile?: UploadedFilePayload,
+  ) {
+    const safeDto = updateUserDto ?? {};
+
     const user = await this.prisma.user.findUnique({
       where: { userId },
     });
@@ -111,31 +124,78 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
+    const imageUpdates: {
+      avatarUrl?: string;
+      frontCitizenIdCardImageUrl?: string;
+      backCitizenIdCardImageUrl?: string;
+    } = {};
+
+    try {
+      if (avatarFile) {
+        const ext = avatarFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.avatarUrl = await this.cloudinary.uploadImage(
+          avatarFile.buffer,
+          {
+            folder: 'floodhelper/profiles/avatars',
+            publicId: `${userId}_avatar.${ext}`,
+          },
+        );
+      }
+
+      if (citizenFrontFile) {
+        const ext = citizenFrontFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.frontCitizenIdCardImageUrl =
+          await this.cloudinary.uploadImage(citizenFrontFile.buffer, {
+            folder: 'floodhelper/profiles/citizen-id-cards',
+            publicId: `${userId}_citizen_id_front.${ext}`,
+          });
+      }
+
+      if (citizenBackFile) {
+        const ext = citizenBackFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.backCitizenIdCardImageUrl = await this.cloudinary.uploadImage(
+          citizenBackFile.buffer,
+          {
+            folder: 'floodhelper/profiles/citizen-id-cards',
+            publicId: `${userId}_citizen_id_back.${ext}`,
+          },
+        );
+      }
+    } catch (error) {
+      throw new BadRequestException('Failed to upload profile images: ' + error.message);
+    }
+
     const updated = await this.prisma.user.update({
       where: { userId },
       data: {
-        fullname: updateUserDto.fullname,
-        nickname: updateUserDto.nickname,
-        gender: updateUserDto.gender,
-        dob: updateUserDto.dob ? new Date(updateUserDto.dob) : undefined,
-        originProvinceCode: updateUserDto.originProvinceCode,
-        originWardCode: updateUserDto.originWardCode,
-        residenceProvinceCode: updateUserDto.residenceProvinceCode,
-        residenceWardCode: updateUserDto.residenceWardCode,
-        dateOfIssue: updateUserDto.dateOfIssue
-          ? new Date(updateUserDto.dateOfIssue)
+        fullname: safeDto.fullname,
+        nickname: safeDto.nickname,
+        gender: safeDto.gender,
+        dob: safeDto.dob ? new Date(safeDto.dob) : undefined,
+        originProvinceCode: safeDto.originProvinceCode,
+        originWardCode: safeDto.originWardCode,
+        residenceProvinceCode: safeDto.residenceProvinceCode,
+        residenceWardCode: safeDto.residenceWardCode,
+        dateOfIssue: safeDto.dateOfIssue
+          ? new Date(safeDto.dateOfIssue)
           : undefined,
-        dateOfExpire: updateUserDto.dateOfExpire
-          ? new Date(updateUserDto.dateOfExpire)
+        dateOfExpire: safeDto.dateOfExpire
+          ? new Date(safeDto.dateOfExpire)
           : undefined,
-        curLongitude: updateUserDto.curLongitude,
-        curLatitude: updateUserDto.curLatitude,
-        visibilityMode: updateUserDto.visibilityMode,
-        showCharityCampaignLocations: updateUserDto.showCharityCampaignLocations,
-        avatarUrl: updateUserDto.avatarUrl,
-        citizenId: updateUserDto.citizenId,
-        citizenIdCardImg: updateUserDto.citizenIdCardImg,
-        jobPosition: updateUserDto.jobPosition,
+        curLongitude: safeDto.curLongitude,
+        curLatitude: safeDto.curLatitude,
+        visibilityMode: safeDto.visibilityMode,
+        showCharityCampaignLocations: safeDto.showCharityCampaignLocations,
+        avatarUrl: imageUpdates.avatarUrl ?? safeDto.avatarUrl,
+        citizenId: safeDto.citizenId,
+        citizenIdCardImg: safeDto.citizenIdCardImg,
+        frontCitizenIdCardImageUrl:
+          imageUpdates.frontCitizenIdCardImageUrl ??
+          safeDto.frontCitizenIdCardImageUrl,
+        backCitizenIdCardImageUrl:
+          imageUpdates.backCitizenIdCardImageUrl ??
+          safeDto.backCitizenIdCardImageUrl,
+        jobPosition: safeDto.jobPosition,
       },
       include: {
         account: {
@@ -346,6 +406,8 @@ export class UserService {
       citizenId: user.citizenId,
       phoneNumber: user.phoneNumber,
       citizenIdCardImg: user.citizenIdCardImg,
+      frontCitizenIdCardImageUrl: user.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: user.backCitizenIdCardImageUrl,
       jobPosition: user.jobPosition,
       account: user.account
         ? {
@@ -417,4 +479,5 @@ export class UserService {
       visibility: dto.visibility,
     };
   }
+
 }

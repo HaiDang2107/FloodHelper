@@ -32,10 +32,12 @@ model User {
   gender           String?   @db.VarChar(20)
   phoneNumber      String    @unique @map("phone_number")
   citizenIdCardImg String?   @map("citizen_id_card_img")
+  frontCitizenIdCardImageUrl String? @map("front_citizen_id_card_image_url")
+  backCitizenIdCardImageUrl String? @map("back_citizen_id_card_image_url")
   jobPosition      String?   @map("job_position")
   fcmToken         String?   @map("fcm_token")
 
-  // Relations (Giữ nguyên)
+  // Relations
   account              Account?
   posts                Post[]
   organizedCampaigns   CharityCampaign[]     @relation("CampaignOrganizer")

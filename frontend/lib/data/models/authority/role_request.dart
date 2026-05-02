@@ -61,8 +61,8 @@ class RoleRequest {
     this.dateOfExpire,
     this.jobPosition,
     this.avatarUrl,
-    required this.frontImageUrl,
-    required this.backImageUrl,
+    this.frontImageUrl,
+    this.backImageUrl,
     required this.notes,
     this.respondedAt,
   });
@@ -93,8 +93,8 @@ class RoleRequest {
   final String? dateOfExpire;
   final String? jobPosition;
   final String? avatarUrl;
-  final String frontImageUrl;
-  final String backImageUrl;
+  final String? frontImageUrl;
+  final String? backImageUrl;
   final String notes;
   final DateTime? respondedAt;
 

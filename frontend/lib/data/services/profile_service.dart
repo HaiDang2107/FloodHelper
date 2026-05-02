@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'api_client.dart';
 import '../models/profile_model.dart';
 
@@ -19,12 +21,26 @@ class ProfileService {
   }
 
   /// Update current user's profile
-  Future<ProfileModel> updateProfile(UpdateProfileDto dto) async {
+  Future<ProfileModel> updateProfile(
+    UpdateProfileDto dto, {
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+  }) async {
     try {
-      final response = await _apiClient.patch(
-        '/user/profile',
-        data: dto.toJson(),
-      );
+      final body = dto.toJson();
+      final hasFiles = avatar != null || frontCitizenId != null || backCitizenId != null;
+
+      final data = hasFiles
+          ? await _buildProfileFormData(
+              body,
+              avatar: avatar,
+              frontCitizenId: frontCitizenId,
+              backCitizenId: backCitizenId,
+            )
+          : body;
+
+      final response = await _apiClient.patch('/user/profile', data: data);
       return ProfileModel.fromJson(response.data);
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
@@ -88,5 +104,41 @@ class ProfileService {
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }
+  }
+
+  Future<FormData> _buildProfileFormData(
+    Map<String, dynamic> body, {
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+  }) async {
+    final payload = <String, dynamic>{};
+
+    for (final entry in body.entries) {
+      payload[entry.key] = entry.value?.toString();
+    }
+
+    if (avatar != null) {
+      payload['avatar'] = await MultipartFile.fromFile(
+        avatar.path,
+        filename: avatar.name,
+      );
+    }
+
+    if (frontCitizenId != null) {
+      payload['citizenFront'] = await MultipartFile.fromFile(
+        frontCitizenId.path,
+        filename: frontCitizenId.name,
+      );
+    }
+
+    if (backCitizenId != null) {
+      payload['citizenBack'] = await MultipartFile.fromFile(
+        backCitizenId.path,
+        filename: backCitizenId.name,
+      );
+    }
+
+    return FormData.fromMap(payload);
   }
 }

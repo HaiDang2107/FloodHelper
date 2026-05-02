@@ -8,6 +8,7 @@ import 'package:antiflood/domain/models/auth_session.dart';
 import 'package:antiflood/ui/profile/view_models/profile_view_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   test(
@@ -108,7 +109,12 @@ class _FakeProfileRepository implements ProfileRepository {
   }) async {}
 
   @override
-  Future<ProfileModel> updateProfile(UpdateProfileDto dto) async {
+  Future<ProfileModel> updateProfile(
+    UpdateProfileDto dto, {
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+  }) async {
     final patchResponseMissingLocationFields = ProfileModel(
       userId: _profile.userId,
       fullname: dto.fullname ?? _profile.fullname,

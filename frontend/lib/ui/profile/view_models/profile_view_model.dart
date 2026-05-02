@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../domain/models/models.dart';
 import '../../../data/mappers/domain_mappers.dart';
@@ -20,6 +21,53 @@ class ProfileState {
   final String? errorMessage;
   final String? successMessage;
   final bool isEditing;
+  
+  // Temporary image selections for edit mode (before upload)
+  final XFile? tempAvatarImage;
+  final XFile? tempFrontCitizenIdImage;
+  final XFile? tempBackCitizenIdImage;
+  final bool isUploadingImages;
+
+  bool get canSubmitRoleRequest => missingFieldsForRoleRequest.isEmpty;
+
+  List<String> get missingFieldsForRoleRequest {
+    final current = profile;
+    if (current == null) {
+      return ['profile'];
+    }
+
+    final missing = <String>[];
+    if (current.name.trim().isEmpty) missing.add('fullname');
+    if (current.gender == null) missing.add('gender');
+    if (current.dateOfBirth == null) missing.add('dob');
+    if (current.phoneNumber.trim().isEmpty) missing.add('phoneNumber');
+    if ((current.jobPosition ?? '').trim().isEmpty) missing.add('jobPosition');
+
+    final address = current.address;
+    if (address?.originProvinceCode == null) missing.add('originProvinceCode');
+    if (address?.originWardCode == null) missing.add('originWardCode');
+    if (address?.residenceProvinceCode == null) missing.add('residenceProvinceCode');
+    if (address?.residenceWardCode == null) missing.add('residenceWardCode');
+
+    final citizen = current.citizenInfo;
+    if ((citizen?.citizenId ?? '').trim().isEmpty) missing.add('citizenId');
+    if (citizen?.dateOfIssue == null) missing.add('dateOfIssue');
+    if (citizen?.dateOfExpire == null) missing.add('dateOfExpire');
+
+    if ((current.avatarUrl ?? '').trim().isEmpty && tempAvatarImage == null) {
+      missing.add('avatarUrl');
+    }
+    if ((citizen?.frontCitizenIdCardImageUrl ?? '').trim().isEmpty &&
+        tempFrontCitizenIdImage == null) {
+      missing.add('frontCitizenIdCardImageUrl');
+    }
+    if ((citizen?.backCitizenIdCardImageUrl ?? '').trim().isEmpty &&
+        tempBackCitizenIdImage == null) {
+      missing.add('backCitizenIdCardImageUrl');
+    }
+
+    return missing;
+  }
 
   const ProfileState({
     this.profile,
@@ -30,6 +78,10 @@ class ProfileState {
     this.errorMessage,
     this.successMessage,
     this.isEditing = false,
+    this.tempAvatarImage,
+    this.tempFrontCitizenIdImage,
+    this.tempBackCitizenIdImage,
+    this.isUploadingImages = false,
   });
 
   ProfileState copyWith({
@@ -41,6 +93,10 @@ class ProfileState {
     String? errorMessage,
     String? successMessage,
     bool? isEditing,
+    XFile? tempAvatarImage,
+    XFile? tempFrontCitizenIdImage,
+    XFile? tempBackCitizenIdImage,
+    bool? isUploadingImages,
     bool clearError = false,
     bool clearSuccess = false,
   }) {
@@ -53,6 +109,10 @@ class ProfileState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
       isEditing: isEditing ?? this.isEditing,
+      tempAvatarImage: tempAvatarImage ?? this.tempAvatarImage,
+      tempFrontCitizenIdImage: tempFrontCitizenIdImage ?? this.tempFrontCitizenIdImage,
+      tempBackCitizenIdImage: tempBackCitizenIdImage ?? this.tempBackCitizenIdImage,
+      isUploadingImages: isUploadingImages ?? this.isUploadingImages,
     );
   }
 }
@@ -122,6 +182,15 @@ class ProfileViewModel extends _$ProfileViewModel {
   }
 
   Future<bool> submitRoleRequest(UserRole role) async {
+    if (!state.canSubmitRoleRequest) {
+      state = state.copyWith(
+        errorMessage:
+            'Please complete required profile fields before sending request: '
+            '${state.missingFieldsForRoleRequest.join(', ')}',
+      );
+      return false;
+    }
+
     final backendType = role == UserRole.benefactor ? 'BENEFACTOR' : 'RESCUER';
 
     state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
@@ -227,7 +296,12 @@ class ProfileViewModel extends _$ProfileViewModel {
         visibilityMode: visibilityMode,
       );
       
-      final updatedProfileModel = await _profileRepository.updateProfile(dto);
+      final updatedProfileModel = await _profileRepository.updateProfile(
+        dto,
+        avatar: state.tempAvatarImage,
+        frontCitizenId: state.tempFrontCitizenIdImage,
+        backCitizenId: state.tempBackCitizenIdImage,
+      );
       final normalizedProfileModel = _normalizeUpdatedProfileModel(
         responseModel: updatedProfileModel,
         fallbackOriginProvinceCode: originProvinceCode,
@@ -249,6 +323,9 @@ class ProfileViewModel extends _$ProfileViewModel {
         profile: updatedProfile,
         isSaving: false,
         isEditing: false,
+        tempAvatarImage: null,
+        tempFrontCitizenIdImage: null,
+        tempBackCitizenIdImage: null,
         successMessage: 'Profile updated successfully!',
       );
       
@@ -391,4 +468,29 @@ class ProfileViewModel extends _$ProfileViewModel {
       throw Exception('Failed to sign out: ${e.toString()}');
     }
   }
+
+  /// Set temporary avatar image for preview
+  void setTempAvatarImage(XFile? image) {
+    state = state.copyWith(tempAvatarImage: image);
+  }
+
+  /// Set temporary CCCD front image for preview
+  void setTempFrontCitizenIdImage(XFile? image) {
+    state = state.copyWith(tempFrontCitizenIdImage: image);
+  }
+
+  /// Set temporary CCCD back image for preview
+  void setTempBackCitizenIdImage(XFile? image) {
+    state = state.copyWith(tempBackCitizenIdImage: image);
+  }
+
+  /// Clear all temporary image selections
+  void clearTempImages() {
+    state = state.copyWith(
+      tempAvatarImage: null,
+      tempFrontCitizenIdImage: null,
+      tempBackCitizenIdImage: null,
+    );
+  }
+
 }

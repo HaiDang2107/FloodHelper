@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/authority/role_request.dart';
+import '../../../profile/widgets/image_viewer_dialog.dart';
 import '../../theme/authority_theme.dart';
 
 class RoleRequestDetail extends StatefulWidget {
@@ -88,15 +89,22 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: AuthorityTheme.brandBlue.withValues(alpha: 0.12),
-                  child: Text(
-                    currentRequest.requesterName.isNotEmpty
-                        ? currentRequest.requesterName.substring(0, 1)
-                        : '?',
-                    style: const TextStyle(
-                      color: AuthorityTheme.brandBlue,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  backgroundImage: (currentRequest.avatarUrl != null &&
+                          currentRequest.avatarUrl!.trim().isNotEmpty)
+                      ? NetworkImage(currentRequest.avatarUrl!.trim())
+                      : null,
+                  child: (currentRequest.avatarUrl == null ||
+                          currentRequest.avatarUrl!.trim().isEmpty)
+                      ? Text(
+                          currentRequest.requesterName.isNotEmpty
+                              ? currentRequest.requesterName.substring(0, 1)
+                              : '?',
+                          style: const TextStyle(
+                            color: AuthorityTheme.brandBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -185,6 +193,13 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
                   child: _ImageCard(
                     label: 'Front side',
                     imageUrl: currentRequest.frontImageUrl,
+                    onOpenPreview: currentRequest.frontImageUrl == null
+                        ? null
+                        : () => _openImagePreview(
+                              context,
+                              currentRequest.frontImageUrl!,
+                              'CCCD Front',
+                            ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -192,6 +207,13 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
                   child: _ImageCard(
                     label: 'Back side',
                     imageUrl: currentRequest.backImageUrl,
+                    onOpenPreview: currentRequest.backImageUrl == null
+                        ? null
+                        : () => _openImagePreview(
+                              context,
+                              currentRequest.backImageUrl!,
+                              'CCCD Back',
+                            ),
                   ),
                 ),
               ],
@@ -296,6 +318,25 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
       ),
     );
   }
+
+  void _openImagePreview(
+    BuildContext context,
+    String imageUrl,
+    String title,
+  ) {
+    final trimmed = imageUrl.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => ImageViewerDialog(
+        imageUrls: [trimmed],
+        title: title,
+      ),
+    );
+  }
 }
 
 String _formatText(String? value) {
@@ -384,10 +425,15 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _ImageCard extends StatelessWidget {
-  const _ImageCard({required this.label, required this.imageUrl});
+  const _ImageCard({
+    required this.label,
+    required this.imageUrl,
+    this.onOpenPreview,
+  });
 
   final String label;
-  final String imageUrl;
+  final String? imageUrl;
+  final VoidCallback? onOpenPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -413,10 +459,33 @@ class _ImageCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: 4 / 3,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-              ),
+              child: (imageUrl == null || imageUrl!.trim().isEmpty)
+                  ? Container(
+                      color: const Color(0xFFF1F5FF),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'No image',
+                        style: TextStyle(
+                          color: Color(0xFF667085),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  : InkWell(
+                      onTap: onOpenPreview,
+                      child: Image.network(
+                        imageUrl!.trim(),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: const Color(0xFFF1F5FF),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.broken_image_outlined,
+                            color: Color(0xFF98A2B3),
+                          ),
+                        ),
+                      ),
+                    ),
             ),
           ),
         ],

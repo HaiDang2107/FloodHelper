@@ -61,7 +61,13 @@ class AuthorityMappers {
 
     final requesterName = _asString(user['fullname']);
     final requesterEmail = _asString(account['username']);
-    final citizenIdCardImg = _asString(user['citizenIdCardImg']);
+    final legacyCitizenIdCardImg = _asNullableString(user['citizenIdCardImg']);
+    final frontImageUrl =
+      _asNullableString(user['frontCitizenIdCardImageUrl']) ??
+      legacyCitizenIdCardImg;
+    final backImageUrl =
+      _asNullableString(user['backCitizenIdCardImageUrl']) ??
+      legacyCitizenIdCardImg;
     final originProvinceCode = _asNullableInt(
       user['originProvinceCode'] ?? originProvince['code'],
     );
@@ -122,8 +128,8 @@ class AuthorityMappers {
       dateOfExpire: _normalizeDateText(user['dateOfExpire']),
       jobPosition: _asNullableString(user['jobPosition']),
       avatarUrl: _asNullableString(user['avatarUrl']),
-      frontImageUrl: citizenIdCardImg,
-      backImageUrl: citizenIdCardImg,
+      frontImageUrl: frontImageUrl,
+      backImageUrl: backImageUrl,
       notes: _asString(json['note']),
       respondedAt: respondedAt,
     );

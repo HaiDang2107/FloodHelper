@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileHeader extends StatelessWidget {
   final bool isEditing;
@@ -7,6 +10,7 @@ class ProfileHeader extends StatelessWidget {
   final VoidCallback? onAvatarTap;
   final String? avatarUrl;
   final String displayName;
+  final XFile? tempAvatarImage;
 
   const ProfileHeader({
     super.key,
@@ -16,6 +20,7 @@ class ProfileHeader extends StatelessWidget {
     this.onAvatarTap,
     this.avatarUrl,
     this.displayName = 'User',
+    this.tempAvatarImage,
   });
 
   @override
@@ -23,15 +28,18 @@ class ProfileHeader extends StatelessWidget {
     return Row(
       children: [
         GestureDetector(
-          onTap: isEditing ? onAvatarTap : null,
+          onTap: onAvatarTap,
           child: Stack(
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
-                    ? NetworkImage(avatarUrl!)
-                    : null,
-                child: avatarUrl == null || avatarUrl!.isEmpty
+                backgroundImage: tempAvatarImage != null
+                    ? FileImage(File(tempAvatarImage!.path))
+                    : (avatarUrl != null && avatarUrl!.isNotEmpty
+                        ? NetworkImage(avatarUrl!)
+                        : null),
+                child: tempAvatarImage == null &&
+                        (avatarUrl == null || avatarUrl!.isEmpty)
                     ? Text(
                         displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
                         style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
@@ -52,6 +60,23 @@ class ProfileHeader extends StatelessWidget {
                       Icons.camera_alt,
                       color: Colors.white,
                       size: 20,
+                    ),
+                  ),
+                )
+              else
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.zoom_in,
+                      color: Colors.white,
+                      size: 16,
                     ),
                   ),
                 ),

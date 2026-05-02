@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+
 import '../../models/profile_model.dart';
 import '../../services/profile_service.dart';
 import '../profile_repository.dart';
@@ -15,8 +17,18 @@ class RealProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<ProfileModel> updateProfile(UpdateProfileDto dto) async {
-    return await _profileService.updateProfile(dto);
+  Future<ProfileModel> updateProfile(
+    UpdateProfileDto dto, {
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+  }) async {
+    return await _profileService.updateProfile(
+      dto,
+      avatar: avatar,
+      frontCitizenId: frontCitizenId,
+      backCitizenId: backCitizenId,
+    );
   }
 
   @override
@@ -44,4 +56,5 @@ class RealProfileRepository implements ProfileRepository {
   Future<List<ProfileRoleRequestModel>> getMyRoleRequests() async {
     return _profileService.getMyRoleRequests();
   }
+
 }

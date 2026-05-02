@@ -39,6 +39,8 @@ extension ProfileModelMapper on data.ProfileModel {
       citizenInfo: CitizenInfo(
         citizenId: citizenId,
         citizenIdCardImg: citizenIdCardImg,
+        frontCitizenIdCardImageUrl: frontCitizenIdCardImageUrl,
+        backCitizenIdCardImageUrl: backCitizenIdCardImageUrl,
         dateOfIssue: dateOfIssue != null ? DateTime.tryParse(dateOfIssue!) : null,
         dateOfExpire: dateOfExpire != null ? DateTime.tryParse(dateOfExpire!) : null,
       ),
@@ -79,6 +81,8 @@ extension UserProfileToDataMapper on UserProfile {
       avatarUrl: avatarUrl,
       citizenId: citizenInfo?.citizenId,
       citizenIdCardImg: citizenInfo?.citizenIdCardImg,
+      frontCitizenIdCardImageUrl: citizenInfo?.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: citizenInfo?.backCitizenIdCardImageUrl,
       jobPosition: jobPosition,
     );
   }

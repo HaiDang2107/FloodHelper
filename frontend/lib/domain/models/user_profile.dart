@@ -240,27 +240,43 @@ class Location {
 class CitizenInfo {
   final String? citizenId;
   final String? citizenIdCardImg;
+  final String? frontCitizenIdCardImageUrl;
+  final String? backCitizenIdCardImageUrl;
   final DateTime? dateOfIssue;
   final DateTime? dateOfExpire;
 
   const CitizenInfo({
     this.citizenId,
     this.citizenIdCardImg,
+    this.frontCitizenIdCardImageUrl,
+    this.backCitizenIdCardImageUrl,
     this.dateOfIssue,
     this.dateOfExpire,
   });
 
   bool get hasIdCard => citizenId != null && citizenId!.isNotEmpty;
+  
+  bool get hasCompleteCitizenInfo =>
+      citizenId != null &&
+      citizenId!.isNotEmpty &&
+      frontCitizenIdCardImageUrl != null &&
+      backCitizenIdCardImageUrl != null;
 
   CitizenInfo copyWith({
     String? citizenId,
     String? citizenIdCardImg,
+    String? frontCitizenIdCardImageUrl,
+    String? backCitizenIdCardImageUrl,
     DateTime? dateOfIssue,
     DateTime? dateOfExpire,
   }) {
     return CitizenInfo(
       citizenId: citizenId ?? this.citizenId,
       citizenIdCardImg: citizenIdCardImg ?? this.citizenIdCardImg,
+      frontCitizenIdCardImageUrl:
+          frontCitizenIdCardImageUrl ?? this.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl:
+          backCitizenIdCardImageUrl ?? this.backCitizenIdCardImageUrl,
       dateOfIssue: dateOfIssue ?? this.dateOfIssue,
       dateOfExpire: dateOfExpire ?? this.dateOfExpire,
     );

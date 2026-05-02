@@ -24,11 +24,14 @@ export class RoleRequestService {
         role: true,
         fullname: true,
         nickname: true,
+        avatarUrl: true,
         dob: true,
         gender: true,
         phoneNumber: true,
         jobPosition: true,
         citizenId: true,
+        frontCitizenIdCardImageUrl: true,
+        backCitizenIdCardImageUrl: true,
         originProvinceCode: true,
         originWardCode: true,
         residenceProvinceCode: true,
@@ -116,24 +119,27 @@ export class RoleRequestService {
   }
 
   async listForAuthority(authorityUserId: string, dto: ListRoleRequestsDto) {
-    const cursorTime = dto.beforeCreatedAt
+    await this.assertAuthorityUser(authorityUserId);
+
+    const rawLimit = Number(dto.limit ?? 10);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(Math.floor(rawLimit), 1), 50)
+      : 10;
+    const beforeCreatedAt = dto.beforeCreatedAt
       ? new Date(dto.beforeCreatedAt)
-      : new Date();
+      : null;
 
-    const windowStart = new Date(
-      cursorTime.getTime() - 7 * 24 * 60 * 60 * 1000,
-    );
-
-    const where: any = {
-      checkBy: authorityUserId,
-      createdAt: {
-        gt: windowStart,
-        lte: cursorTime,
+    const rows = await this.prisma.roleUpdatingRequest.findMany({
+      where: {
+        checkBy: authorityUserId,
+        ...(beforeCreatedAt
+          ? {
+              createdAt: {
+                lt: beforeCreatedAt,
+              },
+            }
+          : {}),
       },
-    };
-
-    const items = await this.prisma.roleUpdatingRequest.findMany({
-      where,
       include: {
         user: {
           select: {
@@ -162,6 +168,9 @@ export class RoleRequestService {
             jobPosition: true,
             citizenId: true,
             citizenIdCardImg: true,
+            frontCitizenIdCardImageUrl: true,
+            backCitizenIdCardImageUrl: true,
+            avatarUrl: true,
             dateOfIssue: true,
             dateOfExpire: true,
             role: true,
@@ -173,24 +182,41 @@ export class RoleRequestService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { requestId: 'desc' }],
+      take: limit + 1,
     });
 
-    const hasOlderOutsideWindow =
-      (await this.prisma.roleUpdatingRequest.count({
-        where: {
-          checkBy: authorityUserId,
-          createdAt: { lte: windowStart },
-        },
-      })) > 0;
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore && items.length > 0
+      ? items[items.length - 1].createdAt.toISOString()
+      : null;
 
     return {
       items,
       pagination: {
-        hasMore: hasOlderOutsideWindow,
-        nextCursor: hasOlderOutsideWindow ? windowStart.toISOString() : null,
+        hasMore,
+        nextCursor,
       },
     };
+  }
+
+  private async assertAuthorityUser(authorityUserId: string) {
+    const authority = await this.prisma.user.findUnique({
+      where: { userId: authorityUserId },
+      select: {
+        userId: true,
+        role: true,
+      },
+    });
+
+    if (!authority) {
+      throw new NotFoundException('Authority account not found');
+    }
+
+    if (!authority.role.includes('AUTHORITY')) {
+      throw new ForbiddenException('Only authority users can access this resource');
+    }
   }
 
   async approve(
@@ -287,11 +313,14 @@ export class RoleRequestService {
   private getMissingProfileFields(user: any): string[] {
     const required: Record<string, any> = {
       fullname: user.fullname,
-      nickname: user.nickname,
       dob: user.dob,
       gender: user.gender,
       phoneNumber: user.phoneNumber,
+      jobPosition: user.jobPosition,
       citizenId: user.citizenId,
+      avatarUrl: user.avatarUrl,
+      frontCitizenIdCardImageUrl: user.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: user.backCitizenIdCardImageUrl,
       originProvinceCode: user.originProvinceCode,
       originWardCode: user.originWardCode,
       residenceProvinceCode: user.residenceProvinceCode,

@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+
 import '../models/profile_model.dart';
 
 /// Abstract repository for profile operations
@@ -6,7 +8,12 @@ abstract class ProfileRepository {
   Future<ProfileModel> getProfile();
   
   /// Update current user's profile
-  Future<ProfileModel> updateProfile(UpdateProfileDto dto);
+  Future<ProfileModel> updateProfile(
+    UpdateProfileDto dto, {
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+  });
   
   /// Update current user's location
   Future<void> updateLocation({
@@ -22,4 +29,5 @@ abstract class ProfileRepository {
 
   /// Get current user's submitted role requests
   Future<List<ProfileRoleRequestModel>> getMyRoleRequests();
+
 }
