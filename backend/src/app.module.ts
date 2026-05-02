@@ -1,4 +1,5 @@
 import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
@@ -8,18 +9,27 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { FriendModule } from './friend/friend.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { LocationModule } from './location/location.module';
 import { RoleRequestModule } from './role-request/role-request.module';
 import { SignalModule } from './signal/signal.module';
+import { CharityModule } from './charity/charity.module';
+import { AnnouncementModule } from './announcement/announcement.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { LoggingMiddleware } from './common/logging.middleware';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     UserModule,
+    PrismaModule,
     AuthModule,
     FriendModule,
     FirebaseModule,
+    LocationModule,
     RoleRequestModule,
     SignalModule,
+    CharityModule,
+    AnnouncementModule,
     CacheModule.register({
       isGlobal: true, // Để dùng ở mọi nơi không cần import lại
       store: redisStore,

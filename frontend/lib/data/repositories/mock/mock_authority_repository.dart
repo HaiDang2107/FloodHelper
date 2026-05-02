@@ -1,8 +1,156 @@
+import 'dart:typed_data';
+
 import '../../models/authority/authority_profile.dart';
+import '../../models/authority/announcement.dart';
 import '../../models/authority/role_request.dart';
+import '../../../domain/models/announcement.dart';
+import '../../../domain/models/charity_campaign.dart';
 import '../authority_repository.dart';
 
 class MockAuthorityRepository implements AuthorityRepository {
+  final List<AuthorityAnnouncement> _announcements = [
+    AuthorityAnnouncement(
+      id: 'ANN-1003',
+      title: 'Flood warning update',
+      caption: 'Heavy rain is expected in the next 24 hours. Residents should prepare evacuation supplies.',
+      documentUrl: 'https://example.com/announcements/flood-warning-update.pdf',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      publishedBy: 'authority-mock-id',
+    ),
+    AuthorityAnnouncement(
+      id: 'ANN-1002',
+      title: 'Relief center schedule',
+      caption: 'Updated operating hours for the temporary relief center in Ward 5.',
+      documentUrl: 'https://example.com/announcements/relief-center-schedule.docx',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+      publishedBy: 'authority-mock-id',
+    ),
+    AuthorityAnnouncement(
+      id: 'ANN-1001',
+      title: 'Donation receipt template',
+      caption: 'Use the attached template to issue donation receipts to sponsors.',
+      documentUrl: 'https://example.com/announcements/donation-receipt-template.xlsx',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now().subtract(const Duration(days: 2, hours: 4)),
+      publishedBy: 'authority-mock-id',
+    ),
+  ];
+
+  final List<CharityCampaign> _campaignRequests = [
+    CharityCampaign(
+      id: 'CAMP-2001',
+      organizedBy: 'user-1',
+      checkedBy: null,
+      name: 'Central Flood Relief 2026',
+      benefactorName: 'Nguyen Van A',
+      purpose: 'Support households affected by flooding',
+      charityObject: 'Flood-affected families',
+      status: CampaignStatus.pending,
+      bankInfo: const BankInfo(
+        accountNumber: '1234567890',
+        bankName: 'Vietcombank',
+        accountHolder: 'Nguyen Van A',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(hours: 4)),
+      startedDonationAt: DateTime.now().add(const Duration(days: 2)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 10)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 11)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 20)),
+      reliefLocation: 'Hue, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().add(const Duration(days: 2)),
+        endDate: DateTime.now().add(const Duration(days: 20)),
+      ),
+      announcements: const [],
+    ),
+    CharityCampaign(
+      id: 'CAMP-2002',
+      organizedBy: 'user-2',
+      checkedBy: 'authority-mock-id',
+      name: 'Emergency Food Support',
+      benefactorName: 'Tran Thi B',
+      purpose: 'Provide food support for 50 households',
+      charityObject: 'Low-income households',
+      status: CampaignStatus.approved,
+      bankInfo: const BankInfo(
+        accountNumber: '0987654321',
+        bankName: 'Techcombank',
+        accountHolder: 'Tran Thi B',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(days: 1)),
+      respondedAt: DateTime.now().subtract(const Duration(hours: 20)),
+      noteForResponse: 'Looks good, approved for rollout.',
+      startedDonationAt: DateTime.now().add(const Duration(days: 1)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 8)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 9)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 15)),
+      reliefLocation: 'Da Nang, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().add(const Duration(days: 1)),
+        endDate: DateTime.now().add(const Duration(days: 15)),
+      ),
+      announcements: const [],
+    ),
+    CharityCampaign(
+      id: 'CAMP-2003',
+      organizedBy: 'user-3',
+      checkedBy: 'authority-mock-id',
+      name: 'School Rebuild Fund',
+      benefactorName: 'Pham Van C',
+      purpose: 'Rebuild classrooms after floods',
+      charityObject: 'Students and teachers',
+      status: CampaignStatus.rejected,
+      bankInfo: const BankInfo(
+        accountNumber: '1122334455',
+        bankName: 'BIDV',
+        accountHolder: 'Pham Van C',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(days: 2)),
+      respondedAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
+      noteForResponse: 'Missing timeline details.',
+      startedDonationAt: DateTime.now().add(const Duration(days: 3)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 12)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 13)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 18)),
+      reliefLocation: 'Quang Tri, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().add(const Duration(days: 3)),
+        endDate: DateTime.now().add(const Duration(days: 18)),
+      ),
+      announcements: const [],
+    ),
+    CharityCampaign(
+      id: 'CAMP-2004',
+      organizedBy: 'user-4',
+      checkedBy: 'authority-mock-id',
+      name: 'Suspended Riverbank Relief',
+      benefactorName: 'Vo Thi D',
+      purpose: 'Temporary relief pause pending review',
+      charityObject: 'Flood-affected families',
+      status: CampaignStatus.suspended,
+      bankInfo: const BankInfo(
+        accountNumber: '6677881122',
+        bankName: 'MBBank',
+        accountHolder: 'Vo Thi D',
+      ),
+      requestedAt: DateTime.now().subtract(const Duration(days: 4)),
+      respondedAt: DateTime.now().subtract(const Duration(days: 2)),
+      noteForResponse: 'Campaign suspended due to missing verification documents.',
+      startedDonationAt: DateTime.now().subtract(const Duration(days: 1)),
+      finishedDonationAt: DateTime.now().add(const Duration(days: 6)),
+      startedDistributionAt: DateTime.now().add(const Duration(days: 7)),
+      finishedDistributionAt: DateTime.now().add(const Duration(days: 12)),
+      reliefLocation: 'Quy Nhon, Vietnam',
+      period: DateRange(
+        startDate: DateTime.now().subtract(const Duration(days: 1)),
+        endDate: DateTime.now().add(const Duration(days: 12)),
+      ),
+      announcements: const [],
+    ),
+  ];
+
   @override
   Future<AuthorityProfile?> fetchProfileFromSession() async {
     await Future.delayed(const Duration(milliseconds: 400));
@@ -36,7 +184,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 98 765 4321',
         address: 'District 7, Ho Chi Minh City',
         idNumber: '079203004531',
+        nickname: 'Duong',
+        placeOfOrigin: 'District 7, Ho Chi Minh City',
         placeOfResidence: 'District 7, Ho Chi Minh City',
+        originProvinceName: 'Ho Chi Minh City',
+        originWardName: 'Ward Tan Hung',
+        residenceProvinceName: 'Ho Chi Minh City',
+        residenceWardName: 'Ward Tan Phong',
+        dateOfIssue: '2024-05-12',
+        dateOfExpire: '2034-05-12',
         frontImageUrl:
             'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -53,7 +209,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 91 234 5678',
         address: 'Thu Duc City, Ho Chi Minh City',
         idNumber: '079203004532',
+        nickname: 'Vy',
+        placeOfOrigin: 'Thu Duc City, Ho Chi Minh City',
         placeOfResidence: 'Thu Duc City, Ho Chi Minh City',
+        originProvinceName: 'Ho Chi Minh City',
+        originWardName: 'Ward An Phu',
+        residenceProvinceName: 'Ho Chi Minh City',
+        residenceWardName: 'Ward Linh Trung',
+        dateOfIssue: '2023-09-18',
+        dateOfExpire: '2033-09-18',
         frontImageUrl:
             'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -70,7 +234,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 90 887 1234',
         address: 'Binh Thanh District, Ho Chi Minh City',
         idNumber: '079203004533',
+        nickname: 'Long',
+        placeOfOrigin: 'Binh Thanh District, Ho Chi Minh City',
         placeOfResidence: 'Binh Thanh District, Ho Chi Minh City',
+        originProvinceName: 'Ho Chi Minh City',
+        originWardName: 'Ward 19',
+        residenceProvinceName: 'Ho Chi Minh City',
+        residenceWardName: 'Ward 25',
+        dateOfIssue: '2022-11-03',
+        dateOfExpire: '2032-11-03',
         frontImageUrl:
             'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -87,7 +259,15 @@ class MockAuthorityRepository implements AuthorityRepository {
         phone: '+84 93 654 0987',
         address: 'Da Nang City',
         idNumber: '079203004534',
+        nickname: 'Han',
+        placeOfOrigin: 'Da Nang City',
         placeOfResidence: 'Da Nang City',
+        originProvinceName: 'Da Nang',
+        originWardName: 'Ward Hai Chau 1',
+        residenceProvinceName: 'Da Nang',
+        residenceWardName: 'Ward Hai Chau 2',
+        dateOfIssue: '2021-04-27',
+        dateOfExpire: '2031-04-27',
         frontImageUrl:
             'https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?auto=format&fit=crop&w=600&q=80',
         backImageUrl:
@@ -116,6 +296,9 @@ class MockAuthorityRepository implements AuthorityRepository {
       phone: '',
       address: '',
       idNumber: '',
+      nickname: 'Mock User',
+      placeOfOrigin: '',
+      placeOfResidence: '',
       frontImageUrl: '',
       backImageUrl: '',
       notes: note ?? '',
@@ -135,9 +318,237 @@ class MockAuthorityRepository implements AuthorityRepository {
       phone: '',
       address: '',
       idNumber: '',
+      nickname: 'Mock User',
+      placeOfOrigin: '',
+      placeOfResidence: '',
       frontImageUrl: '',
       backImageUrl: '',
       notes: note ?? '',
     );
+  }
+
+  @override
+  Future<AuthorityCampaignRequestPage> fetchCharityCampaignRequests({
+    String? beforeRequestedAt,
+    CampaignStatus? status,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 450));
+
+    final cutoff = beforeRequestedAt == null
+        ? null
+        : DateTime.tryParse(beforeRequestedAt);
+
+    final filtered = _campaignRequests.where((campaign) {
+      if (status != null && campaign.status != status) {
+        return false;
+      }
+
+      final requestedAt = _requestOrderingDate(campaign);
+      if (cutoff != null && !requestedAt.isBefore(cutoff) && requestedAt.isAtSameMomentAs(cutoff)) {
+        return false;
+      }
+
+      if (cutoff != null && requestedAt.isAfter(cutoff)) {
+        return false;
+      }
+
+      return status != null
+          ? campaign.status == status
+          : campaign.status == CampaignStatus.pending ||
+              campaign.status == CampaignStatus.approved ||
+            campaign.status == CampaignStatus.rejected ||
+            campaign.status == CampaignStatus.donating ||
+            campaign.status == CampaignStatus.distributing ||
+            campaign.status == CampaignStatus.finished ||
+            campaign.status == CampaignStatus.suspended;
+    }).toList(growable: false);
+
+    filtered.sort((a, b) {
+      final aTime = _requestOrderingDate(a);
+      final bTime = _requestOrderingDate(b);
+      return bTime.compareTo(aTime);
+    });
+
+    return AuthorityCampaignRequestPage(
+      items: filtered,
+      hasMore: false,
+      nextCursor: null,
+    );
+  }
+
+  DateTime _requestOrderingDate(CharityCampaign campaign) {
+    return campaign.requestedAt ??
+        campaign.startedDonationAt ??
+        campaign.startedDistributionAt ??
+        campaign.finishedDonationAt ??
+        campaign.finishedDistributionAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  @override
+  Future<CharityCampaign> fetchCharityCampaignDetail(String campaignId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return _campaignRequests.firstWhere((campaign) => campaign.id == campaignId);
+  }
+
+  @override
+  Future<CharityCampaign> approveCharityCampaign(
+    String campaignId, {
+    String? noteForResponse,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final updated = _updateCampaign(
+      campaignId,
+      status: CampaignStatus.approved,
+      checkedBy: 'authority-mock-id',
+      respondedAt: DateTime.now(),
+      noteForResponse: noteForResponse ?? 'Approved in mock mode.',
+    );
+    return updated;
+  }
+
+  @override
+  Future<CharityCampaign> rejectCharityCampaign(
+    String campaignId, {
+    String? noteForResponse,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final updated = _updateCampaign(
+      campaignId,
+      status: CampaignStatus.rejected,
+      checkedBy: 'authority-mock-id',
+      respondedAt: DateTime.now(),
+      noteForResponse: noteForResponse ?? 'Rejected in mock mode.',
+    );
+    return updated;
+  }
+
+  @override
+  Future<CharityCampaign> suspendCharityCampaign(
+    String campaignId, {
+    String? noteForSuspension,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final updated = _updateCampaign(
+      campaignId,
+      status: CampaignStatus.suspended,
+      checkedBy: 'authority-mock-id',
+      suspendedAt: DateTime.now(),
+      noteForSuspension: noteForSuspension ?? 'Suspended in mock mode.',
+    );
+    return updated;
+  }
+
+  CharityCampaign _updateCampaign(
+    String campaignId, {
+    CampaignStatus? status,
+    String? checkedBy,
+    DateTime? respondedAt,
+    DateTime? suspendedAt,
+    String? noteForResponse,
+    String? noteForSuspension,
+  }) {
+    final index = _campaignRequests.indexWhere((campaign) => campaign.id == campaignId);
+    if (index < 0) {
+      throw Exception('Campaign not found');
+    }
+
+    final updated = _campaignRequests[index].copyWith(
+      status: status,
+      checkedBy: checkedBy,
+      respondedAt: respondedAt,
+      suspendedAt: suspendedAt,
+      noteForResponse: noteForResponse,
+      noteForSuspension: noteForSuspension,
+    );
+    _campaignRequests[index] = updated;
+    return updated;
+  }
+
+  @override
+  Future<AuthorityAnnouncementPage> fetchAuthorityAnnouncements({
+    String? beforeCreatedAt,
+    int limit = 10,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    final cutoff = beforeCreatedAt == null ? null : DateTime.tryParse(beforeCreatedAt);
+
+    final filtered = _announcements.where((announcement) {
+      if (cutoff == null) {
+        return true;
+      }
+      return announcement.createdAt.isBefore(cutoff);
+    }).toList(growable: false);
+
+    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final pageItems = filtered.take(limit).toList(growable: false);
+    final nextCursor = pageItems.length < filtered.length
+        ? pageItems.last.createdAt.toIso8601String()
+        : null;
+
+    return AuthorityAnnouncementPage(
+      items: pageItems,
+      hasMore: pageItems.length < filtered.length,
+      nextCursor: nextCursor,
+    );
+  }
+
+  @override
+  Future<AuthorityAnnouncement> fetchAuthorityAnnouncementDetail(
+    String announcementId,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 250));
+    return _announcements.firstWhere((announcement) => announcement.id == announcementId);
+  }
+
+  @override
+  Future<AuthorityAnnouncement> publishAuthorityAnnouncement({
+    required String title,
+    required String caption,
+    Uint8List? bytes,
+    String? fileName,
+    String? mimeType,
+    void Function(int sent, int total)? onSendProgress,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (bytes != null) {
+      onSendProgress?.call(bytes.length, bytes.length);
+    }
+
+    final created = AuthorityAnnouncement(
+      id: 'ANN-${1000 + _announcements.length + 1}',
+      title: title,
+      caption: caption,
+      documentUrl: fileName == null
+          ? null
+          : 'https://example.com/announcements/${_slugify(fileName)}',
+      type: AnnouncementType.authority,
+      createdAt: DateTime.now(),
+      publishedBy: 'authority-mock-id',
+    );
+
+    _announcements.insert(0, created);
+    return created;
+  }
+
+  @override
+  Future<AuthorityAnnouncement> deleteAuthorityAnnouncement(
+    String announcementId,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 250));
+
+    final index = _announcements.indexWhere((announcement) => announcement.id == announcementId);
+    if (index < 0) {
+      throw Exception('Announcement not found');
+    }
+
+    return _announcements.removeAt(index);
+  }
+
+  String _slugify(String input) {
+    final cleaned = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-');
+    return cleaned.replaceAll(RegExp(r'-+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
   }
 }

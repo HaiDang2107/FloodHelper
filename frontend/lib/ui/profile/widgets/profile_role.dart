@@ -9,6 +9,8 @@ class ProfileRole extends StatelessWidget {
   final bool isLoadingRequests;
   final Future<void> Function(UserRole role) onAddRole;
   final Future<List<ProfileRoleRequestModel>> Function() onRefreshRequests;
+  final bool canSubmitRoleRequest;
+  final String? roleRequestBlockedReason;
 
   const ProfileRole({
     super.key,
@@ -17,6 +19,8 @@ class ProfileRole extends StatelessWidget {
     this.isLoadingRequests = false,
     required this.onAddRole,
     required this.onRefreshRequests,
+    this.canSubmitRoleRequest = true,
+    this.roleRequestBlockedReason,
   });
 
   void _showAddRoleDialog(BuildContext context) {
@@ -171,11 +175,33 @@ class ProfileRole extends StatelessWidget {
           style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black87),
         ),
         const SizedBox(height: 16),
+        if (!canSubmitRoleRequest)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4E5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFFFD7A8)),
+            ),
+            child: Text(
+              roleRequestBlockedReason ??
+                  'Please complete your profile (including avatar and CCCD images) before requesting a new role.',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF8A4B00),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         Row(
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _showAddRoleDialog(context),
+                onPressed: canSubmitRoleRequest
+                    ? () => _showAddRoleDialog(context)
+                    : null,
                 icon: const Icon(Icons.add_circle_outline),
                 label: const Text('Add Role'),
                 style: ElevatedButton.styleFrom(

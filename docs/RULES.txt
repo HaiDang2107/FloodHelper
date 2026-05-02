@@ -1,0 +1,7 @@
+Frontend:
+- Sử dụng Riverpod để quản lý đối tượng ViewModel, Repository, Service
+- Cần export các đối tượng Repository trong frontend/lib/data/providers/repository_providers.dart
+- Cần export các đối tượng Service trong frontend/lib/data/providers/service_providers.dart
+- Cần tuân thủ nghiêm ngặt MVVM Pattern 
+- Khi code, cố gắng decouple các components, tránh phụ thuộc chồng chéo ở cùng một layer.
+- Không xóa những comment trong code mà tôi đã tạo

@@ -88,6 +88,21 @@ class GlobalSessionManager extends _$GlobalSessionManager {
     }
   }
 
+  /// Reload current user profile from backend and rebuild the local session.
+  Future<void> refreshFromServer() async {
+    try {
+      final profileRepository = ref.read(profileRepositoryProvider);
+      final authRepository = ref.read(authRepositoryProvider);
+      final profileModel = await profileRepository.getProfile();
+
+      await authRepository.syncSessionUserFromProfile(profileModel);
+      final session = await authRepository.getCurrentSession();
+      state = AsyncValue.data(session);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
   /// Get device ID for authentication
   Future<String> _getDeviceId() async {
     if (kIsWeb) {

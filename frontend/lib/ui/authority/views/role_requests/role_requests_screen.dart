@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../data/models/authority/role_request.dart';
-import '../../theme/authority_theme.dart';
 import '../../view_models/role_requests_view_model.dart';
-import '../../widgets/role_request_card.dart';
-import '../../widgets/role_request_detail.dart';
+import '../../widgets/review_frame.dart';
+import '../../widgets/role_requests/role_request_card.dart';
+import '../../widgets/role_requests/role_request_detail.dart';
 
 class RoleRequestsScreen extends ConsumerStatefulWidget {
   const RoleRequestsScreen({
@@ -22,6 +22,8 @@ class RoleRequestsScreen extends ConsumerStatefulWidget {
 
 class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
   String? _lastStatusQuery;
+
+  RoleRequestStatus? get _activeStatus => _parseStatus(widget.statusQuery);
 
   @override
   void initState() {
@@ -52,99 +54,61 @@ class _RoleRequestsScreenState extends ConsumerState<RoleRequestsScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(roleRequestsViewModelProvider);
     final viewModel = ref.read(roleRequestsViewModelProvider.notifier);
+    final hasStatusSelection = _activeStatus != null;
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Role requests',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AuthorityTheme.textDark,
-                    ),
-              ),
-              const Spacer(),
-              _FilterChip(
+    final errorMessage = state.errorMessage;
+    if (errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+        viewModel.clearError();
+      });
+    }
+
+    return AuthorityReviewFrame(
+      title: 'Role requests',
+      filters: hasStatusSelection
+          ? [
+              AuthorityFilterChip(
                 label: 'All',
                 isActive: state.roleFilter == null,
                 onTap: () => viewModel.setRoleFilter(null),
               ),
-              _FilterChip(
+              AuthorityFilterChip(
                 label: 'By benefactor',
                 isActive: state.roleFilter == RoleRequestType.benefactor,
                 onTap: () => viewModel.setRoleFilter(RoleRequestType.benefactor),
               ),
-              _FilterChip(
+              AuthorityFilterChip(
                 label: 'By rescuer',
                 isActive: state.roleFilter == RoleRequestType.rescuer,
                 onTap: () => viewModel.setRoleFilter(RoleRequestType.rescuer),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 1100;
-                final listPanel = Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFF),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFE1E6F4)),
-                  ),
-                  child: state.isLoading && state.requests.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : _RoleRequestList(
-                          requests: state.requests,
-                          selectedId: state.selectedId,
-                          onSelect: viewModel.selectRequest,
-                          onReachEnd: viewModel.loadMore,
-                          isLoadingMore: state.isLoadingMore,
-                          endMessage: state.endMessage,
-                        ),
-                );
-
-                if (isNarrow) {
-                  return Column(
-                    children: [
-                      Expanded(child: listPanel),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: RoleRequestDetail(
-                          request: state.selectedRequest,
-                          isSubmitting: state.isLoading,
-                          onApprove: (note) => viewModel.approveSelected(note: note),
-                          onReject: (note) => viewModel.rejectSelected(note: note),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                return Row(
-                  children: [
-                    Expanded(flex: 3, child: listPanel),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 5,
-                      child: RoleRequestDetail(
-                        request: state.selectedRequest,
-                        isSubmitting: state.isLoading,
-                        onApprove: (note) => viewModel.approveSelected(note: note),
-                        onReject: (note) => viewModel.rejectSelected(note: note),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+            ]
+          : const [],
+      listContent: !hasStatusSelection
+          ? const _StatusSelectionHint(
+              message: 'Select a status from the sidebar to view role requests.',
+            )
+          : state.isLoading && state.requests.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : _RoleRequestList(
+                  requests: state.requests,
+                  selectedId: state.selectedId,
+                  onSelect: viewModel.selectRequest,
+                  onReachEnd: viewModel.loadMore,
+                  isLoadingMore: state.isLoadingMore,
+                  endMessage: state.endMessage,
+                ),
+      detailPanel: RoleRequestDetail(
+        request: hasStatusSelection ? state.selectedRequest : null,
+        isSubmitting: state.isLoading,
+        onApprove: (note) => viewModel.approveSelected(note: note),
+        onReject: (note) => viewModel.rejectSelected(note: note),
       ),
     );
   }
@@ -255,45 +219,31 @@ class _RoleRequestList extends StatelessWidget {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isActive,
-        onSelected: (_) => onTap(),
-        selectedColor: AuthorityTheme.brandBlue,
-        labelStyle: TextStyle(
-          color: isActive ? Colors.white : const Color(0xFF344054),
-          fontWeight: FontWeight.w600,
-        ),
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Color(0xFFE1E6F4)),
-        ),
-      ),
-    );
-  }
-}
-
 class _RoleRequestSection {
   const _RoleRequestSection({required this.label, required this.items});
 
   final String label;
   final List<RoleRequest> items;
+}
+
+class _StatusSelectionHint extends StatelessWidget {
+  const _StatusSelectionHint({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF667085),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 }
 
 List<_RoleRequestSection> _groupByDate(List<RoleRequest> requests) {

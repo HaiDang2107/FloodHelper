@@ -14,7 +14,7 @@ typedef _ActionButtonData = ({
 
 class HomeTopActions extends ConsumerStatefulWidget {
   final void Function(String, Widget, {Color? backgroundColor})
-      onShowBottomSheet;
+  onShowBottomSheet;
   final VoidCallback onProfilePressed;
   final VoidCallback onRescuerPressed;
   final VoidCallback onCharityPressed;
@@ -91,9 +91,11 @@ class _HomeTopActionsState extends ConsumerState<HomeTopActions>
         isSpecial: false,
       ),
       (
-        icon: Icons.campaign,
-        onPressed: () =>
-            widget.onShowBottomSheet('Announcements', const AnnouncementsSheet()),
+        icon: Icons.campaign, // icon cái loa
+        onPressed: () => widget.onShowBottomSheet(
+          'Announcements',
+          const AnnouncementsSheet(),
+        ),
         isSpecial: false,
       ),
       if (currentUser?.isRescuer ?? false)
@@ -102,23 +104,22 @@ class _HomeTopActionsState extends ConsumerState<HomeTopActions>
           onPressed: widget.onRescuerPressed,
           isSpecial: false,
         ),
-      if (currentUser?.isBenefactor ?? false)
-        (
-          icon: Icons.volunteer_activism,
-          onPressed: widget.onCharityPressed,
-          isSpecial: false,
-        ),
+      (
+        icon: Icons.volunteer_activism,
+        onPressed: widget.onCharityPressed,
+        isSpecial: false,
+      ),
       (
         icon: Icons.sos,
         onPressed: () => widget.onShowBottomSheet(
-              'Distress Signal',
-              DistressSignalSheet(
-                isBroadcasting: widget.isSosBroadcasting,
-                currentSignalData: widget.sosData,
-                onBroadcast: widget.onSosBroadcast,
-                onRevoke: widget.onSosRevoke,
-              ),
-            ),
+          'Distress Signal',
+          DistressSignalSheet(
+            isBroadcasting: widget.isSosBroadcasting,
+            currentSignalData: widget.sosData,
+            onBroadcast: widget.onSosBroadcast,
+            onRevoke: widget.onSosRevoke,
+          ),
+        ),
         isSpecial: true,
       ),
     ];
@@ -166,8 +167,12 @@ class _HomeTopActionsState extends ConsumerState<HomeTopActions>
     );
   }
 
-  Widget _buildMapIcon(IconData icon, VoidCallback onPressed,
-      {bool isMain = false, bool isSos = false}) {
+  Widget _buildMapIcon(
+    IconData icon,
+    VoidCallback onPressed, {
+    bool isMain = false,
+    bool isSos = false,
+  }) {
     Color backgroundColor;
     Color iconColor;
 

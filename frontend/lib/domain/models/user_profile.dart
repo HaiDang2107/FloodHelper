@@ -149,10 +149,26 @@ class UserProfile {
 class Address {
   final String? placeOfOrigin;
   final String? placeOfResidence;
+  final int? originProvinceCode;
+  final String? originProvinceName;
+  final int? originWardCode;
+  final String? originWardName;
+  final int? residenceProvinceCode;
+  final String? residenceProvinceName;
+  final int? residenceWardCode;
+  final String? residenceWardName;
 
   const Address({
     this.placeOfOrigin,
     this.placeOfResidence,
+    this.originProvinceCode,
+    this.originProvinceName,
+    this.originWardCode,
+    this.originWardName,
+    this.residenceProvinceCode,
+    this.residenceProvinceName,
+    this.residenceWardCode,
+    this.residenceWardName,
   });
 
   String get fullAddress {
@@ -164,10 +180,26 @@ class Address {
   Address copyWith({
     String? placeOfOrigin,
     String? placeOfResidence,
+    int? originProvinceCode,
+    String? originProvinceName,
+    int? originWardCode,
+    String? originWardName,
+    int? residenceProvinceCode,
+    String? residenceProvinceName,
+    int? residenceWardCode,
+    String? residenceWardName,
   }) {
     return Address(
       placeOfOrigin: placeOfOrigin ?? this.placeOfOrigin,
       placeOfResidence: placeOfResidence ?? this.placeOfResidence,
+      originProvinceCode: originProvinceCode ?? this.originProvinceCode,
+      originProvinceName: originProvinceName ?? this.originProvinceName,
+      originWardCode: originWardCode ?? this.originWardCode,
+      originWardName: originWardName ?? this.originWardName,
+      residenceProvinceCode: residenceProvinceCode ?? this.residenceProvinceCode,
+      residenceProvinceName: residenceProvinceName ?? this.residenceProvinceName,
+      residenceWardCode: residenceWardCode ?? this.residenceWardCode,
+      residenceWardName: residenceWardName ?? this.residenceWardName,
     );
   }
 }
@@ -208,27 +240,43 @@ class Location {
 class CitizenInfo {
   final String? citizenId;
   final String? citizenIdCardImg;
+  final String? frontCitizenIdCardImageUrl;
+  final String? backCitizenIdCardImageUrl;
   final DateTime? dateOfIssue;
   final DateTime? dateOfExpire;
 
   const CitizenInfo({
     this.citizenId,
     this.citizenIdCardImg,
+    this.frontCitizenIdCardImageUrl,
+    this.backCitizenIdCardImageUrl,
     this.dateOfIssue,
     this.dateOfExpire,
   });
 
   bool get hasIdCard => citizenId != null && citizenId!.isNotEmpty;
+  
+  bool get hasCompleteCitizenInfo =>
+      citizenId != null &&
+      citizenId!.isNotEmpty &&
+      frontCitizenIdCardImageUrl != null &&
+      backCitizenIdCardImageUrl != null;
 
   CitizenInfo copyWith({
     String? citizenId,
     String? citizenIdCardImg,
+    String? frontCitizenIdCardImageUrl,
+    String? backCitizenIdCardImageUrl,
     DateTime? dateOfIssue,
     DateTime? dateOfExpire,
   }) {
     return CitizenInfo(
       citizenId: citizenId ?? this.citizenId,
       citizenIdCardImg: citizenIdCardImg ?? this.citizenIdCardImg,
+      frontCitizenIdCardImageUrl:
+          frontCitizenIdCardImageUrl ?? this.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl:
+          backCitizenIdCardImageUrl ?? this.backCitizenIdCardImageUrl,
       dateOfIssue: dateOfIssue ?? this.dateOfIssue,
       dateOfExpire: dateOfExpire ?? this.dateOfExpire,
     );

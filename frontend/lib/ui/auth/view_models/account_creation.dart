@@ -48,8 +48,6 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
       fullNameController.dispose();
       phoneNumberController.dispose();
       dateOfBirthController.dispose();
-      placeOfOriginController.dispose();
-      placeOfResidenceController.dispose();
       usernameController.dispose();
       passwordController.dispose();
       codeController.dispose();
@@ -65,8 +63,6 @@ class AccountCreationViewModel extends _$AccountCreationViewModel
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController phoneNumberController = TextEditingController();
   final TextEditingController dateOfBirthController = TextEditingController();
-  final TextEditingController placeOfOriginController = TextEditingController();
-  final TextEditingController placeOfResidenceController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController codeController = TextEditingController();

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/authority_theme.dart';
 import '../../view_models/authority_session_view_model.dart';
-import '../../widgets/authority_sidebar.dart';
+import '../../widgets/authority_sidebar/authority_sidebar.dart';
 import '../../../../routing/authority_router.dart';
 
 class AuthorityShell extends ConsumerStatefulWidget {
@@ -23,7 +23,9 @@ class _AuthorityShellState extends ConsumerState<AuthorityShell> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 1100;
-    final sidebarWidth = _isCollapsed || isCompact ? 120.0 : 260.0;
+    final sidebarWidth = _isCollapsed || isCompact
+        ? 120.0
+        : _expandedSidebarWidth(context);
 
     return Scaffold(
       body: Stack(
@@ -94,5 +96,46 @@ class _AuthorityShellState extends ConsumerState<AuthorityShell> {
         ],
       ),
     );
+  }
+
+  double _expandedSidebarWidth(BuildContext context) {
+    const candidates = <String>[
+      'Authority Desk',
+      'FloodHelper',
+      'Profile',
+      'Role requests',
+      'Pending',
+      'Rejected',
+      'Approved',
+      'Charity campaign',
+      'Donating',
+      'Distributing',
+      'Finished',
+      'Suspended',
+      'Announcements',
+      'New Announcement',
+      'Published Announcements',
+      'Sign out',
+    ];
+
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ) ??
+        const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+
+    double widestLabel = 0;
+    for (final text in candidates) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widestLabel) {
+        widestLabel = painter.width;
+      }
+    }
+
+    final computedWidth = widestLabel + 128;
+    return computedWidth.clamp(240.0, 360.0);
   }
 }

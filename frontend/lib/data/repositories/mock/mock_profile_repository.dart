@@ -1,3 +1,5 @@
+import 'package:image_picker/image_picker.dart';
+
 import '../../models/profile_model.dart';
 import '../profile_repository.dart';
 
@@ -18,8 +20,8 @@ class MockProfileRepository implements ProfileRepository {
     fullname: 'Nguyễn Văn An',
     nickname: 'AnNguyen',
     dob: '1995-05-15',
-    placeOfOrigin: 'Phường Cầu Giấy, Quận Cầu Giấy, Việt Nam',
-    placeOfResidence: 'Phường Cầu Giấy, Quận Cầu Giấy, Việt Nam',
+    // placeOfOrigin: 'Phường Cầu Giấy, Quận Cầu Giấy, Việt Nam',
+    // placeOfResidence: 'Phường Cầu Giấy, Quận Cầu Giấy, Việt Nam',
     dateOfIssue: '2020-01-01',
     dateOfExpire: '2035-01-01',
     roles: const ['NORMAL_USER'],
@@ -44,23 +46,37 @@ class MockProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<ProfileModel> updateProfile(UpdateProfileDto dto) async {
+  Future<ProfileModel> updateProfile(
+    UpdateProfileDto dto, {
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+  }) async {
     await _simulateDelay();
     
     _currentProfile = _currentProfile.copyWith(
       fullname: dto.fullname ?? _currentProfile.fullname,
       nickname: dto.nickname ?? _currentProfile.nickname,
       dob: dto.dob ?? _currentProfile.dob,
-      placeOfOrigin: dto.placeOfOrigin ?? _currentProfile.placeOfOrigin,
-      placeOfResidence: dto.placeOfResidence ?? _currentProfile.placeOfResidence,
+      // placeOfOrigin: dto.placeOfOrigin ?? _currentProfile.placeOfOrigin,
+      // placeOfResidence: dto.placeOfResidence ?? _currentProfile.placeOfResidence,
       dateOfIssue: dto.dateOfIssue ?? _currentProfile.dateOfIssue,
       dateOfExpire: dto.dateOfExpire ?? _currentProfile.dateOfExpire,
       longitude: dto.curLongitude ?? _currentProfile.longitude,
       latitude: dto.curLatitude ?? _currentProfile.latitude,
       visibilityMode: dto.visibilityMode ?? _currentProfile.visibilityMode,
-      avatarUrl: dto.avatarUrl ?? _currentProfile.avatarUrl,
+      avatarUrl:
+          avatar != null
+              ? 'https://i.pravatar.cc/300'
+              : (dto.avatarUrl ?? _currentProfile.avatarUrl),
       citizenId: dto.citizenId ?? _currentProfile.citizenId,
       citizenIdCardImg: dto.citizenIdCardImg ?? _currentProfile.citizenIdCardImg,
+      frontCitizenIdCardImageUrl: frontCitizenId != null
+          ? 'https://via.placeholder.com/400x300?text=CCCD+Front'
+          : _currentProfile.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: backCitizenId != null
+          ? 'https://via.placeholder.com/400x300?text=CCCD+Back'
+          : _currentProfile.backCitizenIdCardImageUrl,
       jobPosition: dto.jobPosition ?? _currentProfile.jobPosition,
     );
     

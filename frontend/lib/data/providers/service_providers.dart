@@ -49,6 +49,18 @@ AuthorityService authorityService(Ref ref) {
   return AuthorityService(apiClient: ref.watch(apiClientProvider));
 }
 
+/// CharityCampaignService provider
+@riverpod
+CharityCampaignService charityCampaignService(Ref ref) {
+  return CharityCampaignService(apiClient: ref.watch(apiClientProvider));
+}
+
+/// SignalService provider
+@Riverpod(keepAlive: true)
+SignalService signalService(Ref ref) {
+  return SignalService(apiClient: ref.watch(apiClientProvider));
+}
+
 /// MqttService provider (keepAlive: true for persistent MQTT connection)
 /// Manages singleton instance and ensures proper cleanup on app shutdown.
 @Riverpod(keepAlive: true)
@@ -60,7 +72,7 @@ MqttService mqttService(Ref ref) {
 
 /// FirebaseMessagingService provider (keepAlive: true for FCM token management)
 /// Manages singleton instance throughout app lifecycle.
-@Riverpod(keepAlive: true)
+@Riverpod(keepAlive: true) // keepAlive để tránh auto dispose (khi mà không có ai listen hay watch)
 FirebaseMessagingService firebaseMessagingService(Ref ref) {
   return FirebaseMessagingService(apiClient: ref.watch(apiClientProvider));
 }

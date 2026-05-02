@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/charity_campaign.dart';
+import '../../../../../domain/models/charity_campaign.dart';
 import 'components/charity_info_row.dart';
 import 'components/charity_location_row.dart';
 import 'components/charity_action_buttons.dart';
@@ -10,15 +10,35 @@ import '../../dialog/post_announcement_dialog.dart';
 class DetailView extends StatefulWidget {
   final CharityCampaign campaign;
   final bool isOwner;
+  final List<CampaignAnnouncement> announcements;
+  final bool isAnnouncementsLoading;
+  final bool isAnnouncementsLoadingMore;
+  final bool hasMoreAnnouncements;
+  final Future<void> Function()? onLoadMoreAnnouncements;
   final VoidCallback onPurchasedSupplies;
-  final VoidCallback onTransaction;
+  final Future<void> Function() onTransaction;
+  final Future<void> Function(PostAnnouncementPayload payload)? onPostAnnouncement;
+  final Future<void> Function()? onUpdateInformation;
+  final Future<void> Function()? onSendRequest;
+  final Future<void> Function()? onCheckInLocation;
+  final Future<void> Function()? onFocusCampaignLocation;
 
   const DetailView({
     super.key,
     required this.campaign,
     required this.isOwner,
+    this.announcements = const [],
+    this.isAnnouncementsLoading = false,
+    this.isAnnouncementsLoadingMore = false,
+    this.hasMoreAnnouncements = false,
+    this.onLoadMoreAnnouncements,
     required this.onPurchasedSupplies,
     required this.onTransaction,
+    this.onPostAnnouncement,
+    this.onUpdateInformation,
+    this.onSendRequest,
+    this.onCheckInLocation,
+    this.onFocusCampaignLocation,
   });
 
   @override
@@ -27,11 +47,22 @@ class DetailView extends StatefulWidget {
 
 class _DetailViewState extends State<DetailView> {
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
   }
 
-  Future<String?> _showPostAnnouncementDialog(BuildContext context) async {
-    return showDialog<String>(
+  String _formatDateOrPlaceholder(DateTime? date) {
+    if (date == null) {
+      return 'Chưa cập nhật';
+    }
+    return _formatDate(date);
+  }
+
+  Future<PostAnnouncementPayload?> _showPostAnnouncementDialog(
+    BuildContext context,
+  ) async {
+    return showDialog<PostAnnouncementPayload>(
       context: context,
       builder: (context) => const PostAnnouncementDialog(),
     );
@@ -42,34 +73,143 @@ class _DetailViewState extends State<DetailView> {
     final bool isActiveStatus = [
       CampaignStatus.donating,
       CampaignStatus.distributing,
-      CampaignStatus.finished
+      CampaignStatus.finished,
     ].contains(widget.campaign.status);
+    final bool canShowMapIcon =
+        widget.isOwner &&
+        widget.campaign.status == CampaignStatus.distributing &&
+        widget.onCheckInLocation != null;
+    final bool canShowFocusIcon =
+        !widget.isOwner &&
+        widget.campaign.latitude != null &&
+        widget.campaign.longitude != null &&
+        widget.onFocusCampaignLocation != null;
+    final bool showAuthorityNote = [
+      CampaignStatus.approved,
+      CampaignStatus.rejected,
+    ].contains(widget.campaign.status);
+    final bool showSuspensionDetails =
+        widget.campaign.status == CampaignStatus.suspended;
 
     return Column(
       key: const ValueKey('details'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CharityInfoRow(
-            label: 'Organizer', value: widget.campaign.benefactorName),
-        CharityInfoRow(
-            label: 'Bank Account', value: widget.campaign.bankAccountNumber),
-        CharityInfoRow(label: 'Bank Name', value: widget.campaign.bankName),
-        CharityLocationRow(
-          location: widget.campaign.reliefLocation,
-          onMapPressed: () {
-            // TODO: Navigate to map
-          },
+          label: 'Organizer',
+          value: widget.campaign.benefactorName,
         ),
         CharityInfoRow(
-            label: 'Start Date', value: _formatDate(widget.campaign.startDate)),
+          label: 'Bank Name',
+          value: widget.campaign.bankInfo.bankName,
+        ),
         CharityInfoRow(
-            label: 'End Date', value: _formatDate(widget.campaign.endDate)),
+          label: 'Bank Account',
+          value: widget.campaign.bankInfo.accountNumber,
+        ),
+        if (widget.isOwner)
+          CharityInfoRow(label: 'Purpose', value: widget.campaign.purpose),
+        if (widget.isOwner)
+          CharityInfoRow(
+            label: 'Charity Object',
+            value: widget.campaign.charityObject,
+          ),
+        CharityLocationRow(
+          location: widget.campaign.reliefLocation,
+          onMapPressed: canShowMapIcon
+              ? () async {
+                  await widget.onCheckInLocation?.call();
+                }
+              : null,
+          onFocusMapPressed: canShowFocusIcon
+              ? () async {
+                  await widget.onFocusCampaignLocation?.call();
+                }
+              : null,
+        ),
+        CharityInfoRow(
+          label: 'Start Donation',
+          value: _formatDateOrPlaceholder(widget.campaign.startedDonationAt),
+        ),
+        CharityInfoRow(
+          label: 'End Donation',
+          value: _formatDateOrPlaceholder(widget.campaign.finishedDonationAt),
+        ),
+        CharityInfoRow(
+          label: 'Start Distribution',
+          value: _formatDateOrPlaceholder(
+            widget.campaign.startedDistributionAt,
+          ),
+        ),
+        CharityInfoRow(
+          label: 'End Distribution',
+          value: _formatDateOrPlaceholder(
+            widget.campaign.finishedDistributionAt,
+          ),
+        ),
+        if (showAuthorityNote)
+          CharityInfoRow(
+            label: 'Note for Response',
+            value: widget.campaign.noteForResponse ?? 'Không có ghi chú',
+          ),
+        if (showSuspensionDetails) ...[
+          CharityInfoRow(
+            label: 'Suspended At',
+            value: _formatDateOrPlaceholder(widget.campaign.suspendedAt),
+          ),
+          CharityInfoRow(
+            label: 'Note for Suspension',
+            value: widget.campaign.noteForSuspension ?? 'Không có ghi chú',
+          ),
+          if (widget.isOwner)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Your campaign was suspended. Please contact your authority in your place of residence for more details',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+        if (widget.isOwner && widget.campaign.status == CampaignStatus.created)
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: widget.onUpdateInformation,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Update Campaign'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F62FE),
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: widget.onSendRequest,
+                  icon: const Icon(Icons.send),
+                  label: const Text('Send Request'),
+                ),
+              ),
+            ],
+          ),
+        if (widget.isOwner && widget.campaign.status == CampaignStatus.created)
+          const SizedBox(height: 24),
         const SizedBox(height: 24),
         if (isActiveStatus) ...[
           CharityActionButtons(
             status: widget.campaign.status,
+            canDonate:
+                !(widget.isOwner &&
+                    widget.campaign.status == CampaignStatus.donating),
             onDonate: () => showDialog(
-                context: context, builder: (_) => const DonateDialog()),
+              context: context,
+              builder: (_) => DonateDialog(campaignId: widget.campaign.id),
+            ),
             onPurchasedSupplies: widget.onPurchasedSupplies,
             onTransaction: widget.onTransaction,
           ),
@@ -79,35 +219,58 @@ class _DetailViewState extends State<DetailView> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  final text = await _showPostAnnouncementDialog(context);
-                  if (text != null && text.isNotEmpty) {
-                    setState(() {
-                      widget.campaign.announcements.insert(
-                          0,
-                          CampaignAnnouncement(
-                            text: text,
-                            date: DateTime.now(),
-                          ));
-                    });
+                  final payload = await _showPostAnnouncementDialog(context);
+                  if (payload != null) {
+                    await widget.onPostAnnouncement?.call(payload);
                   }
                 },
                 icon: const Icon(Icons.post_add),
                 label: const Text('Post Announcement'),
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F62FE),
-                    foregroundColor: Colors.white),
+                  backgroundColor: const Color(0xFF0F62FE),
+                  foregroundColor: Colors.white,
+                ),
               ),
             ),
             const SizedBox(height: 24),
           ],
-          const Text('Announcements',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87)),
+          const Text(
+            'Announcements',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
           const SizedBox(height: 16),
-          ...widget.campaign.announcements
-              .map((a) => CharityAnnouncementItem(announcement: a)),
+          if (widget.isAnnouncementsLoading && widget.announcements.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (widget.announcements.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('No announcements yet.'),
+            )
+          else ...widget.announcements.map(
+            (a) => CharityAnnouncementItem(announcement: a),
+          ),
+          if (widget.isAnnouncementsLoadingMore)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2.2)),
+            )
+          else if (widget.hasMoreAnnouncements)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Center(
+                child: TextButton(
+                  onPressed: widget.onLoadMoreAnnouncements,
+                  child: const Text('Load more announcements'),
+                ),
+              ),
+            ),
         ],
         const SizedBox(height: 32),
       ],

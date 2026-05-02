@@ -95,15 +95,33 @@ class _AuthorityProfileScreenState
                           ),
                           _ProfileRow(
                             label: 'Date of Birth',
-                            value: state.profile!.dob ?? '-',
+                            value: _formatDateOnly(state.profile!.dob),
                           ),
-                          _ProfileRow(
+                          _LocationSection(
                             label: 'Place of Origin',
-                            value: state.profile!.placeOfOrigin ?? '-',
+                            province: _displayText(
+                              state.profile!.originProvinceName,
+                              fallback: state.profile!.placeOfOrigin,
+                              partIndex: 1,
+                            ),
+                            ward: _displayText(
+                              state.profile!.originWardName,
+                              fallback: state.profile!.placeOfOrigin,
+                              partIndex: 0,
+                            ),
                           ),
-                          _ProfileRow(
+                          _LocationSection(
                             label: 'Place of Residence',
-                            value: state.profile!.placeOfResidence ?? '-',
+                            province: _displayText(
+                              state.profile!.residenceProvinceName,
+                              fallback: state.profile!.placeOfResidence,
+                              partIndex: 1,
+                            ),
+                            ward: _displayText(
+                              state.profile!.residenceWardName,
+                              fallback: state.profile!.placeOfResidence,
+                              partIndex: 0,
+                            ),
                           ),
                           _ProfileRow(
                             label: 'Citizen ID',
@@ -111,11 +129,11 @@ class _AuthorityProfileScreenState
                           ),
                           _ProfileRow(
                             label: 'Date of Issue',
-                            value: state.profile!.dateOfIssue ?? '-',
+                            value: _formatDateOnly(state.profile!.dateOfIssue),
                           ),
                           _ProfileRow(
                             label: 'Date of Expire',
-                            value: state.profile!.dateOfExpire ?? '-',
+                            value: _formatDateOnly(state.profile!.dateOfExpire),
                           ),
                           _ProfileRow(
                             label: 'Job Position',
@@ -152,6 +170,120 @@ class _AuthorityProfileScreenState
             )
           else
             const Text('Profile unavailable.'),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateOnly(String? value) {
+    final text = value?.trim();
+    if (text == null || text.isEmpty) {
+      return '-';
+    }
+
+    final parsed = DateTime.tryParse(text);
+    if (parsed == null) {
+      return text.split('T').first;
+    }
+
+    final year = parsed.year.toString().padLeft(4, '0');
+    final month = parsed.month.toString().padLeft(2, '0');
+    final day = parsed.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
+  String _displayText(
+    String? value, {
+    String? fallback,
+    required int partIndex,
+  }) {
+    final text = value?.trim();
+    if (text != null && text.isNotEmpty) {
+      return text;
+    }
+
+    return _splitLocationPart(fallback, partIndex);
+  }
+
+  String _splitLocationPart(String? value, int index) {
+    final text = value?.trim();
+    if (text == null || text.isEmpty) {
+      return '-';
+    }
+
+    final parts = text
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList(growable: false);
+
+    if (parts.isEmpty) {
+      return '-';
+    }
+
+    if (index < 0 || index >= parts.length) {
+      return parts.last;
+    }
+
+    return parts[index];
+  }
+}
+
+class _LocationSection extends StatelessWidget {
+  const _LocationSection({
+    required this.label,
+    required this.province,
+    required this.ward,
+  });
+
+  final String label;
+  final String province;
+  final String ward;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 90,
+                child: Text(
+                  label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: const Color(0xFF667085)),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Province: $province',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Ward: $ward',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

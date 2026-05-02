@@ -9,10 +9,16 @@ import {
   UseGuards,
   Request,
   ParseUUIDPipe,
+  UploadedFiles,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { UserService } from './user.service';
 import { UpdateUserDto, UpdateLocationDto, UpdateVisibilityDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { UploadedFilePayload } from '../common/uploaded-file.type';
 
 @Controller('user')
 export class UserController {
@@ -34,8 +40,77 @@ export class UserController {
    */
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  async updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(req.user.userId, updateUserDto);
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'avatar', maxCount: 1 },
+        { name: 'citizenFront', maxCount: 1 },
+        { name: 'citizenBack', maxCount: 1 },
+      ],
+      {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Only JPG, PNG, or WebP images are allowed'), false);
+          return;
+        }
+        cb(null, true);
+      },
+      },
+    ),
+  )
+  async updateProfile(
+    @Request() req,
+    @Body() body: Record<string, unknown> = {},
+    @UploadedFiles()
+    files: {
+      avatar?: UploadedFilePayload[];
+      citizenFront?: UploadedFilePayload[];
+      citizenBack?: UploadedFilePayload[];
+    } = {},
+  ) {
+    const safeBody = body ?? {};
+
+    const updateUserDto: UpdateUserDto = {
+      ...safeBody,
+      originProvinceCode:
+        safeBody.originProvinceCode != null
+          ? Number(safeBody.originProvinceCode)
+          : undefined,
+      originWardCode:
+        safeBody.originWardCode != null
+          ? Number(safeBody.originWardCode)
+          : undefined,
+      residenceProvinceCode:
+        safeBody.residenceProvinceCode != null
+          ? Number(safeBody.residenceProvinceCode)
+          : undefined,
+      residenceWardCode:
+        safeBody.residenceWardCode != null
+          ? Number(safeBody.residenceWardCode)
+          : undefined,
+      curLongitude:
+        safeBody.curLongitude != null
+          ? Number(safeBody.curLongitude)
+          : undefined,
+      curLatitude:
+        safeBody.curLatitude != null ? Number(safeBody.curLatitude) : undefined,
+      showCharityCampaignLocations:
+        safeBody.showCharityCampaignLocations != null
+          ? String(safeBody.showCharityCampaignLocations).toLowerCase() ===
+            'true'
+          : undefined,
+    };
+
+    return this.userService.update(
+      req.user.userId,
+      updateUserDto,
+      files.avatar?.[0],
+      files.citizenFront?.[0],
+      files.citizenBack?.[0],
+    );
   }
 
   /**

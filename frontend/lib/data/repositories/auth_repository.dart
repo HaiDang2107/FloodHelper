@@ -77,8 +77,6 @@ class AuthRepository {
     required String password,
     String? nickname,
     String? dob,
-    String? placeOfOrigin,
-    String? placeOfResidence,
     String? dateOfIssue,
     String? dateOfExpire,
   }) async {
@@ -89,8 +87,6 @@ class AuthRepository {
       password: password,
       nickname: nickname,
       dob: dob,
-      placeOfOrigin: placeOfOrigin,
-      placeOfResidence: placeOfResidence,
       dateOfIssue: dateOfIssue,
       dateOfExpire: dateOfExpire,
     );
@@ -258,9 +254,31 @@ class AuthRepository {
       'phoneNumber': profile.phoneNumber,
       'role': profile.roles,
       'avatarUrl': profile.avatarUrl,
+      'originProvinceCode': profile.originProvinceCode,
+      'originProvinceName': profile.originProvinceName,
+      'originWardCode': profile.originWardCode,
+      'originWardName': profile.originWardName,
+      'residenceProvinceCode': profile.residenceProvinceCode,
+      'residenceProvinceName': profile.residenceProvinceName,
+      'residenceWardCode': profile.residenceWardCode,
+      'residenceWardName': profile.residenceWardName,
+      'showCharityCampaignLocations': profile.showCharityCampaignLocations,
     };
 
     await AuthLocalStorage.saveUserData(updatedUserData);
+  }
+
+  /// Sync a single display preference to locally persisted auth session user data.
+  Future<void> syncSessionShowCharityCampaignLocations(bool value) async {
+    final existingUserData = await AuthLocalStorage.getUserData();
+    if (existingUserData == null) {
+      return;
+    }
+
+    await AuthLocalStorage.saveUserData({
+      ...existingUserData,
+      'showCharityCampaignLocations': value,
+    });
   }
 
   // ==================== Private Helpers ====================
@@ -284,14 +302,22 @@ class AuthRepository {
         'username': username,
         'gender': data.user.gender,
         'dob': data.user.dob,
-        'placeOfOrigin': data.user.placeOfOrigin,
-        'placeOfResidence': data.user.placeOfResidence,
+        'originProvinceCode': data.user.originProvinceCode,
+        'originProvinceName': data.user.originProvinceName,
+        'originWardCode': data.user.originWardCode,
+        'originWardName': data.user.originWardName,
+        'residenceProvinceCode': data.user.residenceProvinceCode,
+        'residenceProvinceName': data.user.residenceProvinceName,
+        'residenceWardCode': data.user.residenceWardCode,
+        'residenceWardName': data.user.residenceWardName,
         'dateOfIssue': data.user.dateOfIssue,
         'dateOfExpire': data.user.dateOfExpire,
         'citizenId': data.user.citizenId,
         'citizenIdCardImg': data.user.citizenIdCardImg,
         'jobPosition': data.user.jobPosition,
         'visibilityMode': data.user.visibilityMode,
+        'showCharityCampaignLocations':
+            data.user.showCharityCampaignLocations ?? false,
       },
     );
 
@@ -307,6 +333,8 @@ class AuthRepository {
         phoneNumber: data.user.phoneNumber,
         roles: data.user.role.map((r) => UserRole.fromString(r)).toList(),
         avatarUrl: data.user.avatarUrl,
+        showCharityCampaignLocations:
+            data.user.showCharityCampaignLocations ?? false,
       ),
       accessToken: data.tokens.accessToken,
       sessionId: data.session.sessionId,
@@ -325,6 +353,8 @@ class AuthRepository {
               .toList() ??
           [UserRole.normalUser],
       avatarUrl: map['avatarUrl'],
+      showCharityCampaignLocations:
+          map['showCharityCampaignLocations'] as bool? ?? false,
     );
   }
 }

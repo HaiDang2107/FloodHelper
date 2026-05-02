@@ -5,20 +5,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import {
   CreateRoleRequestDto,
   ListRoleRequestsDto,
   RespondRoleRequestDto,
 } from './dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoleRequestService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createRequest(userId: string, dto: CreateRoleRequestDto) {
     const user = await this.prisma.user.findUnique({
@@ -28,13 +24,30 @@ export class RoleRequestService {
         role: true,
         fullname: true,
         nickname: true,
+        avatarUrl: true,
         dob: true,
         gender: true,
         phoneNumber: true,
         jobPosition: true,
         citizenId: true,
-        placeOfOrigin: true,
-        placeOfResidence: true,
+        frontCitizenIdCardImageUrl: true,
+        backCitizenIdCardImageUrl: true,
+        originProvinceCode: true,
+        originWardCode: true,
+        residenceProvinceCode: true,
+        residenceWardCode: true,
+        originProvince: {
+          select: { code: true, name: true },
+        },
+        originWard: {
+          select: { code: true, name: true },
+        },
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
         dateOfIssue: true,
         dateOfExpire: true,
       },
@@ -73,14 +86,14 @@ export class RoleRequestService {
     const authority = await this.prisma.user.findFirst({
       where: {
         role: { has: 'AUTHORITY' },
-        placeOfResidence: user.placeOfResidence,
+        residenceWardCode: user.residenceWardCode,
       },
       select: { userId: true },
     });
 
     if (!authority) {
       throw new NotFoundException(
-        'No authority found for your place of residence',
+        'No authority found for your residence ward',
       );
     }
 
@@ -106,37 +119,60 @@ export class RoleRequestService {
   }
 
   async listForAuthority(authorityUserId: string, dto: ListRoleRequestsDto) {
-    const cursorTime = dto.beforeCreatedAt
+    await this.assertAuthorityUser(authorityUserId);
+
+    const rawLimit = Number(dto.limit ?? 10);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(Math.floor(rawLimit), 1), 50)
+      : 10;
+    const beforeCreatedAt = dto.beforeCreatedAt
       ? new Date(dto.beforeCreatedAt)
-      : new Date();
+      : null;
 
-    const windowStart = new Date(
-      cursorTime.getTime() - 7 * 24 * 60 * 60 * 1000,
-    );
-
-    const where: any = {
-      checkBy: authorityUserId,
-      createdAt: {
-        gt: windowStart,
-        lte: cursorTime,
+    const rows = await this.prisma.roleUpdatingRequest.findMany({
+      where: {
+        checkBy: authorityUserId,
+        ...(beforeCreatedAt
+          ? {
+              createdAt: {
+                lt: beforeCreatedAt,
+              },
+            }
+          : {}),
       },
-    };
-
-    const items = await this.prisma.roleUpdatingRequest.findMany({
-      where,
       include: {
         user: {
           select: {
             userId: true,
             fullname: true,
+            nickname: true,
             dob: true,
             gender: true,
             phoneNumber: true,
-            placeOfOrigin: true,
-            placeOfResidence: true,
+            originProvinceCode: true,
+            originWardCode: true,
+            residenceProvinceCode: true,
+            residenceWardCode: true,
+            originProvince: {
+              select: { code: true, name: true },
+            },
+            originWard: {
+              select: { code: true, name: true },
+            },
+            residenceProvince: {
+              select: { code: true, name: true },
+            },
+            residenceWard: {
+              select: { code: true, name: true },
+            },
             jobPosition: true,
             citizenId: true,
             citizenIdCardImg: true,
+            frontCitizenIdCardImageUrl: true,
+            backCitizenIdCardImageUrl: true,
+            avatarUrl: true,
+            dateOfIssue: true,
+            dateOfExpire: true,
             role: true,
             account: {
               select: {
@@ -146,24 +182,41 @@ export class RoleRequestService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { requestId: 'desc' }],
+      take: limit + 1,
     });
 
-    const hasOlderOutsideWindow =
-      (await this.prisma.roleUpdatingRequest.count({
-        where: {
-          checkBy: authorityUserId,
-          createdAt: { lte: windowStart },
-        },
-      })) > 0;
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore && items.length > 0
+      ? items[items.length - 1].createdAt.toISOString()
+      : null;
 
     return {
       items,
       pagination: {
-        hasMore: hasOlderOutsideWindow,
-        nextCursor: hasOlderOutsideWindow ? windowStart.toISOString() : null,
+        hasMore,
+        nextCursor,
       },
     };
+  }
+
+  private async assertAuthorityUser(authorityUserId: string) {
+    const authority = await this.prisma.user.findUnique({
+      where: { userId: authorityUserId },
+      select: {
+        userId: true,
+        role: true,
+      },
+    });
+
+    if (!authority) {
+      throw new NotFoundException('Authority account not found');
+    }
+
+    if (!authority.role.includes('AUTHORITY')) {
+      throw new ForbiddenException('Only authority users can access this resource');
+    }
   }
 
   async approve(
@@ -260,13 +313,18 @@ export class RoleRequestService {
   private getMissingProfileFields(user: any): string[] {
     const required: Record<string, any> = {
       fullname: user.fullname,
-      nickname: user.nickname,
       dob: user.dob,
       gender: user.gender,
       phoneNumber: user.phoneNumber,
+      jobPosition: user.jobPosition,
       citizenId: user.citizenId,
-      placeOfOrigin: user.placeOfOrigin,
-      placeOfResidence: user.placeOfResidence,
+      avatarUrl: user.avatarUrl,
+      frontCitizenIdCardImageUrl: user.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: user.backCitizenIdCardImageUrl,
+      originProvinceCode: user.originProvinceCode,
+      originWardCode: user.originWardCode,
+      residenceProvinceCode: user.residenceProvinceCode,
+      residenceWardCode: user.residenceWardCode,
       dateOfIssue: user.dateOfIssue,
       dateOfExpire: user.dateOfExpire,
     };

@@ -72,6 +72,17 @@ class UserService {
     }
   }
 
+  Future<void> updateShowCharityCampaignLocations(bool value) async {
+    try {
+      await _apiClient.patch(
+        '/user/profile',
+        data: {'showCharityCampaignLocations': value},
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   /// Update user location
   Future<void> updateLocation({
     required double latitude,

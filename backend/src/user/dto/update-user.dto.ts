@@ -7,6 +7,8 @@ import {
   IsBoolean,
   IsNumber,
   IsIn,
+  IsInt,
+  Min,
 } from 'class-validator';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
@@ -35,6 +37,26 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   placeOfResidence?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  originProvinceCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  originWardCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  residenceProvinceCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  residenceWardCode?: number;
+
+  @IsOptional()
   @IsDateString()
   dateOfIssue?: string;
 
@@ -56,6 +78,10 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   visibilityMode?: string;
 
   @IsOptional()
+  @IsBoolean()
+  showCharityCampaignLocations?: boolean;
+
+  @IsOptional()
   @IsString()
   avatarUrl?: string;
 
@@ -66,6 +92,14 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   @IsString()
   citizenIdCardImg?: string;
+
+  @IsOptional()
+  @IsString()
+  frontCitizenIdCardImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  backCitizenIdCardImageUrl?: string;
 
   @IsOptional()
   @IsString()

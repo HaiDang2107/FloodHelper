@@ -4,7 +4,21 @@ enum MapType { transport, weather }
 
 enum HomeUiEventType { info, success, error }
 
-enum HomePinType { me, friend, victim }
+enum HomePinType { me, friend, victim, campaign }
+
+class HomeCampaignLocationPin {
+  final String campaignId;
+  final String campaignName;
+  final String destination;
+  final LatLng position;
+
+  const HomeCampaignLocationPin({
+    required this.campaignId,
+    required this.campaignName,
+    required this.destination,
+    required this.position,
+  });
+}
 
 class HomeMapPin {
   final String userId;
@@ -13,6 +27,8 @@ class HomeMapPin {
   final LatLng position;
   final HomePinType pinType;
   final bool isSos;
+  final String? campaignId;
+  final String? campaignDestination;
 
   const HomeMapPin({
     required this.userId,
@@ -21,6 +37,8 @@ class HomeMapPin {
     required this.position,
     required this.pinType,
     required this.isSos,
+    this.campaignId,
+    this.campaignDestination,
   });
 }
 
@@ -55,6 +73,7 @@ class HomeState {
   final DistressSignalInput? sosData;
   final bool showStrangerLocation;
   final bool showPostLocation;
+  final bool showCharityCampaignLocations;
   final String? selectedPinId;
   final String? errorMessage;
   final HomeUiEvent? uiEvent;
@@ -69,6 +88,7 @@ class HomeState {
   final Map<String, String> victimFullnames;
 
   final List<FriendModel> friendsWithMapMode;
+  final List<HomeCampaignLocationPin> campaignLocations;
 
   final String locationVisibility;
 
@@ -80,6 +100,7 @@ class HomeState {
     this.sosData,
     this.showStrangerLocation = true,
     this.showPostLocation = true,
+    this.showCharityCampaignLocations = false,
     this.selectedPinId,
     this.errorMessage,
     this.uiEvent,
@@ -91,6 +112,7 @@ class HomeState {
     this.victimLocations = const {},
     this.victimFullnames = const {},
     this.friendsWithMapMode = const [],
+    this.campaignLocations = const [],
     this.locationVisibility = 'JUST_FRIEND',
   });
 
@@ -102,6 +124,7 @@ class HomeState {
     DistressSignalInput? sosData,
     bool? showStrangerLocation,
     bool? showPostLocation,
+    bool? showCharityCampaignLocations,
     String? selectedPinId,
     String? errorMessage,
     HomeUiEvent? uiEvent,
@@ -116,6 +139,7 @@ class HomeState {
     Map<String, LatLng>? victimLocations,
     Map<String, String>? victimFullnames,
     List<FriendModel>? friendsWithMapMode,
+    List<HomeCampaignLocationPin>? campaignLocations,
     String? locationVisibility,
   }) {
     return HomeState(
@@ -126,6 +150,8 @@ class HomeState {
       sosData: clearSosData ? null : (sosData ?? this.sosData),
       showStrangerLocation: showStrangerLocation ?? this.showStrangerLocation,
       showPostLocation: showPostLocation ?? this.showPostLocation,
+        showCharityCampaignLocations:
+          showCharityCampaignLocations ?? this.showCharityCampaignLocations,
       selectedPinId: clearSelectedPin
           ? null
           : (selectedPinId ?? this.selectedPinId),
@@ -140,6 +166,7 @@ class HomeState {
       victimLocations: victimLocations ?? this.victimLocations,
       victimFullnames: victimFullnames ?? this.victimFullnames,
       friendsWithMapMode: friendsWithMapMode ?? this.friendsWithMapMode,
+      campaignLocations: campaignLocations ?? this.campaignLocations,
       locationVisibility: locationVisibility ?? this.locationVisibility,
     );
   }

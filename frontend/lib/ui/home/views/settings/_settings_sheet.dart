@@ -60,8 +60,12 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
             DisplayWidget(
               showStrangerLocation: homeState.showStrangerLocation,
               showPostLocation: homeState.showPostLocation,
+              showCharityCampaignLocations:
+                  homeState.showCharityCampaignLocations,
               onShowStrangerLocationChanged: viewModel.setShowStrangerLocation,
               onShowPostLocationChanged: viewModel.setShowPostLocation,
+              onShowCharityCampaignLocationsChanged:
+                  viewModel.setShowCharityCampaignLocations,
             ),
             const SizedBox(height: 16),
             Container(

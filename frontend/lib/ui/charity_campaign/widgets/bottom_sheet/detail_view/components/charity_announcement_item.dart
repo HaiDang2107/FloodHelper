@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../../../models/charity_campaign.dart';
+import '../../../../../../domain/models/charity_campaign.dart';
 
 class CharityAnnouncementItem extends StatelessWidget {
   final CampaignAnnouncement announcement;
 
-  const CharityAnnouncementItem({
-    super.key,
-    required this.announcement,
-  });
+  const CharityAnnouncementItem({super.key, required this.announcement});
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  String _formatDateTime(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$hour:$minute $day/$month/$year';
   }
 
   @override
@@ -31,11 +33,8 @@ class CharityAnnouncementItem extends StatelessWidget {
               const Icon(Icons.campaign, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
               Text(
-                _formatDate(announcement.date),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                _formatDateTime(announcement.date),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -52,7 +51,7 @@ class CharityAnnouncementItem extends StatelessWidget {
                 announcement.imageUrl!,
                 height: 150,
                 width: double.infinity,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) =>
                     const SizedBox.shrink(),
               ),

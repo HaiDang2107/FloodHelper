@@ -52,9 +52,10 @@ AnnouncementRepository announcementRepository(Ref ref) {
   if (useMockData) {
     return MockAnnouncementRepository();
   }
-  // TODO: Return real implementation when backend is ready
-  // return RealAnnouncementRepository(ref.read(dioProvider));
-  return MockAnnouncementRepository();
+  return RealAnnouncementRepository(
+    authorityService: ref.read(authorityServiceProvider),
+    profileRepository: ref.read(profileRepositoryProvider),
+  );
 }
 
 /// Provider for ProfileRepository
@@ -72,7 +73,17 @@ ProfileRepository profileRepository(Ref ref) {
 /// Provider for FriendRepository
 @riverpod
 FriendRepository friendRepository(Ref ref) {
-  return RealFriendRepository(
-    friendService: ref.read(friendServiceProvider),
+  return RealFriendRepository(friendService: ref.read(friendServiceProvider));
+}
+
+/// Provider for CharityCampaignRepository
+@riverpod
+CharityCampaignRepository charityCampaignRepository(Ref ref) {
+  if (useMockData) {
+    return MockCharityCampaignRepository();
+  }
+
+  return RealCharityCampaignRepository(
+    charityCampaignService: ref.read(charityCampaignServiceProvider),
   );
 }

@@ -65,11 +65,16 @@ final authorityRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AuthorityRoutes.charity,
-            builder: (context, state) => const CharityCampaignScreen(),
+            builder: (context, state) => CharityCampaignScreen(
+              statusQuery: state.uri.queryParameters['status'],
+            ),
           ),
           GoRoute(
             path: AuthorityRoutes.announcements,
-            builder: (context, state) => const AnnouncementsScreen(),
+            builder: (context, state) => AnnouncementsScreen(
+              sectionQuery: state.uri.queryParameters['section'],
+              reloadQuery: state.uri.queryParameters['reload'],
+            ),
           ),
         ],
       ),

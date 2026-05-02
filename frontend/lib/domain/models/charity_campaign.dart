@@ -4,26 +4,72 @@
 
 class CharityCampaign {
   final String id;
+  final String? organizedBy;
+  final String? checkedBy;
   final String name;
   final String benefactorName;
+  final String purpose;
+  final String charityObject;
   final CampaignStatus status;
   final BankInfo bankInfo;
+  final String? bankStatementFileUrl;
+  final DateTime? requestedAt;
+  final DateTime? respondedAt;
+  final DateTime? suspendedAt;
+  final DateTime? createdAt;
+  final String? noteForResponse;
+  final String? noteForSuspension;
+  final DateTime? startedDonationAt;
+  final DateTime? finishedDonationAt;
+  final DateTime? startedDistributionAt;
+  final DateTime? finishedDistributionAt;
+  final int? destinationProvinceCode;
+  final String? destinationProvinceName;
+  final int? destinationWardCode;
+  final String? destinationWardName;
+  final String? destinationDetail;
   final String reliefLocation;
+  final double? latitude;
+  final double? longitude;
   final DateRange period;
   final List<CampaignAnnouncement> announcements;
   final List<PurchasedSupply> purchasedSupplies;
+  final List<FinancialSupportAllocation> financialSupports;
   final List<Donation> donations;
 
   const CharityCampaign({
     required this.id,
+    this.organizedBy,
+    this.checkedBy,
     required this.name,
     required this.benefactorName,
+    this.purpose = '',
+    this.charityObject = '',
     required this.status,
     required this.bankInfo,
+    this.bankStatementFileUrl,
+    this.requestedAt,
+    this.respondedAt,
+    this.suspendedAt,
+    this.createdAt,
+    this.noteForResponse,
+    this.noteForSuspension,
+    this.startedDonationAt,
+    this.finishedDonationAt,
+    this.startedDistributionAt,
+    this.finishedDistributionAt,
+    this.destinationProvinceCode,
+    this.destinationProvinceName,
+    this.destinationWardCode,
+    this.destinationWardName,
+    this.destinationDetail,
     required this.reliefLocation,
+    this.latitude,
+    this.longitude,
     required this.period,
     this.announcements = const [],
     this.purchasedSupplies = const [],
+    this.financialSupports = const [],
     this.donations = const [],
   });
 
@@ -33,12 +79,12 @@ class CharityCampaign {
   }
 
   /// Calculate total spent on supplies
-  double get totalSpent {
-    return purchasedSupplies.fold(0, (sum, s) => sum + s.totalPrice);
-  }
+  // double get totalSpent {
+  //   return purchasedSupplies.fold(0, (sum, s) => sum + s.totalPrice);
+  // }
 
   /// Remaining funds
-  double get remainingFunds => totalDonations - totalSpent;
+  // double get remainingFunds => totalDonations - totalSpent;
 
   /// Check if campaign is active (can receive donations)
   bool get isActive => status == CampaignStatus.donating;
@@ -47,35 +93,85 @@ class CharityCampaign {
   bool get isFinished => status == CampaignStatus.finished;
 
   /// Get progress percentage (days elapsed)
-  double get progressPercentage {
-    final totalDays = period.endDate.difference(period.startDate).inDays;
-    final elapsedDays = DateTime.now().difference(period.startDate).inDays;
-    if (totalDays <= 0) return 100;
-    return (elapsedDays / totalDays * 100).clamp(0, 100);
-  }
+  // double get progressPercentage {
+  //   final totalDays = finishedDistributionAt?.difference(startedDonationAt ?? DateTime.now()).inDays ?? 0;
+  //   final elapsedDays = DateTime.now().difference(startedDonationAt ?? DateTime.now()).inDays;
+  //   if (totalDays <= 0) return 100;
+  //   return (elapsedDays / totalDays * 100).clamp(0, 100);
+  // }
 
   CharityCampaign copyWith({
     String? id,
+    String? organizedBy,
+    String? checkedBy,
     String? name,
     String? benefactorName,
+    String? purpose,
+    String? charityObject,
     CampaignStatus? status,
     BankInfo? bankInfo,
+    String? bankStatementFileUrl,
+    DateTime? requestedAt,
+    DateTime? respondedAt,
+    DateTime? suspendedAt,
+    DateTime? createdAt,
+    String? noteForResponse,
+    String? noteForSuspension,
+    DateTime? startedDonationAt,
+    DateTime? finishedDonationAt,
+    DateTime? startedDistributionAt,
+    DateTime? finishedDistributionAt,
+    int? destinationProvinceCode,
+    String? destinationProvinceName,
+    int? destinationWardCode,
+    String? destinationWardName,
+    String? destinationDetail,
     String? reliefLocation,
+    double? latitude,
+    double? longitude,
     DateRange? period,
     List<CampaignAnnouncement>? announcements,
     List<PurchasedSupply>? purchasedSupplies,
+    List<FinancialSupportAllocation>? financialSupports,
     List<Donation>? donations,
   }) {
     return CharityCampaign(
       id: id ?? this.id,
+      organizedBy: organizedBy ?? this.organizedBy,
+      checkedBy: checkedBy ?? this.checkedBy,
       name: name ?? this.name,
       benefactorName: benefactorName ?? this.benefactorName,
+      purpose: purpose ?? this.purpose,
+      charityObject: charityObject ?? this.charityObject,
       status: status ?? this.status,
       bankInfo: bankInfo ?? this.bankInfo,
+      bankStatementFileUrl: bankStatementFileUrl ?? this.bankStatementFileUrl,
+      requestedAt: requestedAt ?? this.requestedAt,
+      respondedAt: respondedAt ?? this.respondedAt,
+      suspendedAt: suspendedAt ?? this.suspendedAt,
+      createdAt: createdAt ?? this.createdAt,
+      noteForResponse: noteForResponse ?? this.noteForResponse,
+      noteForSuspension: noteForSuspension ?? this.noteForSuspension,
+      startedDonationAt: startedDonationAt ?? this.startedDonationAt,
+      finishedDonationAt: finishedDonationAt ?? this.finishedDonationAt,
+      startedDistributionAt: startedDistributionAt ?? this.startedDistributionAt,
+      finishedDistributionAt: finishedDistributionAt ?? this.finishedDistributionAt,
+        destinationProvinceCode:
+          destinationProvinceCode ?? this.destinationProvinceCode,
+        destinationProvinceName:
+          destinationProvinceName ?? this.destinationProvinceName,
+        destinationWardCode:
+          destinationWardCode ?? this.destinationWardCode,
+        destinationWardName:
+          destinationWardName ?? this.destinationWardName,
+        destinationDetail: destinationDetail ?? this.destinationDetail,
       reliefLocation: reliefLocation ?? this.reliefLocation,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       period: period ?? this.period,
       announcements: announcements ?? this.announcements,
       purchasedSupplies: purchasedSupplies ?? this.purchasedSupplies,
+      financialSupports: financialSupports ?? this.financialSupports,
       donations: donations ?? this.donations,
     );
   }
@@ -94,19 +190,25 @@ class CharityCampaign {
 enum CampaignStatus {
   /// Waiting for approval
   pending,
-  
+
   /// Approved, ready to start
   approved,
-  
+
   /// Rejected by admin
   rejected,
-  
+
+  /// Draft created by benefactor
+  created,
+
   /// Currently accepting donations
   donating,
-  
+
   /// Distributing relief supplies
   distributing,
-  
+
+  /// Temporarily suspended by authority
+  suspended,
+
   /// Campaign completed
   finished;
 
@@ -118,10 +220,14 @@ enum CampaignStatus {
         return 'Đã duyệt';
       case CampaignStatus.rejected:
         return 'Từ chối';
+      case CampaignStatus.created:
+        return 'Mới tạo';
       case CampaignStatus.donating:
         return 'Đang quyên góp';
       case CampaignStatus.distributing:
         return 'Đang phát hàng';
+      case CampaignStatus.suspended:
+        return 'Tạm dừng';
       case CampaignStatus.finished:
         return 'Hoàn thành';
     }
@@ -136,10 +242,14 @@ enum CampaignStatus {
         return CampaignStatus.approved;
       case 'rejected':
         return CampaignStatus.rejected;
+      case 'created':
+        return CampaignStatus.created;
       case 'donating':
         return CampaignStatus.donating;
       case 'distributing':
         return CampaignStatus.distributing;
+      case 'suspended':
+        return CampaignStatus.suspended;
       case 'finished':
         return CampaignStatus.finished;
       default:
@@ -152,11 +262,17 @@ enum CampaignStatus {
 class BankInfo {
   final String accountNumber;
   final String bankName;
+  final int? bankId;
+  final String? bankCode;
+  final String? bankShortName;
   final String? accountHolder;
 
   const BankInfo({
     required this.accountNumber,
     required this.bankName,
+    this.bankId,
+    this.bankCode,
+    this.bankShortName,
     this.accountHolder,
   });
 
@@ -169,11 +285,17 @@ class BankInfo {
   BankInfo copyWith({
     String? accountNumber,
     String? bankName,
+    int? bankId,
+    String? bankCode,
+    String? bankShortName,
     String? accountHolder,
   }) {
     return BankInfo(
       accountNumber: accountNumber ?? this.accountNumber,
       bankName: bankName ?? this.bankName,
+      bankId: bankId ?? this.bankId,
+      bankCode: bankCode ?? this.bankCode,
+      bankShortName: bankShortName ?? this.bankShortName,
       accountHolder: accountHolder ?? this.accountHolder,
     );
   }
@@ -184,10 +306,7 @@ class DateRange {
   final DateTime startDate;
   final DateTime endDate;
 
-  const DateRange({
-    required this.startDate,
-    required this.endDate,
-  });
+  const DateRange({required this.startDate, required this.endDate});
 
   /// Duration in days
   int get durationDays => endDate.difference(startDate).inDays;
@@ -205,10 +324,7 @@ class DateRange {
     return endDate.difference(now).inDays;
   }
 
-  DateRange copyWith({
-    DateTime? startDate,
-    DateTime? endDate,
-  }) {
+  DateRange copyWith({DateTime? startDate, DateTime? endDate}) {
     return DateRange(
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
@@ -243,31 +359,67 @@ class CampaignAnnouncement {
 
 /// Value object for purchased supplies
 class PurchasedSupply {
+  final String? supplyId;
   final String productName;
   final String vendor;
   final int quantity;
   final double unitPrice;
+  final DateTime? boughtAt;
 
   const PurchasedSupply({
+    this.supplyId,
     required this.productName,
     required this.vendor,
     required this.quantity,
     required this.unitPrice,
+    this.boughtAt,
   });
 
   double get totalPrice => quantity * unitPrice;
 
   PurchasedSupply copyWith({
+    String? supplyId,
     String? productName,
     String? vendor,
     int? quantity,
     double? unitPrice,
+    DateTime? boughtAt,
   }) {
     return PurchasedSupply(
+      supplyId: supplyId ?? this.supplyId,
       productName: productName ?? this.productName,
       vendor: vendor ?? this.vendor,
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
+      boughtAt: boughtAt ?? this.boughtAt,
+    );
+  }
+}
+
+class FinancialSupportAllocation {
+  final String? financialSupportId;
+  final String householdName;
+  final double amount;
+  final DateTime? allocatedAt;
+
+  const FinancialSupportAllocation({
+    this.financialSupportId,
+    required this.householdName,
+    required this.amount,
+    this.allocatedAt,
+  });
+
+  FinancialSupportAllocation copyWith({
+    String? financialSupportId,
+    String? householdName,
+    double? amount,
+    DateTime? allocatedAt,
+  }) {
+    return FinancialSupportAllocation(
+      financialSupportId: financialSupportId ?? this.financialSupportId,
+      householdName: householdName ?? this.householdName,
+      amount: amount ?? this.amount,
+      allocatedAt: allocatedAt ?? this.allocatedAt,
     );
   }
 }
@@ -299,4 +451,30 @@ class Donation {
       message: message ?? this.message,
     );
   }
+}
+
+class DonateQrResult {
+  final String qrLink;
+  final String transactionId;
+
+  const DonateQrResult({
+    required this.qrLink,
+    required this.transactionId,
+  });
+}
+
+class CharityCampaignLocation {
+  final String campaignId;
+  final String campaignName;
+  final String destination;
+  final double latitude;
+  final double longitude;
+
+  const CharityCampaignLocation({
+    required this.campaignId,
+    required this.campaignName,
+    required this.destination,
+    required this.latitude,
+    required this.longitude,
+  });
 }

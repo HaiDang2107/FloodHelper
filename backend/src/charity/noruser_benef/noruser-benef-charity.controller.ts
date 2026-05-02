@@ -1,0 +1,555 @@
+import {
+  Body,
+  BadRequestException,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { UserRole } from '../../common/enum/userRole.enum';
+import { CreateCampaignDto } from './dto/create-campaign.dto';
+import { QueryCampaignTransactionsDto } from './dto/query-campaign-transactions.dto';
+import { QueryCampaignsByStateDto } from './dto/query-campaigns-by-state.dto';
+import { UpdateCampaignDto } from './dto/update-campaign.dto';
+import { CreateDonateQrDto } from '../vietqr/dto';
+import {
+  CreateCampaignAnnouncementDto,
+  CreateFinancialSupportDto,
+  CreateSupplyDto,
+  QueryCampaignAnnouncementsDto,
+  UpdateFinancialSupportDto,
+  UpdateSupplyDto,
+  UpdateCampaignLocationDto,
+} from './dto';
+import { NoruserBenefAllocationService } from './noruser-benef-allocation.service';
+import { NoruserBenefCharityService } from './noruser-benef-charity.service';
+import type { UploadedFilePayload } from '../../common/uploaded-file.type';
+
+@Controller('charity')
+@UseGuards(JwtAuthGuard)
+export class NoruserBenefCharityController {
+  constructor(
+    private readonly noruserBenefCharityService: NoruserBenefCharityService,
+    private readonly noruserBenefAllocationService: NoruserBenefAllocationService,
+  ) {}
+
+  @Get('campaigns/existing')
+  async getExistingCampaigns(@Query() query: QueryCampaignsByStateDto) {
+    if (!query.state) {
+      throw new BadRequestException('state is required');
+    }
+
+    const data = await this.noruserBenefCharityService.listExistingCampaignsByState(
+      query.state,
+    );
+
+    return {
+      success: true,
+      message: 'Existing campaigns retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Get('campaigns/mine')
+  async getMyCampaigns(
+    @CurrentUser() user: any,
+    @Query() query: QueryCampaignsByStateDto,
+  ) {
+    if (!query.state) {
+      throw new BadRequestException('state is required');
+    }
+
+    const data = await this.noruserBenefCharityService.listMyCampaignsByState(
+      user.userId,
+      query.state,
+    );
+
+    return {
+      success: true,
+      message: 'My campaigns retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/distributing-locations')
+  async getDistributingCampaignLocations() {
+    const data =
+      await this.noruserBenefCharityService.listDistributingCampaignLocations();
+
+    return {
+      success: true,
+      message: 'Distributing campaign locations retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('banks')
+  async getBanks() {
+    const data = await this.noruserBenefCharityService.listBanks();
+
+    return {
+      success: true,
+      message: 'Banks retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId')
+  async getCampaignDetail(@Param('campaignId') campaignId: string) {
+    const data = await this.noruserBenefCharityService.getCampaignDetail(campaignId);
+
+    return {
+      success: true,
+      message: 'Campaign detail retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/transactions')
+  async getCampaignTransactions(
+    @Param('campaignId') campaignId: string,
+    @Query() query: QueryCampaignTransactionsDto,
+  ) {
+    const data = await this.noruserBenefCharityService.listCampaignTransactions(campaignId, query);
+
+    return {
+      success: true,
+      message: 'Campaign transactions retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/announcements')
+  async getCampaignAnnouncements(
+    @Param('campaignId') campaignId: string,
+    @Query() query: QueryCampaignAnnouncementsDto,
+  ) {
+    const data = await this.noruserBenefCharityService.listCampaignAnnouncements(
+      campaignId,
+      query,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign announcements retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/announcements')
+  @UseInterceptors( // Sử dụng Multer để lấy file trong request
+    FileInterceptor('image', {
+      storage: memoryStorage(), // Lưu tạm file trong RAM 
+      limits: { fileSize: 5 * 1024 * 1024 }, // Dung lượng
+      fileFilter: (_req, file, cb) => { // Bộ lọc kiểm tra định dạng file
+        const allowed = ['image/jpeg', 'image/png'];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Only JPG/PNG images are allowed'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async createCampaignAnnouncement(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateCampaignAnnouncementDto,
+    @UploadedFile() file?: UploadedFilePayload, // Lấy ra file đã qua bộ lọc đầu vào
+  ) {
+    const data = await this.noruserBenefCharityService.createCampaignAnnouncement(
+      user.userId,
+      campaignId,
+      body.caption,
+      file,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign announcement created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/bank-statement')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+        if (!allowed.includes(file.mimetype)) {
+          cb(new BadRequestException('Only PDF, XLSX, or DOCX files are allowed'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadCampaignBankStatement(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @UploadedFile() file?: UploadedFilePayload,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Bank statement file is required');
+    }
+
+    const data = await this.noruserBenefCharityService.uploadCampaignBankStatement(
+      user.userId,
+      campaignId,
+      file,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign bank statement uploaded successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Delete('campaigns/:campaignId/bank-statement')
+  async deleteCampaignBankStatement(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+  ) {
+    const data = await this.noruserBenefCharityService.deleteCampaignBankStatement(
+      user.userId,
+      campaignId,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign bank statement deleted successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns')
+  async createCampaign(
+    @CurrentUser() user: any,
+    @Body() body: CreateCampaignDto,
+  ) {
+    const data = await this.noruserBenefCharityService.createCampaign(user.userId, body);
+
+    return {
+      success: true,
+      message: 'Campaign draft created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Put('campaigns/:campaignId')
+  async updateCampaign(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: UpdateCampaignDto,
+  ) {
+    const data = await this.noruserBenefCharityService.updateCampaign(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Patch('campaigns/:campaignId/location')
+  async updateCampaignLocation(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: UpdateCampaignLocationDto,
+  ) {
+    const data = await this.noruserBenefCharityService.updateCampaignLocation(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign location check-in successful',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/send-request')
+  async sendCampaignRequest(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+  ) {
+    const data = await this.noruserBenefCharityService.sendCampaignRequest(
+      user.userId,
+      campaignId,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign request sent successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/supplies') // Lấy danh sách supplies
+  async getCampaignSupplies(@Param('campaignId') campaignId: string) {
+    const data = await this.noruserBenefAllocationService.listSupplies(campaignId);
+
+    return {
+      success: true,
+      message: 'Campaign supplies retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/supplies')
+  async createCampaignSupply( // Tạo supply
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateSupplyDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.createSupply(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Supply created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Put('campaigns/:campaignId/supplies/:supplyId')
+  async updateCampaignSupply(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('supplyId') supplyId: string,
+    @Body() body: UpdateSupplyDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.updateSupply(
+      user.userId,
+      campaignId,
+      supplyId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Supply updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Delete('campaigns/:campaignId/supplies/:supplyId')
+  async deleteCampaignSupply(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('supplyId') supplyId: string,
+  ) {
+    const data = await this.noruserBenefAllocationService.deleteSupply(
+      user.userId,
+      campaignId,
+      supplyId,
+    );
+
+    return {
+      success: true,
+      message: 'Supply deleted successfully',
+      data,
+    };
+  }
+
+  @Get('campaigns/:campaignId/financial-supports')
+  async getCampaignFinancialSupports(@Param('campaignId') campaignId: string) {
+    const data = await this.noruserBenefAllocationService.listFinancialSupports(
+      campaignId,
+    );
+
+    return {
+      success: true,
+      message: 'Campaign financial supports retrieved successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Post('campaigns/:campaignId/financial-supports')
+  async createCampaignFinancialSupport(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateFinancialSupportDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.createFinancialSupport(
+      user.userId,
+      campaignId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Financial support created successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Put('campaigns/:campaignId/financial-supports/:financialSupportId')
+  async updateCampaignFinancialSupport(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('financialSupportId') financialSupportId: string,
+    @Body() body: UpdateFinancialSupportDto,
+  ) {
+    const data = await this.noruserBenefAllocationService.updateFinancialSupport(
+      user.userId,
+      campaignId,
+      financialSupportId,
+      body,
+    );
+
+    return {
+      success: true,
+      message: 'Financial support updated successfully',
+      data,
+    };
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.BENEFACTOR)
+  @Delete('campaigns/:campaignId/financial-supports/:financialSupportId')
+  async deleteCampaignFinancialSupport(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Param('financialSupportId') financialSupportId: string,
+  ) {
+    const data = await this.noruserBenefAllocationService.deleteFinancialSupport(
+      user.userId,
+      campaignId,
+      financialSupportId,
+    );
+
+    return {
+      success: true,
+      message: 'Financial support deleted successfully',
+      data,
+    };
+  }
+
+  @Post('campaigns/:campaignId/donate/qr')
+  async createDonateQr(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateDonateQrDto,
+  ) {
+    const data = await this.noruserBenefCharityService.createDonationQr(
+      campaignId,
+      body.amount,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'VietQR created successfully',
+      data,
+    };
+  }
+
+  @Post('transactions/:transactionId/test-callback')
+  async testCallback(
+    @CurrentUser() user: any,
+    @Param('transactionId') transactionId: string,
+  ) {
+    const data = await this.noruserBenefCharityService.triggerTestCallback(
+      transactionId,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'Transaction callback triggered successfully',
+      data,
+    };
+  }
+
+  @Post('internal/campaigns/:campaignId/donate/qr')
+  async createDonateQrInternal(
+    @CurrentUser() user: any,
+    @Param('campaignId') campaignId: string,
+    @Body() body: CreateDonateQrDto,
+  ) {
+    const data = await this.noruserBenefCharityService.createDonationQrInternal(
+      campaignId,
+      body.amount,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'Internal VietQR created successfully',
+      data,
+    };
+  }
+
+  @Post('internal/transactions/:transactionId/test-callback')
+  async testCallbackInternal(
+    @CurrentUser() user: any,
+    @Param('transactionId') transactionId: string,
+  ) {
+    const data = await this.noruserBenefCharityService.triggerTestCallbackInternal(
+      transactionId,
+      user.userId,
+    );
+
+    return {
+      success: true,
+      message: 'Internal transaction callback simulated successfully',
+      data,
+    };
+  }
+}

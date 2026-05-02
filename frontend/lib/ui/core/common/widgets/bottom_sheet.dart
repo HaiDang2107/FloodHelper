@@ -4,12 +4,14 @@ class CustomBottomSheet extends StatelessWidget {
   final String title;
   final Widget child;
   final Color? backgroundColor;
+  final VoidCallback? onReachBottom;
 
   const CustomBottomSheet({
     super.key,
     required this.title,
     required this.child,
     this.backgroundColor,
+    this.onReachBottom,
   });
 
   @override
@@ -48,11 +50,25 @@ class CustomBottomSheet extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [child],
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (onReachBottom == null) {
+                      return false;
+                    }
+
+                    final metrics = notification.metrics;
+                    if (metrics.maxScrollExtent - metrics.pixels <= 120) {
+                      onReachBottom!.call();
+                    }
+
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [child],
+                    ),
                   ),
                 ),
               ),

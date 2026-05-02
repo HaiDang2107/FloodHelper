@@ -43,6 +43,8 @@ Future<void> onStart(ServiceInstance service) async {
   StreamSubscription? rescuerSubscription;
   StreamSubscription? rescuerReplySubscription;
 
+  Map<String, double>? _cachedPosition; // Lưu tạm vị trí mới nhất để focus lúc vào app
+
   void teardownRescuerSubscription() {
     rescuerSubscription?.cancel();
     rescuerSubscription = null;
@@ -257,6 +259,45 @@ Future<void> onStart(ServiceInstance service) async {
     service.stopSelf();
   });
 
+  // Trả lời khi tầng bên trên yêu cầu vị trí
+  service.on('requestImmediateLocation').listen((_) async {
+    if (kDebugMode) print('📍 [BG] UI vừa request lấy tọa độ tức thì!');
+
+    if (_cachedPosition != null) {
+      if (kDebugMode) print('📍 [BG] Trả về tọa độ từ Cache cho UI siêu nhanh!');
+      service.invoke('onLocationUpdate', _cachedPosition);
+      return;
+    }
+
+    try {
+      // Ép lấy vị trí ngay lập tức
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      // Bắn ngược lên UI
+      service.invoke('onLocationUpdate', {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      });
+      
+      // Chú ý: Ở bước này ta chỉ bắn lên UI cho bản đồ vẽ nhanh, 
+      // không cần publish MQTT để tránh rác server, việc publish cứ để Timer lo.
+    } catch (e) {
+      if (kDebugMode) print('📍 [BG] Lỗi khi lấy GPS tức thì: $e');
+      // Thử lấy vị trí cuối cùng nếu lỗi
+      final lastPosition = await Geolocator.getLastKnownPosition();
+      if (lastPosition != null) {
+        service.invoke('onLocationUpdate', {
+          'latitude': lastPosition.latitude,
+          'longitude': lastPosition.longitude,
+        });
+      }
+    }
+  });
+
   _publishTimer?.cancel();
   _publishTimer = Timer.periodic(
     Duration(seconds: AppConfig.locationPublishIntervalSeconds),
@@ -281,6 +322,11 @@ Future<void> onStart(ServiceInstance service) async {
           accuracy: LocationAccuracy.high,
         ),
       );
+
+      _cachedPosition = {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      };
 
       if (mqttConnected) {
         final payload = jsonEncode({

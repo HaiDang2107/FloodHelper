@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../../../domain/models/user_profile.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../core/common/widgets/location_selector.dart';
+import 'citizen_id_card_picker.dart';
 
 class ProfileInfo extends StatelessWidget {
   final bool isEditing;
@@ -15,14 +19,34 @@ class ProfileInfo extends StatelessWidget {
   // Additional Info
   final TextEditingController jobPositionController;
   final TextEditingController phoneController;
-  final TextEditingController placeOfOriginController;
-  final TextEditingController placeOfResidenceController;
   final TextEditingController citizenIdController;
   final TextEditingController dateOfIssueController;
   final TextEditingController dateOfExpiryController;
+
+  final String originProvinceDisplay;
+  final String originWardDisplay;
+  final String residenceProvinceDisplay;
+  final String residenceWardDisplay;
+
+  final int? originProvinceCode;
+  final int? originWardCode;
+  final int? residenceProvinceCode;
+  final int? residenceWardCode;
+
+  final ValueChanged<LocationSelection>? onOriginLocationChanged;
+  final ValueChanged<LocationSelection>? onResidenceLocationChanged;
   final VoidCallback? onDobTap;
   final VoidCallback? onDateOfIssueTap;
   final VoidCallback? onDateOfExpiryTap;
+  // ID Card image support
+  final String? currentFrontCitizenIdUrl;
+  final String? currentBackCitizenIdUrl;
+  final XFile? tempFrontImage;
+  final XFile? tempBackImage;
+  final ValueChanged<XFile?>? onFrontImageSelected;
+  final ValueChanged<XFile?>? onBackImageSelected;
+  final VoidCallback? onViewFront;
+  final VoidCallback? onViewBack;
 
   const ProfileInfo({
     super.key,
@@ -36,14 +60,30 @@ class ProfileInfo extends StatelessWidget {
     required this.dobController,
     required this.jobPositionController,
     required this.phoneController,
-    required this.placeOfOriginController,
-    required this.placeOfResidenceController,
     required this.citizenIdController,
     required this.dateOfIssueController,
     required this.dateOfExpiryController,
+    required this.originProvinceDisplay,
+    required this.originWardDisplay,
+    required this.residenceProvinceDisplay,
+    required this.residenceWardDisplay,
+    required this.originProvinceCode,
+    required this.originWardCode,
+    required this.residenceProvinceCode,
+    required this.residenceWardCode,
+    required this.onOriginLocationChanged,
+    required this.onResidenceLocationChanged,
     this.onDobTap,
     this.onDateOfIssueTap,
     this.onDateOfExpiryTap,
+    this.currentFrontCitizenIdUrl,
+    this.currentBackCitizenIdUrl,
+    this.tempFrontImage,
+    this.tempBackImage,
+    this.onFrontImageSelected,
+    this.onBackImageSelected,
+    this.onViewFront,
+    this.onViewBack,
   });
 
   @override
@@ -57,7 +97,7 @@ class ProfileInfo extends StatelessWidget {
         _buildTextField(
           controller: userIdController,
           label: 'User ID',
-          enabled: false, // User ID usually not editable
+          enabled: false,
         ),
         const SizedBox(height: 16),
         _buildTextField(
@@ -110,16 +150,22 @@ class ProfileInfo extends StatelessWidget {
           enabled: isEditing,
         ),
         const SizedBox(height: 16),
-        _buildTextField(
-          controller: placeOfOriginController,
-          label: 'Place of Origin',
-          enabled: isEditing,
+        _buildLocationField(
+          title: 'Place of Origin',
+          provinceDisplay: originProvinceDisplay,
+          wardDisplay: originWardDisplay,
+          provinceCode: originProvinceCode,
+          wardCode: originWardCode,
+          onChanged: onOriginLocationChanged,
         ),
         const SizedBox(height: 16),
-        _buildTextField(
-          controller: placeOfResidenceController,
-          label: 'Place of Residence',
-          enabled: isEditing,
+        _buildLocationField(
+          title: 'Place of Residence',
+          provinceDisplay: residenceProvinceDisplay,
+          wardDisplay: residenceWardDisplay,
+          provinceCode: residenceProvinceCode,
+          wardCode: residenceWardCode,
+          onChanged: onResidenceLocationChanged,
         ),
         const SizedBox(height: 16),
         _buildTextField(
@@ -128,30 +174,20 @@ class ProfileInfo extends StatelessWidget {
           enabled: isEditing,
         ),
         const SizedBox(height: 16),
-        
-        // ID Card Upload Section
-        Text(
-          'ID Card Images',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildImageUploadBox('Front Side'),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildImageUploadBox('Back Side'),
-            ),
-          ],
+
+        CitizenIdCardPicker(
+          currentFrontUrl: currentFrontCitizenIdUrl,
+          currentBackUrl: currentBackCitizenIdUrl,
+          selectedFrontImage: tempFrontImage,
+          selectedBackImage: tempBackImage,
+          onFrontImageSelected: onFrontImageSelected,
+          onBackImageSelected: onBackImageSelected,
+          onViewFront: onViewFront,
+          onViewBack: onViewBack,
+          isEditing: isEditing,
         ),
         const SizedBox(height: 16),
-        
+
         Row(
           children: [
             Expanded(
@@ -187,7 +223,6 @@ class ProfileInfo extends StatelessWidget {
 
   Widget _buildGenderField() {
     if (!isEditing) {
-      // Read-only display
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Column(
@@ -206,7 +241,8 @@ class ProfileInfo extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: selectedGender != null ? Colors.black87 : Colors.grey[400],
+                color:
+                    selectedGender != null ? Colors.black87 : Colors.grey[400],
               ),
             ),
             const SizedBox(height: 4),
@@ -260,30 +296,30 @@ class ProfileInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildImageUploadBox(String label) {
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[50],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.add_a_photo, color: Colors.grey[400]),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildImageUploadBox(String label) {
+  //   return Container(
+  //     height: 100,
+  //     decoration: BoxDecoration(
+  //       border: Border.all(color: Colors.grey[300]!),
+  //       borderRadius: BorderRadius.circular(8),
+  //       color: Colors.grey[50],
+  //     ),
+  //     child: Column(
+  //       mainAxisAlignment: MainAxisAlignment.center,
+  //       children: [
+  //         Icon(Icons.add_a_photo, color: Colors.grey[400]),
+  //         const SizedBox(height: 4),
+  //         Text(
+  //           label,
+  //           style: TextStyle(
+  //             fontSize: 12,
+  //             color: Colors.grey[600],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -331,6 +367,61 @@ class ProfileInfo extends StatelessWidget {
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         suffixIcon: suffixIcon,
+      ),
+    );
+  }
+
+  Widget _buildLocationField({
+    required String title,
+    required String provinceDisplay,
+    required String wardDisplay,
+    required int? provinceCode,
+    required int? wardCode,
+    required ValueChanged<LocationSelection>? onChanged,
+  }) {
+    if (!isEditing) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            const SizedBox(height: 4),
+            _buildLocationLine(
+              label: 'Province',
+              value: provinceDisplay,
+            ),
+            const SizedBox(height: 4),
+            _buildLocationLine(
+              label: 'Ward',
+              value: wardDisplay,
+            ),
+            const SizedBox(height: 4),
+            Divider(color: Colors.grey[200]),
+          ],
+        ),
+      );
+    }
+
+    return LocationSelectorField(
+      provinceLabel: '$title Province',
+      wardLabel: '$title Ward',
+      initialProvinceCode: provinceCode,
+      initialWardCode: wardCode,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildLocationLine({
+    required String label,
+    required String value,
+  }) {
+    return Text(
+      '$label: ${value.isEmpty ? '-' : value}',
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Colors.black87,
       ),
     );
   }

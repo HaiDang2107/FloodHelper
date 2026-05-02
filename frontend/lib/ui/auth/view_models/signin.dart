@@ -100,9 +100,8 @@ class SignInViewModel extends _$SignInViewModel with AuthCodeVerificationMixin {
         // Auto login successful - update auth state and navigate to home
         ref.read(globalSessionManagerProvider.notifier).setSession(authSession);
         
-        // Register FCM token immediately after auto login
         try {
-          await ref.read(firebaseMessagingServiceProvider).registerToken();
+          await ref.read(firebaseMessagingServiceProvider).initialize(); // tự động xin quyền, tự động lấy token và tự động kiểm tra Cache
         } catch (fcmError) {
           // Don't block user if FCM registration fails
           debugPrint('⚠️ FCM registration failed: $fcmError');

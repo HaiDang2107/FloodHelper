@@ -1,5 +1,7 @@
 import '../models/authority/authority_profile.dart';
+import '../models/authority/announcement.dart';
 import '../models/authority/role_request.dart';
+import '../../domain/models/announcement.dart';
 
 class AuthorityMappers {
   static AuthorityProfile profileFromSession(Map<String, dynamic> userData) {
@@ -17,8 +19,22 @@ class AuthorityMappers {
       phoneNumber: _asNullableString(userData['phoneNumber']),
       gender: _asNullableString(userData['gender']),
       dob: _asNullableString(userData['dob']),
-      placeOfOrigin: _asNullableString(userData['placeOfOrigin']),
-      placeOfResidence: _asNullableString(userData['placeOfResidence']),
+      placeOfOrigin: _formatLocation(
+        wardName: _asNullableString(userData['originWardName']),
+        provinceName: _asNullableString(userData['originProvinceName']),
+      ) ?? _asNullableString(userData['placeOfOrigin']),
+      placeOfResidence: _formatLocation(
+        wardName: _asNullableString(userData['residenceWardName']),
+        provinceName: _asNullableString(userData['residenceProvinceName']),
+      ) ?? _asNullableString(userData['placeOfResidence']),
+      originProvinceCode: _asNullableInt(userData['originProvinceCode']),
+      originProvinceName: _asNullableString(userData['originProvinceName']),
+      originWardCode: _asNullableInt(userData['originWardCode']),
+      originWardName: _asNullableString(userData['originWardName']),
+      residenceProvinceCode: _asNullableInt(userData['residenceProvinceCode']),
+      residenceProvinceName: _asNullableString(userData['residenceProvinceName']),
+      residenceWardCode: _asNullableInt(userData['residenceWardCode']),
+      residenceWardName: _asNullableString(userData['residenceWardName']),
       dateOfIssue: _asNullableString(userData['dateOfIssue']),
       dateOfExpire: _asNullableString(userData['dateOfExpire']),
       citizenId: _asNullableString(userData['citizenId']),
@@ -30,6 +46,13 @@ class AuthorityMappers {
   static RoleRequest roleRequestFromApi(Map<String, dynamic> json) {
     final user = (json['user'] as Map<String, dynamic>?) ?? const {};
     final account = (user['account'] as Map<String, dynamic>?) ?? const {};
+    final originProvince = (user['originProvince'] as Map<String, dynamic>?) ??
+      const {};
+    final originWard = (user['originWard'] as Map<String, dynamic>?) ?? const {};
+    final residenceProvince =
+      (user['residenceProvince'] as Map<String, dynamic>?) ?? const {};
+    final residenceWard =
+      (user['residenceWard'] as Map<String, dynamic>?) ?? const {};
 
     final type = _asString(json['type']).toUpperCase();
     final state = _asString(json['state']).toUpperCase();
@@ -38,8 +61,44 @@ class AuthorityMappers {
 
     final requesterName = _asString(user['fullname']);
     final requesterEmail = _asString(account['username']);
-    final citizenIdCardImg = _asString(user['citizenIdCardImg']);
-    final placeOfResidence = _asNullableString(user['placeOfResidence']);
+    final legacyCitizenIdCardImg = _asNullableString(user['citizenIdCardImg']);
+    final frontImageUrl =
+      _asNullableString(user['frontCitizenIdCardImageUrl']) ??
+      legacyCitizenIdCardImg;
+    final backImageUrl =
+      _asNullableString(user['backCitizenIdCardImageUrl']) ??
+      legacyCitizenIdCardImg;
+    final originProvinceCode = _asNullableInt(
+      user['originProvinceCode'] ?? originProvince['code'],
+    );
+    final originProvinceName = _asNullableString(
+      user['originProvinceName'] ?? originProvince['name'],
+    );
+    final originWardCode = _asNullableInt(user['originWardCode'] ?? originWard['code']);
+    final originWardName = _asNullableString(
+      user['originWardName'] ?? originWard['name'],
+    );
+    final residenceProvinceCode = _asNullableInt(
+      user['residenceProvinceCode'] ?? residenceProvince['code'],
+    );
+    final residenceProvinceName = _asNullableString(
+      user['residenceProvinceName'] ?? residenceProvince['name'],
+    );
+    final residenceWardCode = _asNullableInt(
+      user['residenceWardCode'] ?? residenceWard['code'],
+    );
+    final residenceWardName = _asNullableString(
+      user['residenceWardName'] ?? residenceWard['name'],
+    );
+
+    final placeOfOrigin = _formatLocation(
+      wardName: originWardName,
+      provinceName: originProvinceName,
+    );
+    final placeOfResidence = _formatLocation(
+      wardName: residenceWardName,
+      provinceName: residenceProvinceName,
+    );
 
     return RoleRequest(
       id: _asString(json['requestId']),
@@ -54,17 +113,57 @@ class AuthorityMappers {
       idNumber: _asString(user['citizenId']),
       nickname: _asNullableString(user['nickname']),
       gender: _asNullableString(user['gender']),
-      dob: _asNullableString(user['dob']),
-      placeOfOrigin: _asNullableString(user['placeOfOrigin']),
+      placeOfOrigin: placeOfOrigin,
       placeOfResidence: placeOfResidence,
-      dateOfIssue: _asNullableString(user['dateOfIssue']),
-      dateOfExpire: _asNullableString(user['dateOfExpire']),
+      originProvinceCode: originProvinceCode,
+      originProvinceName: originProvinceName,
+      originWardCode: originWardCode,
+      originWardName: originWardName,
+      residenceProvinceCode: residenceProvinceCode,
+      residenceProvinceName: residenceProvinceName,
+      residenceWardCode: residenceWardCode,
+      residenceWardName: residenceWardName,
+      dob: _normalizeDateText(user['dob']),
+      dateOfIssue: _normalizeDateText(user['dateOfIssue']),
+      dateOfExpire: _normalizeDateText(user['dateOfExpire']),
       jobPosition: _asNullableString(user['jobPosition']),
       avatarUrl: _asNullableString(user['avatarUrl']),
-      frontImageUrl: citizenIdCardImg,
-      backImageUrl: citizenIdCardImg,
+      frontImageUrl: frontImageUrl,
+      backImageUrl: backImageUrl,
       notes: _asString(json['note']),
       respondedAt: respondedAt,
+    );
+  }
+
+  static AuthorityAnnouncementPage announcementPageFromApi(
+    Map<String, dynamic> json,
+  ) {
+    final payload = _asMap(json['data']) ?? json;
+    final items = (payload['items'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(announcementFromApi)
+        .toList(growable: false);
+    final pagination = _asMap(payload['pagination']) ?? const {};
+
+    return AuthorityAnnouncementPage(
+      items: items,
+      hasMore: pagination['hasMore'] == true,
+      nextCursor: pagination['nextCursor']?.toString(),
+    );
+  }
+
+  static AuthorityAnnouncement announcementFromApi(Map<String, dynamic> json) {
+    final payload = _asMap(json['data']) ?? json;
+    return AuthorityAnnouncement(
+      id: _asString(payload['announcementId'] ?? payload['id']),
+      title: _asString(payload['title']),
+      caption: _asNullableString(
+        payload['caption'] ?? payload['textContent'] ?? payload['content'],
+      ),
+      documentUrl: _asNullableString(payload['documentUrl']),
+      type: AnnouncementType.fromString(_asString(payload['type'])),
+      createdAt: _asLocalDateTime(payload['createdAt']) ?? DateTime.now(),
+      publishedBy: _asString(payload['publishedBy'] ?? payload['publisherId']),
     );
   }
 
@@ -97,5 +196,80 @@ class AuthorityMappers {
       return null;
     }
     return text;
+  }
+
+  static int? _asNullableInt(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(value.toString());
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    return value is Map<String, dynamic> ? value : null;
+  }
+
+  static DateTime? _asLocalDateTime(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return value.toLocal();
+    }
+
+    final parsed = DateTime.tryParse(value.toString());
+    return parsed?.toLocal();
+  }
+
+  static String? _formatLocation({
+    String? wardName,
+    String? provinceName,
+  }) {
+    final parts = [wardName, provinceName]
+        .where((part) => part != null && part.trim().isNotEmpty)
+        .map((part) => part!.trim())
+        .toList(growable: false);
+
+    if (parts.isEmpty) {
+      return null;
+    }
+
+    return parts.join(', ');
+  }
+
+  static String? _normalizeDateText(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+
+    if (value is DateTime) {
+      return _formatDateOnly(value);
+    }
+
+    final text = value.toString().trim();
+    if (text.isEmpty) {
+      return null;
+    }
+
+    final parsed = DateTime.tryParse(text);
+    if (parsed != null) {
+      return _formatDateOnly(parsed);
+    }
+
+    final dateOnly = text.split('T').first;
+    return dateOnly.isEmpty ? null : dateOnly;
+  }
+
+  static String _formatDateOnly(DateTime dateTime) {
+    final year = dateTime.year.toString().padLeft(4, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 }

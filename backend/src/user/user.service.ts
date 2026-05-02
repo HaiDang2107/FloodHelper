@@ -3,21 +3,23 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import {
   CreateUserDto,
   UpdateUserDto,
   UpdateLocationDto,
   UpdateVisibilityDto,
 } from './dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from '../common/cloudinary.service';
+import { formatLocation } from '../common/location-format.util';
+import type { UploadedFilePayload } from '../common/uploaded-file.type';
 
 @Injectable()
 export class UserService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
   /**
    * Get current user profile by userId (from JWT)
@@ -26,6 +28,10 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { userId },
       include: {
+        originProvince: true,
+        originWard: true,
+        residenceProvince: true,
+        residenceWard: true,
         account: {
           select: {
             username: true,
@@ -58,6 +64,22 @@ export class UserService {
         curLongitude: true,
         curLatitude: true,
         visibilityMode: true,
+        originProvinceCode: true,
+        originWardCode: true,
+        residenceProvinceCode: true,
+        residenceWardCode: true,
+        originProvince: {
+          select: { code: true, name: true },
+        },
+        originWard: {
+          select: { code: true, name: true },
+        },
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
       },
     });
 
@@ -85,7 +107,15 @@ export class UserService {
   /**
    * Update user profile
    */
-  async update(userId: string, updateUserDto: UpdateUserDto) {
+  async update(
+    userId: string,
+    updateUserDto: UpdateUserDto = {},
+    avatarFile?: UploadedFilePayload,
+    citizenFrontFile?: UploadedFilePayload,
+    citizenBackFile?: UploadedFilePayload,
+  ) {
+    const safeDto = updateUserDto ?? {};
+
     const user = await this.prisma.user.findUnique({
       where: { userId },
     });
@@ -94,28 +124,78 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
+    const imageUpdates: {
+      avatarUrl?: string;
+      frontCitizenIdCardImageUrl?: string;
+      backCitizenIdCardImageUrl?: string;
+    } = {};
+
+    try {
+      if (avatarFile) {
+        const ext = avatarFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.avatarUrl = await this.cloudinary.uploadImage(
+          avatarFile.buffer,
+          {
+            folder: 'floodhelper/profiles/avatars',
+            publicId: `${userId}_avatar.${ext}`,
+          },
+        );
+      }
+
+      if (citizenFrontFile) {
+        const ext = citizenFrontFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.frontCitizenIdCardImageUrl =
+          await this.cloudinary.uploadImage(citizenFrontFile.buffer, {
+            folder: 'floodhelper/profiles/citizen-id-cards',
+            publicId: `${userId}_citizen_id_front.${ext}`,
+          });
+      }
+
+      if (citizenBackFile) {
+        const ext = citizenBackFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.backCitizenIdCardImageUrl = await this.cloudinary.uploadImage(
+          citizenBackFile.buffer,
+          {
+            folder: 'floodhelper/profiles/citizen-id-cards',
+            publicId: `${userId}_citizen_id_back.${ext}`,
+          },
+        );
+      }
+    } catch (error) {
+      throw new BadRequestException('Failed to upload profile images: ' + error.message);
+    }
+
     const updated = await this.prisma.user.update({
       where: { userId },
       data: {
-        fullname: updateUserDto.fullname,
-        nickname: updateUserDto.nickname,
-        gender: updateUserDto.gender,
-        dob: updateUserDto.dob ? new Date(updateUserDto.dob) : undefined,
-        placeOfOrigin: updateUserDto.placeOfOrigin,
-        placeOfResidence: updateUserDto.placeOfResidence,
-        dateOfIssue: updateUserDto.dateOfIssue
-          ? new Date(updateUserDto.dateOfIssue)
+        fullname: safeDto.fullname,
+        nickname: safeDto.nickname,
+        gender: safeDto.gender,
+        dob: safeDto.dob ? new Date(safeDto.dob) : undefined,
+        originProvinceCode: safeDto.originProvinceCode,
+        originWardCode: safeDto.originWardCode,
+        residenceProvinceCode: safeDto.residenceProvinceCode,
+        residenceWardCode: safeDto.residenceWardCode,
+        dateOfIssue: safeDto.dateOfIssue
+          ? new Date(safeDto.dateOfIssue)
           : undefined,
-        dateOfExpire: updateUserDto.dateOfExpire
-          ? new Date(updateUserDto.dateOfExpire)
+        dateOfExpire: safeDto.dateOfExpire
+          ? new Date(safeDto.dateOfExpire)
           : undefined,
-        curLongitude: updateUserDto.curLongitude,
-        curLatitude: updateUserDto.curLatitude,
-        visibilityMode: updateUserDto.visibilityMode,
-        avatarUrl: updateUserDto.avatarUrl,
-        citizenId: updateUserDto.citizenId,
-        citizenIdCardImg: updateUserDto.citizenIdCardImg,
-        jobPosition: updateUserDto.jobPosition,
+        curLongitude: safeDto.curLongitude,
+        curLatitude: safeDto.curLatitude,
+        visibilityMode: safeDto.visibilityMode,
+        showCharityCampaignLocations: safeDto.showCharityCampaignLocations,
+        avatarUrl: imageUpdates.avatarUrl ?? safeDto.avatarUrl,
+        citizenId: safeDto.citizenId,
+        citizenIdCardImg: safeDto.citizenIdCardImg,
+        frontCitizenIdCardImageUrl:
+          imageUpdates.frontCitizenIdCardImageUrl ??
+          safeDto.frontCitizenIdCardImageUrl,
+        backCitizenIdCardImageUrl:
+          imageUpdates.backCitizenIdCardImageUrl ??
+          safeDto.backCitizenIdCardImageUrl,
+        jobPosition: safeDto.jobPosition,
       },
       include: {
         account: {
@@ -175,6 +255,22 @@ export class UserService {
           avatarUrl: true,
           role: true,
           phoneNumber: true,
+          originProvinceCode: true,
+          originWardCode: true,
+          residenceProvinceCode: true,
+          residenceWardCode: true,
+          originProvince: {
+            select: { code: true, name: true },
+          },
+          originWard: {
+            select: { code: true, name: true },
+          },
+          residenceProvince: {
+            select: { code: true, name: true },
+          },
+          residenceWard: {
+            select: { code: true, name: true },
+          },
         },
         orderBy: { fullname: 'asc' },
       }),
@@ -226,6 +322,22 @@ export class UserService {
         role: true,
         curLongitude: true,
         curLatitude: true,
+        originProvinceCode: true,
+        originWardCode: true,
+        residenceProvinceCode: true,
+        residenceWardCode: true,
+        originProvince: {
+          select: { code: true, name: true },
+        },
+        originWard: {
+          select: { code: true, name: true },
+        },
+        residenceProvince: {
+          select: { code: true, name: true },
+        },
+        residenceWard: {
+          select: { code: true, name: true },
+        },
       },
     });
 
@@ -266,8 +378,19 @@ export class UserService {
       nickname: user.nickname,
       gender: user.gender ?? null,
       dob: user.dob ? user.dob.toISOString().split('T')[0] : null,
-      placeOfOrigin: user.placeOfOrigin,
-      placeOfResidence: user.placeOfResidence,
+      placeOfOrigin: formatLocation(user.originWard, user.originProvince),
+      placeOfResidence: formatLocation(
+        user.residenceWard,
+        user.residenceProvince,
+      ),
+      originProvinceCode: user.originProvinceCode ?? null,
+      originProvinceName: user.originProvince?.name ?? null,
+      originWardCode: user.originWardCode ?? null,
+      originWardName: user.originWard?.name ?? null,
+      residenceProvinceCode: user.residenceProvinceCode ?? null,
+      residenceProvinceName: user.residenceProvince?.name ?? null,
+      residenceWardCode: user.residenceWardCode ?? null,
+      residenceWardName: user.residenceWard?.name ?? null,
       dateOfIssue: user.dateOfIssue
         ? user.dateOfIssue.toISOString().split('T')[0]
         : null,
@@ -278,10 +401,13 @@ export class UserService {
       longitude: user.curLongitude ? Number(user.curLongitude) : null,
       latitude: user.curLatitude ? Number(user.curLatitude) : null,
       visibilityMode: user.visibilityMode,
+      showCharityCampaignLocations: Boolean(user.showCharityCampaignLocations),
       avatarUrl: user.avatarUrl,
       citizenId: user.citizenId,
       phoneNumber: user.phoneNumber,
       citizenIdCardImg: user.citizenIdCardImg,
+      frontCitizenIdCardImageUrl: user.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: user.backCitizenIdCardImageUrl,
       jobPosition: user.jobPosition,
       account: user.account
         ? {
@@ -353,4 +479,5 @@ export class UserService {
       visibility: dto.visibility,
     };
   }
+
 }

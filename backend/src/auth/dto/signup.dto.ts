@@ -6,6 +6,8 @@ import {
   IsArray,
   MinLength,
   MaxLength,
+  IsInt,
+  Min,
 } from 'class-validator';
 
 export class SignupDto {
@@ -35,6 +37,26 @@ export class SignupDto {
   @IsOptional()
   @IsString()
   placeOfResidence?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  originProvinceCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  originWardCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  residenceProvinceCode?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  residenceWardCode?: number;
 
   @IsOptional()
   @IsDateString()
