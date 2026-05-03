@@ -26,29 +26,35 @@ class SignInFormScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Scaffold(
       backgroundColor: const Color(0xFF0F62FE),
       body: Stack(
         children: [
           Positioned(
             top: 0,
+            left: 0,
             right: 0,
-            child: SvgPicture.asset('assets/images/sun.svg'),
+            child: SvgPicture.asset(
+              'assets/images/sun.svg',
+              width: screenWidth, // Ép chiều ngang ảnh bằng màn hình
+              alignment: Alignment.topCenter, // Neo chặt lên viền trên
+            ),
           ),
+          
+          // Hình sóng (Bottom)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-
-            child: Transform(
-              transform: Matrix4.diagonal3Values(1.0, 0.5, 1.0),
-              alignment: Alignment.bottomRight,
-              child: SvgPicture.asset(
-                'assets/images/wave.svg',
-                fit: BoxFit.fitWidth,
-              ),
+            child: SvgPicture.asset(
+              'assets/images/wave.svg',
+              width: screenWidth, // Ép chiều ngang ảnh bằng màn hình
+              alignment: Alignment.bottomCenter, // Neo chặt xuống viền dưới
             ),
           ),
+
           Center(
             child: SingleChildScrollView(
               child: Padding(
@@ -116,17 +122,17 @@ class SignInFormScreen extends StatelessWidget {
                     const SizedBox(height: 12),
 
                     // Sign in with Google Button
-                    CustomButton(
-                      text: 'Sign in with Google',
-                      backgroundColor: const Color.fromARGB(255, 127, 194, 248),
-                      textColor: Colors.black87,
-                      onPressed: () {}, // Placeholder for Google Sign In
-                      icon: SvgPicture.asset(
-                        'assets/icons/google-icon.svg',
-                        height: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
+                    // CustomButton(
+                    //   text: 'Sign in with Google',
+                    //   backgroundColor: const Color.fromARGB(255, 127, 194, 248),
+                    //   textColor: Colors.black87,
+                    //   onPressed: () {}, // Placeholder for Google Sign In
+                    //   icon: SvgPicture.asset(
+                    //     'assets/icons/google-icon.svg',
+                    //     height: 24,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 15),
 
                     // Create Account Button
                     CustomButton(
