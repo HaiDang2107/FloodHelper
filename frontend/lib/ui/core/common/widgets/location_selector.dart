@@ -218,8 +218,11 @@ class _LocationSelectorFieldState extends State<LocationSelectorField> {
         DropdownButtonFormField<int>(
           initialValue: _selectedProvince?.code,
           isExpanded: true,
+          style: const TextStyle(color: Colors.black),
           decoration: InputDecoration(
             labelText: widget.provinceLabel,
+            labelStyle: const TextStyle(color: Colors.black87),
+            floatingLabelStyle: const TextStyle(color: Colors.black),
             border: const OutlineInputBorder(),
           ),
           items: _provinces
@@ -236,8 +239,11 @@ class _LocationSelectorFieldState extends State<LocationSelectorField> {
         DropdownButtonFormField<int>(
           initialValue: _selectedWard?.code,
           isExpanded: true,
+          style: const TextStyle(color: Colors.black),
           decoration: InputDecoration(
             labelText: widget.wardLabel,
+            labelStyle: const TextStyle(color: Colors.black87),
+            floatingLabelStyle: const TextStyle(color: Colors.black),
             border: const OutlineInputBorder(),
           ),
           items: _wards

@@ -255,8 +255,11 @@ class ProfileInfo extends StatelessWidget {
     // Editable dropdown
     return DropdownButtonFormField<Gender>(
       initialValue: selectedGender,
+      style: const TextStyle(color: Colors.black),
       decoration: const InputDecoration(
         labelText: 'Gender',
+        labelStyle: TextStyle(color: Colors.black87),
+        floatingLabelStyle: TextStyle(color: Colors.black),
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       ),
@@ -362,8 +365,14 @@ class ProfileInfo extends StatelessWidget {
       controller: controller,
       readOnly: readOnly,
       onTap: onTap,
+      style: const TextStyle(
+        color: Colors.black,
+      ),
+      cursorColor: Colors.black,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(color: Colors.black87),
+        floatingLabelStyle: const TextStyle(color: Colors.black),
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         suffixIcon: suffixIcon,
@@ -403,12 +412,28 @@ class ProfileInfo extends StatelessWidget {
       );
     }
 
-    return LocationSelectorField(
-      provinceLabel: '$title Province',
-      wardLabel: '$title Ward',
-      initialProvinceCode: provinceCode,
-      initialWardCode: wardCode,
-      onChanged: onChanged,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          LocationSelectorField(
+            provinceLabel: 'Province',
+            wardLabel: 'Ward',
+            initialProvinceCode: provinceCode,
+            initialWardCode: wardCode,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
     );
   }
 
