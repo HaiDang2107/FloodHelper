@@ -21,6 +21,7 @@ class AllocationViewModelSeed {
 }
 
 class EditableSupply {
+  final String rowId; // Unique ID for preventing widget state reuse
   String? supplyId;
   String productName;
   String quantity;
@@ -28,12 +29,13 @@ class EditableSupply {
   bool isEditing;
 
   EditableSupply({
+    String? rowId,
     required this.supplyId,
     required this.productName,
     required this.quantity,
     required this.unitPrice,
     required this.isEditing,
-  });
+  }) : rowId = rowId ?? DateTime.now().microsecondsSinceEpoch.toString();
 
   factory EditableSupply.fromModel(PurchasedSupply supply) {
     return EditableSupply(
@@ -47,6 +49,7 @@ class EditableSupply {
 
   EditableSupply copyWith() {
     return EditableSupply(
+      rowId: rowId,
       supplyId: supplyId,
       productName: productName,
       quantity: quantity,
@@ -73,17 +76,19 @@ class EditableSupply {
 }
 
 class EditableSupport {
+  final String rowId; // Unique ID for preventing widget state reuse
   String? financialSupportId;
   String householdName;
   String amount;
   bool isEditing;
 
   EditableSupport({
+    String? rowId,
     required this.financialSupportId,
     required this.householdName,
     required this.amount,
     required this.isEditing,
-  });
+  }) : rowId = rowId ?? DateTime.now().microsecondsSinceEpoch.toString();
 
   factory EditableSupport.fromModel(FinancialSupportAllocation support) {
     return EditableSupport(
@@ -96,6 +101,7 @@ class EditableSupport {
 
   EditableSupport copyWith() {
     return EditableSupport(
+      rowId: rowId,
       financialSupportId: financialSupportId,
       householdName: householdName,
       amount: amount,

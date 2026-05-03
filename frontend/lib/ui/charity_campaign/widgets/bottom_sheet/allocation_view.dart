@@ -418,7 +418,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
     final editable = widget.isOwner && row.isEditing;
 
     return DataRow(
-      key: ValueKey('supply-row-${row.supplyId ?? 'new'}-$index'),
+      key: ValueKey('supply-row-${row.rowId}'),
       cells: <DataCell>[
         DataCell(
           Padding(
@@ -426,7 +426,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
             child: SizedBox(
               width: 180,
               child: TextFormField(
-                key: ValueKey('supply-product-${row.supplyId ?? 'new'}-$index'),
+                key: ValueKey('supply-product-${row.rowId}'),
                 initialValue: row.productName,
                 readOnly: !editable,
                 style: const TextStyle(color: Colors.black),
@@ -442,7 +442,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
             child: SizedBox(
               width: 80,
               child: TextFormField(
-                key: ValueKey('supply-qty-${row.supplyId ?? 'new'}-$index'),
+                key: ValueKey('supply-qty-${row.rowId}'),
                 initialValue: row.quantity,
                 readOnly: !editable,
                 style: const TextStyle(color: Colors.black),
@@ -459,7 +459,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
             child: SizedBox(
               width: 120,
               child: TextFormField(
-                key: ValueKey('supply-price-${row.supplyId ?? 'new'}-$index'),
+                key: ValueKey('supply-price-${row.rowId}'),
                 initialValue: row.unitPrice,
                 readOnly: !editable,
                 style: const TextStyle(color: Colors.black),
@@ -530,7 +530,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
     final editable = widget.isOwner && row.isEditing;
 
     return DataRow(
-      key: ValueKey('financial-row-${row.financialSupportId ?? 'new'}-$index'),
+      key: ValueKey('financial-row-${row.rowId}'),
       cells: [
         DataCell(
           Padding(
@@ -538,7 +538,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
             child: SizedBox(
               width: 220,
               child: TextFormField(
-                key: ValueKey('financial-household-${row.financialSupportId ?? 'new'}-$index'),
+                key: ValueKey('financial-household-${row.rowId}'),
                 initialValue: row.householdName,
                 readOnly: !editable,
                 style: const TextStyle(color: Colors.black),
@@ -557,7 +557,7 @@ class _PurchasedSuppliesViewState extends ConsumerState<PurchasedSuppliesView> {
                 SizedBox(
                   width: amountInputWidth,
                   child: TextFormField(
-                    key: ValueKey('financial-amount-${row.financialSupportId ?? 'new'}-$index'),
+                    key: ValueKey('financial-amount-${row.rowId}'),
                     initialValue: row.amount,
                     readOnly: !editable,
                     style: const TextStyle(color: Colors.black),
