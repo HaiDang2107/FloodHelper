@@ -30,34 +30,48 @@ class StartedScreen extends StatelessWidget {
             ),
           ),
         ),
-        PositionedText(
-          text: 'FloodHelper',
-          left: 31,
+        Positioned(
+          left: 0,
+          right: 0,
           top: 571,
-          width: 350,
-          fontSize: 48,
-          color: const Color(0xFF0F62FE),
-          fontWeight: FontWeight.w700,
+          child: Center(
+            child: SizedBox(
+              width: 350,
+              child: Text(
+                'FloodHelper',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F62FE),
+                  fontFamily: 'Anonymous Pro',
+                ),
+              ),
+            ),
+          ),
         ),
         Positioned(
-          left: 55,
+          left: 0,
+          right: 0,
           top: 673,
-          child: isLoading
-              ? const SizedBox(
-                  width: 300,
-                  height: 56,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF0F62FE),
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
+                    width: 300,
+                    height: 56,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF0F62FE),
+                      ),
                     ),
+                  )
+                : CustomButton(
+                    text: 'Get started',
+                    backgroundColor: const Color(0xFF0F62FE),
+                    textColor: Colors.white,
+                    onPressed: onGetStarted,
                   ),
-                )
-              : CustomButton(
-                  text: 'Get started',
-                  backgroundColor: const Color(0xFF0F62FE),
-                  textColor: Colors.white,
-                  onPressed: onGetStarted,
-                ),
+          ),
         ),
       ],
     );
