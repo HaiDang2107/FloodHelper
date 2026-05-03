@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { CharityRepository } from '../../prisma/repositories';
 import {
   CreateFinancialSupportDto,
   CreateSupplyDto,
@@ -14,13 +14,10 @@ import {
 
 @Injectable()
 export class NoruserBenefAllocationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly charityRepository: CharityRepository) {}
 
   async listSupplies(campaignId: string) {
-    const supplies = await this.prisma.supply.findMany({
-      where: { campaignId },
-      orderBy: { boughtAt: 'desc' },
-    });
+    const supplies = await this.charityRepository.getCampaignSupplies(campaignId);
 
     return supplies.map((item) => ({
       supplyId: item.supplyId,
@@ -35,16 +32,7 @@ export class NoruserBenefAllocationService {
   async createSupply(userId: string, campaignId: string, payload: CreateSupplyDto) {
     await this.assertCampaignEditableByOwner(userId, campaignId);
 
-    const supply = await this.prisma.supply.create({
-      data: {
-        campaignId,
-        supplyName: payload.supplyName.trim(),
-        quantity: payload.quantity,
-        unitPrice: payload.unitPrice,
-        price: payload.quantity * payload.unitPrice,
-        boughtAt: payload.boughtAt ? new Date(payload.boughtAt) : new Date(),
-      },
-    });
+    const supply = await this.charityRepository.createSupply(campaignId, payload);
 
     return {
       supplyId: supply.supplyId,
@@ -64,9 +52,7 @@ export class NoruserBenefAllocationService {
   ) {
     await this.assertCampaignEditableByOwner(userId, campaignId);
 
-    const current = await this.prisma.supply.findFirst({
-      where: { supplyId, campaignId },
-    });
+    const current = await this.charityRepository.findSupply(supplyId, campaignId);
     if (!current) {
       throw new NotFoundException('Supply not found');
     }
@@ -74,15 +60,12 @@ export class NoruserBenefAllocationService {
     const nextQuantity = payload.quantity ?? current.quantity;
     const nextUnitPrice = payload.unitPrice ?? Number(current.unitPrice);
 
-    const updated = await this.prisma.supply.update({
-      where: { supplyId },
-      data: {
-        supplyName: payload.supplyName?.trim() ?? current.supplyName,
-        quantity: nextQuantity,
-        unitPrice: nextUnitPrice,
-        price: nextQuantity * nextUnitPrice,
-        boughtAt: payload.boughtAt ? new Date(payload.boughtAt) : current.boughtAt,
-      },
+    const updated = await this.charityRepository.updateSupply(supplyId, campaignId, {
+      supplyName: payload.supplyName?.trim() ?? current.supplyName,
+      quantity: nextQuantity,
+      unitPrice: nextUnitPrice,
+      price: nextQuantity * nextUnitPrice,
+      boughtAt: payload.boughtAt ? new Date(payload.boughtAt) : current.boughtAt,
     });
 
     return {
@@ -98,9 +81,7 @@ export class NoruserBenefAllocationService {
   async deleteSupply(userId: string, campaignId: string, supplyId: string) {
     await this.assertCampaignEditableByOwner(userId, campaignId);
 
-    const deleted = await this.prisma.supply.deleteMany({
-      where: { supplyId, campaignId },
-    });
+    const deleted = await this.charityRepository.deleteSupply(supplyId, campaignId);
 
     if (deleted.count === 0) {
       throw new NotFoundException('Supply not found');
@@ -110,10 +91,7 @@ export class NoruserBenefAllocationService {
   }
 
   async listFinancialSupports(campaignId: string) {
-    const supports = await this.prisma.financialSupport.findMany({
-      where: { campaignId },
-      orderBy: { allocatedAt: 'desc' },
-    });
+    const supports = await this.charityRepository.listFinancialSupports(campaignId);
 
     return supports.map((item) => ({
       financialSupportId: item.financialSupportId,
@@ -130,14 +108,7 @@ export class NoruserBenefAllocationService {
   ) {
     await this.assertCampaignEditableByOwner(userId, campaignId);
 
-    const support = await this.prisma.financialSupport.create({
-      data: {
-        campaignId,
-        householdName: payload.householdName.trim(),
-        amount: payload.amount,
-        allocatedAt: payload.allocatedAt ? new Date(payload.allocatedAt) : new Date(),
-      },
-    });
+    const support = await this.charityRepository.createFinancialSupport(campaignId, payload);
 
     return {
       financialSupportId: support.financialSupportId,
@@ -155,23 +126,22 @@ export class NoruserBenefAllocationService {
   ) {
     await this.assertCampaignEditableByOwner(userId, campaignId);
 
-    const current = await this.prisma.financialSupport.findFirst({
-      where: { financialSupportId, campaignId },
-    });
+    const current = await this.charityRepository.findFinancialSupport(financialSupportId, campaignId);
     if (!current) {
       throw new NotFoundException('Financial support not found');
     }
 
-    const updated = await this.prisma.financialSupport.update({
-      where: { financialSupportId },
-      data: {
+    const updated = await this.charityRepository.updateFinancialSupport(
+      financialSupportId,
+      campaignId,
+      {
         householdName: payload.householdName?.trim() ?? current.householdName,
         amount: payload.amount ?? Number(current.amount),
         allocatedAt: payload.allocatedAt
           ? new Date(payload.allocatedAt)
           : current.allocatedAt,
       },
-    });
+    );
 
     return {
       financialSupportId: updated.financialSupportId,
@@ -188,9 +158,7 @@ export class NoruserBenefAllocationService {
   ) {
     await this.assertCampaignEditableByOwner(userId, campaignId);
 
-    const deleted = await this.prisma.financialSupport.deleteMany({
-      where: { financialSupportId, campaignId },
-    });
+    const deleted = await this.charityRepository.deleteFinancialSupport(financialSupportId, campaignId);
 
     if (deleted.count === 0) {
       throw new NotFoundException('Financial support not found');
@@ -200,14 +168,7 @@ export class NoruserBenefAllocationService {
   }
 
   private async assertCampaignEditableByOwner(userId: string, campaignId: string) { // Đây đơn giản là guard bảo vệ service
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        organizedBy: true,
-        state: true,
-      },
-    });
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
 
     if (!campaign) {
       throw new NotFoundException('Charity campaign not found');

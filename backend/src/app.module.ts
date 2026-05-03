@@ -15,6 +15,7 @@ import { SignalModule } from './signal/signal.module';
 import { CharityModule } from './charity/charity.module';
 import { AnnouncementModule } from './announcement/announcement.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { PrismaRepositoryModule } from './prisma/repositories/prisma-repository.module';
 import { LoggingMiddleware } from './common/logging.middleware';
 
 @Module({
@@ -22,6 +23,7 @@ import { LoggingMiddleware } from './common/logging.middleware';
     ScheduleModule.forRoot(),
     UserModule,
     PrismaModule,
+    PrismaRepositoryModule,
     AuthModule,
     FriendModule,
     FirebaseModule,

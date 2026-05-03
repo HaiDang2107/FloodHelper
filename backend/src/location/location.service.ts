@@ -1,22 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { LocationRepository } from '../prisma/repositories';
 
 @Injectable()
 export class LocationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly locationRepository: LocationRepository) {}
 
   async listProvinces() {
-    return this.prisma.province.findMany({
-      select: {
-        code: true,
-        name: true,
-        divisionType: true,
-        codename: true,
-        phoneCode: true,
-      },
-      orderBy: [{ name: 'asc' }],
-    });
+    return this.locationRepository.listProvinces();
   }
 
   async listWards(provinceCode?: number) {
@@ -24,30 +15,11 @@ export class LocationService {
       ? { provinceCode }
       : {};
 
-    return this.prisma.ward.findMany({
-      where,
-      select: {
-        code: true,
-        name: true,
-        divisionType: true,
-        codename: true,
-        provinceCode: true,
-      },
-      orderBy: [{ name: 'asc' }],
-    });
+    return this.locationRepository.listWards(where);
   }
 
   async getProvince(provinceCode: number) {
-    const province = await this.prisma.province.findUnique({
-      where: { code: provinceCode },
-      select: {
-        code: true,
-        name: true,
-        divisionType: true,
-        codename: true,
-        phoneCode: true,
-      },
-    });
+    const province = await this.locationRepository.getProvince(provinceCode);
 
     if (!province) {
       throw new NotFoundException('Province not found');
@@ -57,16 +29,7 @@ export class LocationService {
   }
 
   async getWard(wardCode: number) {
-    const ward = await this.prisma.ward.findUnique({
-      where: { code: wardCode },
-      select: {
-        code: true,
-        name: true,
-        divisionType: true,
-        codename: true,
-        provinceCode: true,
-      },
-    });
+    const ward = await this.locationRepository.getWard(wardCode);
 
     if (!ward) {
       throw new NotFoundException('Ward not found');
@@ -76,13 +39,7 @@ export class LocationService {
   }
 
   async assertWardExists(wardCode: number) {
-    const ward = await this.prisma.ward.findUnique({
-      where: { code: wardCode },
-      select: {
-        code: true,
-        provinceCode: true,
-      },
-    });
+    const ward = await this.locationRepository.getWardBasic(wardCode);
 
     if (!ward) {
       throw new BadRequestException('Ward does not exist');

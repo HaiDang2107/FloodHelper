@@ -33,12 +33,12 @@ import {
   VerifyCodeDto,
   ResendVerificationCodeDto,
 } from './dto';
-import { PrismaService } from '../prisma/prisma.service';
+import { AuthRepository } from '../prisma/repositories';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly authRepository: AuthRepository,
     private jwtService: JwtService,
     private mailerService: MailerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -49,9 +49,7 @@ export class AuthService {
   ): Promise<{ success: boolean; message: string }> {
     const { username, password, fullname, phoneNumber, ...rest } = registerDto;
 
-    const existingAccount = await this.prisma.account.findUnique({
-      where: { username },
-    });
+    const existingAccount = await this.authRepository.findAccountByUsername(username);
 
     if (existingAccount) {
       if (
@@ -67,7 +65,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prisma.user.create({
+    const user = await this.authRepository.createUserWithAccount({
       data: {
         fullname,
         phoneNumber,
@@ -89,9 +87,6 @@ export class AuthService {
             state: AccountState.INACTIVE,
           },
         },
-      },
-      include: {
-        account: true,
       },
     });
 
@@ -151,45 +146,7 @@ export class AuthService {
 
     await this.cacheManager.del(`otp_${username}`);
 
-    const account = await this.prisma.account.findUnique({
-      where: { username },
-      include: {
-        user: {
-          select: {
-            role: true,
-            userId: true,
-            fullname: true,
-            nickname: true,
-            phoneNumber: true,
-            avatarUrl: true,
-            gender: true,
-            dob: true,
-            originProvinceCode: true,
-            originWardCode: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            originProvince: {
-              select: { code: true, name: true },
-            },
-            originWard: {
-              select: { code: true, name: true },
-            },
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
-            },
-            dateOfIssue: true,
-            dateOfExpire: true,
-            citizenId: true,
-            citizenIdCardImg: true,
-            jobPosition: true,
-            showCharityCampaignLocations: true,
-          },
-        },
-      },
-    });
+    const account = await this.authRepository.findAccountByUsernameWithDetailedUser(username);
 
     if (!account) {
       throw new NotFoundException('Account not found.');
@@ -201,10 +158,7 @@ export class AuthService {
       }
 
       // Activate account
-      await this.prisma.account.update({
-        where: { accountId: account.accountId },
-        data: { state: AccountState.ACTIVE },
-      });
+      await this.authRepository.activateAccount(account.accountId);
 
       return {
         success: true,
@@ -227,9 +181,7 @@ export class AuthService {
     resendDto: ResendVerificationCodeDto,
   ): Promise<{ success: boolean; message: string }> {
     const { username, type } = resendDto;
-    const account = await this.prisma.account.findUnique({
-      where: { username },
-    });
+    const account = await this.authRepository.findAccountByUsername(username);
 
     if (!account) {
       throw new NotFoundException('Account does not exist.');
@@ -286,45 +238,9 @@ export class AuthService {
   ): Promise<SigninResponseDto> {
     const { username, password, deviceId } = signinDto;
 
-    const account = await this.prisma.account.findUnique({
-      where: { username },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            phoneNumber: true,
-            avatarUrl: true,
-            gender: true,
-            dob: true,
-            originProvinceCode: true,
-            originWardCode: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            originProvince: {
-              select: { code: true, name: true },
-            },
-            originWard: {
-              select: { code: true, name: true },
-            },
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
-            },
-            dateOfIssue: true,
-            dateOfExpire: true,
-            citizenId: true,
-            citizenIdCardImg: true,
-            jobPosition: true,
-            showCharityCampaignLocations: true,
-            role: true,
-          },
-        },
-      },
-    });
+    const account = await this.authRepository.findAccountByUsernameWithDetailedUser(
+      username,
+    );
 
     if (!account) {
       throw new UnauthorizedException('User not found!');
@@ -481,28 +397,12 @@ export class AuthService {
     const expireAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     const roleString = role.join(',');
 
-    await this.prisma.session.upsert({
-      // Điều kiện để xác định bản ghi (dựa trên unique constraint vừa tạo)
-      where: {
-        accountId_deviceId: {
-          accountId: accountId,
-          deviceId: deviceId,
-        },
-      },
-      // Nếu tìm thấy -> Update
-      update: {
-        refreshToken: hashedRefreshToken,
-        expireAt: expireAt,
-        role: roleString,
-      },
-      // Nếu không tìm thấy -> Create
-      create: {
-        accountId: accountId,
-        deviceId: deviceId,
-        refreshToken: hashedRefreshToken,
-        expireAt: expireAt,
-        role: roleString,
-      },
+    await this.authRepository.upsertSession({
+      accountId,
+      deviceId,
+      refreshToken: hashedRefreshToken,
+      expireAt,
+      role: roleString,
     });
   }
 
@@ -512,19 +412,13 @@ export class AuthService {
 
     if (logoutAll) {
       // Delete all sessions for this account
-      deletedSessions = await this.prisma.session.deleteMany({
-        where: {
-          accountId: user.accountId,
-        },
-      });
+      deletedSessions = await this.authRepository.deleteSessionsByAccount(user.accountId);
     } else {
       // Delete only the session for this specific device
-      deletedSessions = await this.prisma.session.deleteMany({
-        where: {
-          accountId: user.accountId,
-          deviceId: user.deviceId,
-        },
-      });
+      deletedSessions = await this.authRepository.deleteSessionByAccountAndDevice(
+        user.accountId,
+        user.deviceId,
+      );
     }
 
     return {
@@ -549,19 +443,17 @@ export class AuthService {
     const { googleId, email, firstName, lastName, picture } = googleUser;
 
     // Check if user exists by email or googleId
-    let accountWithUser = await this.prisma.account.findFirst({
-      where: {
-        OR: [{ username: email }, { providerId: googleId }],
-      },
-      include: { user: true },
-    });
+    let accountWithUser = await this.authRepository.findAccountByEmailOrProviderId(
+      email,
+      googleId,
+    );
 
     let isNewUser = false;
 
     if (!accountWithUser) {
       // Create new user with Google account
       isNewUser = true;
-      const newUser = await this.prisma.user.create({
+      const newUser = await this.authRepository.createUserWithAccount({
         data: {
           fullname: `${firstName} ${lastName}`,
           nickname: `${firstName} ${lastName}`,
@@ -575,16 +467,12 @@ export class AuthService {
             },
           },
         },
-        include: {
-          account: true,
-        },
       });
 
       // Re-fetch to get proper structure
-      accountWithUser = await this.prisma.account.findUnique({
-        where: { accountId: newUser.account!.accountId },
-        include: { user: true },
-      });
+      accountWithUser = await this.authRepository.findAccountByIdWithUser(
+        newUser.account!.accountId,
+      );
     }
 
     if (!accountWithUser) {
@@ -641,9 +529,7 @@ export class AuthService {
     forgotPasswordDto: ForgotPasswordDto,
   ): Promise<{ success: boolean; message: string }> {
     const { username } = forgotPasswordDto;
-    const account = await this.prisma.account.findUnique({
-      where: { username },
-    });
+    const account = await this.authRepository.findAccountByUsername(username);
 
     if (!account) {
       throw new NotFoundException('Account does not exist.');
@@ -671,10 +557,7 @@ export class AuthService {
     const { newPassword } = resetPasswordDto;
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await this.prisma.account.update({
-      where: { accountId: user.accountId },
-      data: { password: hashedPassword },
-    });
+    await this.authRepository.updateAccountPassword(user.accountId, hashedPassword);
 
     return { success: true, message: 'Password has been reset successfully.' };
   }
@@ -690,20 +573,10 @@ export class AuthService {
 
       // Find session by accountId + deviceId (unique per device)
       // This is more efficient than findMany + loop
-      const session = await this.prisma.session.findFirst({
-        where: {
-          accountId: payload.sub,
-          deviceId: payload.deviceId, // Each device has unique session
-          expireAt: {
-            gt: new Date(),
-          },
-        },
-        include: {
-          account: {
-            include: { user: true },
-          },
-        },
-      });
+      const session = await this.authRepository.findSessionForRefresh(
+        payload.sub,
+        payload.deviceId,
+      );
 
       if (!session) {
         return {

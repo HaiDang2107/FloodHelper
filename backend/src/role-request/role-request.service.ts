@@ -10,48 +10,17 @@ import {
   ListRoleRequestsDto,
   RespondRoleRequestDto,
 } from './dto';
-import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository, RoleRequestRepository } from '../prisma/repositories';
 
 @Injectable()
 export class RoleRequestService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly roleRequestRepository: RoleRequestRepository,
+  ) {}
 
   async createRequest(userId: string, dto: CreateRoleRequestDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-      select: {
-        userId: true,
-        role: true,
-        fullname: true,
-        nickname: true,
-        avatarUrl: true,
-        dob: true,
-        gender: true,
-        phoneNumber: true,
-        jobPosition: true,
-        citizenId: true,
-        frontCitizenIdCardImageUrl: true,
-        backCitizenIdCardImageUrl: true,
-        originProvinceCode: true,
-        originWardCode: true,
-        residenceProvinceCode: true,
-        residenceWardCode: true,
-        originProvince: {
-          select: { code: true, name: true },
-        },
-        originWard: {
-          select: { code: true, name: true },
-        },
-        residenceProvince: {
-          select: { code: true, name: true },
-        },
-        residenceWard: {
-          select: { code: true, name: true },
-        },
-        dateOfIssue: true,
-        dateOfExpire: true,
-      },
-    });
+    const user = await this.roleRequestRepository.getRequestForCreation(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -64,18 +33,18 @@ export class RoleRequestService {
       );
     }
 
+    if (!user.residenceWardCode) {
+      throw new BadRequestException('Residence ward is required to submit a role request');
+    }
+
     if (user.role.includes(dto.type)) {
       throw new ConflictException(`User already has role ${dto.type}`);
     }
 
-    const existingPending = await this.prisma.roleUpdatingRequest.findFirst({
-      where: {
-        createdBy: userId,
-        type: dto.type as any,
-        state: 'PENDING' as any,
-      },
-      select: { requestId: true },
-    });
+    const existingPending = await this.roleRequestRepository.findPendingRequest(
+      userId,
+      dto.type,
+    );
 
     if (existingPending) {
       throw new ConflictException(
@@ -83,13 +52,10 @@ export class RoleRequestService {
       );
     }
 
-    const authority = await this.prisma.user.findFirst({
-      where: {
-        role: { has: 'AUTHORITY' },
-        residenceWardCode: user.residenceWardCode,
-      },
-      select: { userId: true },
-    });
+    const authorities = await this.userRepository.findAuthoritiesByWard(
+      user.residenceWardCode,
+    );
+    const authority = authorities[0];
 
     if (!authority) {
       throw new NotFoundException(
@@ -97,23 +63,20 @@ export class RoleRequestService {
       );
     }
 
-    const request = await this.prisma.roleUpdatingRequest.create({
-      data: {
-        createdBy: userId,
-        checkBy: authority.userId,
-        type: dto.type as any,
-        state: 'PENDING' as any,
-      },
+    const request = await this.roleRequestRepository.createRequest({
+      createdBy: userId,
+      checkBy: authority.userId,
+      type: dto.type,
+      state: 'PENDING',
     });
 
     return request;
   }
   
   async listForRequester(requesterUserId: string, _dto: ListRoleRequestsDto) {
-    const items = await this.prisma.roleUpdatingRequest.findMany({
-      where: { createdBy: requesterUserId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const items = await this.roleRequestRepository.listRequestsForRequester(
+      requesterUserId,
+    );
 
     return { items };
   }
@@ -129,68 +92,12 @@ export class RoleRequestService {
       ? new Date(dto.beforeCreatedAt)
       : null;
 
-    const rows = await this.prisma.roleUpdatingRequest.findMany({
-      where: {
-        checkBy: authorityUserId,
-        ...(beforeCreatedAt
-          ? {
-              createdAt: {
-                lt: beforeCreatedAt,
-              },
-            }
-          : {}),
-      },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            dob: true,
-            gender: true,
-            phoneNumber: true,
-            originProvinceCode: true,
-            originWardCode: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            originProvince: {
-              select: { code: true, name: true },
-            },
-            originWard: {
-              select: { code: true, name: true },
-            },
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
-            },
-            jobPosition: true,
-            citizenId: true,
-            citizenIdCardImg: true,
-            frontCitizenIdCardImageUrl: true,
-            backCitizenIdCardImageUrl: true,
-            avatarUrl: true,
-            dateOfIssue: true,
-            dateOfExpire: true,
-            role: true,
-            account: {
-              select: {
-                username: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: [{ createdAt: 'desc' }, { requestId: 'desc' }],
-      take: limit + 1,
-    });
-
-    const hasMore = rows.length > limit;
-    const items = hasMore ? rows.slice(0, limit) : rows;
-    const nextCursor = hasMore && items.length > 0
-      ? items[items.length - 1].createdAt.toISOString()
-      : null;
+    const { items, hasMore, nextCursor } =
+      await this.roleRequestRepository.listRequestsForAuthority(
+        authorityUserId,
+        limit,
+        beforeCreatedAt ?? undefined,
+      );
 
     return {
       items,
@@ -202,13 +109,7 @@ export class RoleRequestService {
   }
 
   private async assertAuthorityUser(authorityUserId: string) {
-    const authority = await this.prisma.user.findUnique({
-      where: { userId: authorityUserId },
-      select: {
-        userId: true,
-        role: true,
-      },
-    });
+    const authority = await this.userRepository.getPublicProfile(authorityUserId);
 
     if (!authority) {
       throw new NotFoundException('Authority account not found');
@@ -241,17 +142,7 @@ export class RoleRequestService {
     nextState: 'APPROVED' | 'REJECTED',
     dto: RespondRoleRequestDto,
   ) {
-    const existing = await this.prisma.roleUpdatingRequest.findUnique({
-      where: { requestId },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            role: true,
-          },
-        },
-      },
-    });
+    const existing = await this.roleRequestRepository.getRequestWithUser(requestId);
 
     if (!existing) {
       throw new NotFoundException('Role request not found');
@@ -265,47 +156,12 @@ export class RoleRequestService {
       throw new ConflictException('Only pending requests can be processed');
     }
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.roleUpdatingRequest.update({
-        where: { requestId },
-        data: {
-          state: nextState as any,
-          responsedAt: new Date(),
-          note: dto.note ?? existing.note,
-        },
-        include: {
-          user: {
-            select: {
-              userId: true,
-              fullname: true,
-              nickname: true,
-              role: true,
-            },
-          },
-        },
-      });
-
-      if (nextState === 'APPROVED') {
-        const hasRole = existing.user.role.includes(
-          existing.type as unknown as string,
-        );
-        if (!hasRole) {
-          await tx.user.update({
-            where: { userId: existing.createdBy },
-            data: {
-              role: {
-                set: [
-                  ...existing.user.role,
-                  existing.type as unknown as string,
-                ],
-              },
-            },
-          });
-        }
-      }
-
-      return updated;
-    });
+    const result = await this.roleRequestRepository.respondRequest(
+      authorityUserId,
+      requestId,
+      nextState,
+      dto.note ?? existing.note ?? undefined,
+    );
 
     return result;
   }

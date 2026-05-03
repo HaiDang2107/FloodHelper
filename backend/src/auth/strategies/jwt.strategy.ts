@@ -2,11 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { PrismaService } from '../../prisma/prisma.service';
+import { AuthRepository } from '../../prisma/repositories';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly authRepository: AuthRepository) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -18,10 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     // Verify account exists and is active
 
-    const account = await this.prisma.account.findUnique({
-      where: { accountId: payload.sub },
-      include: { user: true },
-    });
+    const account = await this.authRepository.findAccountByIdWithUser(payload.sub);
 
     if (!account || account.state !== 'ACTIVE') {
       throw new UnauthorizedException(

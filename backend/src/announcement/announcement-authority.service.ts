@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, ForbiddenException, InternalServerErro
 import { PublicAnnouncementType } from '@prisma/client';
 import { extname } from 'node:path';
 import { CloudinaryService } from '../common/cloudinary.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { AnnouncementRepository, UserRepository } from '../prisma/repositories';
 import { FirebaseService } from '../firebase/firebase.service';
 import { CreateAnnouncementDto, QueryAnnouncementsDto } from './dto';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
@@ -22,7 +22,8 @@ export class AnnouncementAuthorityService {
   private readonly logger = new Logger(AnnouncementAuthorityService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly announcementRepository: AnnouncementRepository,
+    private readonly userRepository: UserRepository,
     private readonly cloudinaryService: CloudinaryService,
     private readonly firebaseService: FirebaseService,
   ) {}
@@ -34,16 +35,12 @@ export class AnnouncementAuthorityService {
   ) {
     await this.assertAuthorityUser(authorityUserId);
 
-    const created = await this.prisma.publicAnnouncement.create({
-      data: {
-        title: dto.title.trim(),
-        caption: dto.caption.trim(),
-        publishedBy: authorityUserId,
-        type: 'AUTHORITY',
-      },
-      select: {
-        announcementId: true,
-      },
+    const created = await this.announcementRepository.createAnnouncement({
+      title: dto.title.trim(),
+      caption: dto.caption.trim(),
+      documentUrl: null,
+      publishedBy: authorityUserId,
+      type: 'AUTHORITY',
     });
 
     let uploadedUrl: string | null = null;
@@ -55,13 +52,7 @@ export class AnnouncementAuthorityService {
             created.announcementId,
             file,
           )
-        : await this.prisma.publicAnnouncement.update({
-            where: { announcementId: created.announcementId },
-            data: {
-              documentUrl: null,
-            },
-            select: this.announcementSelect(),
-          });
+        : created;
 
       if (file) {
         uploadedUrl = announcement.documentUrl;
@@ -74,8 +65,8 @@ export class AnnouncementAuthorityService {
       if (uploadedUrl) {
         await this.safeDeleteCloudinaryAsset(uploadedUrl);
       }
-      await this.prisma.publicAnnouncement
-        .delete({ where: { announcementId: created.announcementId } })
+      await this.announcementRepository
+        .deleteAnnouncement(created.announcementId)
         .catch(() => undefined);
       throw new InternalServerErrorException('Failed to publish announcement');
     }
@@ -95,28 +86,11 @@ export class AnnouncementAuthorityService {
       ? new Date(query.beforeCreatedAt)
       : null;
 
-    const rows = await this.prisma.publicAnnouncement.findMany({
-      where: {
-        publishedBy: authorityUserId,
-        type: 'AUTHORITY',
-        ...(beforeCreatedAt
-          ? {
-              createdAt: {
-                lt: beforeCreatedAt,
-              },
-            }
-          : {}),
-      },
-      select: this.announcementSelect(),
-      orderBy: [{ createdAt: 'desc' }, { announcementId: 'desc' }],
-      take: limit + 1,
-    });
-
-    const hasMore = rows.length > limit;
-    const items = hasMore ? rows.slice(0, limit) : rows;
-    const nextCursor = hasMore && items.length > 0
-      ? items[items.length - 1].createdAt.toISOString()
-      : null;
+    const { items, hasMore, nextCursor } = await this.announcementRepository.listAuthorityAnnouncements(
+      authorityUserId,
+      limit,
+      beforeCreatedAt ?? undefined,
+    );
 
     return {
       items: items.map((item) => this.toResponse(item)),
@@ -129,16 +103,9 @@ export class AnnouncementAuthorityService {
 
   async getAuthorityAnnouncement(authorityUserId: string, announcementId: string) {
     await this.assertAuthorityUser(authorityUserId);
-    const announcement = await this.prisma.publicAnnouncement.findFirst({
-      where: {
-        announcementId,
-        publishedBy: authorityUserId,
-        type: 'AUTHORITY',
-      },
-      select: this.announcementSelect(),
-    });
+    const announcement = await this.announcementRepository.getAnnouncement(announcementId);
 
-    if (!announcement) {
+    if (!announcement || announcement.publishedBy !== authorityUserId || announcement.type !== 'AUTHORITY') {
       throw new NotFoundException('Announcement not found');
     }
 
@@ -148,16 +115,9 @@ export class AnnouncementAuthorityService {
   async deleteAuthorityAnnouncement(authorityUserId: string, announcementId: string) {
     await this.assertAuthorityUser(authorityUserId);
 
-    const announcement = await this.prisma.publicAnnouncement.findFirst({
-      where: {
-        announcementId,
-        publishedBy: authorityUserId,
-        type: 'AUTHORITY',
-      },
-      select: this.announcementSelect(),
-    });
+    const announcement = await this.announcementRepository.getAnnouncement(announcementId);
 
-    if (!announcement) {
+    if (!announcement || announcement.publishedBy !== authorityUserId || announcement.type !== 'AUTHORITY') {
       throw new NotFoundException('Announcement not found');
     }
 
@@ -165,9 +125,7 @@ export class AnnouncementAuthorityService {
       await this.safeDeleteCloudinaryAsset(announcement.documentUrl);
     }
 
-    await this.prisma.publicAnnouncement.delete({
-      where: { announcementId },
-    });
+    await this.announcementRepository.deleteAnnouncement(announcementId);
 
     return this.toResponse(announcement);
   }
@@ -175,14 +133,7 @@ export class AnnouncementAuthorityService {
   //==================PRIVATE===============================
 
   private async assertAuthorityUser(authorityUserId: string) {
-    const authority = await this.prisma.user.findUnique({
-      where: { userId: authorityUserId },
-      select: {
-        userId: true,
-        residenceWardCode: true,
-        role: true,
-      },
-    });
+    const authority = await this.userRepository.getPublicProfile(authorityUserId);
 
     if (!authority) {
       throw new NotFoundException('Authority account not found');
@@ -203,33 +154,22 @@ export class AnnouncementAuthorityService {
     authorityUserId: string,
     announcement: ReturnType<AnnouncementAuthorityService['toResponse']>,
   ) {
-    const authority = await this.prisma.user.findUnique({
-      where: { userId: authorityUserId },
-      select: {
-        residenceWardCode: true,
-      },
-    });
+    const authority = await this.userRepository.getPublicProfile(authorityUserId);
 
     if (!authority?.residenceWardCode) {
       return;
     }
 
-    const tokens = await this.prisma.user.findMany({
-      where: {
-        residenceWardCode: authority.residenceWardCode,
-        AND: [
-          { fcmToken: { not: null } },
-          { fcmToken: { not: '' } },
-        ],
-      },
-      select: {
-        fcmToken: true,
-      },
-    });
+    const tokens = await this.userRepository.findUsersByWard(authority.residenceWardCode);
+
+    this.logger.debug(`Total users found in ward: ${tokens.length}`);
 
     const fcmTokens = tokens
       .map((item) => item.fcmToken)
       .filter((token): token is string => Boolean(token && token.trim().length > 0));
+
+    this.logger.debug(`notifyWardUsers fcmTokens count: ${fcmTokens.length}`);
+    this.logger.debug(`notifyWardUsers fcmTokens: ${JSON.stringify(fcmTokens)}`);
 
     if (fcmTokens.length === 0) {
       return;
@@ -288,12 +228,8 @@ export class AnnouncementAuthorityService {
       publicId: `${announcementId}/document${fileExtension}`,
     });
 
-    return this.prisma.publicAnnouncement.update({
-      where: { announcementId },
-      data: {
-        documentUrl: uploadedUrl,
-      },
-      select: this.announcementSelect(),
+    return this.announcementRepository.updateAnnouncement(announcementId, {
+      documentUrl: uploadedUrl,
     });
   }
 

@@ -16,7 +16,7 @@ import {
 import { CommonCharityService } from '../common.service';
 import { VietQrInternalService } from '../vietqr/vietqr-internal.service';
 import { VietQrService } from '../vietqr/vietqr.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { CharityRepository, UserRepository } from '../../prisma/repositories';
 import { formatLocation } from '../../common/location-format.util';
 import { CloudinaryService } from '../../common/cloudinary.service';
 import { UploadedFilePayload } from '../../common/uploaded-file.type';
@@ -68,7 +68,8 @@ export class NoruserBenefCharityService {
   ]);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly charityRepository: CharityRepository,
+    private readonly userRepository: UserRepository,
     private readonly commonCharityService: CommonCharityService,
     private readonly vietQrService: VietQrService,
     private readonly vietQrInternalService: VietQrInternalService,
@@ -81,74 +82,16 @@ export class NoruserBenefCharityService {
       return [];
     }
 
-    const campaigns = await this.prisma.charityCampaign.findMany({
-      where: {
-        state: normalizedState,
-      },
-      select: {
-        campaignId: true,
-        campaignName: true,
-        state: true,
-        createdAt: true,
-        requestedAt: true,
-        respondedAt: true,
-        organizer: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
-            },
-          },
-        },
-      },
-      orderBy: this.getOrderByForState(normalizedState),
-    });
-
-    return campaigns.map((campaign) => this.mapCampaignListItem(campaign));
+    const campaigns = await this.charityRepository.listCampaignsByState(normalizedState as any);
+    return campaigns.map((campaign) => this.mapCampaignListItem(campaign as any));
   }
 
   async listMyCampaignsByState(userId: string, state: string) {
     const normalizedState = this.normalizeAndValidateState(state);
 
-    const campaigns = await this.prisma.charityCampaign.findMany({
-      where: {
-        organizedBy: userId,
-        state: normalizedState,
-      },
-      select: {
-        campaignId: true,
-        campaignName: true,
-        state: true,
-        createdAt: true,
-        requestedAt: true,
-        respondedAt: true,
-        organizer: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
-            },
-          },
-        },
-      },
-      orderBy: this.getOrderByForState(normalizedState),
-    });
-
-    return campaigns.map((campaign) => this.mapCampaignListItem(campaign));
+    const campaigns = await this.charityRepository.listCampaignsByOrganizer(userId);
+    const filtered = campaigns.filter((c: any) => String(c.state).toUpperCase() === String(normalizedState).toUpperCase());
+    return filtered.map((campaign) => this.mapCampaignListItem(campaign as any));
   }
 
   getCampaignDetail(campaignId: string) {
@@ -160,31 +103,16 @@ export class NoruserBenefCharityService {
   }
 
   async listDistributingCampaignLocations() { // Lấy vị trí của các distributing campaign 
-    const campaigns = await this.prisma.charityCampaign.findMany({
-      where: {
-        state: 'DISTRIBUTING',
-        campaignLatitude: { not: null },
-        campaignLongitude: { not: null },
-      },
-      select: {
-        campaignId: true,
-        campaignName: true,
-        destinationProvinceCode: true,
-        destinationWardCode: true,
-        destinationDetail: true,
-        campaignLatitude: true,
-        campaignLongitude: true,
-      },
-      orderBy: [{ startedDistributionAt: 'desc' }, { createdAt: 'desc' }],
-    });
-
-    return campaigns.map((campaign) => ({
-      campaignId: campaign.campaignId,
-      campaignName: campaign.campaignName,
-      destination: campaign.destinationDetail,
-      latitude: Number(campaign.campaignLatitude),
-      longitude: Number(campaign.campaignLongitude),
-    }));
+    const campaigns = await this.charityRepository.listCampaignsByState('DISTRIBUTING');
+    return (campaigns || [])
+      .filter((c: any) => c.campaignLatitude != null && c.campaignLongitude != null)
+      .map((campaign: any) => ({
+        campaignId: campaign.campaignId,
+        campaignName: campaign.campaignName,
+        destination: campaign.destinationDetail,
+        latitude: Number(campaign.campaignLatitude),
+        longitude: Number(campaign.campaignLongitude),
+      }));
   }
 
   async listCampaignTransactions(
@@ -198,62 +126,21 @@ export class NoruserBenefCharityService {
       );
     }
 
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: { campaignId: true },
-    });
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
 
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
+    const transactions = await this.charityRepository.getCampaignTransactions(campaignId);
+    const filtered = (transactions || []).filter((t: any) => String(t.state).toUpperCase() === String(normalizedState).toUpperCase());
 
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        campaignId,
-        state: normalizedState as TransactionState,
-      },
-      orderBy: {
-        donateAt: 'desc',
-      },
-    });
+    const donorIds = Array.from(new Set(filtered.map((t: any) => t.donatedBy).filter(Boolean)));
+    const donors = donorIds.length ? await this.userRepository.findUsersByIds(donorIds) : [];
+    const donorNameById = new Map(donors.map((d: any) => [d.userId, d.fullname]));
 
-    const donorIds = Array.from(
-      new Set(
-        transactions
-          .map((transaction) => transaction.donatedBy)
-          .filter((value): value is string =>
-            Boolean(value && value.trim().length > 0),
-          ),
-      ),
-    );
-
-    const donors = donorIds.length
-      ? await this.prisma.user.findMany({
-          where: {
-            userId: {
-              in: donorIds,
-            },
-          },
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-          },
-        })
-      : [];
-
-    const donorNameById = new Map(
-      donors.map((donor) => [donor.userId, donor.fullname]),
-    );
-
-    return transactions.map((transaction) => ({
+    return filtered.map((transaction: any) => ({
       transactionId: transaction.transactionId,
       state: String(transaction.state).toUpperCase(),
       amount: transaction.amount,
-      donorName:
-        (transaction.donatedBy
-          ? donorNameById.get(transaction.donatedBy)
-          : undefined) || 'Anonymous',
+      donorName: (transaction.donatedBy ? donorNameById.get(transaction.donatedBy) : undefined) || 'Anonymous',
       date: transaction.transactionTime ?? transaction.donateAt,
       message: transaction.content,
     }));
@@ -263,14 +150,8 @@ export class NoruserBenefCharityService {
     campaignId: string,
     query: QueryCampaignAnnouncementsDto,
   ) {
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: { campaignId: true },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
 
     const rawLimit = Number(query.limit ?? 10);
     const limit = Number.isFinite(rawLimit)
@@ -280,35 +161,17 @@ export class NoruserBenefCharityService {
       ? new Date(query.beforePostedAt)
       : null;
 
-    const announcements = await this.prisma.announcementFromBenefactor.findMany({
-      where: {
-        campaignId,
-        ...(beforePostedAt
-          ? {
-              postedAt: {
-                lt: beforePostedAt,
-              },
-            }
-          : {}),
-      },
-      select: {
-        announcementId: true,
-        caption: true,
-        imageUrl: true,
-        postedAt: true,
-      },
-      orderBy: [{ postedAt: 'desc' }, { announcementId: 'desc' }],
-      take: limit + 1,
-    });
+    const announcements = await this.charityRepository.listAnnouncementsByCampaign(campaignId);
+    const itemsAll = announcements || [];
+    const filteredByCursor = beforePostedAt ? itemsAll.filter((a: any) => new Date(a.postedAt) < beforePostedAt) : itemsAll;
+    const items = filteredByCursor.slice(0, limit + 1);
 
-    const hasMore = announcements.length > limit;
-    const items = hasMore ? announcements.slice(0, limit) : announcements;
-    const nextCursor = hasMore && items.length > 0
-      ? items[items.length - 1].postedAt.toISOString()
-      : null;
+    const hasMore = items.length > limit;
+    const finalItems = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore && finalItems.length > 0 ? finalItems[finalItems.length - 1].postedAt.toISOString() : null;
 
     return {
-      items: items.map((announcement) => ({
+      items: finalItems.map((announcement: any) => ({
         announcementId: announcement.announcementId,
         caption: announcement.caption,
         imageUrl: announcement.imageUrl,
@@ -329,20 +192,8 @@ export class NoruserBenefCharityService {
   ) {
     await this.assertCampaignAnnouncementAllowed(userId, campaignId);
 
-    const imageUrl = file
-      ? await this.cloudinaryService.uploadImage(file.buffer, {
-          folder: `floodhelper/announcements/${campaignId}`,
-        })
-      : null;
-
-    const announcement = await this.prisma.announcementFromBenefactor.create({
-      data: {
-        campaignId,
-        caption: caption.trim(),
-        imageUrl,
-        postedAt: new Date(),
-      },
-    });
+    const imageUrl = file ? await this.cloudinaryService.uploadImage(file.buffer, { folder: `floodhelper/announcements/${campaignId}` }) : null;
+    const announcement = await this.charityRepository.createAnnouncementFromBenefactor(campaignId, { caption: caption.trim(), imageUrl, postedAt: new Date() });
 
     return {
       announcementId: announcement.announcementId,
@@ -365,40 +216,17 @@ export class NoruserBenefCharityService {
       publicId: `statement${fileExtension}`,
     });
 
-    await this.prisma.charityCampaign.update({
-      where: { campaignId },
-      data: {
-        bankStatementFileUrl: fileUrl,
-      },
-    });
-
+    await this.charityRepository.updateCampaign(campaignId, { bankStatementFileUrl: fileUrl });
     return this.commonCharityService.getCampaignDetail(campaignId);
   }
 
   async deleteCampaignBankStatement(userId: string, campaignId: string) {
     await this.assertCampaignBankStatementAllowed(userId, campaignId);
 
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        bankStatementFileUrl: true,
-      },
-    });
-
-    const publicId = this.getBankStatementPublicId(
-      campaign?.bankStatementFileUrl,
-      campaignId,
-    );
-
+    const detail = await this.charityRepository.getCampaignDetail(campaignId);
+    const publicId = this.getBankStatementPublicId(detail?.bankStatementFileUrl, campaignId);
     await this.cloudinaryService.deleteRawFile(publicId);
-
-    await this.prisma.charityCampaign.update({
-      where: { campaignId },
-      data: {
-        bankStatementFileUrl: null,
-      },
-    });
-
+    await this.charityRepository.updateCampaign(campaignId, { bankStatementFileUrl: null });
     return this.commonCharityService.getCampaignDetail(campaignId);
   }
 
@@ -434,83 +262,43 @@ export class NoruserBenefCharityService {
   }
 
   private async assertCampaignAnnouncementAllowed(userId: string, campaignId: string) {
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        organizedBy: true,
-        state: true,
-      },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
-
-    if (campaign.organizedBy !== userId) {
-      throw new ForbiddenException('You are not allowed to post announcements');
-    }
-
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
+    if (campaign.organizedBy !== userId) throw new ForbiddenException('You are not allowed to post announcements');
     const state = String(campaign.state).toUpperCase();
     if (state !== 'DONATING' && state !== 'DISTRIBUTING' && state !== 'FINISHED') {
-      throw new BadRequestException(
-        'Announcements can only be posted when campaign is DONATING, DISTRIBUTING or FINISHED',
-      );
+      throw new BadRequestException('Announcements can only be posted when campaign is DONATING, DISTRIBUTING or FINISHED');
     }
   }
 
   private async assertCampaignBankStatementAllowed(userId: string, campaignId: string) {
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        organizedBy: true,
-        state: true,
-      },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
-
-    if (campaign.organizedBy !== userId) {
-      throw new ForbiddenException('You are not allowed to update bank statement');
-    }
-
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
+    if (campaign.organizedBy !== userId) throw new ForbiddenException('You are not allowed to update bank statement');
     const state = String(campaign.state).toUpperCase();
-    if (state === 'DONATING' || state === 'DISTRIBUTING') {
-      throw new BadRequestException(
-        'Bank statement can only be updated when campaign is not in DONATING or DISTRIBUTING',
-      );
-    }
+    if (state === 'DONATING' || state === 'DISTRIBUTING') throw new BadRequestException('Bank statement can only be updated when campaign is not in DONATING or DISTRIBUTING');
   }
 
   async createCampaign(userId: string, payload: CreateCampaignDto) {
     const timeline = this.parseAndValidateTimeline(payload);
-    const bankAccountId = await this.resolveOrCreateBankAccountId(
-      this.prisma,
-      payload,
-    );
+    const bankAccountId = await this.charityRepository.ensureBankAccount({ bankId: payload.bankId, bankName: payload.bankName, bankAccountNumber: payload.bankAccountNumber, bankAccountName: payload.bankAccountName });
 
-    const created = await this.prisma.charityCampaign.create({
-      data: {
-        organizedBy: userId,
-        bankAccountId,
-        campaignName: payload.campaignName.trim(),
-        purpose: payload.purpose.trim(),
-          destinationProvinceCode: payload.destinationProvinceCode ?? null,
-          destinationWardCode: payload.destinationWardCode ?? null,
-          destinationDetail:
-            payload.destinationDetail?.trim() || payload.destination?.trim() || null,
-        charityObject: payload.charityObject.trim(),
-        state: 'CREATED',
-        startedDonationAt: timeline.startedDonationAt,
-        finishedDonationAt: timeline.finishedDonationAt,
-        startedDistributionAt: timeline.startedDistributionAt,
-        finishedDistributionAt: timeline.finishedDistributionAt,
-        bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
-      },
-      select: { campaignId: true },
+    const created = await this.charityRepository.createCampaign(userId, {
+      campaignName: payload.campaignName.trim(),
+      purpose: payload.purpose.trim(),
+      destinationProvinceCode: payload.destinationProvinceCode ?? null,
+      destinationWardCode: payload.destinationWardCode ?? null,
+      destinationDetail: payload.destinationDetail?.trim() || payload.destination?.trim() || null,
+      charityObject: payload.charityObject.trim(),
+    });
+
+    await this.charityRepository.updateCampaign(created.campaignId, {
+      bankAccountId,
+      startedDonationAt: timeline.startedDonationAt,
+      finishedDonationAt: timeline.finishedDonationAt,
+      startedDistributionAt: timeline.startedDistributionAt,
+      finishedDistributionAt: timeline.finishedDistributionAt,
+      bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
     });
 
     return this.commonCharityService.getCampaignDetail(created.campaignId);
@@ -521,43 +309,27 @@ export class NoruserBenefCharityService {
     campaignId: string,
     payload: UpdateCampaignDto,
   ) {
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
-    if (campaign.organizedBy !== userId) {
-      throw new ForbiddenException('You are not allowed to update this campaign');
-    }
-    if (String(campaign.state).toUpperCase() !== 'CREATED') {
-      throw new BadRequestException('Only CREATED campaigns can be updated');
-    }
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
+    if (campaign.organizedBy !== userId) throw new ForbiddenException('You are not allowed to update this campaign');
+    if (String(campaign.state).toUpperCase() !== 'CREATED') throw new BadRequestException('Only CREATED campaigns can be updated');
 
     const timeline = this.parseAndValidateTimeline(payload);
-    const bankAccountId = await this.resolveOrCreateBankAccountId(
-      this.prisma,
-      payload,
-    );
+    const bankAccountId = await this.charityRepository.ensureBankAccount({ bankId: payload.bankId, bankName: payload.bankName, bankAccountNumber: payload.bankAccountNumber, bankAccountName: payload.bankAccountName });
 
-    await this.prisma.charityCampaign.update({
-      where: { campaignId },
-      data: {
-        bankAccountId,
-        campaignName: payload.campaignName.trim(),
-        purpose: payload.purpose.trim(),
-          destinationProvinceCode: payload.destinationProvinceCode ?? null,
-          destinationWardCode: payload.destinationWardCode ?? null,
-          destinationDetail:
-            payload.destinationDetail?.trim() || payload.destination?.trim() || null,
-        charityObject: payload.charityObject.trim(),
-        startedDonationAt: timeline.startedDonationAt,
-        finishedDonationAt: timeline.finishedDonationAt,
-        startedDistributionAt: timeline.startedDistributionAt,
-        finishedDistributionAt: timeline.finishedDistributionAt,
-        bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
-      },
+    await this.charityRepository.updateCampaign(campaignId, {
+      bankAccountId,
+      campaignName: payload.campaignName.trim(),
+      purpose: payload.purpose.trim(),
+      destinationProvinceCode: payload.destinationProvinceCode ?? null,
+      destinationWardCode: payload.destinationWardCode ?? null,
+      destinationDetail: payload.destinationDetail?.trim() || payload.destination?.trim() || null,
+      charityObject: payload.charityObject.trim(),
+      startedDonationAt: timeline.startedDonationAt,
+      finishedDonationAt: timeline.finishedDonationAt,
+      startedDistributionAt: timeline.startedDistributionAt,
+      finishedDistributionAt: timeline.finishedDistributionAt,
+      bankStatementFileUrl: payload.bankStatementFileUrl?.trim() || null,
     });
 
     return this.commonCharityService.getCampaignDetail(campaignId);
@@ -568,122 +340,40 @@ export class NoruserBenefCharityService {
     campaignId: string,
     payload: UpdateCampaignLocationDto,
   ) { // Update vị trí của campaign
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        organizedBy: true,
-        state: true,
-          destinationDetail: true,
-      },
-    });
-
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
-    if (campaign.organizedBy !== userId) {
-      throw new ForbiddenException(
-        'You are not allowed to check in this campaign location',
-      );
-    }
-
+    const campaign = await this.charityRepository.getCampaignOwnership(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
+    if (campaign.organizedBy !== userId) throw new ForbiddenException('You are not allowed to check in this campaign location');
     const state = String(campaign.state).toUpperCase();
-    if (state !== 'DISTRIBUTING') {
-      throw new BadRequestException(
-        'Campaign location can only be checked in when campaign is DISTRIBUTING',
-      );
-    }
+    if (state !== 'DISTRIBUTING') throw new BadRequestException('Campaign location can only be checked in when campaign is DISTRIBUTING');
 
-    const updated = await this.prisma.charityCampaign.update({
-      where: { campaignId },
-      data: {
-        campaignLatitude: payload.latitude,
-        campaignLongitude: payload.longitude,
-      },
-      select: {
-        campaignId: true,
-          destinationDetail: true,
-        campaignLatitude: true,
-        campaignLongitude: true,
-      },
+    const updated = await this.charityRepository.updateCampaign(campaignId, {
+      campaignLatitude: payload.latitude,
+      campaignLongitude: payload.longitude,
     });
 
     return {
       campaignId: updated.campaignId,
-        destination: updated.destinationDetail,
+      destination: updated.destinationDetail,
       latitude: Number(updated.campaignLatitude),
       longitude: Number(updated.campaignLongitude),
     };
   }
 
   async sendCampaignRequest(userId: string, campaignId: string) {
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        organizedBy: true,
-        state: true,
-        bankAccountId: true,
-        startedDonationAt: true,
-        finishedDonationAt: true,
-        startedDistributionAt: true,
-        finishedDistributionAt: true,
-        organizer: {
-          select: {
-              residenceWardCode: true,
-          },
-        },
-      },
-    });
+    const campaign = await this.charityRepository.getCampaignDetail(campaignId);
+    if (!campaign) throw new NotFoundException('Charity campaign not found');
+    if (campaign.organizedBy !== userId) throw new ForbiddenException('You are not allowed to send this campaign');
+    if (String(campaign.state).toUpperCase() !== 'CREATED') throw new BadRequestException('Only CREATED campaigns can be submitted');
+    if (!campaign.bankAccountId) throw new BadRequestException('Campaign bank account is required');
+    if (!campaign.organizer?.residenceWardCode) throw new BadRequestException('Benefactor residence ward is required before sending campaign request');
 
-    if (!campaign) {
-      throw new NotFoundException('Charity campaign not found');
-    }
-    if (campaign.organizedBy !== userId) {
-      throw new ForbiddenException('You are not allowed to send this campaign');
-    }
-    if (String(campaign.state).toUpperCase() !== 'CREATED') {
-      throw new BadRequestException('Only CREATED campaigns can be submitted');
-    }
-    if (!campaign.bankAccountId) {
-      throw new BadRequestException('Campaign bank account is required');
-    }
-      if (!campaign.organizer?.residenceWardCode) {
-      throw new BadRequestException(
-          'Benefactor residence ward is required before sending campaign request',
-      );
-    }
+    const authorities = await this.userRepository.findAuthoritiesByWard(campaign.organizer.residenceWardCode);
+    const assignedAuthority = authorities && authorities.length > 0 ? authorities[0] : null;
+    if (!assignedAuthority) throw new BadRequestException('No authority account found for benefactor residence area');
 
-    const assignedAuthority = await this.prisma.user.findFirst({
-      where: {
-          residenceWardCode: campaign.organizer.residenceWardCode,
-        role: { has: 'AUTHORITY' },
-      },
-      select: {
-        userId: true,
-      },
-    });
+    this.validateTimelineValues(campaign.startedDonationAt, campaign.finishedDonationAt, campaign.startedDistributionAt, campaign.finishedDistributionAt);
 
-    if (!assignedAuthority) {
-      throw new BadRequestException(
-        'No authority account found for benefactor residence area',
-      );
-    }
-
-    this.validateTimelineValues(
-      campaign.startedDonationAt,
-      campaign.finishedDonationAt,
-      campaign.startedDistributionAt,
-      campaign.finishedDistributionAt,
-    );
-
-    await this.prisma.charityCampaign.update({
-      where: { campaignId },
-      data: {
-        state: 'PENDING',
-        requestedAt: new Date(),
-        checkedBy: assignedAuthority.userId,
-      },
-    });
+    await this.charityRepository.updateCampaign(campaignId, { state: 'PENDING', requestedAt: new Date(), checkedBy: assignedAuthority.userId });
 
     return this.commonCharityService.getCampaignDetail(campaignId);
   }
@@ -795,96 +485,9 @@ export class NoruserBenefCharityService {
     };
   }
 
-  private async resolveBank(payload: {
-    bankId?: number;
-    bankName?: string;
-  }): Promise<ResolvedBank> {
-    if (payload.bankId) {
-      const bank = await this.prisma.bank.findUnique({
-        where: { id: payload.bankId },
-        select: {
-          id: true,
-          name: true,
-          code: true,
-          shortName: true,
-        },
-      });
+  // Bank resolution & account creation delegated to CharityRepository.ensureBankAccount
 
-      if (!bank) {
-        throw new BadRequestException('Selected bank does not exist');
-      }
-
-      return bank;
-    }
-
-    const bankName = payload.bankName?.trim();
-    if (!bankName) {
-      throw new BadRequestException('bankId or bankName is required');
-    }
-
-    const bank = await this.prisma.bank.findFirst({
-      where: {
-        OR: [
-          { shortName: bankName },
-          { name: bankName },
-          { code: bankName },
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        shortName: true,
-      },
-    });
-
-    if (!bank) {
-      throw new BadRequestException('Selected bank does not exist');
-    }
-
-    return bank;
-  }
-
-  private async resolveOrCreateBankAccountId(
-    db: Prisma.TransactionClient | PrismaService,
-    payload: {
-      bankId?: number;
-      bankName?: string;
-      bankAccountNumber: string;
-      bankAccountName?: string;
-    },
-  ) {
-    const normalized = this.normalizeBankPayload(payload);
-    const bank = await this.resolveBank(normalized);
-    const existing = await db.bankAccount.findUnique({
-      where: {
-        bankId_bankAccountNumber: {
-          bankId: bank.id,
-          bankAccountNumber: normalized.bankAccountNumber,
-        },
-      },
-      select: {
-        bankAccountId: true,
-      },
-    });
-
-    if (existing) {
-      return existing.bankAccountId;
-    }
-
-    const created = await db.bankAccount.create({
-      data: {
-        bankId: bank.id,
-        bankAccountNumber: normalized.bankAccountNumber,
-        userBankName: normalized.userBankName,
-      },
-      select: {
-        bankAccountId: true,
-      },
-    });
-
-    return created.bankAccountId;
-  }
+  // Bank account resolution now delegated to CharityRepository.ensureBankAccount
 
   private parseAndValidateTimeline(payload: {
     startedDonationAt: string;

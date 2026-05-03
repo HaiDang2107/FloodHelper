@@ -12,7 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { TransactionState } from '@prisma/client';
 import type { Cache } from 'cache-manager';
 import { TransactionSyncDto } from './dto';
-import { PrismaService } from '../../prisma/prisma.service';
+import { CharityRepository } from '../../prisma/repositories';
 
 interface GenerateCustomerQrInput {
   bankCode: string;
@@ -65,26 +65,13 @@ export class VietQrService {
     'https://dev.vietqr.org/vqr/bank/api/test/transaction-callback';
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly charityRepository: CharityRepository,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly jwtService: JwtService,
   ) {}
 
   triggerTestCallback(transactionId: string, requesterUserId: string) {
-    return this.prisma.transaction.findUnique({
-      where: { transactionId },
-      select: {
-        transactionId: true,
-        state: true,
-        amount: true,
-        donatedBy: true,
-        campaign: {
-          select: {
-            organizedBy: true,
-          },
-        },
-      },
-    }).then(async (transaction) => {
+    return this.charityRepository.findTransactionById(transactionId).then(async (transaction) => {
       if (!transaction) {
         throw new NotFoundException('Transaction not found');
       }
@@ -107,11 +94,8 @@ export class VietQrService {
         throw new BadRequestException('Transaction amount is invalid');
       }
 
-      await this.prisma.transaction.update({
-        where: { transactionId },
-        data: {
-          state: 'VERIFYING',
-        },
+      await this.charityRepository.updateTransaction(transactionId, {
+        state: 'VERIFYING',
       });
 
       await this.callTestTransactionCallback({
@@ -177,31 +161,13 @@ export class VietQrService {
     const amount = this.parseAmount(amountInput);
     const amountNumber = Number(amount);
 
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        state: true,
-        bankAccount: {
-          include: {
-            bank: {
-              select: {
-                code: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const campaign = await this.charityRepository.getCampaignBankInfoForQrByState(
+      campaignId,
+      'DONATING',
+    );
 
     if (!campaign) {
       throw new NotFoundException('Charity campaign not found');
-    }
-
-    if (String(campaign.state).toUpperCase() !== 'DONATING') {
-      throw new BadRequestException(
-        'Campaign is not in DONATING state, cannot create donation QR',
-      );
     }
 
     const bankCode = campaign.bankAccount?.bank?.code?.trim();
@@ -220,19 +186,14 @@ export class VietQrService {
     );
     const orderId = transactionId.slice(0, 10);
 
-    const createdTransaction = await this.prisma.transaction.create({
-      data: {
-        transactionId,
-        campaignId,
-        transType: 'C',
-        donateAt: new Date(),
-        donatedBy: donorUserId,
-        amount: amount.toString(),
-        state: 'CREATED',
-      },
-      select: {
-        transactionId: true,
-      },
+    const createdTransaction = await this.charityRepository.createTransaction({
+      transactionId,
+      campaignId,
+      transType: 'C',
+      donateAt: new Date(),
+      donatedBy: donorUserId,
+      amount: amount.toString(),
+      state: 'CREATED',
     });
 
     const qrResult = await this.generateCustomerQr({
@@ -246,16 +207,11 @@ export class VietQrService {
       qrType: 0,
     });
 
-    await this.prisma.transaction.update({
-      where: {
-        transactionId: createdTransaction.transactionId,
-      },
-      data: {
-        transactionIdFromVietQR: qrResult.transactionId || null,
-        transactionRefId: qrResult.transactionRefId || null,
-        qrLink: qrResult.qrLink,
-        content: qrResult.content
-      },
+    await this.charityRepository.updateTransaction(createdTransaction.transactionId, {
+      transactionIdFromVietQR: qrResult.transactionId || null,
+      transactionRefId: qrResult.transactionRefId || null,
+      qrLink: qrResult.qrLink,
+      content: qrResult.content,
     });
 
     return {
@@ -453,18 +409,7 @@ export class VietQrService {
       throw new BadRequestException('content is required to match transaction');
     }
 
-    const transaction = await this.prisma.transaction.findFirst({
-      where: {
-        content,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        transactionId: true,
-        state: true,
-      },
-    });
+    const transaction = await this.charityRepository.findTransactionByContent(content);
 
     if (!transaction) {
       throw new NotFoundException('Transaction not found for given content');
@@ -480,15 +425,10 @@ export class VietQrService {
     const referenceNumber = (payload.referencenumber || payload.referencenumer || '')
       .trim();
 
-    await this.prisma.transaction.update({
-      where: {
-        transactionId: transaction.transactionId,
-      },
-      data: {
-        state: nextState,
-        referencenumber: referenceNumber || null,
-        transactionTime,
-      },
+    await this.charityRepository.updateTransaction(transaction.transactionId, {
+      state: nextState,
+      referencenumber: referenceNumber || null,
+      transactionTime,
     });
 
     return {

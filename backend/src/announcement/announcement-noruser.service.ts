@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PublicAnnouncementType } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { AnnouncementRepository, UserRepository } from '../prisma/repositories';
 import { QueryPublicAnnouncementsDto } from './dto';
 
 type AnnouncementListPayload = {
@@ -15,7 +15,10 @@ type AnnouncementListPayload = {
 
 @Injectable()
 export class AnnouncementNoruserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly announcementRepository: AnnouncementRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
   async listPublicAnnouncementsForUser(
     userId: string,
@@ -52,15 +55,7 @@ export class AnnouncementNoruserService {
         };
       }
 
-      const authority = await this.prisma.user.findFirst({
-        where: {
-          role: { has: 'AUTHORITY' },
-          residenceWardCode: wardId,
-        },
-        select: {
-          userId: true,
-        },
-      });
+      const authority = (await this.userRepository.findAuthoritiesByWard(wardId))[0];
 
       if (!authority) {
         // không thấy authority ==> trả về null
@@ -76,12 +71,11 @@ export class AnnouncementNoruserService {
       where.publishedBy = authority.userId;
     }
 
-    const rows = await this.prisma.publicAnnouncement.findMany({
+    const rows = await this.announcementRepository.listPublicAnnouncements(
       where,
-      select: this.announcementSelect(),
-      orderBy: [{ createdAt: 'desc' }, { announcementId: 'desc' }],
-      take: limit + 1,
-    });
+      limit,
+      beforeCreatedAt ?? undefined,
+    );
 
     const hasMore = rows.length > limit;
     const items = hasMore ? rows.slice(0, limit) : rows;
@@ -126,10 +120,7 @@ export class AnnouncementNoruserService {
       return wardId;
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-      select: { residenceWardCode: true },
-    });
+    const user = await this.userRepository.getPublicProfile(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');

@@ -4,11 +4,13 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { PrismaRepositoryModule } from '../prisma/repositories/prisma-repository.module';
 // import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
     PassportModule,
+    PrismaRepositoryModule,
     JwtModule.register({
       secret: process.env.AT_SECRET || 'your-secret-key',
       signOptions: { expiresIn: '15m' },

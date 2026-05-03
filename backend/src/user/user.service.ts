@@ -9,7 +9,7 @@ import {
   UpdateLocationDto,
   UpdateVisibilityDto,
 } from './dto';
-import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from '../prisma/repositories';
 import { CloudinaryService } from '../common/cloudinary.service';
 import { formatLocation } from '../common/location-format.util';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
@@ -17,7 +17,7 @@ import type { UploadedFilePayload } from '../common/uploaded-file.type';
 @Injectable()
 export class UserService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly userRepository: UserRepository,
     private readonly cloudinary: CloudinaryService,
   ) {}
 
@@ -25,22 +25,7 @@ export class UserService {
    * Get current user profile by userId (from JWT)
    */
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-      include: {
-        originProvince: true,
-        originWard: true,
-        residenceProvince: true,
-        residenceWard: true,
-        account: {
-          select: {
-            username: true,
-            state: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
+    const user = await this.userRepository.getProfileWithRelations(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -53,35 +38,7 @@ export class UserService {
    * Get user by ID (public profile)
    */
   async findOne(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-      select: {
-        userId: true,
-        fullname: true,
-        nickname: true,
-        avatarUrl: true,
-        role: true,
-        curLongitude: true,
-        curLatitude: true,
-        visibilityMode: true,
-        originProvinceCode: true,
-        originWardCode: true,
-        residenceProvinceCode: true,
-        residenceWardCode: true,
-        originProvince: {
-          select: { code: true, name: true },
-        },
-        originWard: {
-          select: { code: true, name: true },
-        },
-        residenceProvince: {
-          select: { code: true, name: true },
-        },
-        residenceWard: {
-          select: { code: true, name: true },
-        },
-      },
-    });
+    const user = await this.userRepository.getPublicProfile(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -116,9 +73,7 @@ export class UserService {
   ) {
     const safeDto = updateUserDto ?? {};
 
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-    });
+    const user = await this.userRepository.findById(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -165,47 +120,29 @@ export class UserService {
       throw new BadRequestException('Failed to upload profile images: ' + error.message);
     }
 
-    const updated = await this.prisma.user.update({
-      where: { userId },
-      data: {
-        fullname: safeDto.fullname,
-        nickname: safeDto.nickname,
-        gender: safeDto.gender,
-        dob: safeDto.dob ? new Date(safeDto.dob) : undefined,
-        originProvinceCode: safeDto.originProvinceCode,
-        originWardCode: safeDto.originWardCode,
-        residenceProvinceCode: safeDto.residenceProvinceCode,
-        residenceWardCode: safeDto.residenceWardCode,
-        dateOfIssue: safeDto.dateOfIssue
-          ? new Date(safeDto.dateOfIssue)
-          : undefined,
-        dateOfExpire: safeDto.dateOfExpire
-          ? new Date(safeDto.dateOfExpire)
-          : undefined,
-        curLongitude: safeDto.curLongitude,
-        curLatitude: safeDto.curLatitude,
-        visibilityMode: safeDto.visibilityMode,
-        showCharityCampaignLocations: safeDto.showCharityCampaignLocations,
-        avatarUrl: imageUpdates.avatarUrl ?? safeDto.avatarUrl,
-        citizenId: safeDto.citizenId,
-        citizenIdCardImg: safeDto.citizenIdCardImg,
-        frontCitizenIdCardImageUrl:
-          imageUpdates.frontCitizenIdCardImageUrl ??
-          safeDto.frontCitizenIdCardImageUrl,
-        backCitizenIdCardImageUrl:
-          imageUpdates.backCitizenIdCardImageUrl ??
-          safeDto.backCitizenIdCardImageUrl,
-        jobPosition: safeDto.jobPosition,
-      },
-      include: {
-        account: {
-          select: {
-            username: true,
-            state: true,
-            createdAt: true,
-          },
-        },
-      },
+    const updated = await this.userRepository.updateProfile(userId, {
+      fullname: safeDto.fullname,
+      nickname: safeDto.nickname,
+      gender: safeDto.gender,
+      dob: safeDto.dob ? new Date(safeDto.dob) : undefined,
+      originProvinceCode: safeDto.originProvinceCode,
+      originWardCode: safeDto.originWardCode,
+      residenceProvinceCode: safeDto.residenceProvinceCode,
+      residenceWardCode: safeDto.residenceWardCode,
+      dateOfIssue: safeDto.dateOfIssue ? new Date(safeDto.dateOfIssue) : undefined,
+      dateOfExpire: safeDto.dateOfExpire ? new Date(safeDto.dateOfExpire) : undefined,
+      curLongitude: safeDto.curLongitude,
+      curLatitude: safeDto.curLatitude,
+      visibilityMode: safeDto.visibilityMode,
+      showCharityCampaignLocations: safeDto.showCharityCampaignLocations,
+      avatarUrl: imageUpdates.avatarUrl ?? safeDto.avatarUrl,
+      citizenId: safeDto.citizenId,
+      citizenIdCardImg: safeDto.citizenIdCardImg,
+      frontCitizenIdCardImageUrl:
+        imageUpdates.frontCitizenIdCardImageUrl ?? safeDto.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl:
+        imageUpdates.backCitizenIdCardImageUrl ?? safeDto.backCitizenIdCardImageUrl,
+      jobPosition: safeDto.jobPosition,
     });
 
     return this.formatUserResponse(updated);
@@ -215,21 +152,17 @@ export class UserService {
    * Update user location
    */
   async updateLocation(userId: string, updateLocationDto: UpdateLocationDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-    });
+    const user = await this.userRepository.exists(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const updated = await this.prisma.user.update({
-      where: { userId },
-      data: {
-        curLongitude: updateLocationDto.curLongitude,
-        curLatitude: updateLocationDto.curLatitude,
-      },
-    });
+    const updated = await this.userRepository.updateLocation(
+      userId,
+      updateLocationDto.curLongitude,
+      updateLocationDto.curLatitude,
+    );
 
     return {
       success: true,
@@ -242,40 +175,7 @@ export class UserService {
    * Get all users (admin only - paginated)
    */
   async findAll(page: number = 1, limit: number = 20) {
-    const skip = (page - 1) * limit;
-
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        skip,
-        take: limit,
-        select: {
-          userId: true,
-          fullname: true,
-          nickname: true,
-          avatarUrl: true,
-          role: true,
-          phoneNumber: true,
-          originProvinceCode: true,
-          originWardCode: true,
-          residenceProvinceCode: true,
-          residenceWardCode: true,
-          originProvince: {
-            select: { code: true, name: true },
-          },
-          originWard: {
-            select: { code: true, name: true },
-          },
-          residenceProvince: {
-            select: { code: true, name: true },
-          },
-          residenceWard: {
-            select: { code: true, name: true },
-          },
-        },
-        orderBy: { fullname: 'asc' },
-      }),
-      this.prisma.user.count(),
-    ]);
+    const { users, total } = await this.userRepository.findAllPaginated(page, limit);
 
     return {
       data: users.map((user) => ({
@@ -306,52 +206,12 @@ export class UserService {
     latitude: number,
     radiusKm: number = 10,
   ) {
-    // Get users with PUBLIC visibility
-    const users = await this.prisma.user.findMany({
-      where: {
-        visibilityMode: 'PUBLIC',
-        userId: { not: userId }, // Exclude current user
-        curLongitude: { not: null },
-        curLatitude: { not: null },
-      },
-      select: {
-        userId: true,
-        fullname: true,
-        nickname: true,
-        avatarUrl: true,
-        role: true,
-        curLongitude: true,
-        curLatitude: true,
-        originProvinceCode: true,
-        originWardCode: true,
-        residenceProvinceCode: true,
-        residenceWardCode: true,
-        originProvince: {
-          select: { code: true, name: true },
-        },
-        originWard: {
-          select: { code: true, name: true },
-        },
-        residenceProvince: {
-          select: { code: true, name: true },
-        },
-        residenceWard: {
-          select: { code: true, name: true },
-        },
-      },
-    });
-
-    // Filter by distance (simple calculation - for production use PostGIS)
-    const nearbyUsers = users.filter((user) => {
-      if (!user.curLongitude || !user.curLatitude) return false;
-      const distance = this.calculateDistance(
-        latitude,
-        longitude,
-        Number(user.curLatitude),
-        Number(user.curLongitude),
-      );
-      return distance <= radiusKm;
-    });
+    const nearbyUsers = await this.userRepository.findNearbyUsers(
+      userId,
+      latitude,
+      longitude,
+      radiusKm,
+    );
 
     return nearbyUsers.map((user) => ({
       userId: user.userId,
@@ -422,37 +282,11 @@ export class UserService {
   /**
    * Calculate distance between two points using Haversine formula
    */
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number,
-  ): number {
-    const R = 6371; // Earth's radius in km
-    const dLat = this.toRad(lat2 - lat1);
-    const dLon = this.toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRad(lat1)) *
-        Math.cos(this.toRad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
-  private toRad(deg: number): number {
-    return deg * (Math.PI / 180);
-  }
-
   /**
    * Get user's current visibility mode.
    */
   async getVisibility(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { userId },
-      select: { visibilityMode: true },
-    });
+    const user = await this.userRepository.getVisibility(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -470,10 +304,7 @@ export class UserService {
    * - 'NO_ONE': nobody can see
    */
   async updateVisibility(userId: string, dto: UpdateVisibilityDto) {
-    await this.prisma.user.update({
-      where: { userId },
-      data: { visibilityMode: dto.visibility },
-    });
+    await this.userRepository.updateVisibility(userId, dto.visibility);
 
     return {
       visibility: dto.visibility,

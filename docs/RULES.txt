@@ -5,3 +5,8 @@ Frontend:
 - Cần tuân thủ nghiêm ngặt MVVM Pattern 
 - Khi code, cố gắng decouple các components, tránh phụ thuộc chồng chéo ở cùng một layer.
 - Không xóa những comment trong code mà tôi đã tạo
+- Nếu code trong một file quá dài (> 600 dòng), nên chia nhỏ ra làm nhiều file
+
+Backend:
+- Nếu code trong một file quá dài (> 600 dòng), nên chia nhỏ ra làm nhiều file
+- Những công việc giao tiếp với database (sử dụng Prisma) nên được định nghĩa trong src/prisma

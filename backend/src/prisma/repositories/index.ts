@@ -1,0 +1,10 @@
+export { BaseRepository } from './base.repository';
+export { UserRepository } from './user.repository';
+export { FriendRepository } from './friend.repository';
+export { SignalRepository } from './signal.repository';
+export { AnnouncementRepository } from './announcement.repository';
+export { CharityRepository } from './charity.repository';
+export { RoleRequestRepository } from './role-request.repository';
+export { ChatRepository } from './chat.repository';
+export { AuthRepository } from './auth.repository';
+export { LocationRepository } from './location.repository';

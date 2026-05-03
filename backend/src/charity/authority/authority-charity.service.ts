@@ -5,52 +5,12 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { CampaignState, Prisma } from '@prisma/client';
+import { CampaignState } from '@prisma/client';
 import { ListAuthorityCampaignsDto, RespondCampaignDto } from './dto';
 import { CommonCharityService } from '../common.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { CharityRepository, UserRepository } from '../../prisma/repositories';
 import { formatLocation } from '../../common/location-format.util';
 
-type CharityCampaignListItemPayload = Prisma.CharityCampaignGetPayload<{
-  select: {
-    campaignId: true;
-    campaignName: true;
-    state: true;
-    createdAt: true;
-    requestedAt: true;
-    respondedAt: true;
-    suspendedAt: true;
-    noteForResponse: true;
-    noteForSuspension: true;
-    startedDonationAt: true;
-    startedDistributionAt: true;
-    finishedDistributionAt: true;
-    organizer: {
-      select: {
-        userId: true;
-        fullname: true;
-        nickname: true;
-        residenceProvinceCode: true;
-        residenceWardCode: true;
-        residenceProvince: {
-          select: { code: true, name: true };
-        };
-        residenceWard: {
-          select: { code: true, name: true };
-        };
-      };
-    };
-  };
-}>;
-
-type AuthorityCampaignCursorField =
-  | 'createdAt'
-  | 'requestedAt'
-  | 'respondedAt'
-  | 'suspendedAt'
-  | 'startedDonationAt'
-  | 'startedDistributionAt'
-  | 'finishedDistributionAt';
 type AuthorityCampaignNextState =
   | 'APPROVED'
   | 'REJECTED'
@@ -60,7 +20,8 @@ type AuthorityCampaignNextState =
 export class AuthorityCharityService {
   constructor(
     private readonly commonCharityService: CommonCharityService,
-    private readonly prisma: PrismaService,
+    private readonly charityRepository: CharityRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
   listCampaignsForAuthority(
@@ -113,100 +74,28 @@ export class AuthorityCharityService {
     );
   }
 
-  //===============================PRIVATE METHOD=========================================
-
   private async _listCampaignsForAuthority(
     authorityUserId: string,
     dto: ListAuthorityCampaignsDto,
   ) {
     const authorityResidence = await this.getAuthorityPlace(authorityUserId);
     const limit = dto.limit ?? 20;
-    const stateFilter = dto.state?.toUpperCase() as
-      | CampaignState
-      | undefined;
-    const cursorField = this.getAuthorityCursorField(stateFilter);
+    const stateFilter = dto.state?.toUpperCase() as CampaignState | undefined;
     const cursorTime = dto.beforeRequestedAt
       ? new Date(dto.beforeRequestedAt)
       : new Date();
 
-    const allowedStates: CampaignState[] = stateFilter
-      ? [stateFilter]
-      : [
-          'PENDING',
-          'APPROVED',
-          'REJECTED',
-          'DONATING',
-          'DISTRIBUTING',
-          'FINISHED',
-          'SUSPENDED',
-        ];
-
-    const where: Prisma.CharityCampaignWhereInput = {
-      AND: [
-        {
-          state: {
-            in: allowedStates,
-          },
-        },
-        {
-          organizer: {
-            residenceWardCode: authorityResidence,
-          },
-        },
-        {
-          [cursorField]: {
-            not: null,
-            lte: cursorTime,
-          },
-        },
-        {
-          checkedBy: authorityUserId,
-        },
-      ],
-    };
-
-    const rows = await this.prisma.charityCampaign.findMany({
-      where,
-      select: {
-        campaignId: true,
-        campaignName: true,
-        state: true,
-        createdAt: true,
-        requestedAt: true,
-        respondedAt: true,
-        suspendedAt: true,
-        noteForResponse: true,
-        noteForSuspension: true,
-        startedDonationAt: true,
-        startedDistributionAt: true,
-        finishedDistributionAt: true,
-        organizer: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
-            },
-          },
-        },
-      },
-      orderBy: this.getAuthorityOrderBy(stateFilter),
-      take: limit + 1,
-    });
+    const rows = await this.charityRepository.listCampaignsForAuthority(
+      authorityResidence,
+      stateFilter,
+      limit,
+      cursorTime,
+    );
 
     const hasMore = rows.length > limit;
     const sliced = hasMore ? rows.slice(0, limit) : rows;
     const lastRow = sliced[sliced.length - 1];
-    const nextCursorDate =
-      hasMore && lastRow
-        ? this.getAuthorityCursorDate(lastRow, stateFilter)
-        : null;
+    const nextCursorDate = hasMore && lastRow ? this.getAuthorityCursorDate(lastRow, stateFilter) : null;
     const nextCursor = nextCursorDate?.toISOString() ?? null;
 
     return {
@@ -219,28 +108,16 @@ export class AuthorityCharityService {
   }
 
   private async getAuthorityPlace(authorityUserId: string) {
-    const authority = await this.prisma.user.findUnique({
-      where: { userId: authorityUserId },
-      select: {
-        userId: true,
-        residenceWardCode: true,
-        residenceProvinceCode: true,
-        residenceProvince: {
-          select: { code: true, name: true },
-        },
-        residenceWard: {
-          select: { code: true, name: true },
-        },
-        role: true,
-      },
-    });
+    const authority = await this.userRepository.getPublicProfile(authorityUserId);
 
     if (!authority) {
       throw new NotFoundException('Authority account not found');
     }
+
     if (!authority.role.includes('AUTHORITY')) {
       throw new ForbiddenException('Only authority users can access this resource');
     }
+
     if (!authority.residenceWardCode) {
       throw new BadRequestException(
         'Authority residence ward is required to review campaigns',
@@ -252,7 +129,7 @@ export class AuthorityCharityService {
 
   private getAuthorityCursorField(
     stateFilter?: string,
-  ): AuthorityCampaignCursorField {
+  ): 'createdAt' | 'requestedAt' | 'respondedAt' | 'suspendedAt' | 'startedDonationAt' | 'startedDistributionAt' | 'finishedDistributionAt' {
     switch (stateFilter) {
       case 'PENDING':
         return 'requestedAt';
@@ -272,15 +149,8 @@ export class AuthorityCharityService {
     }
   }
 
-  private getAuthorityOrderBy(
-    stateFilter?: string,
-  ): Prisma.CharityCampaignOrderByWithRelationInput[] {
-    const cursorField = this.getAuthorityCursorField(stateFilter);
-    return [{ [cursorField]: 'desc' }, { createdAt: 'desc' }];
-  }
-
   private getAuthorityCursorDate(
-    campaign: CharityCampaignListItemPayload,
+    campaign: any,
     stateFilter?: string,
   ): Date {
     const cursorField = this.getAuthorityCursorField(stateFilter);
@@ -304,7 +174,7 @@ export class AuthorityCharityService {
     }
   }
 
-  private mapCampaignListItem(campaign: CharityCampaignListItemPayload) {
+  private mapCampaignListItem(campaign: any) {
     return {
       id: campaign.campaignId,
       name: campaign.campaignName,
@@ -338,23 +208,7 @@ export class AuthorityCharityService {
     campaignId: string,
   ) {
     const authorityPlace = await this.getAuthorityPlace(authorityUserId);
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        checkedBy: true,
-        state: true,
-        respondedAt: true,
-        suspendedAt: true,
-        noteForResponse: true,
-        noteForSuspension: true,
-        organizer: {
-          select: {
-            residenceWardCode: true,
-          },
-        },
-      },
-    });
+    const campaign = await this.charityRepository.getCampaignReviewTarget(campaignId);
 
     if (!campaign) {
       throw new NotFoundException('Charity campaign not found');
@@ -400,25 +254,22 @@ export class AuthorityCharityService {
       );
     }
 
-    await this.prisma.charityCampaign.update({
-      where: { campaignId },
-      data: {
-        state: nextState,
-        respondedAt:
-          nextState === 'APPROVED' || nextState === 'REJECTED'
-            ? new Date()
-            : reviewTarget.respondedAt,
-        suspendedAt:
-          nextState === 'SUSPENDED' ? new Date() : reviewTarget.suspendedAt,
-        noteForResponse:
-          nextState === 'APPROVED' || nextState === 'REJECTED'
-            ? trimmedResponseNote ?? reviewTarget.noteForResponse
-            : reviewTarget.noteForResponse,
-        noteForSuspension:
-          nextState === 'SUSPENDED'
-            ? trimmedSuspensionNote ?? reviewTarget.noteForSuspension
-            : reviewTarget.noteForSuspension,
-      },
+    await this.charityRepository.updateCampaignReviewState(campaignId, {
+      state: nextState,
+      respondedAt:
+        nextState === 'APPROVED' || nextState === 'REJECTED'
+          ? new Date()
+          : reviewTarget.respondedAt,
+      suspendedAt:
+        nextState === 'SUSPENDED' ? new Date() : reviewTarget.suspendedAt,
+      noteForResponse:
+        nextState === 'APPROVED' || nextState === 'REJECTED'
+          ? trimmedResponseNote ?? reviewTarget.noteForResponse
+          : reviewTarget.noteForResponse,
+      noteForSuspension:
+        nextState === 'SUSPENDED'
+          ? trimmedSuspensionNote ?? reviewTarget.noteForSuspension
+          : reviewTarget.noteForSuspension,
     });
 
     return this.commonCharityService.getCampaignDetail(campaignId);
@@ -450,5 +301,4 @@ export class AuthorityCharityService {
       return;
     }
   }
-
 }

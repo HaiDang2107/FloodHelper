@@ -13,28 +13,17 @@ import {
   QuerySignalsDto,
   UpdateSignalInfoDto,
 } from './dto';
-import { PrismaService } from '../prisma/prisma.service';
+import { SignalRepository } from '../prisma/repositories';
 
 @Injectable()
 export class SignalService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly signalRepository: SignalRepository) {}
 
   async createSignal(createdBy: string, dto: CreateSignalDto) {
     await this.ensureNoBroadcastingSignal(createdBy);
 
     try {
-      return await this.prisma.signal.create({
-        data: {
-          createdBy,
-          trappedCount: dto.trappedCount ?? 0,
-          childrenNum: dto.childrenNum ?? 0,
-          elderlyNum: dto.elderlyNum ?? 0,
-          hasFood: dto.hasFood ?? false,
-          hasWater: dto.hasWater ?? false,
-          note: dto.note,
-          state: SignalState.BROADCASTING,
-        },
-      });
+      return await this.signalRepository.createSignal(createdBy, dto);
     } catch (error) {
       if (this.isBroadcastingUniqueViolation(error)) {
         throw new ConflictException(
@@ -56,16 +45,13 @@ export class SignalService {
       throw new ConflictException('Only broadcasting signals can be updated');
     }
 
-    return this.prisma.signal.update({
-      where: { signalId },
-      data: {
-        trappedCount: dto.trappedCount,
-        childrenNum: dto.childrenNum,
-        elderlyNum: dto.elderlyNum,
-        hasFood: dto.hasFood,
-        hasWater: dto.hasWater,
-        note: dto.note,
-      },
+    return this.signalRepository.update(signalId, {
+      trappedCount: dto.trappedCount,
+      childrenNum: dto.childrenNum,
+      elderlyNum: dto.elderlyNum,
+      hasFood: dto.hasFood,
+      hasWater: dto.hasWater,
+      note: dto.note,
     });
   }
 
@@ -76,9 +62,7 @@ export class SignalService {
       throw new ForbiddenException('Only creator can delete distress signal');
     }
 
-    return this.prisma.signal.delete({
-      where: { signalId },
-    });
+    return this.signalRepository.delete(signalId);
   }
 
   async changeState(signalId: string, actorUserId: string, dto: ChangeSignalStateDto) {
@@ -98,14 +82,11 @@ export class SignalService {
         throw new ConflictException('handledBy cannot be changed once handled');
       }
 
-      return this.prisma.signal.update({
-        where: { signalId },
-        data: {
-          state: SignalState.HANDLED,
-          handledBy,
-          handledAt: new Date(),
-        },
-      });
+      return this.signalRepository.updateSignalState(
+        signalId,
+        SignalState.HANDLED,
+        handledBy,
+      );
     }
 
     if (dto.state === SignalState.STOPPED) {
@@ -113,13 +94,7 @@ export class SignalService {
         throw new ForbiddenException('Only creator can stop distress signal');
       }
 
-      return this.prisma.signal.update({
-        where: { signalId },
-        data: {
-          state: SignalState.STOPPED,
-          stoppedAt: new Date(),
-        },
-      });
+      return this.signalRepository.stopSignal(signalId);
     }
 
     throw new BadRequestException('Invalid target state');
@@ -140,92 +115,19 @@ export class SignalService {
       ...(query.state ? { state: query.state as any } : {}),
     };
 
-    return this.prisma.signal.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-            phoneNumber: true,
-            nickname: true,
-            avatarUrl: true,
-          },
-        },
-        handledByUser: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.signalRepository.listSignals(where);
   }
 
   async listBroadcastingSignals() {
-    return this.prisma.signal.findMany({
-      where: {
-        state: SignalState.BROADCASTING,
-      },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-            phoneNumber: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.signalRepository.listActiveSignals();
   }
 
   async listHandledSignalsByRescuer(handledBy: string) {
-    return this.prisma.signal.findMany({
-      where: {
-        handledBy,
-        state: SignalState.HANDLED,
-      },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-            phoneNumber: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.signalRepository.listHandledSignalsByRescuer(handledBy);
   }
 
   async getLatestSignalByUser(createdBy: string) {
-    return this.prisma.signal.findFirst({
-      where: {
-        createdBy,
-      },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-            phoneNumber: true,
-          },
-        },
-        handledByUser: { // handledByUser là tên quan hệ 
-          select: {
-            userId: true,
-            fullname: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    return this.signalRepository.getLatestSignalByUser(createdBy);
   }
 
 //   async updateSignalInfo(signalId: string, dto: UpdateSignalInfoDto) {
@@ -243,14 +145,7 @@ export class SignalService {
       throw new BadRequestException('updatedBy is required');
     }
 
-    const activeSignal = await this.prisma.signal.findFirst({
-      where: {
-        createdBy: actor,
-        state: SignalState.BROADCASTING,
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { signalId: true },
-    });
+    const activeSignal = await this.signalRepository.findActiveSignalByUser(actor);
 
     if (!activeSignal) {
       throw new NotFoundException('No broadcasting signal found for this user');
@@ -277,81 +172,25 @@ export class SignalService {
 //   }
 
   async stopBroadcastingByUser(createdBy: string) {
-    const activeSignal = await this.prisma.signal.findFirst({
-      where: {
-        createdBy,
-        state: SignalState.BROADCASTING,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const activeSignal = await this.signalRepository.findActiveSignalByUser(createdBy);
+    if (!activeSignal) throw new NotFoundException('No broadcasting signal found for this user');
 
-    if (!activeSignal) {
-      throw new NotFoundException('No broadcasting signal found for this user');
-    }
+    await this.changeState(activeSignal.signalId, createdBy, { state: SignalState.STOPPED, updatedBy: createdBy });
 
-    await this.changeState(activeSignal.signalId, createdBy, {
-      state: SignalState.STOPPED,
-      updatedBy: createdBy,
-    });
-
-    return this.prisma.signal.findUnique({
-      where: { signalId: activeSignal.signalId },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-          },
-        },
-      },
-    });
+    return this.signalRepository.getSignal(activeSignal.signalId);
   }
 
   async handleBroadcastingByRescuer(createdBy: string, handledBy: string) {
-    const activeSignal = await this.prisma.signal.findFirst({
-      where: {
-        createdBy,
-        state: SignalState.BROADCASTING,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const activeSignal = await this.signalRepository.findActiveSignalByUser(createdBy);
+    if (!activeSignal) throw new NotFoundException('No broadcasting signal found for this user');
 
-    if (!activeSignal) {
-      throw new NotFoundException('No broadcasting signal found for this user');
-    }
+    await this.changeState(activeSignal.signalId, handledBy, { state: SignalState.HANDLED, handledBy });
 
-    await this.changeState(activeSignal.signalId, handledBy, {
-      state: SignalState.HANDLED,
-      handledBy
-    });
-
-    return this.prisma.signal.findUnique({
-      where: { signalId: activeSignal.signalId },
-      include: {
-        user: {
-          select: {
-            userId: true,
-            fullname: true,
-          },
-        },
-        handledByUser: {
-          select: {
-            userId: true,
-            fullname: true,
-          },
-        },
-      },
-    });
+    return this.signalRepository.getSignal(activeSignal.signalId);
   }
 
   private async ensureNoBroadcastingSignal(createdBy: string) {
-    const activeSignal = await this.prisma.signal.findFirst({
-      where: {
-        createdBy,
-        state: SignalState.BROADCASTING,
-      },
-      select: { signalId: true },
-    });
+    const activeSignal = await this.signalRepository.findActiveSignalByUser(createdBy);
 
     if (activeSignal) {
       throw new ConflictException(
@@ -361,9 +200,7 @@ export class SignalService {
   }
 
   private async getByIdOrThrow(signalId: string) {
-    const signal = await this.prisma.signal.findUnique({
-      where: { signalId },
-    });
+    const signal = await this.signalRepository.getSignal(signalId);
 
     if (!signal) {
       throw new NotFoundException('Signal not found');

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { FriendRequestState } from '../common/enum/friendRequestState.enum';
 import { FirebaseService } from '../firebase/firebase.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { FriendRepository, UserRepository } from '../prisma/repositories';
 
 @Injectable()
 export class FriendService {
@@ -15,100 +15,48 @@ export class FriendService {
 
   constructor(
     private readonly firebaseService: FirebaseService,
-    private readonly prisma: PrismaService,
+    private readonly friendRepository: FriendRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
-  /**
-   * Send a friend request from sender to receiver
-   */
   async sendFriendRequest(senderId: string, receiverId: string, note?: string) {
-    // Validate: cannot send request to yourself
     if (senderId === receiverId) {
       throw new BadRequestException(
         'You cannot send a friend request to yourself',
       );
     }
 
-    // Validate: receiver exists
-    const receiver = await this.prisma.user.findUnique({
-      where: { userId: receiverId },
-    });
-
+    const receiver = await this.userRepository.getPublicProfile(receiverId);
     if (!receiver) {
       throw new NotFoundException('User not found');
     }
 
-    // Check if they are already friends
-    const existingFriendship = await this.prisma.friendship.findFirst({
-      where: {
-        OR: [
-          { userId: senderId, friendId: receiverId },
-          { userId: receiverId, friendId: senderId },
-        ],
-      },
-    });
-
+    const existingFriendship = await this.friendRepository.getFriendship(
+      senderId,
+      receiverId,
+    );
     if (existingFriendship) {
       throw new ConflictException('You are already friends with this user');
     }
 
-    // Check if there's already a pending request between them
-    const existingRequest = await this.prisma.friendMakingRequest.findFirst({
-      where: {
-        OR: [
-          {
-            createdBy: senderId,
-            sentTo: receiverId,
-            state: FriendRequestState.PENDING,
-          },
-          {
-            createdBy: receiverId,
-            sentTo: senderId,
-            state: FriendRequestState.PENDING,
-          },
-        ],
-      },
-    });
-
+    const existingRequest = await this.friendRepository.findPendingRequestBetween(
+      senderId,
+      receiverId,
+    );
     if (existingRequest) {
       throw new ConflictException(
         'A friend request already exists between you and this user',
       );
     }
 
-    // Create the friend request
-    const friendRequest = await this.prisma.friendMakingRequest.create({
-      data: {
-        createdBy: senderId,
-        sentTo: receiverId,
-        state: FriendRequestState.PENDING,
-        note: note || null,
-      },
-      include: {
-        sender: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-          },
-        },
-        receiver: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-            fcmToken: true,
-          },
-        },
-      },
-    });
+    const friendRequest = await this.friendRepository.createFriendRequest(
+      senderId,
+      receiverId,
+      note,
+    );
 
-    // Send push notification to receiver
     if (friendRequest.receiver.fcmToken) {
-      const senderName =
-        friendRequest.sender.nickname || friendRequest.sender.fullname;
+      const senderName = friendRequest.sender.nickname || friendRequest.sender.fullname;
       await this.firebaseService.sendNotification(
         friendRequest.receiver.fcmToken,
         'New Friend Request',
@@ -116,8 +64,8 @@ export class FriendService {
         {
           type: 'FRIEND_REQUEST',
           requestId: friendRequest.requestId,
-          senderId: senderId,
-          senderName: senderName,
+          senderId,
+          senderName,
         },
         'friend-request',
       );
@@ -142,27 +90,8 @@ export class FriendService {
     };
   }
 
-  /**
-   * Get sent friend requests for a user
-   */
   async getSentRequests(userId: string) {
-    const requests = await this.prisma.friendMakingRequest.findMany({
-      where: {
-        createdBy: userId,
-        state: FriendRequestState.PENDING,
-      },
-      include: {
-        receiver: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const requests = await this.friendRepository.getSentRequests(userId);
 
     return requests.map((r) => ({
       requestId: r.requestId,
@@ -180,27 +109,8 @@ export class FriendService {
     }));
   }
 
-  /**
-   * Get received friend requests for a user
-   */
   async getReceivedRequests(userId: string) {
-    const requests = await this.prisma.friendMakingRequest.findMany({
-      where: {
-        sentTo: userId,
-        state: FriendRequestState.PENDING,
-      },
-      include: {
-        sender: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const requests = await this.friendRepository.getReceivedRequests(userId);
 
     return requests.map((r) => ({
       requestId: r.requestId,
@@ -218,34 +128,14 @@ export class FriendService {
     }));
   }
 
-  /**
-   * Accept a friend request
-   */
   async acceptFriendRequest(requestId: string, userId: string) {
-    const request = await this.prisma.friendMakingRequest.findUnique({
-      where: { requestId },
-      include: {
-        sender: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            fcmToken: true,
-          },
-        },
-        receiver: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-          },
-        },
-      },
-    });
+    const result = await this.friendRepository.acceptFriendRequest(requestId);
 
-    if (!request) {
+    if (!result) {
       throw new NotFoundException('Friend request not found');
     }
+
+    const { request, updatedRequest } = result;
 
     if (request.sentTo !== userId) {
       throw new BadRequestException('You can only accept requests sent to you');
@@ -255,43 +145,16 @@ export class FriendService {
       throw new BadRequestException('This request is no longer pending');
     }
 
-    // Update request state and create TWO friendship records (bidirectional) with default map mode = true
-    const [updatedRequest] = await this.prisma.$transaction([
-      this.prisma.friendMakingRequest.update({
-        where: { requestId },
-        data: {
-          state: FriendRequestState.ACCEPTED,
-          responsedAt: new Date(),
-        },
-      }),
-      this.prisma.friendship.create({
-        data: {
-          userId: request.createdBy,
-          friendId: request.sentTo,
-          friendMapMode: true,
-        },
-      }),
-      this.prisma.friendship.create({
-        data: {
-          userId: request.sentTo,
-          friendId: request.createdBy,
-          friendMapMode: true,
-        },
-      }),
-    ]);
-
-    // Send push notification to the sender
     if (request.sender.fcmToken) {
-      const accepterName =
-        request.receiver.nickname || request.receiver.fullname;
+      const accepterName = request.receiver.nickname || request.receiver.fullname;
       await this.firebaseService.sendNotification(
         request.sender.fcmToken,
         'Friend Request Accepted',
         `${accepterName} accepted your friend request`,
         {
           type: 'FRIEND_REQUEST_ACCEPTED',
-          requestId: requestId,
-          userId: userId,
+          requestId,
+          userId,
         },
       );
     }
@@ -299,13 +162,8 @@ export class FriendService {
     return updatedRequest;
   }
 
-  /**
-   * Reject a friend request
-   */
   async rejectFriendRequest(requestId: string, userId: string) {
-    const request = await this.prisma.friendMakingRequest.findUnique({
-      where: { requestId },
-    });
+    const request = await this.friendRepository.getFriendRequest(requestId);
 
     if (!request) {
       throw new NotFoundException('Friend request not found');
@@ -319,22 +177,11 @@ export class FriendService {
       throw new BadRequestException('This request is no longer pending');
     }
 
-    return this.prisma.friendMakingRequest.update({
-      where: { requestId },
-      data: {
-        state: FriendRequestState.REJECTED,
-        responsedAt: new Date(),
-      },
-    });
+    return this.friendRepository.rejectFriendRequest(requestId);
   }
 
-  /**
-   * Cancel a sent friend request
-   */
   async cancelFriendRequest(requestId: string, userId: string) {
-    const request = await this.prisma.friendMakingRequest.findUnique({
-      where: { requestId },
-    });
+    const request = await this.friendRepository.getFriendRequest(requestId);
 
     if (!request) {
       throw new NotFoundException('Friend request not found');
@@ -348,39 +195,15 @@ export class FriendService {
       throw new BadRequestException('This request is no longer pending');
     }
 
-    return this.prisma.friendMakingRequest.delete({
-      where: { requestId },
-    });
+    return this.friendRepository.cancelFriendRequest(requestId);
   }
 
-  /**
-   * Update FCM token for push notifications
-   */
   async updateFcmToken(userId: string, fcmToken: string) {
-    return this.prisma.user.update({
-      where: { userId },
-      data: { fcmToken },
-    });
+    return this.userRepository.updateFcmToken(userId, fcmToken);
   }
 
-  /**
-   * Get all friends of a user with map mode status.
-   * friendMapMode reflects whether current user wants to see this friend on map.
-   */
   async getFriends(userId: string) {
-    const friendships = await this.prisma.friendship.findMany({
-      where: { userId },
-      include: {
-        friend: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-          },
-        },
-      },
-    });
+    const friendships = await this.friendRepository.getFriends(userId);
 
     return friendships.map((f) => ({
       userId: f.friend.userId,
@@ -393,21 +216,16 @@ export class FriendService {
     }));
   }
 
-  /**
-   * Batch-update friendMapMode for multiple friends.
-   */
   async updateFriendMapModes(
     userId: string,
     friendIds: string[],
     mapMode: boolean,
   ) {
-    const result = await this.prisma.friendship.updateMany({
-      where: {
-        userId,
-        friendId: { in: friendIds },
-      },
-      data: { friendMapMode: mapMode },
-    });
+    const result = await this.friendRepository.updateFriendMapModes(
+      userId,
+      friendIds,
+      mapMode,
+    );
 
     return { updated: result.count };
   }

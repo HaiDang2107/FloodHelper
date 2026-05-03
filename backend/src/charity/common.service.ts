@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { CharityRepository } from '../prisma/repositories';
 import { formatLocation } from '../common/location-format.util';
 
 type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
@@ -49,70 +49,22 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
 
 @Injectable()
 export class CommonCharityService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly charityRepository: CharityRepository) {}
 
   async getCampaignDetail(campaignId: string) {
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      include: {
-        organizer: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            residenceProvince: {
-              select: {
-                code: true,
-                name: true,
-              },
-            },
-            residenceWard: {
-              select: {
-                code: true,
-                name: true,
-              },
-            },
-          },
-        },
-        destinationProvince: {
-          select: { code: true, name: true },
-        },
-        destinationWard: {
-          select: { code: true, name: true },
-        },
-        bankAccount: {
-          include: {
-            bank: true,
-          },
-        },
-        transactions: {
-          orderBy: { donateAt: 'desc' },
-        },
-      },
-    });
+    const campaign = await this.charityRepository.getCampaignDetail(campaignId);
 
     if (!campaign) {
       throw new NotFoundException('Charity campaign not found');
     }
 
-    const announcements = await this.prisma.announcementFromBenefactor.findMany({
-      where: { campaignId },
-      orderBy: [{ postedAt: 'desc' }, { announcementId: 'desc' }],
-    });
+    const announcements = await this.charityRepository.listAnnouncementsByCampaign(campaignId);
 
     return this.mapCampaignDetail(campaign, announcements);
   }
 
   async listBanks() {
-    const banks = await this.prisma.bank.findMany({
-      select: {
-        id: true,
-        shortName: true,
-      },
-      orderBy: [{ shortName: 'asc' }, { name: 'asc' }],
-    });
+    const banks = await this.charityRepository.listBanks();
 
     return banks.map((bank) => ({
       id: bank.id,

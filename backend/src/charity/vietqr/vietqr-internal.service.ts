@@ -7,14 +7,14 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { VietQR } from 'vietqr';
-import { PrismaService } from '../../prisma/prisma.service';
+import { CharityRepository } from '../../prisma/repositories';
 
 @Injectable()
 export class VietQrInternalService {
   private readonly logger = new Logger(VietQrInternalService.name);
   private readonly vietQr: any;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly charityRepository: CharityRepository) {
     this.vietQr = new VietQR({
       clientID: process.env.VIETQR_CLIENT_ID ?? 'internal-simulator-client',
       apiKey: process.env.VIETQR_API_KEY ?? 'internal-simulator-key',
@@ -28,22 +28,7 @@ export class VietQrInternalService {
   ) {
     const amount = this.parseAmount(amountInput);
 
-    const campaign = await this.prisma.charityCampaign.findUnique({
-      where: { campaignId },
-      select: {
-        campaignId: true,
-        state: true,
-        bankAccount: {
-          include: {
-            bank: {
-              select: {
-                code: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const campaign = await this.charityRepository.getCampaignBankInfoForQr(campaignId);
 
     if (!campaign) {
       throw new NotFoundException('Charity campaign not found');
@@ -66,7 +51,7 @@ export class VietQrInternalService {
     const transactionId = randomUUID();
     const content = this.buildVietQrContent(campaignId, donorUserId, transactionId);
 
-    const quickLink = this.vietQr.genQuickLink({ //Ảnh QR được lưu ở server của VietQR
+    const quickLink = this.vietQr.genQuickLink({
       bank: bankCode,
       accountName: userBankName,
       accountNumber: bankAccount,
@@ -80,21 +65,16 @@ export class VietQrInternalService {
       throw new BadRequestException('Failed to generate internal VietQR quick link');
     }
 
-    await this.prisma.transaction.create({
-      data: {
-        transactionId,
-        campaignId,
-        transType: 'C',
-        donateAt: new Date(),
-        donatedBy: donorUserId,
-        amount: amount.toString(),
-        state: 'CREATED',
-        content,
-        qrLink: quickLink,
-      },
-      select: {
-        transactionId: true,
-      },
+    await this.charityRepository.createTransaction({
+      transactionId,
+      campaignId,
+      transType: 'C',
+      donateAt: new Date(),
+      donatedBy: donorUserId,
+      amount: amount.toString(),
+      state: 'CREATED',
+      content,
+      qrLink: quickLink,
     });
 
     this.logger.log(
@@ -111,18 +91,7 @@ export class VietQrInternalService {
     transactionId: string,
     requesterUserId: string,
   ) {
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { transactionId },
-      select: {
-        transactionId: true,
-        state: true,
-        campaign: {
-          select: {
-            organizedBy: true,
-          },
-        },
-      },
-    });
+    const transaction = await this.charityRepository.findTransactionById(transactionId);
 
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
@@ -141,13 +110,10 @@ export class VietQrInternalService {
       );
     }
 
-    await this.prisma.transaction.update({
-      where: { transactionId },
-      data: {
-        state: 'SUCCESS',
-        transactionTime: new Date(),
-        referencenumber: `INTERNAL-${Date.now()}`,
-      },
+    await this.charityRepository.updateTransaction(transactionId, {
+      state: 'SUCCESS',
+      transactionTime: new Date(),
+      referencenumber: `INTERNAL-${Date.now()}`,
     });
 
     this.logger.log(
