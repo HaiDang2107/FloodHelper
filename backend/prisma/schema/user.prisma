@@ -45,7 +45,7 @@ model Profile {
   nickname        String?   @db.VarChar(255)
   dob             DateTime? @db.Date
   gender          String?   @db.VarChar(20)
-  phoneNumber     String    @unique @map("phone_number")
+  phoneNumber     String    @map("phone_number")
   avatarUrl       String?   @map("avatar_url")
   citizenId       String?   @map("citizen_id")
   rescuerCertificateUrl String? @map("rescuer_certificate_url")

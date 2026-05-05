@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../domain/models/user_profile.dart';
 import 'package:image_picker/image_picker.dart';
@@ -446,9 +447,11 @@ class ProfileInfo extends StatelessWidget {
   }
 
   Widget _buildCertificatePicker(BuildContext context) {
-    final hasCertificate =
-        (currentRescuerCertificateUrl ?? '').trim().isNotEmpty ||
-        tempRescuerCertificate != null;
+    final hasPendingFile = tempRescuerCertificate != null;
+    final hasSavedUrl = (currentRescuerCertificateUrl ?? '').trim().isNotEmpty;
+
+    // File name to display
+    final pendingFileName = hasPendingFile ? tempRescuerCertificate!.name : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,23 +465,104 @@ class ProfileInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: isEditing
-                    ? () => _pickCertificate(context)
-                    : (hasCertificate ? onViewRescuerCertificate : null),
-                icon: const Icon(Icons.upload_file),
-                label: Text(
-                  hasCertificate ? 'View certificate' : 'Upload certificate',
+
+        // Pending file name (selected but not yet saved)
+        if (hasPendingFile) ...
+          [
+            Row(
+              children: [
+                const Icon(Icons.insert_drive_file, size: 18, color: Colors.blue),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    pendingFileName!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
+                const SizedBox(width: 4),
+                const Text(
+                  '(pending upload)',
+                  style: TextStyle(fontSize: 11, color: Colors.orange),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+
+        // Saved URL — clickable link
+        if (!hasPendingFile && hasSavedUrl) ...
+          [
+            InkWell(
+              onTap: () async {
+                final uri = Uri.tryParse(currentRescuerCertificateUrl!);
+                if (uri != null && await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Row(
+                children: [
+                  const Icon(Icons.picture_as_pdf, size: 18, color: Colors.red),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _extractFileName(currentRescuerCertificateUrl!),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 8),
           ],
-        ),
+
+        // Upload button
+        if (isEditing)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickCertificate(context),
+                  icon: const Icon(Icons.upload_file),
+                  label: Text(
+                    hasPendingFile || hasSavedUrl
+                        ? 'Replace certificate'
+                        : 'Upload certificate',
+                  ),
+                ),
+              ),
+            ],
+          )
+        else if (!hasPendingFile && !hasSavedUrl)
+          const Text(
+            'No certificate uploaded.',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
       ],
     );
+  }
+
+  /// Extract a human-readable file name from a URL.
+  String _extractFileName(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final segment = uri.pathSegments.lastWhere(
+        (s) => s.isNotEmpty,
+        orElse: () => url,
+      );
+      return Uri.decodeComponent(segment);
+    } catch (_) {
+      return url;
+    }
   }
 
   Future<void> _pickCertificate(BuildContext context) async {

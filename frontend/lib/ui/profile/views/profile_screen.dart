@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../routing/routes.dart';
 import '../../../domain/models/user_profile.dart';
+import '../../../domain/models/user.dart';
 import 'package:image_picker/image_picker.dart';
 import '../view_models/profile_view_model.dart';
 import '../widgets/profile_header.dart';
@@ -152,12 +153,145 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  /// Returns true if the current form values differ from the saved profile.
+  bool _hasProfileChanges(ProfileState state) {
+    final profile = state.profile;
+    if (profile == null) return false;
+
+    final savedFullname = profile.name;
+    final savedNickname = profile.displayName ?? '';
+    final savedGender = profile.gender;
+    final savedDob = profile.dateOfBirth != null
+        ? profile.dateOfBirth!.toIso8601String().split('T')[0]
+        : '';
+    final savedOccupation = profile.occupation ?? '';
+    final savedCitizenId = profile.citizenInfo?.citizenId ?? '';
+    final savedDateOfIssue = profile.citizenInfo?.dateOfIssue != null
+        ? profile.citizenInfo!.dateOfIssue!.toIso8601String().split('T')[0]
+        : '';
+    final savedDateOfExpire = profile.citizenInfo?.dateOfExpire != null
+        ? profile.citizenInfo!.dateOfExpire!.toIso8601String().split('T')[0]
+        : '';
+
+    if (_fullNameController.text != savedFullname) return true;
+    if (_nicknameController.text != savedNickname) return true;
+    if (_selectedGender != savedGender) return true;
+    if (_dobController.text != savedDob) return true;
+    if (_occupationController.text != savedOccupation) return true;
+    if (_citizenIdController.text != savedCitizenId) return true;
+    if (_dateOfIssueController.text != savedDateOfIssue) return true;
+    if (_dateOfExpiryController.text != savedDateOfExpire) return true;
+    if (_originProvinceCode != profile.address?.originProvinceCode) return true;
+    if (_residenceProvinceCode != profile.address?.residenceProvinceCode) return true;
+    if (_originWardCode != profile.address?.originWardCode) return true;
+    if (_residenceWardCode != profile.address?.residenceWardCode) return true;
+    // Check temp images
+    if (state.tempAvatarImage != null) return true;
+    if (state.tempFrontCitizenIdImage != null) return true;
+    if (state.tempBackCitizenIdImage != null) return true;
+    if (state.tempRescuerCertificate != null) return true;
+    return false;
+  }
+
+  /// Returns true if any field OTHER than the rescuer certificate has changed.
+  bool _hasNonCertificateChanges(ProfileState state) {
+    final profile = state.profile;
+    if (profile == null) return false;
+
+    final savedFullname = profile.name;
+    final savedNickname = profile.displayName ?? '';
+    final savedGender = profile.gender;
+    final savedDob = profile.dateOfBirth != null
+        ? profile.dateOfBirth!.toIso8601String().split('T')[0]
+        : '';
+    final savedOccupation = profile.occupation ?? '';
+    final savedCitizenId = profile.citizenInfo?.citizenId ?? '';
+    final savedDateOfIssue = profile.citizenInfo?.dateOfIssue != null
+        ? profile.citizenInfo!.dateOfIssue!.toIso8601String().split('T')[0]
+        : '';
+    final savedDateOfExpire = profile.citizenInfo?.dateOfExpire != null
+        ? profile.citizenInfo!.dateOfExpire!.toIso8601String().split('T')[0]
+        : '';
+
+    if (_fullNameController.text != savedFullname) return true;
+    if (_nicknameController.text != savedNickname) return true;
+    if (_selectedGender != savedGender) return true;
+    if (_dobController.text != savedDob) return true;
+    if (_occupationController.text != savedOccupation) return true;
+    if (_citizenIdController.text != savedCitizenId) return true;
+    if (_dateOfIssueController.text != savedDateOfIssue) return true;
+    if (_dateOfExpiryController.text != savedDateOfExpire) return true;
+    if (_originProvinceCode != profile.address?.originProvinceCode) return true;
+    if (_residenceProvinceCode != profile.address?.residenceProvinceCode) return true;
+    if (_originWardCode != profile.address?.originWardCode) return true;
+    if (_residenceWardCode != profile.address?.residenceWardCode) return true;
+    // Avatar and ID card images (not certificate)
+    if (state.tempAvatarImage != null) return true;
+    if (state.tempFrontCitizenIdImage != null) return true;
+    if (state.tempBackCitizenIdImage != null) return true;
+    return false;
+  }
+
   Future<void> _toggleEdit() async {
     final viewModel = ref.read(profileViewModelProvider.notifier);
     final state = ref.read(profileViewModelProvider);
 
     if (state.isEditing) {
-      // Save profile
+      // Check if user is Benefactor or Rescuer
+      final roles = state.profile?.roles ?? [];
+      final isBenefactor = roles.contains(UserRole.benefactor);
+      final isRescuer = roles.contains(UserRole.rescuer);
+      final isRestricted = isBenefactor || isRescuer;
+
+      // A Benefactor-only user who only changed the Certificate can save directly
+      final hasOnlyCertificateChange =
+          isBenefactor &&
+          !isRescuer &&
+          state.tempRescuerCertificate != null &&
+          !_hasNonCertificateChanges(state);
+
+      if (isRestricted && _hasProfileChanges(state) && !hasOnlyCertificateChange) {
+        // Build the DTO body to pass to the request
+        final dto = _buildUpdateDto(state);
+
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Profile Update Restricted'),
+            content: const Text(
+              'You cannot change your profile freely.\n\n'
+              'Do you want to send a profile update request to your authority?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Send Update Request'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed != true || !mounted) return;
+
+        await viewModel.createProfileUpdateRequest(
+          body: dto,
+          avatar: state.tempAvatarImage,
+          frontCitizenId: state.tempFrontCitizenIdImage,
+          backCitizenId: state.tempBackCitizenIdImage,
+          rescuerCertificate: state.tempRescuerCertificate,
+        );
+        return;
+      }
+
+      // Normal user — save directly
       final success = await viewModel.updateProfile(
         fullname: _fullNameController.text,
         nickname: _nicknameController.text,
@@ -188,6 +322,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } else {
       viewModel.toggleEditMode();
     }
+  }
+
+  /// Build an update DTO map from the current controller values.
+  Map<String, dynamic> _buildUpdateDto(ProfileState state) {
+    final map = <String, dynamic>{};
+    if (_fullNameController.text.isNotEmpty) map['fullname'] = _fullNameController.text;
+    if (_nicknameController.text.isNotEmpty) map['nickname'] = _nicknameController.text;
+    if (_selectedGender != null) map['gender'] = _selectedGender!.toBackendString();
+    if (_dobController.text.isNotEmpty) map['dob'] = _dobController.text;
+    if (_occupationController.text.isNotEmpty) map['occupation'] = _occupationController.text;
+    if (_citizenIdController.text.isNotEmpty) map['citizenId'] = _citizenIdController.text;
+    if (_dateOfIssueController.text.isNotEmpty) map['dateOfIssue'] = _dateOfIssueController.text;
+    if (_dateOfExpiryController.text.isNotEmpty) map['dateOfExpire'] = _dateOfExpiryController.text;
+    if (_originProvinceCode != null) map['originProvinceCode'] = _originProvinceCode;
+    if (_originProvinceName != null) map['originProvinceName'] = _originProvinceName;
+    if (_originWardCode != null) map['originWardCode'] = _originWardCode;
+    if (_originWardName != null) map['originWardName'] = _originWardName;
+    if (_residenceProvinceCode != null) map['residenceProvinceCode'] = _residenceProvinceCode;
+    if (_residenceProvinceName != null) map['residenceProvinceName'] = _residenceProvinceName;
+    if (_residenceWardCode != null) map['residenceWardCode'] = _residenceWardCode;
+    if (_residenceWardName != null) map['residenceWardName'] = _residenceWardName;
+    return map;
   }
 
   Future<void> _handleSignOut() async {

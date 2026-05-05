@@ -70,6 +70,23 @@ class RealProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<void> createProfileUpdateRequest({
+    required Map<String, dynamic> body,
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+    XFile? rescuerCertificate,
+  }) async {
+    await _profileService.createProfileUpdateRequest(
+      body: body,
+      avatar: avatar,
+      frontCitizenId: frontCitizenId,
+      backCitizenId: backCitizenId,
+      rescuerCertificate: rescuerCertificate,
+    );
+  }
+
+  @override
   Future<void> revokeRoleRequest(String requestId) async {
     await _profileService.revokeRoleRequest(requestId);
   }

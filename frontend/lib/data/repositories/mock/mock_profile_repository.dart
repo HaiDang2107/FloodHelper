@@ -173,6 +173,26 @@ class MockProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<void> createProfileUpdateRequest({
+    required Map<String, dynamic> body,
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+    XFile? rescuerCertificate,
+  }) async {
+    await _simulateDelay();
+    _profileUpdateRequests.insert(
+      0,
+      ProfileUpdateRequestModel(
+        requestId: 'REQ-PROFILE-${DateTime.now().millisecondsSinceEpoch}',
+        state: 'PENDING',
+        createdAt: DateTime.now(),
+        authorityName: null,
+      ),
+    );
+  }
+
+  @override
   Future<void> revokeRoleRequest(String requestId) async {
     await _simulateDelay();
     final index = _requests.indexWhere(

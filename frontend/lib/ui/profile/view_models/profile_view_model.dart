@@ -260,6 +260,40 @@ class ProfileViewModel extends _$ProfileViewModel {
     }
   }
 
+  Future<bool> createProfileUpdateRequest({
+    required Map<String, dynamic> body,
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+    XFile? rescuerCertificate,
+  }) async {
+    state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
+    try {
+      await _profileRepository.createProfileUpdateRequest(
+        body: body,
+        avatar: avatar,
+        frontCitizenId: frontCitizenId,
+        backCitizenId: backCitizenId,
+        rescuerCertificate: rescuerCertificate,
+      );
+      // Refresh request list then exit edit mode
+      final requests = await _profileRepository.getMyProfileUpdateRequests();
+      state = state.copyWith(
+        profileUpdateRequests: requests,
+        isSaving: false,
+        isEditing: false,
+        successMessage: 'Profile update request sent successfully.',
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to send request: ${e.toString()}',
+      );
+      return false;
+    }
+  }
+
   Future<bool> revokeProfileUpdateRequest(String requestId) async {
     state = state.copyWith(
       isSaving: true,

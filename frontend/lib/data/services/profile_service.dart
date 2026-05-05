@@ -135,6 +135,35 @@ class ProfileService {
     }
   }
 
+  Future<void> createProfileUpdateRequest({
+    required Map<String, dynamic> body,
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+    XFile? rescuerCertificate,
+  }) async {
+    try {
+      final hasFiles = avatar != null ||
+          frontCitizenId != null ||
+          backCitizenId != null ||
+          rescuerCertificate != null;
+
+      final data = hasFiles
+          ? await _buildProfileFormData(
+              body,
+              avatar: avatar,
+              frontCitizenId: frontCitizenId,
+              backCitizenId: backCitizenId,
+              rescuerCertificate: rescuerCertificate,
+            )
+          : body;
+
+      await _apiClient.post('/user/profile/update-requests', data: data);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Future<void> revokeRoleRequest(String requestId) async {
     try {
       await _apiClient.patch('/user/profile/role-requests/$requestId/revoke');

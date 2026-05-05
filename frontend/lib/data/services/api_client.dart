@@ -349,8 +349,18 @@ class ApiException implements Exception {
     dynamic data = error.response?.data;
 
     // Try to extract message from response
-    if (data is Map<String, dynamic> && data['message'] != null) {
-      message = data['message'];
+    if (data is Map<String, dynamic>) {
+      final rawMessage = data['message'];
+      if (rawMessage is List && rawMessage.isNotEmpty) {
+        // NestJS class-validator returns an array of validation messages
+        message = rawMessage.join(', ');
+      } else if (rawMessage is String && rawMessage.isNotEmpty) {
+        message = rawMessage;
+      } else if (data['error'] is String) {
+        message = data['error'] as String;
+      } else {
+        message = _getMessageFromStatusCode(statusCode);
+      }
     } else {
       switch (error.type) {
         case DioExceptionType.connectionTimeout:

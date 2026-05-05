@@ -37,6 +37,15 @@ abstract class ProfileRepository {
   /// Revoke a pending profile update request
   Future<void> revokeProfileUpdateRequest(String requestId);
 
+  /// Create a profile update request (for Benefactor/Rescuer)
+  Future<void> createProfileUpdateRequest({
+    required Map<String, dynamic> body,
+    XFile? avatar,
+    XFile? frontCitizenId,
+    XFile? backCitizenId,
+    XFile? rescuerCertificate,
+  });
+
   /// Revoke a pending role request
   Future<void> revokeRoleRequest(String requestId);
 
