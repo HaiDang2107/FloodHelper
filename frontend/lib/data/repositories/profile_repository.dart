@@ -13,6 +13,7 @@ abstract class ProfileRepository {
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
+    XFile? rescuerCertificate,
   });
   
   /// Update current user's location
@@ -29,5 +30,14 @@ abstract class ProfileRepository {
 
   /// Get current user's submitted role requests
   Future<List<ProfileRoleRequestModel>> getMyRoleRequests();
+
+  /// Get current user's submitted profile update requests
+  Future<List<ProfileUpdateRequestModel>> getMyProfileUpdateRequests();
+
+  /// Revoke a pending profile update request
+  Future<void> revokeProfileUpdateRequest(String requestId);
+
+  /// Revoke a pending role request
+  Future<void> revokeRoleRequest(String requestId);
 
 }

@@ -26,10 +26,14 @@ class ProfileService {
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
+    XFile? rescuerCertificate,
   }) async {
     try {
       final body = dto.toJson();
-      final hasFiles = avatar != null || frontCitizenId != null || backCitizenId != null;
+        final hasFiles = avatar != null ||
+          frontCitizenId != null ||
+          backCitizenId != null ||
+          rescuerCertificate != null;
 
       final data = hasFiles
           ? await _buildProfileFormData(
@@ -37,6 +41,7 @@ class ProfileService {
               avatar: avatar,
               frontCitizenId: frontCitizenId,
               backCitizenId: backCitizenId,
+              rescuerCertificate: rescuerCertificate,
             )
           : body;
 
@@ -106,11 +111,44 @@ class ProfileService {
     }
   }
 
+  Future<List<ProfileUpdateRequestModel>> getMyProfileUpdateRequests() async {
+    try {
+      final response = await _apiClient.get('/user/profile/update-requests');
+      final body = response.data as Map<String, dynamic>?;
+      final data = body?['data'] as Map<String, dynamic>?;
+      final items = (data?['items'] as List<dynamic>? ?? const []);
+
+      return items
+          .whereType<Map<String, dynamic>>()
+          .map(ProfileUpdateRequestModel.fromJson)
+          .toList();
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> revokeProfileUpdateRequest(String requestId) async {
+    try {
+      await _apiClient.patch('/user/profile/update-requests/$requestId/revoke');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
+  Future<void> revokeRoleRequest(String requestId) async {
+    try {
+      await _apiClient.patch('/user/profile/role-requests/$requestId/revoke');
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   Future<FormData> _buildProfileFormData(
     Map<String, dynamic> body, {
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
+    XFile? rescuerCertificate,
   }) async {
     final payload = <String, dynamic>{};
 
@@ -136,6 +174,13 @@ class ProfileService {
       payload['citizenBack'] = await MultipartFile.fromFile(
         backCitizenId.path,
         filename: backCitizenId.name,
+      );
+    }
+
+    if (rescuerCertificate != null) {
+      payload['rescuerCertificate'] = await MultipartFile.fromFile(
+        rescuerCertificate.path,
+        filename: rescuerCertificate.name,
       );
     }
 

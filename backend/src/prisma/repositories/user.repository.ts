@@ -16,39 +16,59 @@ export class UserRepository extends BaseRepository<any> {
    * Get full user profile with relationships (locations, account state)
    */
   async getProfileWithRelations(userId: string) {
-    return this.prisma.user.findUnique({
-      where: { userId },
+    const profile = await this.prisma.profile.findFirst({
+      where: { userId, isCurrent: true },
       include: {
         originProvince: true,
         originWard: true,
         residenceProvince: true,
         residenceWard: true,
-        account: {
+        user: {
           select: {
-            username: true,
-            state: true,
-            createdAt: true,
+            userId: true,
+            role: true,
+            curLongitude: true,
+            curLatitude: true,
+            visibilityMode: true,
+            showCharityCampaignLocations: true,
+            account: {
+              select: {
+                username: true,
+                state: true,
+                createdAt: true,
+              },
+            },
           },
         },
       },
     });
+
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      ...profile,
+      role: profile.user.role,
+      curLongitude: profile.user.curLongitude,
+      curLatitude: profile.user.curLatitude,
+      visibilityMode: profile.user.visibilityMode,
+      showCharityCampaignLocations: profile.user.showCharityCampaignLocations,
+      account: profile.user.account,
+    };
   }
 
   /**
    * Get public user profile (limited fields for visibility)
    */
   async getPublicProfile(userId: string) {
-    return this.prisma.user.findUnique({
-      where: { userId },
+    const profile = await this.prisma.profile.findFirst({
+      where: { userId, isCurrent: true },
       select: {
         userId: true,
         fullname: true,
         nickname: true,
         avatarUrl: true,
-        role: true,
-        curLongitude: true,
-        curLatitude: true,
-        visibilityMode: true,
         originProvinceCode: true,
         originWardCode: true,
         residenceProvinceCode: true,
@@ -65,23 +85,65 @@ export class UserRepository extends BaseRepository<any> {
         residenceWard: {
           select: { code: true, name: true },
         },
+        user: {
+          select: {
+            role: true,
+            curLongitude: true,
+            curLatitude: true,
+            visibilityMode: true,
+          },
+        },
       },
     });
+
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      ...profile,
+      role: profile.user.role,
+      curLongitude: profile.user.curLongitude,
+      curLatitude: profile.user.curLatitude,
+      visibilityMode: profile.user.visibilityMode,
+    };
   }
 
   /**
    * Update user profile fields
    */
   async updateProfile(userId: string, data: Partial<any>) {
-    return this.prisma.user.update({
-      where: { userId },
+    const currentProfile = await this.prisma.profile.findFirst({
+      where: { userId, isCurrent: true },
+      select: { profileId: true },
+    });
+
+    if (!currentProfile) {
+      return null;
+    }
+
+    return this.prisma.profile.update({
+      where: { profileId: currentProfile.profileId },
       data,
       include: {
-        account: {
+        originProvince: true,
+        originWard: true,
+        residenceProvince: true,
+        residenceWard: true,
+        user: {
           select: {
-            username: true,
-            state: true,
-            createdAt: true,
+            role: true,
+            curLongitude: true,
+            curLatitude: true,
+            visibilityMode: true,
+            showCharityCampaignLocations: true,
+            account: {
+              select: {
+                username: true,
+                state: true,
+                createdAt: true,
+              },
+            },
           },
         },
       },
@@ -121,16 +183,16 @@ export class UserRepository extends BaseRepository<any> {
   async findAllPaginated(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
 
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
+    const [profiles, total] = await Promise.all([
+      this.prisma.profile.findMany({
         skip,
         take: limit,
+        where: { isCurrent: true },
         select: {
           userId: true,
           fullname: true,
           nickname: true,
           avatarUrl: true,
-          role: true,
           phoneNumber: true,
           originProvinceCode: true,
           originWardCode: true,
@@ -148,11 +210,21 @@ export class UserRepository extends BaseRepository<any> {
           residenceWard: {
             select: { code: true, name: true },
           },
+          user: {
+            select: {
+              role: true,
+            },
+          },
         },
         orderBy: { fullname: 'asc' },
       }),
-      this.prisma.user.count(),
+      this.prisma.profile.count({ where: { isCurrent: true } }),
     ]);
+
+    const users = profiles.map((profile) => ({
+      ...profile,
+      role: profile.user.role,
+    }));
 
     return { users, total, page, limit };
   }
@@ -166,21 +238,21 @@ export class UserRepository extends BaseRepository<any> {
     longitude: number,
     radiusKm: number = 10,
   ) {
-    const users = await this.prisma.user.findMany({
+    const profiles = await this.prisma.profile.findMany({
       where: {
-        visibilityMode: 'PUBLIC',
-        userId: { not: userId },
-        curLongitude: { not: null },
-        curLatitude: { not: null },
+        isCurrent: true,
+        user: {
+          visibilityMode: 'PUBLIC',
+          userId: { not: userId },
+          curLongitude: { not: null },
+          curLatitude: { not: null },
+        },
       },
       select: {
         userId: true,
         fullname: true,
         nickname: true,
         avatarUrl: true,
-        role: true,
-        curLongitude: true,
-        curLatitude: true,
         originProvinceCode: true,
         originWardCode: true,
         residenceProvinceCode: true,
@@ -197,8 +269,22 @@ export class UserRepository extends BaseRepository<any> {
         residenceWard: {
           select: { code: true, name: true },
         },
+        user: {
+          select: {
+            role: true,
+            curLongitude: true,
+            curLatitude: true,
+          },
+        },
       },
     });
+
+    const users = profiles.map((profile) => ({
+      ...profile,
+      role: profile.user.role,
+      curLongitude: profile.user.curLongitude,
+      curLatitude: profile.user.curLatitude,
+    }));
 
     return users.filter((user) => {
       if (!user.curLongitude || !user.curLatitude) return false;
@@ -218,21 +304,35 @@ export class UserRepository extends BaseRepository<any> {
    * Find users by ward code
    */
   async findUsersByWard(wardCode: number) {
-    return this.prisma.user.findMany({
-      where: { residenceWardCode: wardCode },
+    const profiles = await this.prisma.profile.findMany({
+      where: {
+        isCurrent: true,
+        residenceWardCode: wardCode,
+      },
       select: {
         userId: true,
         fullname: true,
-        fcmToken: true,
+        user: {
+          select: { fcmToken: true },
+        },
       },
     });
+
+    return profiles.map((profile) => ({
+      userId: profile.userId,
+      fullname: profile.fullname,
+      fcmToken: profile.user.fcmToken,
+    }));
   }
 
   async findAuthoritiesByWard(wardCode: number) {
-    return this.prisma.user.findMany({
+    const profiles = await this.prisma.profile.findMany({
       where: {
+        isCurrent: true,
         residenceWardCode: wardCode,
-        role: { has: 'AUTHORITY' },
+        user: {
+          role: { has: 'AUTHORITY' },
+        },
       },
       select: {
         userId: true,
@@ -240,12 +340,18 @@ export class UserRepository extends BaseRepository<any> {
         nickname: true,
       },
     });
+
+    return profiles.map((profile) => ({
+      userId: profile.userId,
+      fullname: profile.fullname,
+      nickname: profile.nickname,
+    }));
   }
 
   async findUsersByIds(ids: string[]) {
     if (!ids || ids.length === 0) return [];
-    return this.prisma.user.findMany({
-      where: { userId: { in: ids } },
+    return this.prisma.profile.findMany({
+      where: { userId: { in: ids }, isCurrent: true },
       select: { userId: true, fullname: true, nickname: true },
     });
   }
@@ -254,17 +360,29 @@ export class UserRepository extends BaseRepository<any> {
    * Get users by role
    */
   async findUsersByRole(role: string) {
-    return this.prisma.user.findMany({
+    const profiles = await this.prisma.profile.findMany({
       where: {
-        role: { has: role },
+        isCurrent: true,
+        user: {
+          role: { has: role },
+        },
       },
       select: {
         userId: true,
         fullname: true,
-        role: true,
         residenceWardCode: true,
+        user: {
+          select: { role: true },
+        },
       },
     });
+
+    return profiles.map((profile) => ({
+      userId: profile.userId,
+      fullname: profile.fullname,
+      role: profile.user.role,
+      residenceWardCode: profile.residenceWardCode,
+    }));
   }
 
   /**
@@ -292,6 +410,13 @@ export class UserRepository extends BaseRepository<any> {
     });
   }
 
+  async updateUserFields(userId: string, data: Record<string, unknown>) {
+    return this.prisma.user.update({
+      where: { userId },
+      data,
+    });
+  }
+
   /**
    * Base CRUD methods - not typically used for User
    */
@@ -300,13 +425,22 @@ export class UserRepository extends BaseRepository<any> {
   }
 
   async findAll() {
-    return this.prisma.user.findMany({
+    const profiles = await this.prisma.profile.findMany({
+      where: { isCurrent: true },
       select: {
         userId: true,
         fullname: true,
-        role: true,
+        user: {
+          select: { role: true },
+        },
       },
     });
+
+    return profiles.map((profile) => ({
+      userId: profile.userId,
+      fullname: profile.fullname,
+      role: profile.user.role,
+    }));
   }
 
   async create(data: any) {

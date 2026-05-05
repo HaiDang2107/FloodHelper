@@ -33,19 +33,33 @@ export class ChatRepository extends BaseRepository<any> {
         members: {
           include: {
             user: {
+              include: {
+                profiles: {
+                  where: { isCurrent: true },
+                  select: {
+                    fullname: true,
+                    avatarUrl: true,
+                  }
+                }
+              },
               select: {
                 userId: true,
-                fullname: true,
-                avatarUrl: true,
               },
             },
           },
         },
         creator: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
           },
         },
       },
@@ -85,10 +99,17 @@ export class ChatRepository extends BaseRepository<any> {
       where: { roomId },
       include: {
         user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
           },
         },
       },
@@ -108,10 +129,17 @@ export class ChatRepository extends BaseRepository<any> {
       },
       include: {
         sender: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
           },
         },
       },
@@ -130,10 +158,17 @@ export class ChatRepository extends BaseRepository<any> {
       where: { roomId },
       include: {
         sender: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
           },
         },
       },

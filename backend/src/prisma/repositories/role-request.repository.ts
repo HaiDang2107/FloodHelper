@@ -18,7 +18,7 @@ export class RoleRequestRepository extends BaseRepository<any> {
   async createRequest(data: any) {
     return this.prisma.roleUpdatingRequest.create({
       data: {
-        createdBy: data.createdBy,
+        profileId: data.profileId,
         checkBy: data.checkBy,
         type: data.type,
         state: data.state || 'PENDING',
@@ -27,20 +27,21 @@ export class RoleRequestRepository extends BaseRepository<any> {
     });
   }
 
-  async getRequestForCreation(userId: string) {
-    return this.prisma.user.findUnique({
-      where: { userId },
+  async getRequestForCreation(userId: string) { // Cần trả về nhiều trường để xem có miss trường nào không
+    const profile = await this.prisma.profile.findFirst({
+      where: { userId, isCurrent: true },
       select: {
+        profileId: true,
         userId: true,
-        role: true,
         fullname: true,
         nickname: true,
         avatarUrl: true,
         dob: true,
         gender: true,
         phoneNumber: true,
-        jobPosition: true,
+        occupation: true,
         citizenId: true,
+        rescuerCertificateUrl: true,
         frontCitizenIdCardImageUrl: true,
         backCitizenIdCardImageUrl: true,
         originProvinceCode: true,
@@ -61,8 +62,22 @@ export class RoleRequestRepository extends BaseRepository<any> {
         },
         dateOfIssue: true,
         dateOfExpire: true,
+        user: {
+          select: {
+            role: true,
+          },
+        },
       },
     });
+
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      ...profile,
+      role: profile.user.role,
+    };
   }
 
   /**
@@ -72,14 +87,19 @@ export class RoleRequestRepository extends BaseRepository<any> {
     return this.prisma.roleUpdatingRequest.findUnique({
       where: { requestId },
       include: {
-        user: {
+        profile: {
           select: {
             userId: true,
             fullname: true,
             avatarUrl: true,
-            role: true,
+            user: {
+              select: {
+                role: true,
+              },
+            },
           },
         },
+
       },
     });
   }
@@ -89,7 +109,26 @@ export class RoleRequestRepository extends BaseRepository<any> {
    */
   async listRequestsForRequester(userId: string) {
     return this.prisma.roleUpdatingRequest.findMany({
-      where: { createdBy: userId },
+      where: {
+        profile: {
+          userId,
+        },
+      },
+      include: {
+        authority: {
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+              }
+            }
+          },
+        },
+      },
+
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -114,7 +153,7 @@ export class RoleRequestRepository extends BaseRepository<any> {
           : {}),
       },
       include: {
-        user: {
+        profile: {
           select: {
             userId: true,
             fullname: true,
@@ -138,18 +177,22 @@ export class RoleRequestRepository extends BaseRepository<any> {
             residenceWard: {
               select: { code: true, name: true },
             },
-            jobPosition: true,
+            occupation: true,
             citizenId: true,
-            citizenIdCardImg: true,
+            rescuerCertificateUrl: true,
             frontCitizenIdCardImageUrl: true,
             backCitizenIdCardImageUrl: true,
             avatarUrl: true,
             dateOfIssue: true,
             dateOfExpire: true,
-            role: true,
-            account: {
+            user: {
               select: {
-                username: true,
+                role: true,
+                account: {
+                  select: {
+                    username: true,
+                  },
+                },
               },
             },
           },
@@ -180,11 +223,15 @@ export class RoleRequestRepository extends BaseRepository<any> {
         note,
       },
       include: {
-        user: {
+        profile: {
           select: {
             userId: true,
             fullname: true,
-            role: true,
+            user: {
+              select: {
+                role: true,
+              },
+            },
           },
         },
       },
@@ -197,8 +244,22 @@ export class RoleRequestRepository extends BaseRepository<any> {
   async findPendingRequest(userId: string, type: string) {
     return this.prisma.roleUpdatingRequest.findFirst({
       where: {
-        createdBy: userId,
+        profile: {
+          userId,
+        },
         type: type as any,
+        state: 'PENDING' as any,
+      },
+      select: { requestId: true },
+    });
+  }
+
+  async findAnyPendingRequest(userId: string) {
+    return this.prisma.roleUpdatingRequest.findFirst({
+      where: {
+        profile: {
+          userId,
+        },
         state: 'PENDING' as any,
       },
       select: { requestId: true },
@@ -209,32 +270,41 @@ export class RoleRequestRepository extends BaseRepository<any> {
     return this.prisma.roleUpdatingRequest.findUnique({
       where: { requestId },
       include: {
-        user: {
+        profile: {
           select: {
             userId: true,
-            role: true,
             fullname: true,
             nickname: true,
+            user: {
+              select: {
+                role: true,
+              },
+            },
           },
         },
       },
     });
   }
 
-  async respondRequest(
+  async respondRequest( // Xử lý một Role Request
     authorityUserId: string,
     requestId: string,
     nextState: 'APPROVED' | 'REJECTED',
     note?: string,
   ) {
     return this.prisma.$transaction(async (tx) => {
+      // find request dựa trên requestId
       const existing = await tx.roleUpdatingRequest.findUnique({
         where: { requestId },
         include: {
-          user: {
+          profile: {
             select: {
               userId: true,
-              role: true,
+              user: {
+                select: {
+                  role: true,
+                },
+              },
             },
           },
         },
@@ -244,36 +314,48 @@ export class RoleRequestRepository extends BaseRepository<any> {
         return null;
       }
 
+      // Cập nhật request
       const updated = await tx.roleUpdatingRequest.update({
         where: { requestId },
         data: {
           state: nextState as any,
           responsedAt: new Date(),
+          checkBy: authorityUserId,
           note,
         },
+
         include: {
-          user: {
+          profile: {
             select: {
               userId: true,
               fullname: true,
               nickname: true,
-              role: true,
+              user: {
+                select: {
+                  role: true,
+                },
+              },
             },
           },
         },
+
       });
 
+      // Nếu approve request thì thêm role cho user
       if (nextState === 'APPROVED') {
-        const hasRole = existing.user.role.includes(
+        const hasRole = existing.profile.user.role.includes(
           existing.type as unknown as string,
         );
 
         if (!hasRole) {
           await tx.user.update({
-            where: { userId: existing.createdBy },
+            where: { userId: existing.profile.userId },
             data: {
               role: {
-                set: [...existing.user.role, existing.type as unknown as string],
+                set: [
+                  ...existing.profile.user.role,
+                  existing.type as unknown as string,
+                ],
               },
             },
           });
@@ -291,8 +373,14 @@ export class RoleRequestRepository extends BaseRepository<any> {
     return this.prisma.roleUpdatingRequest.findMany({
       where: { state: state as any },
       include: {
-        user: {
-          select: { userId: true, fullname: true, role: true },
+        profile: {
+          select: {
+            userId: true,
+            fullname: true,
+            user: {
+              select: { role: true },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },

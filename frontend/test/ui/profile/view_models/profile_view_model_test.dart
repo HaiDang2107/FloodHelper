@@ -95,6 +95,17 @@ class _FakeProfileRepository implements ProfileRepository {
   }
 
   @override
+  Future<List<ProfileUpdateRequestModel>> getMyProfileUpdateRequests() async {
+    return const [];
+  }
+
+  @override
+  Future<void> revokeProfileUpdateRequest(String requestId) async {}
+
+  @override
+  Future<void> revokeRoleRequest(String requestId) async {}
+
+  @override
   Future<ProfileModel?> getUserById(String userId) async {
     return _profile;
   }
@@ -114,6 +125,7 @@ class _FakeProfileRepository implements ProfileRepository {
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
+    XFile? rescuerCertificate,
   }) async {
     final patchResponseMissingLocationFields = ProfileModel(
       userId: _profile.userId,

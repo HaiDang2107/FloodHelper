@@ -42,7 +42,7 @@ export class AuthService {
     private jwtService: JwtService,
     private mailerService: MailerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) { }
 
   async signUp(
     registerDto: SignupDto,
@@ -66,26 +66,27 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.authRepository.createUserWithAccount({
-      data: {
-        fullname,
-        phoneNumber,
-        nickname: rest.nickname,
-        dob: rest.dob ? new Date(rest.dob) : undefined,
-        originProvinceCode: rest.originProvinceCode,
-        originWardCode: rest.originWardCode,
-        residenceProvinceCode: rest.residenceProvinceCode,
-        residenceWardCode: rest.residenceWardCode,
-        dateOfIssue: rest.dateOfIssue ? new Date(rest.dateOfIssue) : undefined,
-        dateOfExpire: rest.dateOfExpire
-          ? new Date(rest.dateOfExpire)
-          : undefined,
-        jobPosition: rest.jobPosition,
-        account: {
-          create: {
-            username,
-            password: hashedPassword,
-            state: AccountState.INACTIVE,
-          },
+      profiles: {
+        create: {
+          fullname,
+          phoneNumber,
+          nickname: rest.nickname,
+          dob: rest.dob ? new Date(rest.dob) : undefined,
+          originProvinceCode: rest.originProvinceCode,
+          originWardCode: rest.originWardCode,
+          residenceProvinceCode: rest.residenceProvinceCode,
+          residenceWardCode: rest.residenceWardCode,
+          dateOfIssue: rest.dateOfIssue ? new Date(rest.dateOfIssue) : undefined,
+          dateOfExpire: rest.dateOfExpire ? new Date(rest.dateOfExpire) : undefined,
+          occupation: rest.occupation,
+          isCurrent: true,
+        }
+      },
+      account: {
+        create: {
+          username,
+          password: hashedPassword,
+          state: AccountState.INACTIVE,
         },
       },
     });
@@ -272,43 +273,77 @@ export class AuthService {
       account.user.role,
     );
 
-    const { user } = account;
+
+    const user = account.user;
+    const profile = user.profiles?.find(p => p.isCurrent) || { fullname: '', phoneNumber: '', nickname: '', avatarUrl: '', gender: null, dob: null, originProvinceCode: null, originWardCode: null, residenceProvinceCode: null, residenceWardCode: null, originProvince: null, originWard: null, residenceProvince: null, residenceWard: null, dateOfIssue: null, dateOfExpire: null, citizenId: null, frontCitizenIdCardImageUrl: null, occupation: null };
+    const userWithProfile = {
+      ...user,
+      fullname: profile.fullname || '',
+      phoneNumber: profile.phoneNumber || '',
+
+
+
+      nickname: profile.nickname ?? '',
+      avatarUrl: profile.avatarUrl ?? '',
+      gender: profile.gender,
+      dob: profile.dob,
+      originProvinceCode: profile.originProvinceCode,
+      originWardCode: profile.originWardCode,
+      residenceProvinceCode: profile.residenceProvinceCode,
+      residenceWardCode: profile.residenceWardCode,
+      originProvince: profile.originProvince,
+      originWard: profile.originWard,
+      residenceProvince: profile.residenceProvince,
+      residenceWard: profile.residenceWard,
+      dateOfIssue: profile.dateOfIssue,
+      dateOfExpire: profile.dateOfExpire,
+      citizenId: profile.citizenId,
+      frontCitizenIdCardImageUrl: profile.frontCitizenIdCardImageUrl ?? null,
+      occupation: profile.occupation ?? null,
+    };
+
     return {
       success: true,
       message: 'Sign in successful',
       data: {
+
+
         user: {
           userId: user.userId,
-          name: user.fullname,
-          displayName: user.nickname,
-          phoneNumber: user.phoneNumber,
+          name: userWithProfile.fullname,
+          displayName: userWithProfile.nickname,
+          phoneNumber: userWithProfile.phoneNumber,
           role: user.role,
-          avatarUrl: user.avatarUrl,
-          gender: user.gender,
-          dob: user.dob,
+          avatarUrl: userWithProfile.avatarUrl,
+          gender: userWithProfile.gender,
+          dob: userWithProfile.dob,
           placeOfOrigin: formatLocation(
-            user.originWard,
-            user.originProvince,
+            userWithProfile.originWard,
+            userWithProfile.originProvince,
           ),
           placeOfResidence: formatLocation(
-            user.residenceWard,
-            user.residenceProvince,
+            userWithProfile.residenceWard,
+            userWithProfile.residenceProvince,
           ),
-          originProvinceCode: user.originProvinceCode,
-          originProvinceName: user.originProvince?.name,
-          originWardCode: user.originWardCode,
-          originWardName: user.originWard?.name,
-          residenceProvinceCode: user.residenceProvinceCode,
-          residenceProvinceName: user.residenceProvince?.name,
-          residenceWardCode: user.residenceWardCode,
-          residenceWardName: user.residenceWard?.name,
-          dateOfIssue: user.dateOfIssue,
-          dateOfExpire: user.dateOfExpire,
-          citizenId: user.citizenId,
-          citizenIdCardImg: user.citizenIdCardImg,
-          jobPosition: user.jobPosition,
+
+
+          originProvinceCode: userWithProfile.originProvinceCode,
+          originProvinceName: userWithProfile.originProvince?.name,
+          originWardCode: userWithProfile.originWardCode,
+          originWardName: userWithProfile.originWard?.name,
+          residenceProvinceCode: userWithProfile.residenceProvinceCode,
+          residenceProvinceName: userWithProfile.residenceProvince?.name,
+          residenceWardCode: userWithProfile.residenceWardCode,
+          residenceWardName: userWithProfile.residenceWard?.name,
+          dateOfIssue: userWithProfile.dateOfIssue,
+          dateOfExpire: userWithProfile.dateOfExpire,
+          citizenId: userWithProfile.citizenId,
+          frontCitizenIdCardImageUrl: userWithProfile.frontCitizenIdCardImageUrl,
+          occupation: userWithProfile.occupation,
           showCharityCampaignLocations: user.showCharityCampaignLocations,
         },
+
+
         tokens: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,
@@ -316,6 +351,7 @@ export class AuthService {
         },
       },
     };
+
   }
 
   private async generateTokens(
@@ -454,17 +490,20 @@ export class AuthService {
       // Create new user with Google account
       isNewUser = true;
       const newUser = await this.authRepository.createUserWithAccount({
-        data: {
-          fullname: `${firstName} ${lastName}`,
-          nickname: `${firstName} ${lastName}`,
-          phoneNumber: email, // Using email as phoneNumber placeholder
-          avatarUrl: picture,
-          account: {
-            create: {
-              username: email,
-              password: '', // No password for OAuth users
-              state: AccountState.ACTIVE,
-            },
+        profiles: {
+          create: {
+            fullname: `${firstName} ${lastName}`,
+            nickname: `${firstName} ${lastName}`,
+            phoneNumber: email, // Using email as phoneNumber placeholder
+            avatarUrl: picture,
+            isCurrent: true,
+          }
+        },
+        account: {
+          create: {
+            username: email,
+            password: '', // No password for OAuth users
+            state: AccountState.ACTIVE,
           },
         },
       });
@@ -501,16 +540,18 @@ export class AuthService {
     );
 
     const user = accountWithUser.user;
+    const profile = user.profiles?.find((p: any) => p.isCurrent) || user.profiles?.[0] || {} as any;
     return {
       success: true,
       message: 'Google login successful',
       data: {
         user: {
           userId: user.userId,
-          name: user.fullname,
-          phoneNumber: user.phoneNumber,
+          name: profile.fullname || '',
+          phoneNumber: profile.phoneNumber || '',
           role: user.role,
         },
+
         tokens: {
           accessToken: tokens.accessToken,
           refreshToken: tokens.refreshToken,

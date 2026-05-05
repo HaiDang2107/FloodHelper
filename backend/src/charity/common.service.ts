@@ -8,20 +8,24 @@ type CharityCampaignDetailPayload = Prisma.CharityCampaignGetPayload<{
     organizer: {
       select: {
         userId: true;
-        fullname: true;
-        nickname: true;
-        residenceProvinceCode: true;
-        residenceWardCode: true;
-        residenceProvince: {
+        profiles: {
           select: {
-            code: true;
-            name: true;
-          };
-        };
-        residenceWard: {
-          select: {
-            code: true;
-            name: true;
+            fullname: true;
+            nickname: true;
+            residenceProvinceCode: true;
+            residenceWardCode: true;
+            residenceProvince: {
+              select: {
+                code: true;
+                name: true;
+              };
+            };
+            residenceWard: {
+              select: {
+                code: true;
+                name: true;
+              };
+            };
           };
         };
       };
@@ -93,7 +97,7 @@ export class CommonCharityService {
       checkedBy: campaign.checkedBy,
       name: campaign.campaignName,
       benefactorName:
-        campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
+        campaign.organizer?.profiles?.[0]?.fullname || campaign.organizer?.profiles?.[0]?.nickname || 'Unknown',
       purpose: campaign.purpose,
       charityObject: campaign.charityObject,
       state:

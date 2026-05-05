@@ -50,7 +50,7 @@ class UserProfile {
   final Address? address;
   final Location? location;
   final String visibilityMode; // PUBLIC | JUST_FRIEND | NO_ONE
-  final String? jobPosition;
+  final String? occupation;
   final CitizenInfo? citizenInfo;
   final AccountState? accountState;
 
@@ -66,7 +66,7 @@ class UserProfile {
     this.address,
     this.location,
     this.visibilityMode = 'PUBLIC',
-    this.jobPosition,
+    this.occupation,
     this.citizenInfo,
     this.accountState,
   });
@@ -113,7 +113,7 @@ class UserProfile {
     Address? address,
     Location? location,
     String? visibilityMode,
-    String? jobPosition,
+    String? occupation,
     CitizenInfo? citizenInfo,
     AccountState? accountState,
   }) {
@@ -129,7 +129,7 @@ class UserProfile {
       address: address ?? this.address,
       location: location ?? this.location,
       visibilityMode: visibilityMode ?? this.visibilityMode,
-      jobPosition: jobPosition ?? this.jobPosition,
+      occupation: occupation ?? this.occupation,
       citizenInfo: citizenInfo ?? this.citizenInfo,
       accountState: accountState ?? this.accountState,
     );
@@ -244,6 +244,7 @@ class CitizenInfo {
   final String? backCitizenIdCardImageUrl;
   final DateTime? dateOfIssue;
   final DateTime? dateOfExpire;
+  final String? rescuerCertificateUrl;
 
   const CitizenInfo({
     this.citizenId,
@@ -252,6 +253,7 @@ class CitizenInfo {
     this.backCitizenIdCardImageUrl,
     this.dateOfIssue,
     this.dateOfExpire,
+    this.rescuerCertificateUrl,
   });
 
   bool get hasIdCard => citizenId != null && citizenId!.isNotEmpty;

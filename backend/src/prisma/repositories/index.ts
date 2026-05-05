@@ -5,6 +5,8 @@ export { SignalRepository } from './signal.repository';
 export { AnnouncementRepository } from './announcement.repository';
 export { CharityRepository } from './charity.repository';
 export { RoleRequestRepository } from './role-request.repository';
+export { ProfileRepository } from './profile.repository';
+export { ProfileRequestRepository } from './profile-request.repository';
 export { ChatRepository } from './chat.repository';
 export { AuthRepository } from './auth.repository';
 export { LocationRepository } from './location.repository';

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/models/user_profile.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../core/common/widgets/location_selector.dart';
 import 'citizen_id_card_picker.dart';
 
@@ -15,9 +16,9 @@ class ProfileInfo extends StatelessWidget {
   final ValueChanged<Gender?>? onGenderChanged;
   final TextEditingController emailController;
   final TextEditingController dobController;
-  
+
   // Additional Info
-  final TextEditingController jobPositionController;
+  final TextEditingController occupationController;
   final TextEditingController phoneController;
   final TextEditingController citizenIdController;
   final TextEditingController dateOfIssueController;
@@ -45,6 +46,10 @@ class ProfileInfo extends StatelessWidget {
   final XFile? tempBackImage;
   final ValueChanged<XFile?>? onFrontImageSelected;
   final ValueChanged<XFile?>? onBackImageSelected;
+  final XFile? tempRescuerCertificate;
+  final ValueChanged<XFile?>? onRescuerCertificateSelected;
+  final VoidCallback? onViewRescuerCertificate;
+  final String? currentRescuerCertificateUrl;
   final VoidCallback? onViewFront;
   final VoidCallback? onViewBack;
 
@@ -58,7 +63,7 @@ class ProfileInfo extends StatelessWidget {
     required this.onGenderChanged,
     required this.emailController,
     required this.dobController,
-    required this.jobPositionController,
+    required this.occupationController,
     required this.phoneController,
     required this.citizenIdController,
     required this.dateOfIssueController,
@@ -84,6 +89,10 @@ class ProfileInfo extends StatelessWidget {
     this.onBackImageSelected,
     this.onViewFront,
     this.onViewBack,
+    this.tempRescuerCertificate,
+    this.onRescuerCertificateSelected,
+    this.onViewRescuerCertificate,
+    this.currentRescuerCertificateUrl,
   });
 
   @override
@@ -139,8 +148,8 @@ class ProfileInfo extends StatelessWidget {
         _buildSectionHeader(context, 'Additional Personal Information'),
         const SizedBox(height: 16),
         _buildTextField(
-          controller: jobPositionController,
-          label: 'Job Position',
+          controller: occupationController,
+          label: 'Occupation',
           enabled: isEditing,
         ),
         const SizedBox(height: 16),
@@ -217,6 +226,9 @@ class ProfileInfo extends StatelessWidget {
             ),
           ],
         ),
+
+        const SizedBox(height: 16),
+        _buildCertificatePicker(context),
       ],
     );
   }
@@ -230,10 +242,7 @@ class ProfileInfo extends StatelessWidget {
           children: [
             Text(
               'Gender',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 4),
             Text(
@@ -241,8 +250,9 @@ class ProfileInfo extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color:
-                    selectedGender != null ? Colors.black87 : Colors.grey[400],
+                color: selectedGender != null
+                    ? Colors.black87
+                    : Colors.grey[400],
               ),
             ),
             const SizedBox(height: 4),
@@ -255,10 +265,11 @@ class ProfileInfo extends StatelessWidget {
     // Editable dropdown
     return DropdownButtonFormField<Gender>(
       initialValue: selectedGender,
+      dropdownColor: Colors.white,
       style: const TextStyle(color: Colors.black),
       decoration: const InputDecoration(
         labelText: 'Gender',
-        labelStyle: TextStyle(color: Colors.black87),
+        labelStyle: TextStyle(color: Colors.grey),
         floatingLabelStyle: TextStyle(color: Colors.black),
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -281,10 +292,7 @@ class ProfileInfo extends StatelessWidget {
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(8),
         border: Border(
-          left: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 4,
-          ),
+          left: BorderSide(color: Theme.of(context).primaryColor, width: 4),
         ),
       ),
       child: Text(
@@ -340,10 +348,7 @@ class ProfileInfo extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 4),
             Text(
@@ -365,16 +370,17 @@ class ProfileInfo extends StatelessWidget {
       controller: controller,
       readOnly: readOnly,
       onTap: onTap,
-      style: const TextStyle(
-        color: Colors.black,
-      ),
+      style: const TextStyle(color: Colors.black),
       cursorColor: Colors.black,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.black87),
+        labelStyle: const TextStyle(color: Colors.grey),
         floatingLabelStyle: const TextStyle(color: Colors.black),
         border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 16,
+        ),
         suffixIcon: suffixIcon,
       ),
     );
@@ -394,17 +400,14 @@ class ProfileInfo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            const SizedBox(height: 4),
-            _buildLocationLine(
-              label: 'Province',
-              value: provinceDisplay,
+            Text(
+              title,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 4),
-            _buildLocationLine(
-              label: 'Ward',
-              value: wardDisplay,
-            ),
+            _buildLocationLine(label: 'Province', value: provinceDisplay),
+            const SizedBox(height: 4),
+            _buildLocationLine(label: 'Ward', value: wardDisplay),
             const SizedBox(height: 4),
             Divider(color: Colors.grey[200]),
           ],
@@ -417,13 +420,7 @@ class ProfileInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           const SizedBox(height: 8),
           LocationSelectorField(
             provinceLabel: 'Province',
@@ -437,10 +434,7 @@ class ProfileInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationLine({
-    required String label,
-    required String value,
-  }) {
+  Widget _buildLocationLine({required String label, required String value}) {
     return Text(
       '$label: ${value.isEmpty ? '-' : value}',
       style: const TextStyle(
@@ -449,5 +443,57 @@ class ProfileInfo extends StatelessWidget {
         color: Colors.black87,
       ),
     );
+  }
+
+  Widget _buildCertificatePicker(BuildContext context) {
+    final hasCertificate =
+        (currentRescuerCertificateUrl ?? '').trim().isNotEmpty ||
+        tempRescuerCertificate != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Certificate for Rescuer',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: isEditing
+                    ? () => _pickCertificate(context)
+                    : (hasCertificate ? onViewRescuerCertificate : null),
+                icon: const Icon(Icons.upload_file),
+                label: Text(
+                  hasCertificate ? 'View certificate' : 'Upload certificate',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickCertificate(BuildContext context) async {
+    if (!isEditing) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['pdf'],
+    );
+
+    final file = result?.files.single;
+    if (file == null || file.path == null) {
+      return;
+    }
+
+    final picked = XFile(file.path!);
+    onRescuerCertificateSelected?.call(picked);
   }
 }

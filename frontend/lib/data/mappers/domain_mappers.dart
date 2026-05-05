@@ -35,14 +35,19 @@ extension ProfileModelMapper on data.ProfileModel {
           ? Location(latitude: latitude!, longitude: longitude!)
           : null,
       visibilityMode: visibilityMode,
-      jobPosition: jobPosition,
+      occupation: occupation,
       citizenInfo: CitizenInfo(
         citizenId: citizenId,
         citizenIdCardImg: citizenIdCardImg,
         frontCitizenIdCardImageUrl: frontCitizenIdCardImageUrl,
         backCitizenIdCardImageUrl: backCitizenIdCardImageUrl,
-        dateOfIssue: dateOfIssue != null ? DateTime.tryParse(dateOfIssue!) : null,
-        dateOfExpire: dateOfExpire != null ? DateTime.tryParse(dateOfExpire!) : null,
+        dateOfIssue: dateOfIssue != null
+            ? DateTime.tryParse(dateOfIssue!)
+            : null,
+        dateOfExpire: dateOfExpire != null
+            ? DateTime.tryParse(dateOfExpire!)
+            : null,
+        rescuerCertificateUrl: rescuerCertificateUrl,
       ),
       accountState: account != null
           ? AccountState(
@@ -80,10 +85,10 @@ extension UserProfileToDataMapper on UserProfile {
       visibilityMode: visibilityMode,
       avatarUrl: avatarUrl,
       citizenId: citizenInfo?.citizenId,
-      citizenIdCardImg: citizenInfo?.citizenIdCardImg,
       frontCitizenIdCardImageUrl: citizenInfo?.frontCitizenIdCardImageUrl,
       backCitizenIdCardImageUrl: citizenInfo?.backCitizenIdCardImageUrl,
-      jobPosition: jobPosition,
+      occupation: occupation,
+      rescuerCertificateUrl: citizenInfo?.rescuerCertificateUrl,
     );
   }
 }
@@ -100,10 +105,7 @@ extension PostModelMapper on data.PostModel {
       ),
       caption: caption,
       imageUrl: imageUrl.isNotEmpty ? imageUrl : null,
-      location: Location(
-        latitude: latitude,
-        longitude: longitude,
-      ),
+      location: Location(latitude: latitude, longitude: longitude),
       createdAt: createdAt,
       deletedAt: deletedAt,
       likesCount: likesCount,
@@ -135,10 +137,7 @@ extension UserModelMapper on data.UserModel {
       name: name,
       displayName: displayName,
       avatarUrl: avatarUrl.isNotEmpty ? avatarUrl : null,
-      location: Location(
-        latitude: latitude,
-        longitude: longitude,
-      ),
+      location: Location(latitude: latitude, longitude: longitude),
       status: UserOnlineStatus.fromString(status),
       roles: roles,
       isFriend: isFriend,

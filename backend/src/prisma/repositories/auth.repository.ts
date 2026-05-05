@@ -2,39 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { BaseRepository } from './base.repository';
 
-const ACCOUNT_USER_PROFILE_SELECT = {
-  userId: true,
-  fullname: true,
-  nickname: true,
-  phoneNumber: true,
-  avatarUrl: true,
-  gender: true,
-  dob: true,
-  originProvinceCode: true,
-  originWardCode: true,
-  residenceProvinceCode: true,
-  residenceWardCode: true,
-  originProvince: {
-    select: { code: true, name: true },
-  },
-  originWard: {
-    select: { code: true, name: true },
-  },
-  residenceProvince: {
-    select: { code: true, name: true },
-  },
-  residenceWard: {
-    select: { code: true, name: true },
-  },
-  dateOfIssue: true,
-  dateOfExpire: true,
-  citizenId: true,
-  citizenIdCardImg: true,
-  jobPosition: true,
-  showCharityCampaignLocations: true,
-  role: true,
-} as const;
-
 @Injectable()
 export class AuthRepository extends BaseRepository<any> {
   constructor(private readonly prisma: PrismaService) {
@@ -46,20 +13,90 @@ export class AuthRepository extends BaseRepository<any> {
   }
 
   async findAccountByUsernameWithDetailedUser(username: string) {
-    return this.prisma.account.findUnique({
+    const account = await this.prisma.account.findUnique({
       where: { username },
       include: {
         user: {
-          select: ACCOUNT_USER_PROFILE_SELECT,
+          select: {
+            userId: true,
+            role: true,
+            curLongitude: true,
+            curLatitude: true,
+            visibilityMode: true,
+            showCharityCampaignLocations: true,
+            fcmToken: true,
+            profiles: {
+              where: { isCurrent: true },
+              include: {
+                originProvince: {
+                  select: { code: true, name: true }
+                },
+                originWard: {
+                  select: { code: true, name: true }
+                },
+                residenceProvince: {
+                  select: { code: true, name: true }
+                },
+                residenceWard: {
+                  select: { code: true, name: true }
+                }
+              }
+            }
+          }
         },
       },
     });
+
+    if (!account || !account.user || !account.user.profiles || account.user.profiles.length === 0) {
+      return null;
+    }
+
+    const profile = account.user.profiles[0];
+
+    // Flatten profile data for backward compatibility
+    return {
+      ...account,
+      user: {
+        ...account.user,
+        fullname: profile.fullname,
+        nickname: profile.nickname || profile.fullname,
+        phoneNumber: profile.phoneNumber,
+        avatarUrl: profile.avatarUrl,
+        gender: profile.gender,
+        dob: profile.dob,
+        originProvinceCode: profile.originProvinceCode,
+        originWardCode: profile.originWardCode,
+        residenceProvinceCode: profile.residenceProvinceCode,
+        residenceWardCode: profile.residenceWardCode,
+        originProvince: profile.originProvince,
+        originWard: profile.originWard,
+        residenceProvince: profile.residenceProvince,
+        residenceWard: profile.residenceWard,
+        dateOfIssue: profile.dateOfIssue,
+        dateOfExpire: profile.dateOfExpire,
+
+
+        citizenId: profile.citizenId ?? null,
+        citizenIdCardImg: (profile as any).citizenIdCardImg ?? null,
+        occupation: (profile as any).occupation ?? null,
+      }
+    };
   }
+
+
 
   async findAccountByIdWithUser(accountId: string) {
     return this.prisma.account.findUnique({
       where: { accountId },
-      include: { user: true },
+      include: {
+        user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -68,7 +105,15 @@ export class AuthRepository extends BaseRepository<any> {
       where: {
         OR: [{ username: email }, { providerId }],
       },
-      include: { user: true },
+      include: {
+        user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -177,3 +222,4 @@ export class AuthRepository extends BaseRepository<any> {
     return this.prisma.account.count();
   }
 }
+

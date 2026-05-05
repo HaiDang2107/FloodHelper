@@ -34,9 +34,9 @@ class _AuthorityProfileScreenState
           Text(
             'Authority profile',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AuthorityTheme.textDark,
-                ),
+              fontWeight: FontWeight.w700,
+              color: AuthorityTheme.textDark,
+            ),
           ),
           const SizedBox(height: 16),
           if (state.isLoading)
@@ -50,11 +50,11 @@ class _AuthorityProfileScreenState
                     CircleAvatar(
                       radius: 40,
                       backgroundImage: state.profile!.avatarUrl.isNotEmpty
-                        ? NetworkImage(state.profile!.avatarUrl)
-                        : null,
+                          ? NetworkImage(state.profile!.avatarUrl)
+                          : null,
                       child: state.profile!.avatarUrl.isEmpty
-                        ? const Icon(Icons.person)
-                        : null,
+                          ? const Icon(Icons.person)
+                          : null,
                     ),
                     const SizedBox(width: 24),
                     Expanded(
@@ -63,17 +63,13 @@ class _AuthorityProfileScreenState
                         children: [
                           Text(
                             state.profile!.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
+                            style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             state.profile!.roleTitle,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: const Color(0xFF667085)),
                           ),
                           const SizedBox(height: 12),
@@ -137,7 +133,7 @@ class _AuthorityProfileScreenState
                           ),
                           _ProfileRow(
                             label: 'Job Position',
-                            value: state.profile!.jobPosition ?? '-',
+                            value: state.profile!.occupation ?? '-',
                           ),
                           _ProfileRow(
                             label: 'Role',
@@ -254,10 +250,9 @@ class _LocationSection extends StatelessWidget {
                 width: 90,
                 child: Text(
                   label,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: const Color(0xFF667085)),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF667085),
+                  ),
                 ),
               ),
               Expanded(
@@ -266,18 +261,16 @@ class _LocationSection extends StatelessWidget {
                   children: [
                     Text(
                       'Province: $province',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Ward: $ward',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -306,19 +299,17 @@ class _ProfileRow extends StatelessWidget {
             width: 90,
             child: Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: const Color(0xFF667085)),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF667085)),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ],

@@ -4,7 +4,11 @@ import 'package:image_picker/image_picker.dart';
 import '../../../domain/models/models.dart';
 import '../../../data/mappers/domain_mappers.dart';
 import '../../../data/models/profile_model.dart'
-    show ProfileModel, ProfileRoleRequestModel, UpdateProfileDto;
+    show
+        ProfileModel,
+        ProfileRoleRequestModel,
+        ProfileUpdateRequestModel,
+        UpdateProfileDto;
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/global_session_provider.dart';
 import '../../../data/repositories/profile_repository.dart';
@@ -15,17 +19,20 @@ part 'profile_view_model.g.dart';
 class ProfileState {
   final UserProfile? profile;
   final List<ProfileRoleRequestModel> roleRequests;
+  final List<ProfileUpdateRequestModel> profileUpdateRequests;
   final bool isLoading;
   final bool isLoadingRoleRequests;
+  final bool isLoadingProfileUpdateRequests;
   final bool isSaving;
   final String? errorMessage;
   final String? successMessage;
   final bool isEditing;
-  
+
   // Temporary image selections for edit mode (before upload)
   final XFile? tempAvatarImage;
   final XFile? tempFrontCitizenIdImage;
   final XFile? tempBackCitizenIdImage;
+  final XFile? tempRescuerCertificate;
   final bool isUploadingImages;
 
   bool get canSubmitRoleRequest => missingFieldsForRoleRequest.isEmpty;
@@ -41,12 +48,13 @@ class ProfileState {
     if (current.gender == null) missing.add('gender');
     if (current.dateOfBirth == null) missing.add('dob');
     if (current.phoneNumber.trim().isEmpty) missing.add('phoneNumber');
-    if ((current.jobPosition ?? '').trim().isEmpty) missing.add('jobPosition');
+    if ((current.occupation ?? '').trim().isEmpty) missing.add('occupation');
 
     final address = current.address;
     if (address?.originProvinceCode == null) missing.add('originProvinceCode');
     if (address?.originWardCode == null) missing.add('originWardCode');
-    if (address?.residenceProvinceCode == null) missing.add('residenceProvinceCode');
+    if (address?.residenceProvinceCode == null)
+      missing.add('residenceProvinceCode');
     if (address?.residenceWardCode == null) missing.add('residenceWardCode');
 
     final citizen = current.citizenInfo;
@@ -66,14 +74,20 @@ class ProfileState {
       missing.add('backCitizenIdCardImageUrl');
     }
 
+    if ((citizen?.rescuerCertificateUrl ?? '').trim().isEmpty) {
+      // Certificate is optional for Benefactor; enforced when creating Rescuer request.
+    }
+
     return missing;
   }
 
   const ProfileState({
     this.profile,
     this.roleRequests = const [],
+    this.profileUpdateRequests = const [],
     this.isLoading = false,
     this.isLoadingRoleRequests = false,
+    this.isLoadingProfileUpdateRequests = false,
     this.isSaving = false,
     this.errorMessage,
     this.successMessage,
@@ -81,14 +95,17 @@ class ProfileState {
     this.tempAvatarImage,
     this.tempFrontCitizenIdImage,
     this.tempBackCitizenIdImage,
+    this.tempRescuerCertificate,
     this.isUploadingImages = false,
   });
 
   ProfileState copyWith({
     UserProfile? profile,
     List<ProfileRoleRequestModel>? roleRequests,
+    List<ProfileUpdateRequestModel>? profileUpdateRequests,
     bool? isLoading,
     bool? isLoadingRoleRequests,
+    bool? isLoadingProfileUpdateRequests,
     bool? isSaving,
     String? errorMessage,
     String? successMessage,
@@ -96,6 +113,7 @@ class ProfileState {
     XFile? tempAvatarImage,
     XFile? tempFrontCitizenIdImage,
     XFile? tempBackCitizenIdImage,
+    XFile? tempRescuerCertificate,
     bool? isUploadingImages,
     bool clearError = false,
     bool clearSuccess = false,
@@ -103,15 +121,26 @@ class ProfileState {
     return ProfileState(
       profile: profile ?? this.profile,
       roleRequests: roleRequests ?? this.roleRequests,
+      profileUpdateRequests:
+          profileUpdateRequests ?? this.profileUpdateRequests,
       isLoading: isLoading ?? this.isLoading,
-      isLoadingRoleRequests: isLoadingRoleRequests ?? this.isLoadingRoleRequests,
+      isLoadingRoleRequests:
+          isLoadingRoleRequests ?? this.isLoadingRoleRequests,
+      isLoadingProfileUpdateRequests:
+          isLoadingProfileUpdateRequests ?? this.isLoadingProfileUpdateRequests,
       isSaving: isSaving ?? this.isSaving,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
       isEditing: isEditing ?? this.isEditing,
       tempAvatarImage: tempAvatarImage ?? this.tempAvatarImage,
-      tempFrontCitizenIdImage: tempFrontCitizenIdImage ?? this.tempFrontCitizenIdImage,
-      tempBackCitizenIdImage: tempBackCitizenIdImage ?? this.tempBackCitizenIdImage,
+      tempFrontCitizenIdImage:
+          tempFrontCitizenIdImage ?? this.tempFrontCitizenIdImage,
+      tempBackCitizenIdImage:
+          tempBackCitizenIdImage ?? this.tempBackCitizenIdImage,
+      tempRescuerCertificate:
+          tempRescuerCertificate ?? this.tempRescuerCertificate,
       isUploadingImages: isUploadingImages ?? this.isUploadingImages,
     );
   }
@@ -124,13 +153,14 @@ class ProfileViewModel extends _$ProfileViewModel {
   @override
   ProfileState build() {
     _profileRepository = ref.read(profileRepositoryProvider);
-    
+
     // Auto-load profile on build
     Future.microtask(() async {
       await loadProfile();
       await loadRoleRequests();
+      await loadProfileUpdateRequests();
     });
-    
+
     return const ProfileState(isLoading: true);
   }
 
@@ -151,15 +181,61 @@ class ProfileViewModel extends _$ProfileViewModel {
     }
   }
 
+  Future<void> loadProfileUpdateRequests() async {
+    state = state.copyWith(
+      isLoadingProfileUpdateRequests: true,
+      clearError: true,
+    );
+
+    try {
+      final requests = await _profileRepository.getMyProfileUpdateRequests();
+      state = state.copyWith(
+        profileUpdateRequests: requests,
+        isLoadingProfileUpdateRequests: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingProfileUpdateRequests: false,
+        errorMessage: 'Failed to load profile update requests: ${e.toString()}',
+      );
+    }
+  }
+
+  Future<List<ProfileUpdateRequestModel>> refreshProfileUpdateRequests() async {
+    state = state.copyWith(
+      isLoadingProfileUpdateRequests: true,
+      clearError: true,
+    );
+
+    try {
+      final requests = await _profileRepository.getMyProfileUpdateRequests();
+      state = state.copyWith(
+        profileUpdateRequests: requests,
+        isLoadingProfileUpdateRequests: false,
+      );
+      return requests;
+    } catch (e) {
+      state = state.copyWith(
+        isLoadingProfileUpdateRequests: false,
+        errorMessage:
+            'Failed to refresh profile update requests: ${e.toString()}',
+      );
+      return state.profileUpdateRequests;
+    }
+  }
+
   Future<List<ProfileRoleRequestModel>> refreshRoleManagementData() async {
     state = state.copyWith(
       isLoadingRoleRequests: true,
+      isLoadingProfileUpdateRequests: true,
       clearError: true,
       clearSuccess: true,
     );
 
     try {
       final requests = await _profileRepository.getMyRoleRequests();
+      final profileRequests = await _profileRepository
+          .getMyProfileUpdateRequests();
       final profileModel = await _profileRepository.getProfile();
       final updatedProfile = profileModel.toDomain();
 
@@ -167,17 +243,70 @@ class ProfileViewModel extends _$ProfileViewModel {
 
       state = state.copyWith(
         roleRequests: requests,
+        profileUpdateRequests: profileRequests,
         profile: updatedProfile,
         isLoadingRoleRequests: false,
+        isLoadingProfileUpdateRequests: false,
       );
 
       return requests;
     } catch (e) {
       state = state.copyWith(
         isLoadingRoleRequests: false,
+        isLoadingProfileUpdateRequests: false,
         errorMessage: 'Failed to refresh role data: ${e.toString()}',
       );
       return state.roleRequests;
+    }
+  }
+
+  Future<bool> revokeProfileUpdateRequest(String requestId) async {
+    state = state.copyWith(
+      isSaving: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      await _profileRepository.revokeProfileUpdateRequest(requestId);
+      final requests = await _profileRepository.getMyProfileUpdateRequests();
+      state = state.copyWith(
+        profileUpdateRequests: requests,
+        isSaving: false,
+        successMessage: 'Profile update request revoked successfully.',
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to revoke request: ${e.toString()}',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> revokeRoleRequest(String requestId) async {
+    state = state.copyWith(
+      isSaving: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      await _profileRepository.revokeRoleRequest(requestId);
+      final requests = await _profileRepository.getMyRoleRequests();
+      state = state.copyWith(
+        roleRequests: requests,
+        isSaving: false,
+        successMessage: 'Role request revoked successfully.',
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to revoke request: ${e.toString()}',
+      );
+      return false;
     }
   }
 
@@ -193,7 +322,11 @@ class ProfileViewModel extends _$ProfileViewModel {
 
     final backendType = role == UserRole.benefactor ? 'BENEFACTOR' : 'RESCUER';
 
-    state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(
+      isSaving: true,
+      clearError: true,
+      clearSuccess: true,
+    );
 
     try {
       await _profileRepository.createRoleRequest(type: backendType);
@@ -208,10 +341,7 @@ class ProfileViewModel extends _$ProfileViewModel {
       final message = raw.contains('Profile is incomplete')
           ? 'Please complete your personal information before sending a role request.'
           : raw;
-      state = state.copyWith(
-        isSaving: false,
-        errorMessage: message,
-      );
+      state = state.copyWith(isSaving: false, errorMessage: message);
       return false;
     }
   }
@@ -219,16 +349,13 @@ class ProfileViewModel extends _$ProfileViewModel {
   /// Load current user's profile
   Future<void> loadProfile() async {
     state = state.copyWith(isLoading: true, clearError: true);
-    
+
     try {
       final profileModel = await _profileRepository.getProfile();
       await _syncSessionFromProfile(profileModel);
       // Convert data model to domain model
       final profile = profileModel.toDomain();
-      state = state.copyWith(
-        profile: profile,
-        isLoading: false,
-      );
+      state = state.copyWith(profile: profile, isLoading: false);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -265,15 +392,20 @@ class ProfileViewModel extends _$ProfileViewModel {
     String? residenceWardName,
     String? dateOfIssue,
     String? dateOfExpire,
-    String? jobPosition,
+    String? occupation,
     String? citizenId,
     String? avatarUrl,
     String? visibilityMode,
+    XFile? rescuerCertificate,
   }) async {
     if (state.profile == null) return false;
-    
-    state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
-    
+
+    state = state.copyWith(
+      isSaving: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
     try {
       final dto = UpdateProfileDto(
         fullname: fullname,
@@ -290,17 +422,19 @@ class ProfileViewModel extends _$ProfileViewModel {
         residenceWardName: residenceWardName,
         dateOfIssue: dateOfIssue,
         dateOfExpire: dateOfExpire,
-        jobPosition: jobPosition,
+        occupation: occupation,
         citizenId: citizenId,
         avatarUrl: avatarUrl,
         visibilityMode: visibilityMode,
+        rescuerCertificateUrl: rescuerCertificate?.path,
       );
-      
+
       final updatedProfileModel = await _profileRepository.updateProfile(
         dto,
         avatar: state.tempAvatarImage,
         frontCitizenId: state.tempFrontCitizenIdImage,
         backCitizenId: state.tempBackCitizenIdImage,
+        rescuerCertificate: rescuerCertificate,
       );
       final normalizedProfileModel = _normalizeUpdatedProfileModel(
         responseModel: updatedProfileModel,
@@ -318,7 +452,7 @@ class ProfileViewModel extends _$ProfileViewModel {
 
       // Convert to domain model
       final updatedProfile = normalizedProfileModel.toDomain();
-      
+
       state = state.copyWith(
         profile: updatedProfile,
         isSaving: false,
@@ -328,7 +462,7 @@ class ProfileViewModel extends _$ProfileViewModel {
         tempBackCitizenIdImage: null,
         successMessage: 'Profile updated successfully!',
       );
-      
+
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -345,7 +479,9 @@ class ProfileViewModel extends _$ProfileViewModel {
 
     final refreshedSession = await authRepository.getCurrentSession();
     if (refreshedSession != null) {
-      ref.read(globalSessionManagerProvider.notifier).setSession(refreshedSession);
+      ref
+          .read(globalSessionManagerProvider.notifier)
+          .setSession(refreshedSession);
     }
   }
 
@@ -424,15 +560,12 @@ class ProfileViewModel extends _$ProfileViewModel {
         longitude: longitude,
         latitude: latitude,
       );
-      
+
       // Update local domain state
       if (state.profile != null) {
         state = state.copyWith(
           profile: state.profile!.copyWith(
-            location: Location(
-              latitude: latitude,
-              longitude: longitude,
-            ),
+            location: Location(latitude: latitude, longitude: longitude),
           ),
         );
       }
@@ -458,10 +591,10 @@ class ProfileViewModel extends _$ProfileViewModel {
   Future<void> signOut({bool logoutAll = false}) async {
     try {
       // Call sign out through auth provider
-      await ref.read(globalSessionManagerProvider.notifier).signOut(
-        logoutAll: logoutAll,
-      );
-      
+      await ref
+          .read(globalSessionManagerProvider.notifier)
+          .signOut(logoutAll: logoutAll);
+
       // Clear profile state
       state = const ProfileState();
     } catch (e) {
@@ -484,13 +617,18 @@ class ProfileViewModel extends _$ProfileViewModel {
     state = state.copyWith(tempBackCitizenIdImage: image);
   }
 
+  /// Set temporary rescuer certificate for preview
+  void setTempRescuerCertificate(XFile? file) {
+    state = state.copyWith(tempRescuerCertificate: file);
+  }
+
   /// Clear all temporary image selections
   void clearTempImages() {
     state = state.copyWith(
       tempAvatarImage: null,
       tempFrontCitizenIdImage: null,
       tempBackCitizenIdImage: null,
+      tempRescuerCertificate: null,
     );
   }
-
 }

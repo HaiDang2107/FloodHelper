@@ -29,11 +29,8 @@ export class CharityRepository extends BaseRepository<any> {
         campaignLongitude: data.campaignLongitude,
         state: 'CREATED' as any,
       },
-      include: {
-        organizer: {
-          select: { userId: true, fullname: true, avatarUrl: true },
-        },
-      },
+
+
     });
   }
 
@@ -69,18 +66,26 @@ export class CharityRepository extends BaseRepository<any> {
         bankStatementFileUrl: true,
         bankAccountId: true,
         organizer: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+                residenceProvinceCode: true,
+                residenceWardCode: true,
+                residenceProvince: { select: { code: true, name: true } },
+                residenceWard: { select: { code: true, name: true } },
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
             role: true,
-            nickname: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            residenceProvince: { select: { code: true, name: true } },
-            residenceWard: { select: { code: true, name: true } },
           },
         },
+
         destinationProvince: {
           select: {
             code: true,
@@ -96,7 +101,10 @@ export class CharityRepository extends BaseRepository<any> {
         checker: {
           select: {
             userId: true,
-            fullname: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true },
+            },
           },
         },
         bankAccount: {
@@ -125,7 +133,13 @@ export class CharityRepository extends BaseRepository<any> {
       where: { state: state as any },
       include: {
         organizer: {
-          select: { userId: true, fullname: true, avatarUrl: true },
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -141,7 +155,13 @@ export class CharityRepository extends BaseRepository<any> {
       where: { organizedBy: userId },
       include: {
         organizer: {
-          select: { userId: true, fullname: true, avatarUrl: true },
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -450,7 +470,7 @@ export class CharityRepository extends BaseRepository<any> {
       where: {
         AND: [
           { state: { in: allowedStates } },
-          { organizer: { residenceWardCode: authorityResidenceWardCode } },
+          { organizer: { profiles: { some: { isCurrent: true, residenceWardCode: authorityResidenceWardCode } } } },
           {
             [cursorField]: {
               not: null,
@@ -475,15 +495,20 @@ export class CharityRepository extends BaseRepository<any> {
         organizer: {
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            residenceProvinceCode: true,
-            residenceWardCode: true,
-            residenceProvince: {
-              select: { code: true, name: true },
-            },
-            residenceWard: {
-              select: { code: true, name: true },
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                residenceProvinceCode: true,
+                residenceWardCode: true,
+                residenceProvince: {
+                  select: { code: true, name: true },
+                },
+                residenceWard: {
+                  select: { code: true, name: true },
+                },
+              },
             },
           },
         },
@@ -506,7 +531,12 @@ export class CharityRepository extends BaseRepository<any> {
         noteForSuspension: true,
         organizer: {
           select: {
-            residenceWardCode: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                residenceWardCode: true,
+              },
+            },
           },
         },
       },
@@ -623,7 +653,13 @@ export class CharityRepository extends BaseRepository<any> {
     return this.prisma.charityCampaign.findMany({
       include: {
         organizer: {
-          select: { userId: true, fullname: true, avatarUrl: true },
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },

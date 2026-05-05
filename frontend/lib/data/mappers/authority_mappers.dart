@@ -5,7 +5,8 @@ import '../../domain/models/announcement.dart';
 
 class AuthorityMappers {
   static AuthorityProfile profileFromSession(Map<String, dynamic> userData) {
-    final roles = (userData['role'] as List<dynamic>?)
+    final roles =
+        (userData['role'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         const <String>[];
@@ -19,76 +20,87 @@ class AuthorityMappers {
       phoneNumber: _asNullableString(userData['phoneNumber']),
       gender: _asNullableString(userData['gender']),
       dob: _asNullableString(userData['dob']),
-      placeOfOrigin: _formatLocation(
-        wardName: _asNullableString(userData['originWardName']),
-        provinceName: _asNullableString(userData['originProvinceName']),
-      ) ?? _asNullableString(userData['placeOfOrigin']),
-      placeOfResidence: _formatLocation(
-        wardName: _asNullableString(userData['residenceWardName']),
-        provinceName: _asNullableString(userData['residenceProvinceName']),
-      ) ?? _asNullableString(userData['placeOfResidence']),
+      placeOfOrigin:
+          _formatLocation(
+            wardName: _asNullableString(userData['originWardName']),
+            provinceName: _asNullableString(userData['originProvinceName']),
+          ) ??
+          _asNullableString(userData['placeOfOrigin']),
+      placeOfResidence:
+          _formatLocation(
+            wardName: _asNullableString(userData['residenceWardName']),
+            provinceName: _asNullableString(userData['residenceProvinceName']),
+          ) ??
+          _asNullableString(userData['placeOfResidence']),
       originProvinceCode: _asNullableInt(userData['originProvinceCode']),
       originProvinceName: _asNullableString(userData['originProvinceName']),
       originWardCode: _asNullableInt(userData['originWardCode']),
       originWardName: _asNullableString(userData['originWardName']),
       residenceProvinceCode: _asNullableInt(userData['residenceProvinceCode']),
-      residenceProvinceName: _asNullableString(userData['residenceProvinceName']),
+      residenceProvinceName: _asNullableString(
+        userData['residenceProvinceName'],
+      ),
       residenceWardCode: _asNullableInt(userData['residenceWardCode']),
       residenceWardName: _asNullableString(userData['residenceWardName']),
       dateOfIssue: _asNullableString(userData['dateOfIssue']),
       dateOfExpire: _asNullableString(userData['dateOfExpire']),
       citizenId: _asNullableString(userData['citizenId']),
-      jobPosition: _asNullableString(userData['jobPosition']),
+      occupation: _asNullableString(
+        userData['occupation'] ?? userData['occupation'],
+      ),
       avatarUrl: _asString(userData['avatarUrl']),
     );
   }
 
   static RoleRequest roleRequestFromApi(Map<String, dynamic> json) {
-    final user = (json['user'] as Map<String, dynamic>?) ?? const {};
-    final account = (user['account'] as Map<String, dynamic>?) ?? const {};
-    final originProvince = (user['originProvince'] as Map<String, dynamic>?) ??
-      const {};
-    final originWard = (user['originWard'] as Map<String, dynamic>?) ?? const {};
-    final residenceProvince =
-      (user['residenceProvince'] as Map<String, dynamic>?) ?? const {};
-    final residenceWard =
-      (user['residenceWard'] as Map<String, dynamic>?) ?? const {};
+    final profile = _asMap(json['profile']) ?? _asMap(json['user']) ?? const {};
+    final user = _asMap(profile['user']) ?? const {};
+    final account =
+        _asMap(user['account']) ?? _asMap(profile['account']) ?? const {};
+    final originProvince = _asMap(profile['originProvince']) ?? const {};
+    final originWard = _asMap(profile['originWard']) ?? const {};
+    final residenceProvince = _asMap(profile['residenceProvince']) ?? const {};
+    final residenceWard = _asMap(profile['residenceWard']) ?? const {};
 
     final type = _asString(json['type']).toUpperCase();
     final state = _asString(json['state']).toUpperCase();
-    final createdAt = DateTime.tryParse(_asString(json['createdAt']));
-    final respondedAt = DateTime.tryParse(_asString(json['responsedAt']));
+    final createdAt = DateTime.tryParse(_asString(json['createdAt']))?.toLocal();
+    final respondedAt = DateTime.tryParse(_asString(json['responsedAt']))?.toLocal();
 
-    final requesterName = _asString(user['fullname']);
+    final requesterName = _asString(profile['fullname']);
     final requesterEmail = _asString(account['username']);
-    final legacyCitizenIdCardImg = _asNullableString(user['citizenIdCardImg']);
+    final legacyCitizenIdCardImg = _asNullableString(
+      profile['citizenIdCardImg'],
+    );
     final frontImageUrl =
-      _asNullableString(user['frontCitizenIdCardImageUrl']) ??
-      legacyCitizenIdCardImg;
+        _asNullableString(profile['frontCitizenIdCardImageUrl']) ??
+        legacyCitizenIdCardImg;
     final backImageUrl =
-      _asNullableString(user['backCitizenIdCardImageUrl']) ??
-      legacyCitizenIdCardImg;
+        _asNullableString(profile['backCitizenIdCardImageUrl']) ??
+        legacyCitizenIdCardImg;
     final originProvinceCode = _asNullableInt(
-      user['originProvinceCode'] ?? originProvince['code'],
+      profile['originProvinceCode'] ?? originProvince['code'],
     );
     final originProvinceName = _asNullableString(
-      user['originProvinceName'] ?? originProvince['name'],
+      profile['originProvinceName'] ?? originProvince['name'],
     );
-    final originWardCode = _asNullableInt(user['originWardCode'] ?? originWard['code']);
+    final originWardCode = _asNullableInt(
+      profile['originWardCode'] ?? originWard['code'],
+    );
     final originWardName = _asNullableString(
-      user['originWardName'] ?? originWard['name'],
+      profile['originWardName'] ?? originWard['name'],
     );
     final residenceProvinceCode = _asNullableInt(
-      user['residenceProvinceCode'] ?? residenceProvince['code'],
+      profile['residenceProvinceCode'] ?? residenceProvince['code'],
     );
     final residenceProvinceName = _asNullableString(
-      user['residenceProvinceName'] ?? residenceProvince['name'],
+      profile['residenceProvinceName'] ?? residenceProvince['name'],
     );
     final residenceWardCode = _asNullableInt(
-      user['residenceWardCode'] ?? residenceWard['code'],
+      profile['residenceWardCode'] ?? residenceWard['code'],
     );
     final residenceWardName = _asNullableString(
-      user['residenceWardName'] ?? residenceWard['name'],
+      profile['residenceWardName'] ?? residenceWard['name'],
     );
 
     final placeOfOrigin = _formatLocation(
@@ -104,15 +116,16 @@ class AuthorityMappers {
       id: _asString(json['requestId']),
       requesterName: requesterName,
       requesterEmail: requesterEmail,
-      requestedRole:
-          type == 'RESCUER' ? RoleRequestType.rescuer : RoleRequestType.benefactor,
+      requestedRole: type == 'RESCUER'
+          ? RoleRequestType.rescuer
+          : RoleRequestType.benefactor,
       status: _mapApiStateToStatus(state),
       submittedAt: createdAt ?? DateTime.now(),
-      phone: _asString(user['phoneNumber']),
-      address: placeOfResidence ?? _asString(user['placeOfOrigin']),
-      idNumber: _asString(user['citizenId']),
-      nickname: _asNullableString(user['nickname']),
-      gender: _asNullableString(user['gender']),
+      phone: _asString(profile['phoneNumber']),
+      address: placeOfResidence ?? _asString(profile['placeOfOrigin']),
+      idNumber: _asString(profile['citizenId']),
+      nickname: _asNullableString(profile['nickname']),
+      gender: _asNullableString(profile['gender']),
       placeOfOrigin: placeOfOrigin,
       placeOfResidence: placeOfResidence,
       originProvinceCode: originProvinceCode,
@@ -123,11 +136,13 @@ class AuthorityMappers {
       residenceProvinceName: residenceProvinceName,
       residenceWardCode: residenceWardCode,
       residenceWardName: residenceWardName,
-      dob: _normalizeDateText(user['dob']),
-      dateOfIssue: _normalizeDateText(user['dateOfIssue']),
-      dateOfExpire: _normalizeDateText(user['dateOfExpire']),
-      jobPosition: _asNullableString(user['jobPosition']),
-      avatarUrl: _asNullableString(user['avatarUrl']),
+      dob: _normalizeDateText(profile['dob']),
+      dateOfIssue: _normalizeDateText(profile['dateOfIssue']),
+      dateOfExpire: _normalizeDateText(profile['dateOfExpire']),
+      occupation: _asNullableString(
+        profile['occupation'] ?? profile['occupation'],
+      ),
+      avatarUrl: _asNullableString(profile['avatarUrl']),
       frontImageUrl: frontImageUrl,
       backImageUrl: backImageUrl,
       notes: _asString(json['note']),
@@ -173,6 +188,8 @@ class AuthorityMappers {
         return RoleRequestStatus.approved;
       case 'REJECTED':
         return RoleRequestStatus.rejected;
+      case 'REVOKED':
+        return RoleRequestStatus.revoked;
       case 'PENDING':
       default:
         return RoleRequestStatus.pending;
@@ -227,10 +244,7 @@ class AuthorityMappers {
     return parsed?.toLocal();
   }
 
-  static String? _formatLocation({
-    String? wardName,
-    String? provinceName,
-  }) {
+  static String? _formatLocation({String? wardName, String? provinceName}) {
     final parts = [wardName, provinceName]
         .where((part) => part != null && part.trim().isNotEmpty)
         .map((part) => part!.trim())

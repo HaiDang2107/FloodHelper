@@ -13,7 +13,7 @@ class AuthRepository {
   final AuthService _authService;
 
   AuthRepository({required AuthService authService})
-      : _authService = authService;
+    : _authService = authService;
 
   // ==================== Authentication ====================
 
@@ -117,10 +117,7 @@ class AuthRepository {
     required String username,
     required VerificationType type,
   }) async {
-    final request = ResendCodeRequestDto(
-      username: username,
-      type: type.value,
-    );
+    final request = ResendCodeRequestDto(username: username, type: type.value);
 
     final response = await _authService.resendCode(request);
 
@@ -193,7 +190,9 @@ class AuthRepository {
   Future<AuthSession?> tryAutoLogin() async {
     try {
       // Debug: Print cookies before calling refresh
-      await ApiClient().debugPrintCookies(Uri.parse('http://192.168.88.106:3000/'));
+      await ApiClient().debugPrintCookies(
+        Uri.parse('http://192.168.88.106:3000/'),
+      );
 
       // Reuse repository refresh flow to persist new access token + expiry.
       await refreshToken();
@@ -222,7 +221,10 @@ class AuthRepository {
     final expiry = await AuthLocalStorage.getTokenExpiry();
     final userData = await AuthLocalStorage.getUserData();
 
-    if (accessToken == null || sessionId == null || expiry == null || userData == null) {
+    if (accessToken == null ||
+        sessionId == null ||
+        expiry == null ||
+        userData == null) {
       return null;
     }
 
@@ -244,7 +246,8 @@ class AuthRepository {
 
   /// Syncs user data stored in local auth session after profile updates.
   Future<void> syncSessionUserFromProfile(ProfileModel profile) async {
-    final existingUserData = await AuthLocalStorage.getUserData() ?? <String, dynamic>{};
+    final existingUserData =
+        await AuthLocalStorage.getUserData() ?? <String, dynamic>{};
 
     final updatedUserData = <String, dynamic>{
       ...existingUserData,
@@ -314,7 +317,7 @@ class AuthRepository {
         'dateOfExpire': data.user.dateOfExpire,
         'citizenId': data.user.citizenId,
         'citizenIdCardImg': data.user.citizenIdCardImg,
-        'jobPosition': data.user.jobPosition,
+        'occupation': data.user.occupation,
         'visibilityMode': data.user.visibilityMode,
         'showCharityCampaignLocations':
             data.user.showCharityCampaignLocations ?? false,
@@ -348,7 +351,8 @@ class AuthRepository {
       name: map['fullname'] ?? map['name'] ?? '',
       displayName: map['nickname'] ?? map['displayName'],
       phoneNumber: map['phoneNumber'],
-      roles: (map['role'] as List<dynamic>?)
+      roles:
+          (map['role'] as List<dynamic>?)
               ?.map((r) => UserRole.fromString(r.toString()))
               .toList() ??
           [UserRole.normalUser],

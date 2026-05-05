@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../view_models/profile_view_model.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_info.dart';
-import '../widgets/profile_role.dart';
+import '../widgets/role_management.dart';
 import '../widgets/profile_action_button.dart';
 import '../widgets/fullscreen_image_viewer.dart';
 import '../../core/common/widgets/location_selector.dart';
@@ -27,7 +27,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Gender? _selectedGender;
   late final TextEditingController _emailController;
   late final TextEditingController _dobController;
-  late final TextEditingController _jobPositionController;
+  late final TextEditingController _occupationController;
   late final TextEditingController _phoneController;
   late final TextEditingController _citizenIdController;
   late final TextEditingController _dateOfIssueController;
@@ -41,7 +41,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _residenceProvinceName;
   int? _residenceWardCode;
   String? _residenceWardName;
-  
+
   bool _controllersInitialized = false;
 
   @override
@@ -53,7 +53,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _nicknameController = TextEditingController();
     _emailController = TextEditingController();
     _dobController = TextEditingController();
-    _jobPositionController = TextEditingController();
+    _occupationController = TextEditingController();
     _phoneController = TextEditingController();
     _citizenIdController = TextEditingController();
     _dateOfIssueController = TextEditingController();
@@ -67,7 +67,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _nicknameController.dispose();
     _emailController.dispose();
     _dobController.dispose();
-    _jobPositionController.dispose();
+    _occupationController.dispose();
     _phoneController.dispose();
     _citizenIdController.dispose();
     _dateOfIssueController.dispose();
@@ -90,7 +90,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _dobController.text = profile.dateOfBirth != null
           ? profile.dateOfBirth!.toIso8601String().split('T')[0]
           : '';
-      _jobPositionController.text = profile.jobPosition ?? '';
+      _occupationController.text = profile.occupation ?? '';
       _phoneController.text = profile.phoneNumber;
       _syncLocationState(profile);
       _citizenIdController.text = profile.citizenInfo?.citizenId ?? '';
@@ -155,7 +155,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _toggleEdit() async {
     final viewModel = ref.read(profileViewModelProvider.notifier);
     final state = ref.read(profileViewModelProvider);
-    
+
     if (state.isEditing) {
       // Save profile
       final success = await viewModel.updateProfile(
@@ -178,7 +178,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ? _dateOfExpiryController.text
             : null,
         citizenId: _citizenIdController.text,
-        jobPosition: _jobPositionController.text,
+        occupation: _occupationController.text,
+        rescuerCertificate: state.tempRescuerCertificate,
       );
 
       if (!success) {
@@ -214,9 +215,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -229,11 +228,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       Navigator.pop(context);
 
       // Navigate to login screen and remove all previous routes
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.signIn,
-          (route) => false,
-        );
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.signIn,
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -253,13 +252,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileViewModelProvider);
-    
+
     // Update controllers when profile loads
     _updateControllersFromProfile(profileState);
-    
+
     // Show error messages
     ref.listen<ProfileState>(profileViewModelProvider, (previous, next) {
-      if (next.errorMessage != null && next.errorMessage != previous?.errorMessage) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
@@ -268,10 +268,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
         ref.read(profileViewModelProvider.notifier).clearError();
       }
-      if (next.successMessage != null && next.successMessage != previous?.successMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.successMessage!)),
-        );
+      if (next.successMessage != null &&
+          next.successMessage != previous?.successMessage) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.successMessage!)));
         ref.read(profileViewModelProvider.notifier).clearSuccess();
       }
     });
@@ -309,21 +310,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         final picker = ImagePicker();
                         final messenger = ScaffoldMessenger.of(context);
                         try {
-                          final file = await picker.pickImage(source: ImageSource.gallery);
+                          final file = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
                           if (file == null) return;
                           if (!mounted) return;
 
-                          final vm = ref.read(profileViewModelProvider.notifier);
+                          final vm = ref.read(
+                            profileViewModelProvider.notifier,
+                          );
                           vm.setTempAvatarImage(file);
                           messenger.showSnackBar(
                             const SnackBar(
-                              content: Text('Avatar selected. Press Save Profile to upload.'),
+                              content: Text(
+                                'Avatar selected. Press Save Profile to upload.',
+                              ),
                             ),
                           );
                         } catch (e) {
                           if (!mounted) return;
                           messenger.showSnackBar(
-                            SnackBar(content: Text('Failed to pick avatar: ${e.toString()}')),
+                            SnackBar(
+                              content: Text(
+                                'Failed to pick avatar: ${e.toString()}',
+                              ),
+                            ),
                           );
                         }
                       } else {
@@ -338,7 +349,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       }
                     },
                     avatarUrl: profileState.profile?.avatarUrl,
-                    displayName: profileState.profile?.effectiveDisplayName ?? 'User',
+                    displayName:
+                        profileState.profile?.effectiveDisplayName ?? 'User',
                     tempAvatarImage: profileState.tempAvatarImage,
                   ),
                   const SizedBox(height: 24),
@@ -355,7 +367,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     },
                     emailController: _emailController,
                     dobController: _dobController,
-                    jobPositionController: _jobPositionController,
+                    occupationController: _occupationController,
                     phoneController: _phoneController,
                     citizenIdController: _citizenIdController,
                     dateOfIssueController: _dateOfIssueController,
@@ -365,7 +377,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     originWardDisplay:
                         profileState.profile?.address?.originWardName ?? '',
                     residenceProvinceDisplay:
-                        profileState.profile?.address?.residenceProvinceName ?? '',
+                        profileState.profile?.address?.residenceProvinceName ??
+                        '',
                     residenceWardDisplay:
                         profileState.profile?.address?.residenceWardName ?? '',
                     originProvinceCode: _originProvinceCode,
@@ -375,29 +388,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     onOriginLocationChanged: _updateOriginLocation,
                     onResidenceLocationChanged: _updateResidenceLocation,
                     onDobTap: profileState.isEditing
-                      ? () => _pickDate(
-                          controller: _dobController,
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime.now(),
-                        )
-                      : null,
+                        ? () => _pickDate(
+                            controller: _dobController,
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                          )
+                        : null,
                     onDateOfIssueTap: profileState.isEditing
-                      ? () => _pickDate(
-                          controller: _dateOfIssueController,
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime.now(),
-                        )
-                      : null,
+                        ? () => _pickDate(
+                            controller: _dateOfIssueController,
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                          )
+                        : null,
                     onDateOfExpiryTap: profileState.isEditing
-                      ? () => _pickDate(
-                          controller: _dateOfExpiryController,
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2100),
-                        )
-                      : null,
+                        ? () => _pickDate(
+                            controller: _dateOfExpiryController,
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime(2100),
+                          )
+                        : null,
                     // Image picker wiring
-                    currentFrontCitizenIdUrl: profileState.profile?.citizenInfo?.frontCitizenIdCardImageUrl,
-                    currentBackCitizenIdUrl: profileState.profile?.citizenInfo?.backCitizenIdCardImageUrl,
+                    currentFrontCitizenIdUrl: profileState
+                        .profile
+                        ?.citizenInfo
+                        ?.frontCitizenIdCardImageUrl,
+                    currentBackCitizenIdUrl: profileState
+                        .profile
+                        ?.citizenInfo
+                        ?.backCitizenIdCardImageUrl,
                     tempFrontImage: profileState.tempFrontCitizenIdImage,
                     tempBackImage: profileState.tempBackCitizenIdImage,
                     onFrontImageSelected: (xfile) async {
@@ -406,7 +425,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       if (xfile != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Front ID selected. Press Save Profile to upload.'),
+                            content: Text(
+                              'Front ID selected. Press Save Profile to upload.',
+                            ),
                           ),
                         );
                       }
@@ -417,7 +438,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       if (xfile != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Back ID selected. Press Save Profile to upload.'),
+                            content: Text(
+                              'Back ID selected. Press Save Profile to upload.',
+                            ),
                           ),
                         );
                       }
@@ -426,7 +449,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       if (!profileState.isEditing) {
                         showFullscreenImageViewer(
                           context: context,
-                          networkUrl: profileState.profile?.citizenInfo?.frontCitizenIdCardImageUrl,
+                          networkUrl: profileState
+                              .profile
+                              ?.citizenInfo
+                              ?.frontCitizenIdCardImageUrl,
                           localFilePath: null,
                           title: 'Front ID Card',
                         );
@@ -436,11 +462,46 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       if (!profileState.isEditing) {
                         showFullscreenImageViewer(
                           context: context,
-                          networkUrl: profileState.profile?.citizenInfo?.backCitizenIdCardImageUrl,
+                          networkUrl: profileState
+                              .profile
+                              ?.citizenInfo
+                              ?.backCitizenIdCardImageUrl,
                           localFilePath: null,
                           title: 'Back ID Card',
                         );
                       }
+                    },
+                    tempRescuerCertificate: profileState.tempRescuerCertificate,
+                    currentRescuerCertificateUrl: profileState
+                        .profile
+                        ?.citizenInfo
+                        ?.rescuerCertificateUrl,
+                    onRescuerCertificateSelected: (file) {
+                      ref
+                          .read(profileViewModelProvider.notifier)
+                          .setTempRescuerCertificate(file);
+                      if (file != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Certificate selected. Press Save Profile to upload.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    onViewRescuerCertificate: () {
+                      final url = profileState
+                          .profile
+                          ?.citizenInfo
+                          ?.rescuerCertificateUrl;
+                      if (url == null || url.trim().isEmpty) return;
+                      showFullscreenImageViewer(
+                        context: context,
+                        networkUrl: url,
+                        localFilePath: null,
+                        title: 'Rescuer Certificate',
+                      );
                     },
                   ),
                   const SizedBox(height: 24),
@@ -449,19 +510,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ProfileRole(
                     roles: profileState.profile?.roles ?? [],
                     requests: profileState.roleRequests,
+                    profileUpdateRequests: profileState.profileUpdateRequests,
                     isLoadingRequests: profileState.isLoadingRoleRequests,
+                    isLoadingProfileUpdateRequests:
+                        profileState.isLoadingProfileUpdateRequests,
                     canSubmitRoleRequest: profileState.canSubmitRoleRequest,
                     roleRequestBlockedReason: profileState.canSubmitRoleRequest
                         ? null
                         : 'Missing fields: ${profileState.missingFieldsForRoleRequest.join(', ')}',
                     onAddRole: (role) async {
-                      await ref.read(profileViewModelProvider.notifier).submitRoleRequest(role);
+                      await ref
+                          .read(profileViewModelProvider.notifier)
+                          .submitRoleRequest(role);
                     },
                     onRefreshRequests: () => ref
                         .read(profileViewModelProvider.notifier)
                         .refreshRoleManagementData(),
+                    onRefreshProfileUpdateRequests: () => ref
+                        .read(profileViewModelProvider.notifier)
+                        .refreshProfileUpdateRequests(),
+                    onRevokeProfileUpdateRequest: (requestId) => ref
+                        .read(profileViewModelProvider.notifier)
+                        .revokeProfileUpdateRequest(requestId),
                   ),
                   const SizedBox(height: 32),
+                  ProfileActionButton(
+                    text: 'Sent Requests',
+                    onPressed: () => showSentRequestsSheet(
+                      context,
+                      requests: profileState.roleRequests,
+                      profileUpdateRequests: profileState.profileUpdateRequests,
+                      isLoadingRequests: profileState.isLoadingRoleRequests,
+                      isLoadingProfileUpdateRequests: profileState.isLoadingProfileUpdateRequests,
+                      onRefreshRequests: () => ref.read(profileViewModelProvider.notifier).refreshRoleManagementData(),
+                      onRefreshProfileUpdateRequests: () => ref.read(profileViewModelProvider.notifier).refreshProfileUpdateRequests(),
+                      onRevokeProfileUpdateRequest: (requestId) => ref.read(profileViewModelProvider.notifier).revokeProfileUpdateRequest(requestId),
+                      onRevokeRoleRequest: (requestId) => ref.read(profileViewModelProvider.notifier).revokeRoleRequest(requestId),
+                    ),
+                    backgroundColor: Colors.grey[200],
+                    textColor: Colors.black,
+                  ),
+                  const SizedBox(height: 16),
                   ProfileActionButton(
                     text: 'Change Password',
                     onPressed: () {},

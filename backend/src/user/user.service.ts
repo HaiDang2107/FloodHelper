@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import {
   CreateUserDto,
@@ -9,7 +10,12 @@ import {
   UpdateLocationDto,
   UpdateVisibilityDto,
 } from './dto';
-import { UserRepository } from '../prisma/repositories';
+import {
+  UserRepository,
+  ProfileRepository,
+  RoleRequestRepository,
+  ProfileRequestRepository,
+} from '../prisma/repositories';
 import { CloudinaryService } from '../common/cloudinary.service';
 import { formatLocation } from '../common/location-format.util';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
@@ -18,20 +24,31 @@ import type { UploadedFilePayload } from '../common/uploaded-file.type';
 export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly profileRepository: ProfileRepository,
+    private readonly roleRequestRepository: RoleRequestRepository,
+    private readonly profileRequestRepository: ProfileRequestRepository,
     private readonly cloudinary: CloudinaryService,
-  ) {}
+  ) { }
 
   /**
    * Get current user profile by userId (from JWT)
    */
   async getProfile(userId: string) {
-    const user = await this.userRepository.getProfileWithRelations(userId);
+    const user = await this.profileRepository.getCurrentProfileWithRelations(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return this.formatUserResponse(user);
+    return this.formatUserResponse({
+      ...user,
+      role: user.user?.role ?? [],
+      curLongitude: user.user?.curLongitude ?? null,
+      curLatitude: user.user?.curLatitude ?? null,
+      visibilityMode: user.user?.visibilityMode ?? null,
+      showCharityCampaignLocations: user.user?.showCharityCampaignLocations ?? false,
+      account: user.user?.account ?? null,
+    });
   }
 
   /**
@@ -64,63 +81,36 @@ export class UserService {
   /**
    * Update user profile
    */
-  async update(
+  async update( // Dành cho normal user
     userId: string,
     updateUserDto: UpdateUserDto = {},
     avatarFile?: UploadedFilePayload,
     citizenFrontFile?: UploadedFilePayload,
     citizenBackFile?: UploadedFilePayload,
+    rescuerCertificateFile?: UploadedFilePayload,
   ) {
     const safeDto = updateUserDto ?? {};
 
-    const user = await this.userRepository.findById(userId);
+    const currentProfile = await this.profileRepository.getCurrentProfileWithRelations(userId);
 
-    if (!user) {
+    if (!currentProfile) {
       throw new NotFoundException('User not found');
     }
 
-    const imageUpdates: {
-      avatarUrl?: string;
-      frontCitizenIdCardImageUrl?: string;
-      backCitizenIdCardImageUrl?: string;
-    } = {};
+    const roles = currentProfile.user?.role ?? [];
+    const isBenefactor = roles.includes('BENEFACTOR');
+    const isRescuer = roles.includes('RESCUER');
+    const isNormal = !isBenefactor && !isRescuer;
 
-    try {
-      if (avatarFile) {
-        const ext = avatarFile.originalname.split('.').pop() || 'jpg';
-        imageUpdates.avatarUrl = await this.cloudinary.uploadImage(
-          avatarFile.buffer,
-          {
-            folder: 'floodhelper/profiles/avatars',
-            publicId: `${userId}_avatar.${ext}`,
-          },
-        );
-      }
+    // Chặn việc update profile khi có role request hoặc profile request pending
+    const pendingRoleRequest = await this.roleRequestRepository.findAnyPendingRequest(userId);
+    const pendingProfileRequest = await this.profileRequestRepository.findPendingForUser(userId);
 
-      if (citizenFrontFile) {
-        const ext = citizenFrontFile.originalname.split('.').pop() || 'jpg';
-        imageUpdates.frontCitizenIdCardImageUrl =
-          await this.cloudinary.uploadImage(citizenFrontFile.buffer, {
-            folder: 'floodhelper/profiles/citizen-id-cards',
-            publicId: `${userId}_citizen_id_front.${ext}`,
-          });
-      }
-
-      if (citizenBackFile) {
-        const ext = citizenBackFile.originalname.split('.').pop() || 'jpg';
-        imageUpdates.backCitizenIdCardImageUrl = await this.cloudinary.uploadImage(
-          citizenBackFile.buffer,
-          {
-            folder: 'floodhelper/profiles/citizen-id-cards',
-            publicId: `${userId}_citizen_id_back.${ext}`,
-          },
-        );
-      }
-    } catch (error) {
-      throw new BadRequestException('Failed to upload profile images: ' + error.message);
+    if (pendingRoleRequest || pendingProfileRequest) {
+      throw new ConflictException('Exist pending requests. Please revoke them to update your profile.');
     }
 
-    const updated = await this.userRepository.updateProfile(userId, {
+    const profileUpdateDataPreview = {
       fullname: safeDto.fullname,
       nickname: safeDto.nickname,
       gender: safeDto.gender,
@@ -131,21 +121,210 @@ export class UserService {
       residenceWardCode: safeDto.residenceWardCode,
       dateOfIssue: safeDto.dateOfIssue ? new Date(safeDto.dateOfIssue) : undefined,
       dateOfExpire: safeDto.dateOfExpire ? new Date(safeDto.dateOfExpire) : undefined,
+      citizenId: safeDto.citizenId,
+      occupation: safeDto.occupation,
+    } as const;
+
+    const hasNonCertificateChangesPreview = // Kiểm tra dữ liệu mới có khác dữ liệu cũ không
+      this.hasNonCertificateChanges(currentProfile, profileUpdateDataPreview) ||
+      !!avatarFile || !!citizenFrontFile || !!citizenBackFile;
+
+    const hasCertificateChangePreview = !!rescuerCertificateFile;
+
+    if (!isNormal) {
+      const onlyCertificateChange = !hasNonCertificateChangesPreview && hasCertificateChangePreview;
+
+      if (!(isBenefactor && !isRescuer && onlyCertificateChange)) {
+        throw new BadRequestException(
+          'You can not change your profile freely. Please send a profile update request.',
+        );
+      }
+    }
+
+    // Upload ảnh lên cloudinary và lấy lại link
+    const imageUpdates = await this.uploadProfileImages(
+      userId,
+      avatarFile,
+      citizenFrontFile,
+      citizenBackFile,
+      rescuerCertificateFile,
+    );
+
+    const profileUpdateData = {
+      ...profileUpdateDataPreview,
+      avatarUrl: imageUpdates.avatarUrl,
+      frontCitizenIdCardImageUrl: imageUpdates.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: imageUpdates.backCitizenIdCardImageUrl,
+      rescuerCertificateUrl: imageUpdates.rescuerCertificateUrl,
+    } as const;
+
+    const userUpdateData = {
       curLongitude: safeDto.curLongitude,
       curLatitude: safeDto.curLatitude,
       visibilityMode: safeDto.visibilityMode,
       showCharityCampaignLocations: safeDto.showCharityCampaignLocations,
-      avatarUrl: imageUpdates.avatarUrl ?? safeDto.avatarUrl,
-      citizenId: safeDto.citizenId,
-      citizenIdCardImg: safeDto.citizenIdCardImg,
-      frontCitizenIdCardImageUrl:
-        imageUpdates.frontCitizenIdCardImageUrl ?? safeDto.frontCitizenIdCardImageUrl,
-      backCitizenIdCardImageUrl:
-        imageUpdates.backCitizenIdCardImageUrl ?? safeDto.backCitizenIdCardImageUrl,
-      jobPosition: safeDto.jobPosition,
+    } as const;
+
+    if (userUpdateData.curLongitude != null ||
+      userUpdateData.curLatitude != null ||
+      userUpdateData.visibilityMode != null ||
+      userUpdateData.showCharityCampaignLocations != null) {
+      await this.userRepository.updateUserFields(userId, userUpdateData);
+    }
+
+    const updated = await this.profileRepository.updateCurrentProfile(
+      userId,
+      profileUpdateData,
+    );
+
+    if (!updated) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.formatUserResponse({
+      ...updated,
+      role: updated.user.role,
+      curLongitude: updated.user.curLongitude,
+      curLatitude: updated.user.curLatitude,
+      visibilityMode: updated.user.visibilityMode,
+      showCharityCampaignLocations: updated.user.showCharityCampaignLocations,
+      account: updated.user.account,
+    });
+  }
+
+  async createProfileUpdateRequest( // Dành cho benefactor và rescuer 
+    userId: string,
+    updateUserDto: UpdateUserDto = {},
+    avatarFile?: UploadedFilePayload,
+    citizenFrontFile?: UploadedFilePayload,
+    citizenBackFile?: UploadedFilePayload,
+    rescuerCertificateFile?: UploadedFilePayload,
+  ) {
+    const safeDto = updateUserDto ?? {};
+    const currentProfile = await this.profileRepository.findCurrentProfileSummary(userId);
+
+    if (!currentProfile) {
+      throw new NotFoundException('User not found');
+    }
+
+    const roles = currentProfile.user?.role ?? [];
+    const isBenefactor = roles.includes('BENEFACTOR');
+    const isRescuer = roles.includes('RESCUER');
+
+    if (!isBenefactor && !isRescuer) {
+      throw new BadRequestException('Only benefactor or rescuer can request profile updates');
+    }
+
+    const pendingRoleRequest = await this.roleRequestRepository.findAnyPendingRequest(userId);
+    const pendingProfileRequest = await this.profileRequestRepository.findPendingForUser(userId);
+
+    if (pendingRoleRequest || pendingProfileRequest) {
+      throw new ConflictException('Exist pending requests. Please revoke them to update your profile.');
+    }
+
+    const profileUpdateDataPreview = {
+      fullname: safeDto.fullname ?? currentProfile.fullname,
+      nickname: safeDto.nickname ?? currentProfile.nickname,
+      gender: safeDto.gender ?? currentProfile.gender,
+      dob: safeDto.dob ? new Date(safeDto.dob) : currentProfile.dob,
+      originProvinceCode: safeDto.originProvinceCode ?? currentProfile.originProvinceCode,
+      originWardCode: safeDto.originWardCode ?? currentProfile.originWardCode,
+      residenceProvinceCode: safeDto.residenceProvinceCode ?? currentProfile.residenceProvinceCode,
+      residenceWardCode: safeDto.residenceWardCode ?? currentProfile.residenceWardCode,
+      dateOfIssue: safeDto.dateOfIssue ? new Date(safeDto.dateOfIssue) : currentProfile.dateOfIssue,
+      dateOfExpire: safeDto.dateOfExpire ? new Date(safeDto.dateOfExpire) : currentProfile.dateOfExpire,
+      citizenId: safeDto.citizenId ?? currentProfile.citizenId,
+      occupation: safeDto.occupation ?? currentProfile.occupation,
+    } as const;
+
+    const hasChangesPreview =
+      this.hasNonCertificateChanges(currentProfile, profileUpdateDataPreview) ||
+      !!avatarFile || !!citizenFrontFile || !!citizenBackFile ||
+      !!rescuerCertificateFile;
+
+    if (!hasChangesPreview) {
+      throw new BadRequestException('No profile changes detected');
+    }
+
+    if (!currentProfile.residenceWardCode) {
+      throw new BadRequestException('Residence ward is required to send a profile update request');
+    }
+
+    const authorities = await this.userRepository.findAuthoritiesByWard(
+      currentProfile.residenceWardCode,
+    );
+    const authority = authorities[0];
+
+    if (!authority) {
+      throw new BadRequestException('No authority found for your residence ward');
+    }
+
+    // Upload ảnh lên cloudinary và lấy lại link
+    const imageUpdates = await this.uploadProfileImages(
+      userId,
+      avatarFile,
+      citizenFrontFile,
+      citizenBackFile,
+      rescuerCertificateFile,
+    );
+
+    const profileUpdateData = {
+      ...profileUpdateDataPreview,
+      avatarUrl: imageUpdates.avatarUrl ?? currentProfile.avatarUrl,
+      frontCitizenIdCardImageUrl: imageUpdates.frontCitizenIdCardImageUrl ?? currentProfile.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: imageUpdates.backCitizenIdCardImageUrl ?? currentProfile.backCitizenIdCardImageUrl,
+      rescuerCertificateUrl: imageUpdates.rescuerCertificateUrl ?? currentProfile.rescuerCertificateUrl,
+    } as const;
+
+    const newProfile = await this.profileRepository.createProfile({
+      userId,
+      isCurrent: false,
+      fullname: profileUpdateData.fullname,
+      nickname: profileUpdateData.nickname,
+      dob: profileUpdateData.dob,
+      gender: profileUpdateData.gender,
+      phoneNumber: currentProfile.phoneNumber,
+      avatarUrl: profileUpdateData.avatarUrl,
+      citizenId: profileUpdateData.citizenId,
+      rescuerCertificateUrl: profileUpdateData.rescuerCertificateUrl,
+      frontCitizenIdCardImageUrl: profileUpdateData.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: profileUpdateData.backCitizenIdCardImageUrl,
+      occupation: profileUpdateData.occupation,
+      originProvinceCode: profileUpdateData.originProvinceCode,
+      originWardCode: profileUpdateData.originWardCode,
+      residenceProvinceCode: profileUpdateData.residenceProvinceCode,
+      residenceWardCode: profileUpdateData.residenceWardCode,
+      dateOfIssue: profileUpdateData.dateOfIssue,
+      dateOfExpire: profileUpdateData.dateOfExpire,
     });
 
-    return this.formatUserResponse(updated);
+    return this.profileRequestRepository.createRequest({
+      currentProfileId: currentProfile.profileId,
+      newProfileId: newProfile.profileId,
+      checkedBy: authority.userId,
+    });
+  }
+
+  async listProfileUpdateRequests(userId: string) {
+    const items = await this.profileRequestRepository.listRequestsForRequester(userId);
+    return { items };
+  }
+
+  async revokeProfileUpdateRequest(userId: string, requestId: string) {
+    const existing = await this.profileRequestRepository.getRequestForRevoke(
+      userId,
+      requestId,
+    );
+
+    if (!existing) {
+      throw new NotFoundException('Profile update request not found');
+    }
+
+    if (existing.state !== ('PENDING' as any)) {
+      throw new ConflictException('Only pending requests can be revoked');
+    }
+
+    return this.profileRequestRepository.revokeRequest(requestId);
   }
 
   /**
@@ -265,18 +444,131 @@ export class UserService {
       avatarUrl: user.avatarUrl,
       citizenId: user.citizenId,
       phoneNumber: user.phoneNumber,
-      citizenIdCardImg: user.citizenIdCardImg,
+      rescuerCertificateUrl: user.rescuerCertificateUrl ?? null,
       frontCitizenIdCardImageUrl: user.frontCitizenIdCardImageUrl,
       backCitizenIdCardImageUrl: user.backCitizenIdCardImageUrl,
-      jobPosition: user.jobPosition,
+      occupation: user.occupation,
       account: user.account
         ? {
-            username: user.account.username,
-            state: user.account.state,
-            createdAt: user.account.createdAt,
-          }
+          username: user.account.username,
+          state: user.account.state,
+          createdAt: user.account.createdAt,
+        }
         : null,
     };
+  }
+
+  private async uploadProfileImages(
+    userId: string,
+    avatarFile?: UploadedFilePayload,
+    citizenFrontFile?: UploadedFilePayload,
+    citizenBackFile?: UploadedFilePayload,
+    rescuerCertificateFile?: UploadedFilePayload,
+  ) {
+    const imageUpdates: {
+      avatarUrl?: string;
+      frontCitizenIdCardImageUrl?: string;
+      backCitizenIdCardImageUrl?: string;
+      rescuerCertificateUrl?: string;
+    } = {};
+
+    try {
+      if (avatarFile) {
+        const ext = avatarFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.avatarUrl = await this.cloudinary.uploadImage(
+          avatarFile.buffer,
+          {
+            folder: 'floodhelper/profiles/avatars',
+            publicId: `${userId}_avatar.${ext}`,
+          },
+        );
+      }
+
+      if (citizenFrontFile) {
+        const ext = citizenFrontFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.frontCitizenIdCardImageUrl =
+          await this.cloudinary.uploadImage(citizenFrontFile.buffer, {
+            folder: 'floodhelper/profiles/citizen-id-cards',
+            publicId: `${userId}_citizen_id_front.${ext}`,
+          });
+      }
+
+      if (citizenBackFile) {
+        const ext = citizenBackFile.originalname.split('.').pop() || 'jpg';
+        imageUpdates.backCitizenIdCardImageUrl = await this.cloudinary.uploadImage(
+          citizenBackFile.buffer,
+          {
+            folder: 'floodhelper/profiles/citizen-id-cards',
+            publicId: `${userId}_citizen_id_back.${ext}`,
+          },
+        );
+      }
+
+      if (rescuerCertificateFile) {
+        const ext = rescuerCertificateFile.originalname.split('.').pop() || 'pdf';
+        imageUpdates.rescuerCertificateUrl = await this.cloudinary.uploadRawFile(
+          rescuerCertificateFile.buffer,
+          {
+            folder: 'floodhelper/profiles/rescuer-certificates',
+            publicId: `${userId}_rescuer_certificate.${ext}`,
+          },
+        );
+      }
+    } catch (error) {
+      throw new BadRequestException('Failed to upload profile images: ' + error.message);
+    }
+
+    return imageUpdates;
+  }
+
+  private hasNonCertificateChanges(
+    currentProfile: any,
+    updateData: Record<string, unknown>,
+    newCertificateUrl?: string,
+  ) {
+    const current = {
+      fullname: currentProfile.fullname,
+      nickname: currentProfile.nickname,
+      gender: currentProfile.gender,
+      dob: currentProfile.dob?.toISOString?.() ?? currentProfile.dob,
+      originProvinceCode: currentProfile.originProvinceCode,
+      originWardCode: currentProfile.originWardCode,
+      residenceProvinceCode: currentProfile.residenceProvinceCode,
+      residenceWardCode: currentProfile.residenceWardCode,
+      dateOfIssue: currentProfile.dateOfIssue?.toISOString?.() ?? currentProfile.dateOfIssue,
+      dateOfExpire: currentProfile.dateOfExpire?.toISOString?.() ?? currentProfile.dateOfExpire,
+      avatarUrl: currentProfile.avatarUrl,
+      citizenId: currentProfile.citizenId,
+      frontCitizenIdCardImageUrl: currentProfile.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl: currentProfile.backCitizenIdCardImageUrl,
+      occupation: currentProfile.occupation,
+    };
+
+    const next = {
+      fullname: updateData.fullname ?? current.fullname,
+      nickname: updateData.nickname ?? current.nickname,
+      gender: updateData.gender ?? current.gender,
+      dob: updateData.dob ? new Date(updateData.dob as any).toISOString() : current.dob,
+      originProvinceCode: updateData.originProvinceCode ?? current.originProvinceCode,
+      originWardCode: updateData.originWardCode ?? current.originWardCode,
+      residenceProvinceCode: updateData.residenceProvinceCode ?? current.residenceProvinceCode,
+      residenceWardCode: updateData.residenceWardCode ?? current.residenceWardCode,
+      dateOfIssue: updateData.dateOfIssue ? new Date(updateData.dateOfIssue as any).toISOString() : current.dateOfIssue,
+      dateOfExpire: updateData.dateOfExpire ? new Date(updateData.dateOfExpire as any).toISOString() : current.dateOfExpire,
+      avatarUrl: updateData.avatarUrl ?? current.avatarUrl,
+      citizenId: updateData.citizenId ?? current.citizenId,
+      frontCitizenIdCardImageUrl:
+        updateData.frontCitizenIdCardImageUrl ?? current.frontCitizenIdCardImageUrl,
+      backCitizenIdCardImageUrl:
+        updateData.backCitizenIdCardImageUrl ?? current.backCitizenIdCardImageUrl,
+      occupation: updateData.occupation ?? current.occupation,
+    };
+
+    if (newCertificateUrl) {
+      return Object.keys(next).some((key) => next[key] !== current[key]);
+    }
+
+    return Object.keys(next).some((key) => next[key] !== current[key]);
   }
 
   /**

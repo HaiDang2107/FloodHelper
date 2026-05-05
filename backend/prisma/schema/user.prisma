@@ -4,41 +4,16 @@
 
 model User {
   userId           String    @id @default(uuid()) @db.Uuid @map("user_id")
-  fullname         String    @db.VarChar(255)
-  nickname         String?   @db.VarChar(255)
-  dob              DateTime? @db.Date
-
-  // --- Thay thế placeOfOrigin ---
-  originProvinceCode Int?      @map("origin_province_code")
-  originProvince     Province? @relation("OriginProvince", fields: [originProvinceCode], references: [code])
-  originWardCode Int?      @map("origin_Ward_code")
-  originWard     Ward? @relation("OriginWard", fields: [originWardCode], references: [code])
-
-  // --- Thay thế placeOfResidence ---
-  residenceProvinceCode Int?      @map("residence_province_code")
-  residenceProvince     Province? @relation("ResidenceProvince", fields: [residenceProvinceCode], references: [code])
-  residenceWardCode Int?      @map("residence_ward_code")
-  residenceWard     Ward? @relation("ResidenceWard", fields: [residenceWardCode], references: [code])
-
-  dateOfIssue      DateTime? @map("date_of_issue") @db.Date
-  dateOfExpire     DateTime? @map("date_of_expire") @db.Date
   role             String[]  @default(["NORMAL_USER"]) 
   curLongitude     Decimal?  @map("cur_longitude") @db.Decimal(10, 7)
   curLatitude      Decimal?  @map("cur_latitude") @db.Decimal(10, 7)
   visibilityMode   String    @default("JUST_FRIEND") @map("visibility_mode") @db.VarChar(20) 
   showCharityCampaignLocations Boolean @default(false) @map("show_charity_campaign_locations")
-  avatarUrl        String?   @map("avatar_url")
-  citizenId        String?   @map("citizen_id")
-  gender           String?   @db.VarChar(20)
-  phoneNumber      String    @unique @map("phone_number")
-  citizenIdCardImg String?   @map("citizen_id_card_img")
-  frontCitizenIdCardImageUrl String? @map("front_citizen_id_card_image_url")
-  backCitizenIdCardImageUrl String? @map("back_citizen_id_card_image_url")
-  jobPosition      String?   @map("job_position")
   fcmToken         String?   @map("fcm_token")
 
   // Relations
   account              Account?
+  profiles             Profile[]
   posts                Post[]
   organizedCampaigns   CharityCampaign[]     @relation("CampaignOrganizer")
   checkedCampaigns     CharityCampaign[]     @relation("CampaignChecker")
@@ -49,8 +24,8 @@ model User {
   likes                Like[]
   comments             Comment[]
   roomMemberships      RoomMember[]
-  roleRequestsCreated  RoleUpdatingRequest[] @relation("RoleRequestCreator")
   roleRequestsReceived RoleUpdatingRequest[] @relation("RoleRequestChecker")
+  profileRequestsChecked ProfileUpdatingRequest[] @relation("ProfileRequestChecker")
   publicAnnouncements  PublicAnnouncement[]  @relation("PublicAnnouncementPublisher")
   friendRequestsSent   FriendMakingRequest[] @relation("FriendRequestSender")
   friendRequestsRcved  FriendMakingRequest[] @relation("FriendRequestReceiver")
@@ -59,6 +34,49 @@ model User {
   friendshipsReceived  Friendship[]          @relation("Friendship_Friend")
 
   @@map("User")
+}
+
+model Profile {
+  profileId       String    @id @default(uuid()) @db.Uuid @map("profile_id")
+  userId          String    @db.Uuid @map("user_id")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  isCurrent       Boolean   @default(false) @map("is_current")
+  fullname        String    @db.VarChar(255)
+  nickname        String?   @db.VarChar(255)
+  dob             DateTime? @db.Date
+  gender          String?   @db.VarChar(20)
+  phoneNumber     String    @unique @map("phone_number")
+  avatarUrl       String?   @map("avatar_url")
+  citizenId       String?   @map("citizen_id")
+  rescuerCertificateUrl String? @map("rescuer_certificate_url")
+  frontCitizenIdCardImageUrl String? @map("front_citizen_id_card_image_url")
+  backCitizenIdCardImageUrl String? @map("back_citizen_id_card_image_url")
+  occupation      String?   @map("occupation")
+
+  // --- Thay thế placeOfOrigin ---
+  originProvinceCode Int?      @map("origin_province_code")
+  originProvince     Province? @relation("OriginProvince", fields: [originProvinceCode], references: [code])
+  originWardCode Int?      @map("origin_ward_code")
+  originWard     Ward? @relation("OriginWard", fields: [originWardCode], references: [code])
+
+  // --- Thay thế placeOfResidence ---
+  residenceProvinceCode Int?      @map("residence_province_code")
+  residenceProvince     Province? @relation("ResidenceProvince", fields: [residenceProvinceCode], references: [code])
+  residenceWardCode Int?      @map("residence_ward_code")
+  residenceWard     Ward? @relation("ResidenceWard", fields: [residenceWardCode], references: [code])
+
+  dateOfIssue      DateTime? @map("date_of_issue") @db.Date
+  dateOfExpire     DateTime? @map("date_of_expire") @db.Date
+
+  user User @relation(fields: [userId], references: [userId])
+
+  roleRequestsCreated RoleUpdatingRequest[] @relation("RoleRequestCreator")
+  profileRequestsCurrent ProfileUpdatingRequest[] @relation("ProfileRequestCurrent")
+  profileRequestsNew ProfileUpdatingRequest[] @relation("ProfileRequestNew")
+
+  @@unique([userId, isCurrent])
+  @@index([userId])
+  @@map("Profile")
 }
 
 model Account {
@@ -123,8 +141,8 @@ model Province {
   wards    Ward[]
 
   // Các relation trả ngược về bảng User và CharityCampaign
-  usersOrigin          User[]            @relation("OriginProvince")
-  usersResidence       User[]            @relation("ResidenceProvince")
+  profilesOrigin       Profile[]         @relation("OriginProvince")
+  profilesResidence    Profile[]         @relation("ResidenceProvince")
   campaignDestinations CharityCampaign[] @relation("CampaignDestinationProvince")
 
   @@map("Province")
@@ -140,8 +158,8 @@ model Ward {
   province     Province @relation(fields: [provinceCode], references: [code])
 
   // Các relation trả ngược về bảng User và CharityCampaign
-  usersOrigin          User[]            @relation("OriginWard")
-  usersResidence       User[]            @relation("ResidenceWard")
+  profilesOrigin       Profile[]         @relation("OriginWard")
+  profilesResidence    Profile[]         @relation("ResidenceWard")
   campaignDestinations CharityCampaign[] @relation("CampaignDestinationWard")
 
   @@map("Ward")

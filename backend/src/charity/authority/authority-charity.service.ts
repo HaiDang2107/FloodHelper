@@ -180,11 +180,11 @@ export class AuthorityCharityService {
       name: campaign.campaignName,
       organizedBy: campaign.organizer?.userId,
       organizerResidence: formatLocation(
-        campaign.organizer?.residenceWard,
-        campaign.organizer?.residenceProvince,
+        campaign.organizer?.profiles?.[0]?.residenceWard,
+        campaign.organizer?.profiles?.[0]?.residenceProvince,
       ),
       benefactorName:
-        campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
+        campaign.organizer?.profiles?.[0]?.fullname || campaign.organizer?.profiles?.[0]?.nickname || 'Unknown',
       state: String(campaign.state).toUpperCase(),
       requestedAt: campaign.requestedAt,
       respondedAt: campaign.respondedAt,
@@ -214,7 +214,7 @@ export class AuthorityCharityService {
       throw new NotFoundException('Charity campaign not found');
     }
 
-    if (campaign.organizer?.residenceWardCode !== authorityPlace) {
+    if (campaign.organizer?.profiles?.[0]?.residenceWardCode !== authorityPlace) {
       throw new ForbiddenException(
         'You are not allowed to review campaigns outside your residence area',
       );

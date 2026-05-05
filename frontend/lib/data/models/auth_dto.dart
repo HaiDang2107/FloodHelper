@@ -16,10 +16,10 @@ class SigninRequestDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'username': username,
-        'password': password,
-        'deviceId': deviceId,
-      };
+    'username': username,
+    'password': password,
+    'deviceId': deviceId,
+  };
 }
 
 /// Sign up request
@@ -30,7 +30,7 @@ class SignupRequestDto {
   final String? dob;
   final String? dateOfIssue;
   final String? dateOfExpire;
-  final String? jobPosition;
+  final String? occupation;
   final String username;
   final String password;
 
@@ -41,22 +41,22 @@ class SignupRequestDto {
     this.dob,
     this.dateOfIssue,
     this.dateOfExpire,
-    this.jobPosition,
+    this.occupation,
     required this.username,
     required this.password,
   });
 
   Map<String, dynamic> toJson() => {
-        'fullname': fullname,
-        if (nickname != null) 'nickname': nickname,
-        'phoneNumber': phoneNumber,
-        if (dob != null) 'dob': dob,
-        if (dateOfIssue != null) 'dateOfIssue': dateOfIssue,
-        if (dateOfExpire != null) 'dateOfExpire': dateOfExpire,
-        if (jobPosition != null) 'jobPosition': jobPosition,
-        'username': username,
-        'password': password,
-      };
+    'fullname': fullname,
+    if (nickname != null) 'nickname': nickname,
+    'phoneNumber': phoneNumber,
+    if (dob != null) 'dob': dob,
+    if (dateOfIssue != null) 'dateOfIssue': dateOfIssue,
+    if (dateOfExpire != null) 'dateOfExpire': dateOfExpire,
+    if (occupation != null) 'occupation': occupation,
+    'username': username,
+    'password': password,
+  };
 }
 
 /// Verify code request
@@ -72,10 +72,10 @@ class VerifyCodeRequestDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'username': username,
-        'type': type,
-        'code': code,
-      };
+    'username': username,
+    'type': type,
+    'code': code,
+  };
 }
 
 /// Resend verification code request
@@ -83,15 +83,9 @@ class ResendCodeRequestDto {
   final String username;
   final String type;
 
-  ResendCodeRequestDto({
-    required this.username,
-    required this.type,
-  });
+  ResendCodeRequestDto({required this.username, required this.type});
 
-  Map<String, dynamic> toJson() => {
-        'username': username,
-        'type': type,
-      };
+  Map<String, dynamic> toJson() => {'username': username, 'type': type};
 }
 
 /// Forgot password request
@@ -129,11 +123,7 @@ class ApiResponse<T> {
   final String message;
   final T? data;
 
-  ApiResponse({
-    required this.success,
-    required this.message,
-    this.data,
-  });
+  ApiResponse({required this.success, required this.message, this.data});
 
   factory ApiResponse.fromJson(
     Map<String, dynamic> json,
@@ -173,7 +163,7 @@ class UserResponseDto {
   final String? dateOfExpire;
   final String? citizenId;
   final String? citizenIdCardImg;
-  final String? jobPosition;
+  final String? occupation;
   final String? visibilityMode;
   final bool? showCharityCampaignLocations;
 
@@ -200,7 +190,7 @@ class UserResponseDto {
     this.dateOfExpire,
     this.citizenId,
     this.citizenIdCardImg,
-    this.jobPosition,
+    this.occupation,
     this.visibilityMode,
     this.showCharityCampaignLocations,
   });
@@ -229,9 +219,10 @@ class UserResponseDto {
       dateOfExpire: json['dateOfExpire']?.toString(),
       citizenId: json['citizenId'],
       citizenIdCardImg: json['citizenIdCardImg'],
-      jobPosition: json['jobPosition'],
+      occupation: json['occupation'],
       visibilityMode: json['visibilityMode'],
-      showCharityCampaignLocations: json['showCharityCampaignLocations'] as bool?,
+      showCharityCampaignLocations:
+          json['showCharityCampaignLocations'] as bool?,
     );
   }
 }
@@ -283,15 +274,14 @@ class SessionResponseDto {
   final String sessionId;
   final DateTime expireAt;
 
-  SessionResponseDto({
-    required this.sessionId,
-    required this.expireAt,
-  });
+  SessionResponseDto({required this.sessionId, required this.expireAt});
 
   factory SessionResponseDto.fromJson(Map<String, dynamic> json) {
     return SessionResponseDto(
       sessionId: json['sessionId'] ?? '',
-      expireAt: DateTime.parse(json['expireAt'] ?? DateTime.now().toIso8601String()),
+      expireAt: DateTime.parse(
+        json['expireAt'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 }
@@ -309,7 +299,9 @@ class VerificationResponseDto {
   factory VerificationResponseDto.fromJson(Map<String, dynamic> json) {
     return VerificationResponseDto(
       verificationId: json['verificationId'] ?? '',
-      expiresAt: DateTime.parse(json['expiresAt'] ?? DateTime.now().toIso8601String()),
+      expiresAt: DateTime.parse(
+        json['expiresAt'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 }
@@ -365,9 +357,7 @@ class SignoutDataDto {
   SignoutDataDto({required this.loggedOutSessions});
 
   factory SignoutDataDto.fromJson(Map<String, dynamic> json) {
-    return SignoutDataDto(
-      loggedOutSessions: json['loggedOutSessions'] ?? 0,
-    );
+    return SignoutDataDto(loggedOutSessions: json['loggedOutSessions'] ?? 0);
   }
 }
 
@@ -377,17 +367,15 @@ class RefreshTokenDataDto {
   final RefreshUserDto? user;
   final RefreshSessionDto? session;
 
-  RefreshTokenDataDto({
-    required this.tokens,
-    this.user,
-    this.session,
-  });
+  RefreshTokenDataDto({required this.tokens, this.user, this.session});
 
   factory RefreshTokenDataDto.fromJson(Map<String, dynamic> json) {
     return RefreshTokenDataDto(
       tokens: TokensResponseDto.fromJson(json['tokens'] ?? {}),
       user: json['user'] != null ? RefreshUserDto.fromJson(json['user']) : null,
-      session: json['session'] != null ? RefreshSessionDto.fromJson(json['session']) : null,
+      session: json['session'] != null
+          ? RefreshSessionDto.fromJson(json['session'])
+          : null,
     );
   }
 }
@@ -427,10 +415,7 @@ class RefreshSessionDto {
   final String sessionId;
   final String deviceId;
 
-  RefreshSessionDto({
-    required this.sessionId,
-    required this.deviceId,
-  });
+  RefreshSessionDto({required this.sessionId, required this.deviceId});
 
   factory RefreshSessionDto.fromJson(Map<String, dynamic> json) {
     return RefreshSessionDto(

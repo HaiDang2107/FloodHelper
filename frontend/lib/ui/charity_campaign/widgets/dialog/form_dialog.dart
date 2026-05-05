@@ -411,7 +411,7 @@ class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
               )
             else ...[
               DropdownButtonFormField<int>(
-                value: _selectedBankId,
+                initialValue: _selectedBankId,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Bank',

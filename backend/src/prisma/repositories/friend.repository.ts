@@ -32,23 +32,38 @@ export class FriendRepository extends BaseRepository<any> {
         note: note ?? null,
       },
       include: {
+
+
         sender: {
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
+            fcmToken: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
           },
         },
         receiver: {
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
             fcmToken: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
           },
         },
+
+
       },
     });
   }
@@ -67,26 +82,7 @@ export class FriendRepository extends BaseRepository<any> {
   async getFriendRequest(requestId: string) {
     return this.prisma.friendMakingRequest.findUnique({
       where: { requestId },
-      include: {
-        sender: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-            fcmToken: true,
-          },
-        },
-        receiver: {
-          select: {
-            userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
-            fcmToken: true,
-          },
-        },
-      },
+
     });
   }
 
@@ -97,9 +93,14 @@ export class FriendRepository extends BaseRepository<any> {
         receiver: {
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
           },
         },
       },
@@ -114,9 +115,14 @@ export class FriendRepository extends BaseRepository<any> {
         sender: {
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
           },
         },
       },
@@ -124,30 +130,35 @@ export class FriendRepository extends BaseRepository<any> {
     });
   }
 
+
   async acceptFriendRequest(requestId: string) {
     return this.prisma.$transaction(async (tx) => {
+
       const request = await tx.friendMakingRequest.findUnique({
         where: { requestId },
         include: {
           sender: {
             select: {
               userId: true,
-              fullname: true,
-              nickname: true,
-              avatarUrl: true,
               fcmToken: true,
             },
           },
           receiver: {
             select: {
               userId: true,
-              fullname: true,
-              nickname: true,
-              avatarUrl: true,
+              profiles: {
+                where: { isCurrent: true },
+                select: {
+                  fullname: true,
+                  nickname: true,
+                  avatarUrl: true,
+                }
+              }
             },
           },
         },
       });
+
 
       if (!request) {
         return null;
@@ -204,9 +215,14 @@ export class FriendRepository extends BaseRepository<any> {
         friend: {
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
           },
         },
       },

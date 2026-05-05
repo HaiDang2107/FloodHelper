@@ -15,6 +15,15 @@ class MockProfileRepository implements ProfileRepository {
     ),
   ];
 
+  final List<ProfileUpdateRequestModel> _profileUpdateRequests = [
+    ProfileUpdateRequestModel(
+      requestId: 'REQ-PROFILE-001',
+      state: 'PENDING',
+      createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+      authorityName: 'Authority A',
+    ),
+  ];
+
   ProfileModel _currentProfile = ProfileModel(
     userId: 'mock-user-123',
     fullname: 'Nguyễn Văn An',
@@ -31,7 +40,7 @@ class MockProfileRepository implements ProfileRepository {
     avatarUrl: 'https://i.pravatar.cc/300',
     citizenId: '001095012345',
     phoneNumber: '0912345678',
-    jobPosition: 'Software Engineer',
+    occupation: 'Software Engineer',
     account: AccountInfo(
       username: 'annguyen@example.com',
       state: 'ACTIVE',
@@ -51,9 +60,10 @@ class MockProfileRepository implements ProfileRepository {
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
+    XFile? rescuerCertificate,
   }) async {
     await _simulateDelay();
-    
+
     _currentProfile = _currentProfile.copyWith(
       fullname: dto.fullname ?? _currentProfile.fullname,
       nickname: dto.nickname ?? _currentProfile.nickname,
@@ -65,21 +75,22 @@ class MockProfileRepository implements ProfileRepository {
       longitude: dto.curLongitude ?? _currentProfile.longitude,
       latitude: dto.curLatitude ?? _currentProfile.latitude,
       visibilityMode: dto.visibilityMode ?? _currentProfile.visibilityMode,
-      avatarUrl:
-          avatar != null
-              ? 'https://i.pravatar.cc/300'
-              : (dto.avatarUrl ?? _currentProfile.avatarUrl),
+      avatarUrl: avatar != null
+          ? 'https://i.pravatar.cc/300'
+          : (dto.avatarUrl ?? _currentProfile.avatarUrl),
       citizenId: dto.citizenId ?? _currentProfile.citizenId,
-      citizenIdCardImg: dto.citizenIdCardImg ?? _currentProfile.citizenIdCardImg,
       frontCitizenIdCardImageUrl: frontCitizenId != null
           ? 'https://via.placeholder.com/400x300?text=CCCD+Front'
           : _currentProfile.frontCitizenIdCardImageUrl,
       backCitizenIdCardImageUrl: backCitizenId != null
           ? 'https://via.placeholder.com/400x300?text=CCCD+Back'
           : _currentProfile.backCitizenIdCardImageUrl,
-      jobPosition: dto.jobPosition ?? _currentProfile.jobPosition,
+      rescuerCertificateUrl: rescuerCertificate != null
+          ? 'https://example.com/mock-rescuer-certificate.pdf'
+          : _currentProfile.rescuerCertificateUrl,
+      occupation: dto.occupation ?? _currentProfile.occupation,
     );
-    
+
     return _currentProfile;
   }
 
@@ -89,7 +100,7 @@ class MockProfileRepository implements ProfileRepository {
     required double latitude,
   }) async {
     await _simulateDelay();
-    
+
     _currentProfile = _currentProfile.copyWith(
       longitude: longitude,
       latitude: latitude,
@@ -99,12 +110,12 @@ class MockProfileRepository implements ProfileRepository {
   @override
   Future<ProfileModel?> getUserById(String userId) async {
     await _simulateDelay();
-    
+
     // Mock other users
     if (userId == _currentProfile.userId) {
       return _currentProfile;
     }
-    
+
     // Return a mock user for testing
     return ProfileModel(
       userId: userId,
@@ -135,6 +146,49 @@ class MockProfileRepository implements ProfileRepository {
   Future<List<ProfileRoleRequestModel>> getMyRoleRequests() async {
     await _simulateDelay();
     return List<ProfileRoleRequestModel>.from(_requests);
+  }
+
+  @override
+  Future<List<ProfileUpdateRequestModel>> getMyProfileUpdateRequests() async {
+    await _simulateDelay();
+    return List<ProfileUpdateRequestModel>.from(_profileUpdateRequests);
+  }
+
+  @override
+  Future<void> revokeProfileUpdateRequest(String requestId) async {
+    await _simulateDelay();
+    final index = _profileUpdateRequests.indexWhere(
+      (request) => request.requestId == requestId,
+    );
+    if (index == -1) return;
+    final existing = _profileUpdateRequests[index];
+    _profileUpdateRequests[index] = ProfileUpdateRequestModel(
+      requestId: existing.requestId,
+      state: 'REVOKED',
+      note: existing.note,
+      createdAt: existing.createdAt,
+      respondedAt: DateTime.now(),
+      authorityName: existing.authorityName,
+    );
+  }
+
+  @override
+  Future<void> revokeRoleRequest(String requestId) async {
+    await _simulateDelay();
+    final index = _requests.indexWhere(
+      (request) => request.requestId == requestId,
+    );
+    if (index == -1) return;
+    final existing = _requests[index];
+    _requests[index] = ProfileRoleRequestModel(
+      requestId: existing.requestId,
+      type: existing.type,
+      state: 'REVOKED',
+      note: existing.note,
+      createdAt: existing.createdAt,
+      responsedAt: DateTime.now(),
+      authorityName: existing.authorityName,
+    );
   }
 
   Future<void> _simulateDelay() async {

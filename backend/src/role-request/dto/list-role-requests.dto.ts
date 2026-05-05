@@ -20,7 +20,7 @@ export class ListRoleRequestsDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['PENDING', 'APPROVED', 'REJECTED'])
+  @IsIn(['PENDING', 'APPROVED', 'REJECTED', 'REVOKED'])
   state?: string;
 
   @IsOptional()

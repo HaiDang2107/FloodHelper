@@ -7,6 +7,7 @@ This backend uses Prisma with a split schema layout under prisma/schema.
 - prisma/schema: domain-based schema files
   - user.prisma
   - charity.prisma
+  - request.prisma
   - social.prisma
   - chat.prisma
   - rescue.prisma
@@ -16,7 +17,6 @@ This backend uses Prisma with a split schema layout under prisma/schema.
 - prisma/migrations: migration history
 - prisma/seed.ts: main seed entry used by npm run db:seed
 - prisma/charity_seed.ts: charity-specific seed helper
-- prisma/signal_seed.ts: signal-specific seed helper
 - prisma/account_seed.ts: account/user seed helper
 
 ## Common Commands

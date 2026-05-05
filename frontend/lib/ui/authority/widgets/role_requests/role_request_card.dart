@@ -97,6 +97,8 @@ class RoleRequestCard extends StatelessWidget {
         return const Color(0xFF157F3B);
       case RoleRequestStatus.rejected:
         return const Color(0xFFB42318);
+      case RoleRequestStatus.revoked:
+        return const Color(0xFF667085);
     }
   }
 }

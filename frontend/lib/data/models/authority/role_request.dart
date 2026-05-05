@@ -1,13 +1,6 @@
-enum RoleRequestStatus {
-  pending,
-  approved,
-  rejected,
-}
+enum RoleRequestStatus { pending, approved, rejected, revoked }
 
-enum RoleRequestType {
-  rescuer,
-  benefactor,
-}
+enum RoleRequestType { rescuer, benefactor }
 
 extension RoleRequestStatusLabel on RoleRequestStatus {
   String get label {
@@ -18,6 +11,8 @@ extension RoleRequestStatusLabel on RoleRequestStatus {
         return 'Approved';
       case RoleRequestStatus.rejected:
         return 'Rejected';
+      case RoleRequestStatus.revoked:
+        return 'Revoked';
     }
   }
 }
@@ -59,7 +54,7 @@ class RoleRequest {
     this.residenceWardName,
     this.dateOfIssue,
     this.dateOfExpire,
-    this.jobPosition,
+    this.occupation,
     this.avatarUrl,
     this.frontImageUrl,
     this.backImageUrl,
@@ -91,7 +86,7 @@ class RoleRequest {
   final String? residenceWardName;
   final String? dateOfIssue;
   final String? dateOfExpire;
-  final String? jobPosition;
+  final String? occupation;
   final String? avatarUrl;
   final String? frontImageUrl;
   final String? backImageUrl;
@@ -128,7 +123,7 @@ class RoleRequest {
       residenceWardName: residenceWardName,
       dateOfIssue: dateOfIssue,
       dateOfExpire: dateOfExpire,
-      jobPosition: jobPosition,
+      occupation: occupation,
       avatarUrl: avatarUrl,
       frontImageUrl: frontImageUrl,
       backImageUrl: backImageUrl,

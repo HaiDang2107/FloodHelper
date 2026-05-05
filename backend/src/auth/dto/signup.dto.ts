@@ -68,7 +68,7 @@ export class SignupDto {
 
   @IsOptional()
   @IsString()
-  jobPosition?: string;
+  occupation?: string;
 
   // Account information
   @IsString()

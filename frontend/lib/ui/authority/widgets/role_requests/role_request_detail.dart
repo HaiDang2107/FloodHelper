@@ -69,8 +69,9 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
     }
 
     final currentRequest = widget.request!;
-    final dateLabel = DateFormat('MMM d, yyyy • h:mm a')
-        .format(currentRequest.submittedAt);
+    final dateLabel = DateFormat(
+      'MMM d, yyyy • h:mm a',
+    ).format(currentRequest.submittedAt);
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
@@ -88,12 +89,16 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
               children: [
                 CircleAvatar(
                   radius: 26,
-                  backgroundColor: AuthorityTheme.brandBlue.withValues(alpha: 0.12),
-                  backgroundImage: (currentRequest.avatarUrl != null &&
+                  backgroundColor: AuthorityTheme.brandBlue.withValues(
+                    alpha: 0.12,
+                  ),
+                  backgroundImage:
+                      (currentRequest.avatarUrl != null &&
                           currentRequest.avatarUrl!.trim().isNotEmpty)
                       ? NetworkImage(currentRequest.avatarUrl!.trim())
                       : null,
-                  child: (currentRequest.avatarUrl == null ||
+                  child:
+                      (currentRequest.avatarUrl == null ||
                           currentRequest.avatarUrl!.trim().isEmpty)
                       ? Text(
                           currentRequest.requesterName.isNotEmpty
@@ -113,18 +118,16 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
                     children: [
                       Text(
                         currentRequest.requesterName,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         currentRequest.requesterEmail,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: const Color(0xFF667085)),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF667085),
+                        ),
                       ),
                     ],
                   ),
@@ -134,7 +137,10 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
               ],
             ),
             const SizedBox(height: 18),
-            _InfoRow(label: 'Requested role', value: currentRequest.requestedRole.label),
+            _InfoRow(
+              label: 'Requested role',
+              value: currentRequest.requestedRole.label,
+            ),
             _InfoRow(label: 'Submitted', value: dateLabel),
             _InfoRow(label: 'Nickname', value: currentRequest.nickname ?? '-'),
             _InfoRow(label: 'Phone', value: currentRequest.phone),
@@ -157,34 +163,40 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
               label: 'Residence ward',
               value: currentRequest.residenceWardName ?? '-',
             ),
-            _InfoRow(label: 'Date of issue', value: _formatText(currentRequest.dateOfIssue)),
-            _InfoRow(label: 'Date of expire', value: _formatText(currentRequest.dateOfExpire)),
-            _InfoRow(label: 'Job position', value: currentRequest.jobPosition ?? '-'),
+            _InfoRow(
+              label: 'Date of issue',
+              value: _formatText(currentRequest.dateOfIssue),
+            ),
+            _InfoRow(
+              label: 'Date of expire',
+              value: _formatText(currentRequest.dateOfExpire),
+            ),
+            _InfoRow(
+              label: 'Job position',
+              value: currentRequest.occupation ?? '-',
+            ),
             if (currentRequest.status != RoleRequestStatus.pending) ...[
               const SizedBox(height: 16),
               Text(
                 'Reviewer notes',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               Text(
                 currentRequest.notes,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: const Color(0xFF475467)),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF475467),
+                ),
               ),
             ],
             const SizedBox(height: 16),
             Text(
               'ID documents',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             Row(
@@ -196,10 +208,10 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
                     onOpenPreview: currentRequest.frontImageUrl == null
                         ? null
                         : () => _openImagePreview(
-                              context,
-                              currentRequest.frontImageUrl!,
-                              'CCCD Front',
-                            ),
+                            context,
+                            currentRequest.frontImageUrl!,
+                            'CCCD Front',
+                          ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -210,10 +222,10 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
                     onOpenPreview: currentRequest.backImageUrl == null
                         ? null
                         : () => _openImagePreview(
-                              context,
-                              currentRequest.backImageUrl!,
-                              'CCCD Back',
-                            ),
+                            context,
+                            currentRequest.backImageUrl!,
+                            'CCCD Back',
+                          ),
                   ),
                 ),
               ],
@@ -301,29 +313,23 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
           const SizedBox(height: 12),
           Text(
             'Select a request to review',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 6),
           Text(
             'Details and documents will appear on the right.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: const Color(0xFF667085)),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: const Color(0xFF667085)),
           ),
         ],
       ),
     );
   }
 
-  void _openImagePreview(
-    BuildContext context,
-    String imageUrl,
-    String title,
-  ) {
+  void _openImagePreview(BuildContext context, String imageUrl, String title) {
     final trimmed = imageUrl.trim();
     if (trimmed.isEmpty) {
       return;
@@ -331,10 +337,7 @@ class _RoleRequestDetailState extends State<RoleRequestDetail> {
 
     showDialog<void>(
       context: context,
-      builder: (_) => ImageViewerDialog(
-        imageUrls: [trimmed],
-        title: title,
-      ),
+      builder: (_) => ImageViewerDialog(imageUrls: [trimmed], title: title),
     );
   }
 }
@@ -360,6 +363,8 @@ class _StatusBadge extends StatelessWidget {
         return const Color(0xFF157F3B);
       case RoleRequestStatus.rejected:
         return const Color(0xFFB42318);
+      case RoleRequestStatus.revoked:
+        return const Color(0xFF667085);
     }
   }
 
@@ -377,9 +382,9 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         status.label,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -402,20 +407,18 @@ class _InfoRow extends StatelessWidget {
             width: 120,
             child: Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: const Color(0xFF667085)),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: const Color(0xFF667085)),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -449,10 +452,9 @@ class _ImageCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: const Color(0xFF475467)),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: const Color(0xFF475467)),
           ),
           const SizedBox(height: 8),
           ClipRRect(
@@ -476,7 +478,7 @@ class _ImageCard extends StatelessWidget {
                       child: Image.network(
                         imageUrl!.trim(),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, _, _) => Container(
                           color: const Color(0xFFF1F5FF),
                           alignment: Alignment.center,
                           child: const Icon(

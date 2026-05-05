@@ -58,7 +58,7 @@ class _SidebarItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (trailing != null) trailing!,
+                ?trailing,
               ],
             ],
           ),

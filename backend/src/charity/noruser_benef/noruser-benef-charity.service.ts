@@ -365,9 +365,9 @@ export class NoruserBenefCharityService {
     if (campaign.organizedBy !== userId) throw new ForbiddenException('You are not allowed to send this campaign');
     if (String(campaign.state).toUpperCase() !== 'CREATED') throw new BadRequestException('Only CREATED campaigns can be submitted');
     if (!campaign.bankAccountId) throw new BadRequestException('Campaign bank account is required');
-    if (!campaign.organizer?.residenceWardCode) throw new BadRequestException('Benefactor residence ward is required before sending campaign request');
+    if (!campaign.organizer?.profiles?.[0]?.residenceWardCode) throw new BadRequestException('Benefactor residence ward is required before sending campaign request');
 
-    const authorities = await this.userRepository.findAuthoritiesByWard(campaign.organizer.residenceWardCode);
+    const authorities = await this.userRepository.findAuthoritiesByWard(campaign.organizer.profiles[0].residenceWardCode);
     const assignedAuthority = authorities && authorities.length > 0 ? authorities[0] : null;
     if (!assignedAuthority) throw new BadRequestException('No authority account found for benefactor residence area');
 

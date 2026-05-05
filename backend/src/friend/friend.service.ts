@@ -56,11 +56,12 @@ export class FriendService {
     );
 
     if (friendRequest.receiver.fcmToken) {
-      const senderName = friendRequest.sender.nickname || friendRequest.sender.fullname;
+      const senderName = friendRequest.sender.profiles?.[0]?.nickname || friendRequest.sender.profiles?.[0]?.fullname || '';
       await this.firebaseService.sendNotification(
         friendRequest.receiver.fcmToken,
         'New Friend Request',
         `${senderName} sent you a friend request`,
+
         {
           type: 'FRIEND_REQUEST',
           requestId: friendRequest.requestId,
@@ -81,32 +82,38 @@ export class FriendService {
       sender: friendRequest.sender,
       receiver: {
         userId: friendRequest.receiver.userId,
-        name: friendRequest.receiver.fullname,
-        displayName: friendRequest.receiver.nickname,
-        fullname: friendRequest.receiver.fullname,
-        nickname: friendRequest.receiver.nickname,
-        avatarUrl: friendRequest.receiver.avatarUrl,
+
+        name: friendRequest.receiver.profiles?.[0]?.fullname || '',
+        displayName: friendRequest.receiver.profiles?.[0]?.nickname || '',
+        fullname: friendRequest.receiver.profiles?.[0]?.fullname || '',
+        nickname: friendRequest.receiver.profiles?.[0]?.nickname || '',
+        avatarUrl: friendRequest.receiver.profiles?.[0]?.avatarUrl || '',
       },
+
     };
   }
 
   async getSentRequests(userId: string) {
     const requests = await this.friendRepository.getSentRequests(userId);
 
-    return requests.map((r) => ({
-      requestId: r.requestId,
-      state: r.state,
-      note: r.note,
-      createdAt: r.createdAt,
-      user: {
-        userId: r.receiver.userId,
-        name: r.receiver.fullname,
-        displayName: r.receiver.nickname,
-        fullname: r.receiver.fullname,
-        nickname: r.receiver.nickname,
-        avatarUrl: r.receiver.avatarUrl,
-      },
-    }));
+
+      return requests.map((r) => ({
+        requestId: r.requestId,
+        state: r.state,
+        note: r.note,
+        createdAt: r.createdAt,
+        user: {
+          userId: r.receiver.userId,
+          name: r.receiver.profiles?.[0]?.fullname || '',
+          displayName: r.receiver.profiles?.[0]?.nickname || '',
+          fullname: r.receiver.profiles?.[0]?.fullname || '',
+          nickname: r.receiver.profiles?.[0]?.nickname || '',
+          avatarUrl: r.receiver.profiles?.[0]?.avatarUrl || '',
+        },
+      }));
+
+
+
   }
 
   async getReceivedRequests(userId: string) {
@@ -119,13 +126,14 @@ export class FriendService {
       createdAt: r.createdAt,
       user: {
         userId: r.sender.userId,
-        name: r.sender.fullname,
-        displayName: r.sender.nickname,
-        fullname: r.sender.fullname,
-        nickname: r.sender.nickname,
-        avatarUrl: r.sender.avatarUrl,
+        name: r.sender.profiles?.[0]?.fullname || '',
+        displayName: r.sender.profiles?.[0]?.nickname || '',
+        fullname: r.sender.profiles?.[0]?.fullname || '',
+        nickname: r.sender.profiles?.[0]?.nickname || '',
+        avatarUrl: r.sender.profiles?.[0]?.avatarUrl || '',
       },
     }));
+
   }
 
   async acceptFriendRequest(requestId: string, userId: string) {
@@ -146,7 +154,8 @@ export class FriendService {
     }
 
     if (request.sender.fcmToken) {
-      const accepterName = request.receiver.nickname || request.receiver.fullname;
+      const accepterName = request.receiver.profiles?.[0]?.nickname || request.receiver.profiles?.[0]?.fullname || '';
+
       await this.firebaseService.sendNotification(
         request.sender.fcmToken,
         'Friend Request Accepted',
@@ -207,11 +216,11 @@ export class FriendService {
 
     return friendships.map((f) => ({
       userId: f.friend.userId,
-      name: f.friend.fullname,
-      displayName: f.friend.nickname,
-      fullname: f.friend.fullname,
-      nickname: f.friend.nickname,
-      avatarUrl: f.friend.avatarUrl,
+      name: f.friend.profiles[0]?.fullname || '',
+      displayName: f.friend.profiles[0]?.nickname || '',
+      fullname: f.friend.profiles[0]?.fullname || '',
+      nickname: f.friend.profiles[0]?.nickname || '',
+      avatarUrl: f.friend.profiles[0]?.avatarUrl || '',
       friendMapMode: f.friendMapMode,
     }));
   }

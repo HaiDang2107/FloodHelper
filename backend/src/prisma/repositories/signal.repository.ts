@@ -30,10 +30,17 @@ export class SignalRepository extends BaseRepository<any> {
       },
       include: {
         user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
           },
         },
       },
@@ -48,18 +55,32 @@ export class SignalRepository extends BaseRepository<any> {
       where: { signalId },
       include: {
         user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
             role: true,
           },
         },
         handledByUser: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
           },
         },
       },
@@ -76,8 +97,10 @@ export class SignalRepository extends BaseRepository<any> {
         user: {
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
           },
         },
       },
@@ -95,8 +118,10 @@ export class SignalRepository extends BaseRepository<any> {
         user: {
           select: {
             userId: true,
-            fullname: true,
-            avatarUrl: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
           },
         },
       },
@@ -109,20 +134,34 @@ export class SignalRepository extends BaseRepository<any> {
       where,
       include: {
         user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                phoneNumber: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            phoneNumber: true,
-            nickname: true,
-            avatarUrl: true,
           },
         },
         handledByUser: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              }
+            }
+          },
           select: {
             userId: true,
-            fullname: true,
-            nickname: true,
-            avatarUrl: true,
           },
         },
       },
@@ -149,14 +188,19 @@ export class SignalRepository extends BaseRepository<any> {
         user: {
           select: {
             userId: true,
-            fullname: true,
-            phoneNumber: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, phoneNumber: true },
+            },
           },
         },
         handledByUser: {
           select: {
             userId: true,
-            fullname: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true },
+            },
           },
         },
       },
@@ -174,8 +218,10 @@ export class SignalRepository extends BaseRepository<any> {
         user: {
           select: {
             userId: true,
-            fullname: true,
-            phoneNumber: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, phoneNumber: true },
+            },
           },
         },
       },

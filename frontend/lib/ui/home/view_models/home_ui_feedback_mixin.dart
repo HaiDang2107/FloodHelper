@@ -45,6 +45,7 @@ mixin HomeUiFeedbackMixin on _HomeViewModelBase {
     state = state.copyWith(clearUiEvent: true);
   }
 
+  @override
   void _emitUiEvent(String message, HomeUiEventType type) {
     state = state.copyWith(
       uiEvent: HomeUiEvent(type: type, message: message),

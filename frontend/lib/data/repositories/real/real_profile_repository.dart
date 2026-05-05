@@ -22,12 +22,14 @@ class RealProfileRepository implements ProfileRepository {
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
+    XFile? rescuerCertificate,
   }) async {
     return await _profileService.updateProfile(
       dto,
       avatar: avatar,
       frontCitizenId: frontCitizenId,
       backCitizenId: backCitizenId,
+      rescuerCertificate: rescuerCertificate,
     );
   }
 
@@ -57,4 +59,18 @@ class RealProfileRepository implements ProfileRepository {
     return _profileService.getMyRoleRequests();
   }
 
+  @override
+  Future<List<ProfileUpdateRequestModel>> getMyProfileUpdateRequests() async {
+    return _profileService.getMyProfileUpdateRequests();
+  }
+
+  @override
+  Future<void> revokeProfileUpdateRequest(String requestId) async {
+    await _profileService.revokeProfileUpdateRequest(requestId);
+  }
+
+  @override
+  Future<void> revokeRoleRequest(String requestId) async {
+    await _profileService.revokeRoleRequest(requestId);
+  }
 }

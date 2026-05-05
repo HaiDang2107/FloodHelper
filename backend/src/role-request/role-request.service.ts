@@ -10,13 +10,18 @@ import {
   ListRoleRequestsDto,
   RespondRoleRequestDto,
 } from './dto';
-import { UserRepository, RoleRequestRepository } from '../prisma/repositories';
+import {
+  UserRepository,
+  RoleRequestRepository,
+  ProfileRequestRepository,
+} from '../prisma/repositories';
 
 @Injectable()
 export class RoleRequestService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly roleRequestRepository: RoleRequestRepository,
+    private readonly profileRequestRepository: ProfileRequestRepository,
   ) {}
 
   async createRequest(userId: string, dto: CreateRoleRequestDto) {
@@ -33,27 +38,23 @@ export class RoleRequestService {
       );
     }
 
-    if (!user.residenceWardCode) {
-      throw new BadRequestException('Residence ward is required to submit a role request');
+    if (dto.type === 'RESCUER' && !user.rescuerCertificateUrl) {
+      throw new BadRequestException('Rescuer certificate is required');
     }
 
     if (user.role.includes(dto.type)) {
       throw new ConflictException(`User already has role ${dto.type}`);
     }
 
-    const existingPending = await this.roleRequestRepository.findPendingRequest(
-      userId,
-      dto.type,
-    );
+    const existingPending = await this.roleRequestRepository.findAnyPendingRequest(userId);
+    const pendingProfile = await this.profileRequestRepository.findPendingForUser(userId);
 
-    if (existingPending) {
-      throw new ConflictException(
-        `You already have a pending ${dto.type.toLowerCase()} request`,
-      );
+    if (existingPending || pendingProfile) {
+      throw new ConflictException('Exist pending requests. Please revoke them to update your roles.');
     }
 
     const authorities = await this.userRepository.findAuthoritiesByWard(
-      user.residenceWardCode,
+      user.residenceWardCode!,
     );
     const authority = authorities[0];
 
@@ -64,7 +65,7 @@ export class RoleRequestService {
     }
 
     const request = await this.roleRequestRepository.createRequest({
-      createdBy: userId,
+      profileId: user.profileId,
       checkBy: authority.userId,
       type: dto.type,
       state: 'PENDING',
@@ -136,6 +137,28 @@ export class RoleRequestService {
     return this.respond(authorityUserId, requestId, 'REJECTED', dto);
   }
 
+  async revoke(requesterUserId: string, requestId: string) {
+    const existing = await this.roleRequestRepository.getRequestWithUser(requestId);
+
+    if (!existing) {
+      throw new NotFoundException('Role request not found');
+    }
+
+    if (existing.profile.userId !== requesterUserId) {
+      throw new ForbiddenException('You are not allowed to revoke this request');
+    }
+
+    if (existing.state !== ('PENDING' as any)) {
+      throw new ConflictException('Only pending requests can be revoked');
+    }
+
+    return this.roleRequestRepository.updateRequestState(
+      requestId,
+      'REVOKED',
+      existing.note ?? undefined,
+    );
+  }
+
   private async respond(
     authorityUserId: string,
     requestId: string,
@@ -172,7 +195,7 @@ export class RoleRequestService {
       dob: user.dob,
       gender: user.gender,
       phoneNumber: user.phoneNumber,
-      jobPosition: user.jobPosition,
+      occupation: user.occupation,
       citizenId: user.citizenId,
       avatarUrl: user.avatarUrl,
       frontCitizenIdCardImageUrl: user.frontCitizenIdCardImageUrl,

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' show AsyncData;
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,7 +29,9 @@ part 'home_ui_feedback_mixin.dart';
 part 'home_view_model.g.dart';
 
 abstract class _HomeViewModelBase extends _$HomeViewModel { // Định nghĩa các state chung, các mixin đều có thể sử dụng.
+  @override
   HomeState get state;
+  @override
   set state(HomeState value);
 
   MapController get mapController;
@@ -71,21 +72,31 @@ class HomeViewModel extends _HomeViewModelBase
     HomeCampaignMapMixin,
     HomeContentMixin,
     HomeUiFeedbackMixin {
+  @override
   final MapController mapController = MapController();
+  @override
   final ImagePicker _imagePicker = ImagePicker();
+  @override
   late final LocationTrackingService _locationTrackingService = ref.read(
     locationTrackingServiceProvider,
   );
 
   // MQTT service (UI isolate — for subscribing to friend locations)
+  @override
   late final MqttService _mqttService = ref.read(mqttServiceProvider);
+  @override
   late final SignalService _signalService = ref.read(signalServiceProvider);
 
   // Repositories
+  @override
   late final UserRepository _userRepository;
+  @override
   late final PostRepository _postRepository;
+  @override
   late final AnnouncementRepository _announcementRepository;
+  @override
   late final FriendRepository _friendRepository;
+  @override
   late final CharityCampaignRepository _charityCampaignRepository;
 
   // Location stream subscription
@@ -93,9 +104,13 @@ class HomeViewModel extends _HomeViewModelBase
 
   // Friend location stream subscription
   StreamSubscription<FriendLocationUpdate>? _friendLocationSubscription;
+  @override
   StreamSubscription<VictimAlert>? _victimLocationSubscription;
+  @override
   StreamSubscription<VictimSignalEvent>? _victimStoppedSubscription;
+  @override
   StreamSubscription<VictimSignalEvent>? _victimHandledSubscription;
+  @override
   StreamSubscription<RescuerReplyEvent>? _rescuerReplySubscription;
   bool _isMessagingSetup = false;
 

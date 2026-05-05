@@ -3,11 +3,11 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/profile_model.dart';
 
-class RoleRequestItem extends StatelessWidget {
-  final ProfileRoleRequestModel request;
+class ProfileUpdateRequestItem extends StatelessWidget {
+  final ProfileUpdateRequestModel request;
   final VoidCallback? onRevoke;
 
-  const RoleRequestItem({
+  const ProfileUpdateRequestItem({
     super.key,
     required this.request,
     this.onRevoke,
@@ -39,33 +39,6 @@ class RoleRequestItem extends StatelessWidget {
     }
   }
 
-  String _roleLabel() {
-    switch (request.type.toUpperCase()) {
-      case 'RESCUER':
-        return 'Rescuer';
-      default:
-        return 'Benefactor';
-    }
-  }
-
-  IconData _roleIcon() {
-    switch (request.type.toUpperCase()) {
-      case 'RESCUER':
-        return Icons.shield;
-      default:
-        return Icons.volunteer_activism;
-    }
-  }
-
-  Color _roleIconColor() {
-    switch (request.type.toUpperCase()) {
-      case 'RESCUER':
-        return Colors.blue;
-      default:
-        return Colors.green;
-    }
-  }
-
   String _formatDateTime(DateTime value) {
     return DateFormat('yyyy-MM-dd HH:mm').format(value);
   }
@@ -74,7 +47,7 @@ class RoleRequestItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusLabel = _statusLabel();
     final statusColor = _getStatusColor();
-    final showResponseInfo = request.state == 'APPROVED' || request.state == 'REJECTED';
+    final isPending = request.state.toUpperCase() == 'PENDING';
 
     return Card(
       color: Colors.grey[50],
@@ -90,24 +63,23 @@ class RoleRequestItem extends StatelessWidget {
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundColor: _roleIconColor().withValues(alpha: 0.14),
-              child: Icon(_roleIcon(), color: _roleIconColor()),
+              backgroundColor: statusColor.withValues(alpha: 0.14),
+              child: Icon(Icons.assignment_outlined, color: statusColor),
             ),
-            title: Text(
-              _roleLabel(),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+            title: const Text(
+              'Profile update',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Requested at: ${_formatDateTime(request.createdAt)}', style: const TextStyle(color: Colors.black87)),
-                if (showResponseInfo)
-                  Text(
-                    'Responded at: ${request.responsedAt != null ? _formatDateTime(request.responsedAt!) : '-'}',
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                if (showResponseInfo)
-                  Text('Note: ${request.note?.trim().isNotEmpty == true ? request.note!.trim() : 'No note'}', style: const TextStyle(color: Colors.black87)),
+                if (request.respondedAt != null)
+                  Text('Responded at: ${_formatDateTime(request.respondedAt!)}', style: const TextStyle(color: Colors.black87)),
+                if (request.authorityName != null)
+                  Text('Reviewer: ${request.authorityName}', style: const TextStyle(color: Colors.black87)),
+                if (request.note?.trim().isNotEmpty == true)
+                  Text('Note: ${request.note!.trim()}', style: const TextStyle(color: Colors.black87)),
               ],
             ),
             trailing: Container(
@@ -127,7 +99,7 @@ class RoleRequestItem extends StatelessWidget {
               ),
             ),
           ),
-          if (request.state.toUpperCase() == 'PENDING' && onRevoke != null)
+          if (isPending && onRevoke != null)
             Padding(
               padding: const EdgeInsets.only(right: 16.0, bottom: 8.0, top: 0.0),
               child: Row(

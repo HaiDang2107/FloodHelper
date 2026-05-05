@@ -91,5 +91,5 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  jobPosition?: string;
+  occupation?: string;
 }

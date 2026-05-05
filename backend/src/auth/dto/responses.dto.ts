@@ -47,8 +47,8 @@ export class SigninResponseDto {
       dateOfIssue?: Date | null;
       dateOfExpire?: Date | null;
       citizenId?: string | null;
-      citizenIdCardImg?: string | null;
-      jobPosition?: string | null;
+      frontCitizenIdCardImageUrl?: string | null;
+      occupation?: string | null;
       showCharityCampaignLocations?: boolean;
     };
     tokens: {

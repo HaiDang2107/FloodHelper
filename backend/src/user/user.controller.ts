@@ -46,17 +46,34 @@ export class UserController {
         { name: 'avatar', maxCount: 1 },
         { name: 'citizenFront', maxCount: 1 },
         { name: 'citizenBack', maxCount: 1 },
+        { name: 'rescuerCertificate', maxCount: 1 },
       ],
       {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
       fileFilter: (_req, file, cb) => {
-        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!allowed.includes(file.mimetype)) {
-          cb(new BadRequestException('Only JPG, PNG, or WebP images are allowed'), false);
+        const imageFields = ['avatar', 'citizenFront', 'citizenBack'];
+        const allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
+
+        if (imageFields.includes(file.fieldname)) {
+          if (!allowedImages.includes(file.mimetype)) {
+            cb(new BadRequestException('Only JPG, PNG, or WebP images are allowed'), false);
+            return;
+          }
+          cb(null, true);
           return;
         }
-        cb(null, true);
+
+        if (file.fieldname === 'rescuerCertificate') {
+          if (file.mimetype !== 'application/pdf') {
+            cb(new BadRequestException('Only PDF files are allowed'), false);
+            return;
+          }
+          cb(null, true);
+          return;
+        }
+
+        cb(new BadRequestException('Unsupported upload field'), false);
       },
       },
     ),
@@ -69,40 +86,10 @@ export class UserController {
       avatar?: UploadedFilePayload[];
       citizenFront?: UploadedFilePayload[];
       citizenBack?: UploadedFilePayload[];
+      rescuerCertificate?: UploadedFilePayload[];
     } = {},
   ) {
-    const safeBody = body ?? {};
-
-    const updateUserDto: UpdateUserDto = {
-      ...safeBody,
-      originProvinceCode:
-        safeBody.originProvinceCode != null
-          ? Number(safeBody.originProvinceCode)
-          : undefined,
-      originWardCode:
-        safeBody.originWardCode != null
-          ? Number(safeBody.originWardCode)
-          : undefined,
-      residenceProvinceCode:
-        safeBody.residenceProvinceCode != null
-          ? Number(safeBody.residenceProvinceCode)
-          : undefined,
-      residenceWardCode:
-        safeBody.residenceWardCode != null
-          ? Number(safeBody.residenceWardCode)
-          : undefined,
-      curLongitude:
-        safeBody.curLongitude != null
-          ? Number(safeBody.curLongitude)
-          : undefined,
-      curLatitude:
-        safeBody.curLatitude != null ? Number(safeBody.curLatitude) : undefined,
-      showCharityCampaignLocations:
-        safeBody.showCharityCampaignLocations != null
-          ? String(safeBody.showCharityCampaignLocations).toLowerCase() ===
-            'true'
-          : undefined,
-    };
+    const updateUserDto = this.parseUpdateUserDto(body);
 
     return this.userService.update(
       req.user.userId,
@@ -110,7 +97,118 @@ export class UserController {
       files.avatar?.[0],
       files.citizenFront?.[0],
       files.citizenBack?.[0],
+      files.rescuerCertificate?.[0],
     );
+  }
+
+  /**
+   * Create a profile updating request (Benefactor/Rescuer only)
+   * POST /user/profile/update-requests
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('profile/update-requests')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'avatar', maxCount: 1 },
+        { name: 'citizenFront', maxCount: 1 },
+        { name: 'citizenBack', maxCount: 1 },
+        { name: 'rescuerCertificate', maxCount: 1 },
+      ],
+      {
+        storage: memoryStorage(),
+        limits: { fileSize: 5 * 1024 * 1024 },
+        fileFilter: (_req, file, cb) => {
+          const imageFields = ['avatar', 'citizenFront', 'citizenBack'];
+          const allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
+
+          if (imageFields.includes(file.fieldname)) {
+            if (!allowedImages.includes(file.mimetype)) {
+              cb(new BadRequestException('Only JPG, PNG, or WebP images are allowed'), false);
+              return;
+            }
+            cb(null, true);
+            return;
+          }
+
+          if (file.fieldname === 'rescuerCertificate') {
+            if (file.mimetype !== 'application/pdf') {
+              cb(new BadRequestException('Only PDF files are allowed'), false);
+              return;
+            }
+            cb(null, true);
+            return;
+          }
+
+          cb(new BadRequestException('Unsupported upload field'), false);
+        },
+      },
+    ),
+  )
+  async createProfileUpdateRequest(
+    @Request() req,
+    @Body() body: Record<string, unknown> = {},
+    @UploadedFiles()
+    files: {
+      avatar?: UploadedFilePayload[];
+      citizenFront?: UploadedFilePayload[];
+      citizenBack?: UploadedFilePayload[];
+      rescuerCertificate?: UploadedFilePayload[];
+    } = {},
+  ) {
+    const updateUserDto = this.parseUpdateUserDto(body);
+
+    const result = await this.userService.createProfileUpdateRequest(
+      req.user.userId,
+      updateUserDto,
+      files.avatar?.[0],
+      files.citizenFront?.[0],
+      files.citizenBack?.[0],
+      files.rescuerCertificate?.[0],
+    );
+
+    return {
+      success: true,
+      message: 'Profile update request created successfully',
+      data: result,
+    };
+  }
+
+  /**
+   * Get current user's profile update requests
+   * GET /user/profile/update-requests
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('profile/update-requests')
+  async listProfileUpdateRequests(@Request() req) {
+    const result = await this.userService.listProfileUpdateRequests(req.user.userId);
+    return {
+      success: true,
+      message: 'Profile update requests retrieved successfully',
+      data: result,
+    };
+  }
+
+  /**
+   * Revoke profile update request
+   * PATCH /user/profile/update-requests/:id/revoke
+   */
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile/update-requests/:id/revoke')
+  async revokeProfileUpdateRequest(
+    @Request() req,
+    @Param('id', ParseUUIDPipe) requestId: string,
+  ) {
+    const result = await this.userService.revokeProfileUpdateRequest(
+      req.user.userId,
+      requestId,
+    );
+
+    return {
+      success: true,
+      message: 'Profile update request revoked successfully',
+      data: result,
+    };
   }
 
   /**
@@ -201,5 +299,39 @@ export class UserController {
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.userService.findOne(id);
+  }
+
+  private parseUpdateUserDto(body: Record<string, unknown> = {}): UpdateUserDto {
+    const safeBody = body ?? {};
+
+    return {
+      ...safeBody,
+      originProvinceCode:
+        safeBody.originProvinceCode != null
+          ? Number(safeBody.originProvinceCode)
+          : undefined,
+      originWardCode:
+        safeBody.originWardCode != null
+          ? Number(safeBody.originWardCode)
+          : undefined,
+      residenceProvinceCode:
+        safeBody.residenceProvinceCode != null
+          ? Number(safeBody.residenceProvinceCode)
+          : undefined,
+      residenceWardCode:
+        safeBody.residenceWardCode != null
+          ? Number(safeBody.residenceWardCode)
+          : undefined,
+      curLongitude:
+        safeBody.curLongitude != null
+          ? Number(safeBody.curLongitude)
+          : undefined,
+      curLatitude:
+        safeBody.curLatitude != null ? Number(safeBody.curLatitude) : undefined,
+      showCharityCampaignLocations:
+        safeBody.showCharityCampaignLocations != null
+          ? String(safeBody.showCharityCampaignLocations).toLowerCase() === 'true'
+          : undefined,
+    };
   }
 }

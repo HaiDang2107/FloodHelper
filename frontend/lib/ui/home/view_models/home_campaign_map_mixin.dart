@@ -89,6 +89,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
     return false;
   }
 
+  @override
   Future<void> loadDistributingCampaignLocations() async {
     if (!state.showCharityCampaignLocations) {
       state = state.copyWith(campaignLocations: const []);
@@ -253,6 +254,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
     }
   }
 
+  @override
   void _clearSelectionIfHidden() {
     final selectedId = state.selectedPinId;
     if (selectedId == null) {

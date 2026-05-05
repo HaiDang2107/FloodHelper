@@ -136,6 +136,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
     }
   }
 
+  @override
   Future<void> _loadFriendsWithMapMode() async {
     try {
       final friends = await _friendRepository.getFriends();
@@ -187,6 +188,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
     }
   }
 
+  @override
   Future<void> refreshFriends() async {
     await _loadFriendsWithMapMode();
     _syncAllowedFriends();
@@ -433,6 +435,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
     _locationTrackingService.setSosStatus(false);
   }
 
+  @override
   Future<void> syncAfterAcceptFriendRequest(String friendUserId) async {
     final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
     updatedLocations.remove(friendUserId);

@@ -1,0 +1,51 @@
+enum RoleRequestType {
+  BENEFACTOR
+  RESCUER
+}
+
+enum RoleRequestState {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum ProfileRequestState {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+model RoleUpdatingRequest {
+  requestId   String    @id @default(uuid()) @db.Uuid @map("request_id")
+  profileId   String    @db.Uuid @map("profile_id")
+  checkBy     String?   @db.Uuid @map("check_by")
+  type        RoleRequestType
+  state       RoleRequestState @default(PENDING)
+  note        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  responsedAt DateTime? @map("responsed_at")
+
+  profile   Profile  @relation("RoleRequestCreator", fields: [profileId], references: [profileId])
+  authority User?    @relation("RoleRequestChecker", fields: [checkBy], references: [userId])
+
+  @@map("RoleUpdatingRequest")
+}
+
+model ProfileUpdatingRequest {
+  requestId        String   @id @default(uuid()) @db.Uuid @map("request_id")
+  currentProfileId String   @db.Uuid @map("current_profile_id")
+  newProfileId     String   @db.Uuid @map("new_profile_id")
+  checkedBy        String?  @db.Uuid @map("checked_by")
+  state            ProfileRequestState @default(PENDING)
+  note             String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  respondedAt      DateTime? @map("responded_at")
+
+  currentProfile Profile @relation("ProfileRequestCurrent", fields: [currentProfileId], references: [profileId])
+  newProfile     Profile @relation("ProfileRequestNew", fields: [newProfileId], references: [profileId])
+  checker        User?   @relation("ProfileRequestChecker", fields: [checkedBy], references: [userId])
+
+  @@map("ProfileUpdatingRequest")
+}

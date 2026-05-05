@@ -43,7 +43,7 @@ Future<void> onStart(ServiceInstance service) async {
   StreamSubscription? rescuerSubscription;
   StreamSubscription? rescuerReplySubscription;
 
-  Map<String, double>? _cachedPosition; // Lưu tạm vị trí mới nhất để focus lúc vào app
+  Map<String, double>? cachedPosition; // Lưu tạm vị trí mới nhất để focus lúc vào app
 
   void teardownRescuerSubscription() {
     rescuerSubscription?.cancel();
@@ -263,9 +263,9 @@ Future<void> onStart(ServiceInstance service) async {
   service.on('requestImmediateLocation').listen((_) async {
     if (kDebugMode) print('📍 [BG] UI vừa request lấy tọa độ tức thì!');
 
-    if (_cachedPosition != null) {
+    if (cachedPosition != null) {
       if (kDebugMode) print('📍 [BG] Trả về tọa độ từ Cache cho UI siêu nhanh!');
-      service.invoke('onLocationUpdate', _cachedPosition);
+      service.invoke('onLocationUpdate', cachedPosition);
       return;
     }
 
@@ -305,7 +305,9 @@ Future<void> onStart(ServiceInstance service) async {
     // Timer.periodic does not await async work; guard to avoid overlapping ticks.
     if (isPublishingLocation) {
       if (kDebugMode && AppConfig.mqttVerboseLogging) {
-        print('📍 [BG] Skip tick because previous publish is still running');
+        if (kDebugMode) {
+          print('📍 [BG] Skip tick because previous publish is still running');
+        }
       }
       return;
     }
@@ -323,7 +325,7 @@ Future<void> onStart(ServiceInstance service) async {
         ),
       );
 
-      _cachedPosition = {
+      cachedPosition = {
         'latitude': position.latitude,
         'longitude': position.longitude,
       };
@@ -338,7 +340,9 @@ Future<void> onStart(ServiceInstance service) async {
           'isSoS': isSos,
         });
         if (kDebugMode && AppConfig.mqttVerboseLogging) {
-          print(payload);
+          if (kDebugMode) {
+            print(payload);
+          }
           print(AppConfig.mqttCurrentLocationSuffix);
         }
         mqttService.publishRaw(

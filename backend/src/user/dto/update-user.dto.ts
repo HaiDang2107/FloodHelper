@@ -81,9 +81,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsBoolean()
   showCharityCampaignLocations?: boolean;
 
-  @IsOptional()
-  @IsString()
-  avatarUrl?: string;
 
   @IsOptional()
   @IsString()
@@ -91,17 +88,5 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   @IsOptional()
   @IsString()
-  citizenIdCardImg?: string;
-
-  @IsOptional()
-  @IsString()
-  frontCitizenIdCardImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  backCitizenIdCardImageUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  jobPosition?: string;
+  occupation?: string;
 }

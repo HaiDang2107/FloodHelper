@@ -53,6 +53,19 @@ export class RoleRequestController {
     };
   }
 
+  @Patch('user/profile/role-requests/:id/revoke')
+  async revokeRoleRequest(
+    @CurrentUser() user: any,
+    @Param('id') requestId: string,
+  ) {
+    const result = await this.roleRequestService.revoke(user.userId, requestId);
+    return {
+      success: true,
+      message: 'Role request revoked successfully',
+      data: result,
+    };
+  }
+
   @Get('authority/role-requests')
   @Roles(UserRole.AUTHORITY)
   async listRoleRequests(

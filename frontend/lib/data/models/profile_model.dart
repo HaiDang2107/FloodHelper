@@ -28,7 +28,8 @@ class ProfileModel {
   final String? citizenIdCardImg;
   final String? frontCitizenIdCardImageUrl;
   final String? backCitizenIdCardImageUrl;
-  final String? jobPosition;
+  final String? occupation;
+  final String? rescuerCertificateUrl;
   final AccountInfo? account;
 
   const ProfileModel({
@@ -60,7 +61,8 @@ class ProfileModel {
     this.citizenIdCardImg,
     this.frontCitizenIdCardImageUrl,
     this.backCitizenIdCardImageUrl,
-    this.jobPosition,
+    this.occupation,
+    this.rescuerCertificateUrl,
     this.account,
   });
 
@@ -91,11 +93,10 @@ class ProfileModel {
       residenceWardName: json['residenceWardName']?.toString(),
       dateOfIssue: json['dateOfIssue'],
       dateOfExpire: json['dateOfExpire'],
-      roles: List<String>.from(json['roles'] ?? []),
       longitude: json['longitude']?.toDouble(),
       latitude: json['latitude']?.toDouble(),
       visibilityMode: json['visibilityMode'] ?? 'PUBLIC',
-        showCharityCampaignLocations:
+      showCharityCampaignLocations:
           json['showCharityCampaignLocations'] as bool? ?? false,
       avatarUrl: json['avatarUrl'],
       citizenId: json['citizenId'],
@@ -103,9 +104,14 @@ class ProfileModel {
       citizenIdCardImg: json['citizenIdCardImg'],
       frontCitizenIdCardImageUrl: json['frontCitizenIdCardImageUrl'],
       backCitizenIdCardImageUrl: json['backCitizenIdCardImageUrl'],
-      jobPosition: json['jobPosition'],
-      account: json['account'] != null 
-          ? AccountInfo.fromJson(json['account']) 
+      occupation: json['occupation'] ?? json['occupation'],
+      rescuerCertificateUrl: json['rescuerCertificateUrl'],
+      roles: (json['roles'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      account: json['account'] != null
+          ? AccountInfo.fromJson(json['account'])
           : null,
     );
   }
@@ -148,7 +154,8 @@ class ProfileModel {
       'citizenIdCardImg': citizenIdCardImg,
       'frontCitizenIdCardImageUrl': frontCitizenIdCardImageUrl,
       'backCitizenIdCardImageUrl': backCitizenIdCardImageUrl,
-      'jobPosition': jobPosition,
+      'occupation': occupation,
+      'rescuerCertificateUrl': rescuerCertificateUrl,
       'account': account?.toJson(),
     };
   }
@@ -179,10 +186,10 @@ class ProfileModel {
     String? avatarUrl,
     String? citizenId,
     String? phoneNumber,
-    String? citizenIdCardImg,
     String? frontCitizenIdCardImageUrl,
     String? backCitizenIdCardImageUrl,
-    String? jobPosition,
+    String? occupation,
+    String? rescuerCertificateUrl,
     AccountInfo? account,
   }) {
     return ProfileModel(
@@ -197,8 +204,10 @@ class ProfileModel {
       originProvinceName: originProvinceName ?? this.originProvinceName,
       originWardCode: originWardCode ?? this.originWardCode,
       originWardName: originWardName ?? this.originWardName,
-      residenceProvinceCode: residenceProvinceCode ?? this.residenceProvinceCode,
-      residenceProvinceName: residenceProvinceName ?? this.residenceProvinceName,
+      residenceProvinceCode:
+          residenceProvinceCode ?? this.residenceProvinceCode,
+      residenceProvinceName:
+          residenceProvinceName ?? this.residenceProvinceName,
       residenceWardCode: residenceWardCode ?? this.residenceWardCode,
       residenceWardName: residenceWardName ?? this.residenceWardName,
       dateOfIssue: dateOfIssue ?? this.dateOfIssue,
@@ -212,12 +221,14 @@ class ProfileModel {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       citizenId: citizenId ?? this.citizenId,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      citizenIdCardImg: citizenIdCardImg ?? this.citizenIdCardImg,
+      citizenIdCardImg: citizenIdCardImg ?? citizenIdCardImg,
       frontCitizenIdCardImageUrl:
           frontCitizenIdCardImageUrl ?? this.frontCitizenIdCardImageUrl,
       backCitizenIdCardImageUrl:
           backCitizenIdCardImageUrl ?? this.backCitizenIdCardImageUrl,
-      jobPosition: jobPosition ?? this.jobPosition,
+      occupation: occupation ?? this.occupation,
+      rescuerCertificateUrl:
+          rescuerCertificateUrl ?? this.rescuerCertificateUrl,
       account: account ?? this.account,
     );
   }
@@ -239,8 +250,8 @@ class AccountInfo {
     return AccountInfo(
       username: json['username'] ?? '',
       state: json['state'] ?? '',
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : null,
     );
   }
@@ -278,10 +289,10 @@ class UpdateProfileDto {
   final bool? showCharityCampaignLocations;
   final String? avatarUrl;
   final String? citizenId;
-  final String? citizenIdCardImg;
   final String? frontCitizenIdCardImageUrl;
   final String? backCitizenIdCardImageUrl;
-  final String? jobPosition;
+  final String? occupation;
+  final String? rescuerCertificateUrl;
 
   const UpdateProfileDto({
     this.fullname,
@@ -306,10 +317,10 @@ class UpdateProfileDto {
     this.showCharityCampaignLocations,
     this.avatarUrl,
     this.citizenId,
-    this.citizenIdCardImg,
     this.frontCitizenIdCardImageUrl,
     this.backCitizenIdCardImageUrl,
-    this.jobPosition,
+    this.occupation,
+    this.rescuerCertificateUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -338,14 +349,16 @@ class UpdateProfileDto {
     }
     if (avatarUrl != null) map['avatarUrl'] = avatarUrl;
     if (citizenId != null) map['citizenId'] = citizenId;
-    if (citizenIdCardImg != null) map['citizenIdCardImg'] = citizenIdCardImg;
     if (frontCitizenIdCardImageUrl != null) {
       map['frontCitizenIdCardImageUrl'] = frontCitizenIdCardImageUrl;
     }
     if (backCitizenIdCardImageUrl != null) {
       map['backCitizenIdCardImageUrl'] = backCitizenIdCardImageUrl;
     }
-    if (jobPosition != null) map['jobPosition'] = jobPosition;
+    if (occupation != null) map['occupation'] = occupation;
+    if (rescuerCertificateUrl != null) {
+      map['rescuerCertificateUrl'] = rescuerCertificateUrl;
+    }
     return map;
   }
 }
@@ -385,6 +398,44 @@ class ProfileRoleRequestModel {
       ),
       responsedAt: json['responsedAt'] != null
           ? DateTime.tryParse(json['responsedAt'].toString())
+          : null,
+      authorityName: authorityName,
+    );
+  }
+}
+
+class ProfileUpdateRequestModel {
+  final String requestId;
+  final String state;
+  final String? note;
+  final DateTime createdAt;
+  final DateTime? respondedAt;
+  final String? authorityName;
+
+  const ProfileUpdateRequestModel({
+    required this.requestId,
+    required this.state,
+    this.note,
+    required this.createdAt,
+    this.respondedAt,
+    this.authorityName,
+  });
+
+  factory ProfileUpdateRequestModel.fromJson(Map<String, dynamic> json) {
+    final checker = json['checker'] as Map<String, dynamic>?;
+    final authorityName = checker == null
+        ? null
+        : (checker['nickname'] ?? checker['fullname'])?.toString();
+
+    return ProfileUpdateRequestModel(
+      requestId: json['requestId']?.toString() ?? '',
+      state: json['state']?.toString() ?? 'PENDING',
+      note: json['note']?.toString(),
+      createdAt: DateTime.parse(
+        json['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
+      respondedAt: json['respondedAt'] != null
+          ? DateTime.tryParse(json['respondedAt'].toString())
           : null,
       authorityName: authorityName,
     );

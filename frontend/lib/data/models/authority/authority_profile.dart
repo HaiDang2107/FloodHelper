@@ -21,7 +21,7 @@ class AuthorityProfile {
     this.dateOfIssue,
     this.dateOfExpire,
     this.citizenId,
-    this.jobPosition,
+    this.occupation,
     required this.avatarUrl,
   });
 
@@ -46,6 +46,6 @@ class AuthorityProfile {
   final String? dateOfIssue;
   final String? dateOfExpire;
   final String? citizenId;
-  final String? jobPosition;
+  final String? occupation;
   final String avatarUrl;
 }

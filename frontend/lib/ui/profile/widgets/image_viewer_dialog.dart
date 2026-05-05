@@ -7,11 +7,11 @@ class ImageViewerDialog extends StatefulWidget {
   final String title;
 
   const ImageViewerDialog({
-    Key? key,
+    super.key,
     required this.imageUrls,
     this.initialIndex = 0,
     this.title = 'Image Viewer',
-  }) : super(key: key);
+  });
 
   @override
   State<ImageViewerDialog> createState() => _ImageViewerDialogState();
