@@ -428,6 +428,7 @@ class ProfileViewModel extends _$ProfileViewModel {
     String? dateOfExpire,
     String? occupation,
     String? citizenId,
+    String? phoneNumber,
     String? avatarUrl,
     String? visibilityMode,
     XFile? rescuerCertificate,
@@ -461,6 +462,7 @@ class ProfileViewModel extends _$ProfileViewModel {
         avatarUrl: avatarUrl,
         visibilityMode: visibilityMode,
         rescuerCertificateUrl: rescuerCertificate?.path,
+        phoneNumber: phoneNumber,
       );
 
       final updatedProfileModel = await _profileRepository.updateProfile(

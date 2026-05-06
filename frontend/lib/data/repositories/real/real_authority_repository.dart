@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../../models/authority/authority_profile.dart';
 import '../../models/authority/announcement.dart';
 import '../../models/authority/role_request.dart';
+import '../../models/authority/profile_update_request.dart';
 import '../../mappers/authority_mappers.dart';
 import '../../mappers/charity_campaign_mappers.dart';
 import '../../services/authority_service.dart';
@@ -194,4 +195,47 @@ class RealAuthorityRepository implements AuthorityRepository {
     return AuthorityMappers.announcementFromApi(data);
   }
 
+  @override
+  Future<AuthorityProfileUpdateRequestPage> fetchProfileUpdateRequests({
+    String? beforeCreatedAt,
+    RoleRequestType? roleFilter,
+    RoleRequestStatus? statusFilter,
+  }) async {
+    final body = await _authorityService.getProfileUpdateRequests(
+      beforeCreatedAt: beforeCreatedAt,
+      type: roleFilter?.name.toUpperCase(),
+      state: statusFilter?.name.toUpperCase(),
+    );
+
+    final list = (body['data'] as List<dynamic>? ?? const []);
+    final pagination = body['pagination'] as Map<String, dynamic>? ?? {};
+
+    final items =
+        list
+            .whereType<Map<String, dynamic>>()
+            .map(AuthorityMappers.profileUpdateRequestFromApi)
+            .toList();
+
+    return AuthorityProfileUpdateRequestPage(
+      items: items,
+      hasMore: pagination['hasMore'] == true,
+      nextCursor: pagination['nextCursor']?.toString(),
+    );
+  }
+
+  @override
+  Future<void> approveProfileUpdateRequest(
+    String requestId, {
+    String? note,
+  }) async {
+    await _authorityService.approveProfileUpdateRequest(requestId, note: note);
+  }
+
+  @override
+  Future<void> rejectProfileUpdateRequest(
+    String requestId, {
+    String? note,
+  }) async {
+    await _authorityService.rejectProfileUpdateRequest(requestId, note: note);
+  }
 }

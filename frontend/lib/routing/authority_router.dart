@@ -8,6 +8,7 @@ import '../ui/authority/views/role_requests/role_requests_screen.dart';
 import '../ui/authority/views/profile/authority_profile_screen.dart';
 import '../ui/authority/views/charity/charity_campaign_screen.dart';
 import '../ui/authority/views/announcements/announcements_screen.dart';
+import '../ui/authority/views/updating_profile_requests/updating_profile_requests_screen.dart';
 
 class AuthorityRoutes {
   static const String login = '/authority/login';
@@ -15,6 +16,7 @@ class AuthorityRoutes {
   static const String profile = '/authority/profile';
   static const String charity = '/authority/charity';
   static const String announcements = '/authority/announcements';
+  static const String profileUpdates = '/authority/profile-updates';
 }
 
 final authorityRouterProvider = Provider<GoRouter>((ref) {
@@ -74,6 +76,12 @@ final authorityRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => AnnouncementsScreen(
               sectionQuery: state.uri.queryParameters['section'],
               reloadQuery: state.uri.queryParameters['reload'],
+            ),
+          ),
+          GoRoute(
+            path: AuthorityRoutes.profileUpdates,
+            builder: (context, state) => UpdatingProfileRequestsScreen(
+              statusQuery: state.uri.queryParameters['status'],
             ),
           ),
         ],

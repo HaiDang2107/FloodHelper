@@ -19,6 +19,11 @@ import { UserService } from './user.service';
 import { UpdateUserDto, UpdateLocationDto, UpdateVisibilityDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../common/enum/userRole.enum';
+import { ListRoleRequestsDto, RespondRoleRequestDto } from '../role-request/dto';
 
 @Controller('user')
 export class UserController {
@@ -196,17 +201,87 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Patch('profile/update-requests/:id/revoke')
   async revokeProfileUpdateRequest(
-    @Request() req,
-    @Param('id', ParseUUIDPipe) requestId: string,
+    @CurrentUser() user: any,
+    @Param('id') requestId: string,
   ) {
     const result = await this.userService.revokeProfileUpdateRequest(
-      req.user.userId,
+      user.userId,
       requestId,
     );
-
     return {
       success: true,
       message: 'Profile update request revoked successfully',
+      data: result,
+    };
+  }
+
+  /**
+   * Authority: List profile update requests
+   * GET /user/authority/profile-update-requests
+   */
+  @Get('authority/profile-update-requests')
+  @Roles(UserRole.AUTHORITY)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async listProfileUpdateRequestsForAuthority(
+    @CurrentUser() user: any,
+    @Query() query: ListRoleRequestsDto,
+  ) {
+    const result = await this.userService.listProfileUpdateRequestsForAuthority(
+      user.userId,
+      query,
+    );
+    return {
+      success: true,
+      message: 'Profile update requests retrieved successfully',
+      data: result.items,
+      pagination: result.pagination,
+    };
+  }
+
+  /**
+   * Authority: Approve profile update request
+   * PATCH /user/authority/profile-update-requests/:id/approve
+   */
+  @Patch('authority/profile-update-requests/:id/approve')
+  @Roles(UserRole.AUTHORITY)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async approveProfileUpdateRequest(
+    @CurrentUser() user: any,
+    @Param('id') requestId: string,
+    @Body() dto: RespondRoleRequestDto,
+  ) {
+    const result = await this.userService.approveProfileUpdateRequest(
+      user.userId,
+      requestId,
+      dto,
+    );
+    return {
+      success: true,
+      message: 'Profile update request approved successfully',
+      data: result,
+    };
+  }
+
+  /**
+   * Authority: Reject profile update request
+   * PATCH /user/authority/profile-update-requests/:id/reject
+   */
+  @Patch('authority/profile-update-requests/:id/reject')
+  @Roles(UserRole.AUTHORITY)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async rejectProfileUpdateRequest(
+    @CurrentUser() user: any,
+    @Param('id') requestId: string,
+    @Body() dto: RespondRoleRequestDto,
+  ) {
+    const result = await this.userService.rejectProfileUpdateRequest(
+      user.userId,
+      requestId,
+      dto,
+    );
+    return {
+      success: true,
+      message: 'Profile update request rejected successfully',
       data: result,
     };
   }

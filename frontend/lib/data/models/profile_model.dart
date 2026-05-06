@@ -293,6 +293,7 @@ class UpdateProfileDto {
   final String? backCitizenIdCardImageUrl;
   final String? occupation;
   final String? rescuerCertificateUrl;
+  final String? phoneNumber;
 
   const UpdateProfileDto({
     this.fullname,
@@ -321,6 +322,7 @@ class UpdateProfileDto {
     this.backCitizenIdCardImageUrl,
     this.occupation,
     this.rescuerCertificateUrl,
+    this.phoneNumber,
   });
 
   Map<String, dynamic> toJson() {
@@ -359,6 +361,7 @@ class UpdateProfileDto {
     if (rescuerCertificateUrl != null) {
       map['rescuerCertificateUrl'] = rescuerCertificateUrl;
     }
+    if (phoneNumber != null) map['phoneNumber'] = phoneNumber;
     return map;
   }
 }

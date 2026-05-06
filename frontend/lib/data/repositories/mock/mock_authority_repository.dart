@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import '../../models/authority/authority_profile.dart';
 import '../../models/authority/announcement.dart';
 import '../../models/authority/role_request.dart';
+import '../../models/authority/profile_update_request.dart';
+import '../../models/profile_model.dart';
 import '../../../domain/models/announcement.dart';
 import '../../../domain/models/charity_campaign.dart';
 import '../authority_repository.dart';
@@ -539,7 +541,10 @@ class MockAuthorityRepository implements AuthorityRepository {
   ) async {
     await Future.delayed(const Duration(milliseconds: 250));
 
-    final index = _announcements.indexWhere((announcement) => announcement.id == announcementId);
+    final index =
+        _announcements.indexWhere(
+          (announcement) => announcement.id == announcementId,
+        );
     if (index < 0) {
       throw Exception('Announcement not found');
     }
@@ -547,8 +552,76 @@ class MockAuthorityRepository implements AuthorityRepository {
     return _announcements.removeAt(index);
   }
 
+  @override
+  Future<AuthorityProfileUpdateRequestPage> fetchProfileUpdateRequests({
+    String? beforeCreatedAt,
+    RoleRequestType? roleFilter,
+    RoleRequestStatus? statusFilter,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final mockItems = [
+      AuthorityProfileUpdateRequest(
+        id: 'PROF-1001',
+        requesterName: 'Nguyen Anh Duong',
+        requesterEmail: 'duong.nguyen@mail.com',
+        requesterRole: RoleRequestType.rescuer,
+        status: RoleRequestStatus.pending,
+        submittedAt: DateTime.now().subtract(const Duration(hours: 1)),
+        changedFields: [
+          const ProfileFieldChange(
+            field: 'nickname',
+            label: 'Nickname',
+            oldValue: 'Duong',
+            newValue: 'Duong Rescuer',
+          ),
+          const ProfileFieldChange(
+            field: 'occupation',
+            label: 'Occupation',
+            oldValue: 'Office worker',
+            newValue: 'Professional Rescuer',
+          ),
+        ],
+        notes: 'Updating my profile with new job title.',
+      ),
+    ];
+
+    final filtered =
+        mockItems.where((item) {
+          if (statusFilter != null && item.status != statusFilter) return false;
+          if (roleFilter != null && item.requesterRole != roleFilter) {
+            return false;
+          }
+          return true;
+        }).toList();
+
+    return AuthorityProfileUpdateRequestPage(
+      items: filtered,
+      hasMore: false,
+      nextCursor: null,
+    );
+  }
+
+  @override
+  Future<void> approveProfileUpdateRequest(
+    String requestId, {
+    String? note,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  @override
+  Future<void> rejectProfileUpdateRequest(
+    String requestId, {
+    String? note,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
   String _slugify(String input) {
     final cleaned = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-    return cleaned.replaceAll(RegExp(r'-+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+    return cleaned
+        .replaceAll(RegExp(r'-+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
   }
 }

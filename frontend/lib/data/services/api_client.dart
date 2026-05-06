@@ -95,9 +95,27 @@ class ApiClient {
     _cookieJar?.deleteAll();
   }
 
-  Future<String?> refreshAccessToken() {
-    _refreshFuture ??= _performRefreshAccessToken();
-    return _refreshFuture!.whenComplete(() => _refreshFuture = null);
+  Future<String?> refreshAccessToken() async {
+    if (_refreshFuture != null) {
+      return _refreshFuture;
+    }
+
+    // Check if token was already refreshed by another request
+    final currentToken = await AuthLocalStorage.getAccessToken();
+    final expiry = await AuthLocalStorage.getTokenExpiry();
+    if (currentToken != null &&
+        expiry != null &&
+        expiry.isAfter(DateTime.now().add(const Duration(seconds: 10)))) {
+      setAuthToken(currentToken);
+      return currentToken;
+    }
+
+    _refreshFuture = _performRefreshAccessToken();
+    try {
+      return await _refreshFuture;
+    } finally {
+      _refreshFuture = null;
+    }
   }
 
   Future<String?> _performRefreshAccessToken() async {
@@ -215,7 +233,7 @@ class ApiClient {
   }
 }
 
-class _AuthRefreshInterceptor extends QueuedInterceptor {
+class _AuthRefreshInterceptor extends Interceptor {
   final ApiClient _apiClient;
 
   _AuthRefreshInterceptor(this._apiClient);
@@ -230,10 +248,21 @@ class _AuthRefreshInterceptor extends QueuedInterceptor {
       return;
     }
 
+    if (kDebugMode) {
+      print('🔄 [AuthRefreshInterceptor] 401 Error detected for ${request.path}. Attempting refresh...');
+    }
+
     final newToken = await _apiClient.refreshAccessToken();
     if (newToken == null) {
+      if (kDebugMode) {
+        print('❌ [AuthRefreshInterceptor] Refresh failed for ${request.path}.');
+      }
       handler.next(err);
       return;
+    }
+
+    if (kDebugMode) {
+      print('✅ [AuthRefreshInterceptor] Refresh success for ${request.path}. Retrying request...');
     }
 
     try {
@@ -266,9 +295,20 @@ class _AuthRefreshInterceptor extends QueuedInterceptor {
         onSendProgress: request.onSendProgress,
       );
 
+      if (kDebugMode) {
+        print('🎉 [AuthRefreshInterceptor] Retry successful for ${request.path}!');
+      }
       handler.resolve(response);
     } on DioException catch (retryError) {
+      if (kDebugMode) {
+        print('❌ [AuthRefreshInterceptor] Retry failed for ${request.path}: ${retryError.message}');
+      }
       handler.next(retryError);
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [AuthRefreshInterceptor] Unexpected error during retry for ${request.path}: $e');
+      }
+      handler.next(err);
     }
   }
 

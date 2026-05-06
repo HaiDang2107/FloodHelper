@@ -1,6 +1,8 @@
 import '../models/authority/authority_profile.dart';
 import '../models/authority/announcement.dart';
 import '../models/authority/role_request.dart';
+import '../models/authority/profile_update_request.dart';
+import '../models/profile_model.dart';
 import '../../domain/models/announcement.dart';
 
 class AuthorityMappers {
@@ -145,6 +147,37 @@ class AuthorityMappers {
       avatarUrl: _asNullableString(profile['avatarUrl']),
       frontImageUrl: frontImageUrl,
       backImageUrl: backImageUrl,
+      notes: _asString(json['note']),
+      respondedAt: respondedAt,
+    );
+  }
+
+  static AuthorityProfileUpdateRequest profileUpdateRequestFromApi(
+    Map<String, dynamic> json,
+  ) {
+    final state = _asString(json['state']).toUpperCase();
+    final createdAt = DateTime.tryParse(_asString(json['createdAt']))?.toLocal();
+    final respondedAt = DateTime.tryParse(
+      _asString(json['responsedAt']),
+    )?.toLocal();
+
+    final changedFieldsRaw = json['changedFields'] as List<dynamic>? ?? [];
+    final changedFields =
+        changedFieldsRaw
+            .map((e) => ProfileFieldChange.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+    return AuthorityProfileUpdateRequest(
+      id: _asString(json['requestId']),
+      requesterName: _asString(json['requesterName']),
+      requesterEmail: _asString(json['requesterEmail']),
+      requesterRole:
+          _asString(json['requesterRole']).toUpperCase() == 'RESCUER'
+              ? RoleRequestType.rescuer
+              : RoleRequestType.benefactor,
+      status: _mapApiStateToStatus(state),
+      submittedAt: createdAt ?? DateTime.now(),
+      changedFields: changedFields,
       notes: _asString(json['note']),
       respondedAt: respondedAt,
     );

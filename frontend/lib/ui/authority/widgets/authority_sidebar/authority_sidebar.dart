@@ -9,6 +9,7 @@ part '_announcements_menu.dart';
 part '_sidebar_header.dart';
 part '_sidebar_item.dart';
 part '_subsidebar_item.dart';
+part '_profile_update_requests_menu.dart';
 
 class AuthoritySidebar extends StatelessWidget {
   const AuthoritySidebar({
@@ -63,6 +64,10 @@ class AuthoritySidebar extends StatelessWidget {
                   onTap: () => _navigate(context, AuthorityRoutes.profile),
                 ),
                 _RoleRequestsMenu(
+                  isCollapsed: isCollapsed,
+                  currentLocation: currentLocation,
+                ),
+                _ProfileUpdateRequestsMenu(
                   isCollapsed: isCollapsed,
                   currentLocation: currentLocation,
                 ),

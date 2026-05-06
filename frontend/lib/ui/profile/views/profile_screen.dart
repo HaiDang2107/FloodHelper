@@ -172,8 +172,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final savedDateOfExpire = profile.citizenInfo?.dateOfExpire != null
         ? profile.citizenInfo!.dateOfExpire!.toIso8601String().split('T')[0]
         : '';
+    final savedPhone = profile.phoneNumber;
 
     if (_fullNameController.text != savedFullname) return true;
+    if (_phoneController.text != savedPhone) return true;
     if (_nicknameController.text != savedNickname) return true;
     if (_selectedGender != savedGender) return true;
     if (_dobController.text != savedDob) return true;
@@ -212,8 +214,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final savedDateOfExpire = profile.citizenInfo?.dateOfExpire != null
         ? profile.citizenInfo!.dateOfExpire!.toIso8601String().split('T')[0]
         : '';
+    final savedPhone = profile.phoneNumber;
 
     if (_fullNameController.text != savedFullname) return true;
+    if (_phoneController.text != savedPhone) return true;
     if (_nicknameController.text != savedNickname) return true;
     if (_selectedGender != savedGender) return true;
     if (_dobController.text != savedDob) return true;
@@ -313,6 +317,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             : null,
         citizenId: _citizenIdController.text,
         occupation: _occupationController.text,
+        phoneNumber: _phoneController.text,
         rescuerCertificate: state.tempRescuerCertificate,
       );
 
@@ -332,6 +337,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_selectedGender != null) map['gender'] = _selectedGender!.toBackendString();
     if (_dobController.text.isNotEmpty) map['dob'] = _dobController.text;
     if (_occupationController.text.isNotEmpty) map['occupation'] = _occupationController.text;
+    if (_phoneController.text.isNotEmpty) map['phoneNumber'] = _phoneController.text;
     if (_citizenIdController.text.isNotEmpty) map['citizenId'] = _citizenIdController.text;
     if (_dateOfIssueController.text.isNotEmpty) map['dateOfIssue'] = _dateOfIssueController.text;
     if (_dateOfExpiryController.text.isNotEmpty) map['dateOfExpire'] = _dateOfExpiryController.text;

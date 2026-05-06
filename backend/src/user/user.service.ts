@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   CreateUserDto,
@@ -19,6 +20,7 @@ import {
 import { CloudinaryService } from '../common/cloudinary.service';
 import { formatLocation } from '../common/location-format.util';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
+import { RespondRoleRequestDto } from '../role-request/dto';
 
 @Injectable()
 export class UserService {
@@ -235,6 +237,7 @@ export class UserService {
       dateOfExpire: safeDto.dateOfExpire ? new Date(safeDto.dateOfExpire) : currentProfile.dateOfExpire,
       citizenId: safeDto.citizenId ?? currentProfile.citizenId,
       occupation: safeDto.occupation ?? currentProfile.occupation,
+      phoneNumber: safeDto.phoneNumber ?? currentProfile.phoneNumber,
     } as const;
 
     const hasChangesPreview =
@@ -285,7 +288,7 @@ export class UserService {
       nickname: profileUpdateData.nickname,
       dob: profileUpdateData.dob,
       gender: profileUpdateData.gender,
-      phoneNumber: currentProfile.phoneNumber,
+      phoneNumber: profileUpdateData.phoneNumber,
       avatarUrl: profileUpdateData.avatarUrl,
       citizenId: profileUpdateData.citizenId,
       rescuerCertificateUrl: profileUpdateData.rescuerCertificateUrl,
@@ -308,17 +311,179 @@ export class UserService {
   }
 
   async listProfileUpdateRequests(userId: string) {
-    const items = await this.profileRequestRepository.listRequestsForRequester(userId);
+    const items = await this.profileRequestRepository.listRequestsForRequester(
+      userId,
+    );
 
-    const FIELD_LABELS: Record<string, string> = {
-      fullname: 'Full name', nickname: 'Nickname', gender: 'Gender', dob: 'Date of birth',
-      occupation: 'Occupation', citizenId: 'Citizen ID', dateOfIssue: 'Date of issue',
-      dateOfExpire: 'Date of expire', avatarUrl: 'Avatar', originProvince: 'Origin province',
-      originWard: 'Origin ward', residenceProvince: 'Residence province',
-      residenceWard: 'Residence ward', frontCitizenIdCardImageUrl: 'ID card (front)',
-      backCitizenIdCardImageUrl: 'ID card (back)', rescuerCertificateUrl: 'Rescuer certificate',
+    const formatted = items.map((item) => {
+      const { currentProfile, newProfile, checker, ...rest } = item as any;
+      const checkerProfile = checker?.profiles?.[0];
+      const authorityName =
+        checkerProfile?.nickname ?? checkerProfile?.fullname ?? null;
+
+      const changedFields = this.calculateChangedFields(
+        currentProfile,
+        newProfile,
+      );
+
+      return { ...rest, authorityName, changedFields };
+    });
+
+    return { items: formatted };
+  }
+
+  async listProfileUpdateRequestsForAuthority(authorityId: string, dto: any) {
+    await this.assertAuthorityUser(authorityId);
+
+    const rawLimit = Number(dto.limit ?? 10);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(Math.max(Math.floor(rawLimit), 1), 50)
+      : 10;
+    const beforeCreatedAt = dto.beforeCreatedAt
+      ? new Date(dto.beforeCreatedAt)
+      : undefined;
+
+    const { items, hasMore, nextCursor } =
+      await this.profileRequestRepository.listRequestsForAuthority(
+        authorityId,
+        limit,
+        beforeCreatedAt,
+        dto.type, // BENEFACTOR | RESCUER
+        dto.state,
+      );
+
+    const formatted = items.map((item) => {
+      const { currentProfile, newProfile, ...rest } = item as any;
+      const changedFields = this.calculateChangedFields(
+        currentProfile,
+        newProfile,
+      );
+
+      // Get requester role and name
+      const requester = currentProfile.user;
+      const requesterName = currentProfile.fullname;
+      const requesterEmail = requester.account?.username;
+      const requesterRole = requester.role.includes('RESCUER')
+        ? 'RESCUER'
+        : 'BENEFACTOR';
+
+      return {
+        ...rest,
+        requesterName,
+        requesterEmail,
+        requesterRole,
+        changedFields,
+      };
+    });
+
+    return {
+      items: formatted,
+      pagination: {
+        hasMore,
+        nextCursor,
+      },
     };
+  }
 
+  async approveProfileUpdateRequest(
+    authorityId: string,
+    requestId: string,
+    dto: RespondRoleRequestDto,
+  ) {
+    await this.assertAuthorityUser(authorityId);
+
+    const request = await this.profileRequestRepository.getRequestWithProfiles(
+      requestId,
+    );
+    if (!request) {
+      throw new NotFoundException('Profile update request not found');
+    }
+
+    if (request.checkedBy !== authorityId) {
+      throw new ForbiddenException('You are not assigned to this request');
+    }
+
+    if (request.state !== ('PENDING' as any)) {
+      throw new ConflictException('Only pending requests can be approved');
+    }
+
+    await this.profileRequestRepository.approveProfileUpdate(
+      requestId,
+      request.currentProfileId,
+      request.newProfileId,
+      dto.note,
+    );
+
+    return { success: true };
+  }
+
+  async rejectProfileUpdateRequest(
+    authorityId: string,
+    requestId: string,
+    dto: RespondRoleRequestDto,
+  ) {
+    await this.assertAuthorityUser(authorityId);
+
+    const request = await this.profileRequestRepository.findById(requestId);
+    if (!request) {
+      throw new NotFoundException('Profile update request not found');
+    }
+
+    if (request.checkedBy !== authorityId) {
+      throw new ForbiddenException('You are not assigned to this request');
+    }
+
+    if (request.state !== ('PENDING' as any)) {
+      throw new ConflictException('Only pending requests can be rejected');
+    }
+
+    await this.profileRequestRepository.respondRequest(
+      authorityId,
+      requestId,
+      'REJECTED',
+      dto.note,
+    );
+
+    return { success: true };
+  }
+
+  private async assertAuthorityUser(authorityUserId: string) {
+    const authority = await this.userRepository.getPublicProfile(
+      authorityUserId,
+    );
+
+    if (!authority) {
+      throw new NotFoundException('Authority account not found');
+    }
+
+    if (!authority.role.includes('AUTHORITY')) {
+      throw new ForbiddenException(
+        'Only authority users can access this resource',
+      );
+    }
+  }
+
+  private readonly FIELD_LABELS: Record<string, string> = {
+    fullname: 'Full name',
+    nickname: 'Nickname',
+    gender: 'Gender',
+    dob: 'Date of birth',
+    occupation: 'Occupation',
+    phoneNumber: 'Phone number',
+    citizenId: 'Citizen ID',
+    dateOfIssue: 'Date of issue',
+    dateOfExpire: 'Date of expire',
+    avatarUrl: 'Avatar',
+    originProvince: 'Origin province',
+    originWard: 'Origin ward',
+    residenceProvince: 'Residence province',
+    residenceWard: 'Residence ward',
+    frontCitizenIdCardImageUrl: 'ID card (front)',
+    backCitizenIdCardImageUrl: 'ID card (back)',
+    rescuerCertificateUrl: 'Rescuer certificate',
+  };
+
+  private calculateChangedFields(currentProfile: any, newProfile: any) {
     const safeIsoDate = (val: any): string | null => {
       if (val == null) return null;
       const d = new Date(val);
@@ -333,61 +498,79 @@ export class UserService {
       }
       if (key === 'originProvince') return profile.originProvince?.name ?? '-';
       if (key === 'originWard') return profile.originWard?.name ?? '-';
-      if (key === 'residenceProvince') return profile.residenceProvince?.name ?? '-';
+      if (key === 'residenceProvince')
+        return profile.residenceProvince?.name ?? '-';
       if (key === 'residenceWard') return profile.residenceWard?.name ?? '-';
-      if (typeof val === 'string' && val.startsWith('http')) return '[File updated]';
+      if (typeof val === 'string' && val.startsWith('http'))
+        return '[File updated]';
       return String(val);
     };
 
     const COMPARABLE_FIELDS = [
-      'fullname', 'nickname', 'gender', 'dob', 'occupation', 'citizenId',
-      'dateOfIssue', 'dateOfExpire', 'avatarUrl', 'frontCitizenIdCardImageUrl',
-      'backCitizenIdCardImageUrl', 'rescuerCertificateUrl',
-      'originProvince', 'originWard', 'residenceProvince', 'residenceWard',
+      'fullname',
+      'nickname',
+      'gender',
+      'dob',
+      'occupation',
+      'phoneNumber',
+      'citizenId',
+      'dateOfIssue',
+      'dateOfExpire',
+      'avatarUrl',
+      'frontCitizenIdCardImageUrl',
+      'backCitizenIdCardImageUrl',
+      'rescuerCertificateUrl',
+      'originProvince',
+      'originWard',
+      'residenceProvince',
+      'residenceWard',
     ];
 
     const getVal = (key: string, profile: any) => {
       if (key === 'originProvince') return profile.originProvince?.name ?? null;
       if (key === 'originWard') return profile.originWard?.name ?? null;
-      if (key === 'residenceProvince') return profile.residenceProvince?.name ?? null;
+      if (key === 'residenceProvince')
+        return profile.residenceProvince?.name ?? null;
       if (key === 'residenceWard') return profile.residenceWard?.name ?? null;
-      
+
       const v = profile[key];
-      if (v instanceof Date || (key.toLowerCase().includes('date') || key === 'dob')) {
+      if (
+        v instanceof Date ||
+        key.toLowerCase().includes('date') ||
+        key === 'dob'
+      ) {
         return safeIsoDate(v);
       }
       return v ?? null;
     };
 
-    const formatted = items.map((item) => {
-      const { currentProfile, newProfile, checker, ...rest } = item as any;
-      const checkerProfile = checker?.profiles?.[0];
-      const authorityName = checkerProfile?.nickname ?? checkerProfile?.fullname ?? null;
+    const changedFields: {
+      field: string;
+      label: string;
+      oldValue: string;
+      newValue: string;
+    }[] = [];
 
-      let changedFields: { field: string; label: string; oldValue: string; newValue: string }[] = [];
+    if (currentProfile && newProfile) {
+      for (const key of COMPARABLE_FIELDS) {
+        // So sánh
+        const oldVal = getVal(key, currentProfile);
+        const newVal = getVal(key, newProfile);
 
-      if (currentProfile && newProfile) {
-        for (const key of COMPARABLE_FIELDS) { // So sánh
-          const oldVal = getVal(key, currentProfile);
-          const newVal = getVal(key, newProfile);
-
-          if (oldVal !== newVal) {
-            const oldStr = formatVal(key, oldVal, currentProfile);
-            const newStr = formatVal(key, newVal, newProfile);
-            changedFields.push({
-              field: key,
-              label: FIELD_LABELS[key] ?? key,
-              oldValue: oldStr,
-              newValue: newStr,
-            });
-          }
+        if (oldVal !== newVal) {
+          const oldStr = formatVal(key, oldVal, currentProfile);
+          const newStr = formatVal(key, newVal, newProfile);
+          changedFields.push({
+            field: key,
+            label: this.FIELD_LABELS[key] ?? key,
+            oldValue: oldStr,
+            newValue: newStr,
+          });
         }
       }
+    }
 
-      return { ...rest, authorityName, changedFields };
-    });
-
-    return { items: formatted };
+    return changedFields;
   }
 
   async revokeProfileUpdateRequest(userId: string, requestId: string) {
@@ -627,6 +810,7 @@ export class UserService {
       frontCitizenIdCardImageUrl: currentProfile.frontCitizenIdCardImageUrl,
       backCitizenIdCardImageUrl: currentProfile.backCitizenIdCardImageUrl,
       occupation: currentProfile.occupation,
+      phoneNumber: currentProfile.phoneNumber,
     };
 
     const next = {
@@ -647,6 +831,7 @@ export class UserService {
       backCitizenIdCardImageUrl:
         updateData.backCitizenIdCardImageUrl ?? current.backCitizenIdCardImageUrl,
       occupation: updateData.occupation ?? current.occupation,
+      phoneNumber: updateData.phoneNumber ?? current.phoneNumber,
     };
 
     if (newCertificateUrl) {

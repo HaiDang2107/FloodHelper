@@ -30,11 +30,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   @IsOptional()
   @IsString()
-  placeOfOrigin?: string;
-
-  @IsOptional()
-  @IsString()
-  placeOfResidence?: string;
+  phoneNumber?: string;
 
   @IsOptional()
   @IsInt()
@@ -80,7 +76,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
   @IsBoolean()
   showCharityCampaignLocations?: boolean;
-
 
   @IsOptional()
   @IsString()

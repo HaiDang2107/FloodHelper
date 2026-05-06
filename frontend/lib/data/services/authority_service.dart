@@ -208,7 +208,61 @@ class AuthorityService {
   Future<Map<String, dynamic>> deleteAuthorityAnnouncement(
     String announcementId,
   ) async {
-    final response = await _apiClient.delete('/announcements/authority/$announcementId');
+    final response = await _apiClient.delete(
+      '/announcements/authority/$announcementId',
+    );
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> getProfileUpdateRequests({
+    String? beforeCreatedAt,
+    String? type,
+    String? state,
+  }) async {
+    final query = <String, dynamic>{};
+    if (beforeCreatedAt != null) {
+      query['beforeCreatedAt'] = beforeCreatedAt;
+    }
+    if (type != null) {
+      query['type'] = type;
+    }
+    if (state != null) {
+      query['state'] = state;
+    }
+
+    final response = await _apiClient.get(
+      '/user/authority/profile-update-requests',
+      queryParameters: query,
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> approveProfileUpdateRequest(
+    String requestId, {
+    String? note,
+  }) async {
+    final response = await _apiClient.patch(
+      '/user/authority/profile-update-requests/$requestId/approve',
+      data: {
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
+
+    return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
+  }
+
+  Future<Map<String, dynamic>> rejectProfileUpdateRequest(
+    String requestId, {
+    String? note,
+  }) async {
+    final response = await _apiClient.patch(
+      '/user/authority/profile-update-requests/$requestId/reject',
+      data: {
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
+
     return response.data as Map<String, dynamic>? ?? <String, dynamic>{};
   }
 }
