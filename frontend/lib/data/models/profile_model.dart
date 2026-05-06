@@ -395,11 +395,35 @@ class ProfileRoleRequestModel {
       note: json['note']?.toString(),
       createdAt: DateTime.parse(
         json['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
-      ),
+      ).toLocal(),
       responsedAt: json['responsedAt'] != null
-          ? DateTime.tryParse(json['responsedAt'].toString())
+          ? DateTime.tryParse(json['responsedAt'].toString())?.toLocal()
           : null,
       authorityName: authorityName,
+    );
+  }
+}
+
+/// Represents a single changed field in a profile update request
+class ProfileFieldChange {
+  final String field;
+  final String label;
+  final String oldValue;
+  final String newValue;
+
+  const ProfileFieldChange({
+    required this.field,
+    required this.label,
+    required this.oldValue,
+    required this.newValue,
+  });
+
+  factory ProfileFieldChange.fromJson(Map<String, dynamic> json) {
+    return ProfileFieldChange(
+      field: json['field']?.toString() ?? '',
+      label: json['label']?.toString() ?? '',
+      oldValue: json['oldValue']?.toString() ?? '-',
+      newValue: json['newValue']?.toString() ?? '-',
     );
   }
 }
@@ -411,6 +435,7 @@ class ProfileUpdateRequestModel {
   final DateTime createdAt;
   final DateTime? respondedAt;
   final String? authorityName;
+  final List<ProfileFieldChange> changedFields;
 
   const ProfileUpdateRequestModel({
     required this.requestId,
@@ -419,13 +444,20 @@ class ProfileUpdateRequestModel {
     required this.createdAt,
     this.respondedAt,
     this.authorityName,
+    this.changedFields = const [],
   });
 
   factory ProfileUpdateRequestModel.fromJson(Map<String, dynamic> json) {
     final checker = json['checker'] as Map<String, dynamic>?;
     final authorityName = checker == null
-        ? null
+        ? (json['authorityName']?.toString())
         : (checker['nickname'] ?? checker['fullname'])?.toString();
+
+    final rawChanged = json['changedFields'] as List<dynamic>?;
+    final changedFields = rawChanged
+            ?.map((e) => ProfileFieldChange.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [];
 
     return ProfileUpdateRequestModel(
       requestId: json['requestId']?.toString() ?? '',
@@ -433,11 +465,12 @@ class ProfileUpdateRequestModel {
       note: json['note']?.toString(),
       createdAt: DateTime.parse(
         json['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
-      ),
+      ).toLocal(),
       respondedAt: json['respondedAt'] != null
-          ? DateTime.tryParse(json['respondedAt'].toString())
+          ? DateTime.tryParse(json['respondedAt'].toString())?.toLocal()
           : null,
       authorityName: authorityName,
+      changedFields: changedFields,
     );
   }
 }

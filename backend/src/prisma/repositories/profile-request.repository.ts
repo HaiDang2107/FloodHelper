@@ -67,14 +67,35 @@ export class ProfileRequestRepository extends BaseRepository<ProfileUpdatingRequ
           select: {
             userId: true,
             profiles: {
-              where: {
-                isCurrent: true
-              },
-              select: {
-                fullname: true,
-                nickname: true,
-              }
-            }
+              where: { isCurrent: true },
+              select: { fullname: true, nickname: true },
+            },
+          },
+        },
+        currentProfile: {
+          select: {
+            fullname: true, nickname: true, gender: true, dob: true,
+            occupation: true, citizenId: true, dateOfIssue: true, dateOfExpire: true,
+            avatarUrl: true, frontCitizenIdCardImageUrl: true, backCitizenIdCardImageUrl: true,
+            rescuerCertificateUrl: true, originProvinceCode: true, originWardCode: true,
+            residenceProvinceCode: true, residenceWardCode: true,
+            originProvince: { select: { name: true } },
+            originWard: { select: { name: true } },
+            residenceProvince: { select: { name: true } },
+            residenceWard: { select: { name: true } },
+          },
+        },
+        newProfile: {
+          select: {
+            fullname: true, nickname: true, gender: true, dob: true,
+            occupation: true, citizenId: true, dateOfIssue: true, dateOfExpire: true,
+            avatarUrl: true, frontCitizenIdCardImageUrl: true, backCitizenIdCardImageUrl: true,
+            rescuerCertificateUrl: true, originProvinceCode: true, originWardCode: true,
+            residenceProvinceCode: true, residenceWardCode: true,
+            originProvince: { select: { name: true } },
+            originWard: { select: { name: true } },
+            residenceProvince: { select: { name: true } },
+            residenceWard: { select: { name: true } },
           },
         },
       },

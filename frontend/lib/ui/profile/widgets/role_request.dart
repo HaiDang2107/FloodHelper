@@ -67,7 +67,7 @@ class RoleRequestItem extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime value) {
-    return DateFormat('yyyy-MM-dd HH:mm').format(value);
+    return DateFormat('dd/MM/yyyy HH:mm').format(value);
   }
 
   @override

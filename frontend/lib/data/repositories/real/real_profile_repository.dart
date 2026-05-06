@@ -70,14 +70,14 @@ class RealProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<void> createProfileUpdateRequest({
+  Future<String?> createProfileUpdateRequest({
     required Map<String, dynamic> body,
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
     XFile? rescuerCertificate,
   }) async {
-    await _profileService.createProfileUpdateRequest(
+    return await _profileService.createProfileUpdateRequest(
       body: body,
       avatar: avatar,
       frontCitizenId: frontCitizenId,

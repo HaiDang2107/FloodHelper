@@ -38,7 +38,7 @@ abstract class ProfileRepository {
   Future<void> revokeProfileUpdateRequest(String requestId);
 
   /// Create a profile update request (for Benefactor/Rescuer)
-  Future<void> createProfileUpdateRequest({
+  Future<String?> createProfileUpdateRequest({
     required Map<String, dynamic> body,
     XFile? avatar,
     XFile? frontCitizenId,

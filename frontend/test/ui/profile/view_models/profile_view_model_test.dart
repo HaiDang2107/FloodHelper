@@ -103,13 +103,15 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<void> revokeProfileUpdateRequest(String requestId) async {}
 
   @override
-  Future<void> createProfileUpdateRequest({
+  Future<String?> createProfileUpdateRequest({
     required Map<String, dynamic> body,
     XFile? avatar,
     XFile? frontCitizenId,
     XFile? backCitizenId,
     XFile? rescuerCertificate,
-  }) async {}
+  }) async {
+    return null;
+  }
 
   @override
   Future<void> revokeRoleRequest(String requestId) async {}

@@ -173,7 +173,7 @@ class MockProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<void> createProfileUpdateRequest({
+  Future<String?> createProfileUpdateRequest({
     required Map<String, dynamic> body,
     XFile? avatar,
     XFile? frontCitizenId,
@@ -190,6 +190,7 @@ class MockProfileRepository implements ProfileRepository {
         authorityName: null,
       ),
     );
+    return 'Mock: Profile update request created successfully';
   }
 
   @override

@@ -135,7 +135,7 @@ class ProfileService {
     }
   }
 
-  Future<void> createProfileUpdateRequest({
+  Future<String?> createProfileUpdateRequest({
     required Map<String, dynamic> body,
     XFile? avatar,
     XFile? frontCitizenId,
@@ -158,7 +158,8 @@ class ProfileService {
             )
           : body;
 
-      await _apiClient.post('/user/profile/update-requests', data: data);
+      final response = await _apiClient.post('/user/profile/update-requests', data: data);
+      return response.data['message']?.toString();
     } on DioException catch (e) {
       throw ApiException.fromDioError(e);
     }

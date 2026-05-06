@@ -269,7 +269,7 @@ class ProfileViewModel extends _$ProfileViewModel {
   }) async {
     state = state.copyWith(isSaving: true, clearError: true, clearSuccess: true);
     try {
-      await _profileRepository.createProfileUpdateRequest(
+      final message = await _profileRepository.createProfileUpdateRequest(
         body: body,
         avatar: avatar,
         frontCitizenId: frontCitizenId,
@@ -282,7 +282,7 @@ class ProfileViewModel extends _$ProfileViewModel {
         profileUpdateRequests: requests,
         isSaving: false,
         isEditing: false,
-        successMessage: 'Profile update request sent successfully.',
+        successMessage: message ?? 'Profile update request sent successfully.',
       );
       return true;
     } catch (e) {

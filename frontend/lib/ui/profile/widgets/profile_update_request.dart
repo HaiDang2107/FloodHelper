@@ -40,7 +40,7 @@ class ProfileUpdateRequestItem extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime value) {
-    return DateFormat('yyyy-MM-dd HH:mm').format(value);
+    return DateFormat('dd/MM/yyyy HH:mm').format(value);
   }
 
   @override
@@ -48,6 +48,7 @@ class ProfileUpdateRequestItem extends StatelessWidget {
     final statusLabel = _statusLabel();
     final statusColor = _getStatusColor();
     final isPending = request.state.toUpperCase() == 'PENDING';
+    final hasChanges = request.changedFields.isNotEmpty;
 
     return Card(
       color: Colors.grey[50],
@@ -73,13 +74,25 @@ class ProfileUpdateRequestItem extends StatelessWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Requested at: ${_formatDateTime(request.createdAt)}', style: const TextStyle(color: Colors.black87)),
+                Text(
+                  'Requested at: ${_formatDateTime(request.createdAt)}',
+                  style: const TextStyle(color: Colors.black87),
+                ),
                 if (request.respondedAt != null)
-                  Text('Responded at: ${_formatDateTime(request.respondedAt!)}', style: const TextStyle(color: Colors.black87)),
+                  Text(
+                    'Responded at: ${_formatDateTime(request.respondedAt!)}',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
                 if (request.authorityName != null)
-                  Text('Reviewer: ${request.authorityName}', style: const TextStyle(color: Colors.black87)),
+                  Text(
+                    'Reviewer: ${request.authorityName}',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
                 if (request.note?.trim().isNotEmpty == true)
-                  Text('Note: ${request.note!.trim()}', style: const TextStyle(color: Colors.black87)),
+                  Text(
+                    'Note: ${request.note!.trim()}',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
               ],
             ),
             trailing: Container(
@@ -99,17 +112,64 @@ class ProfileUpdateRequestItem extends StatelessWidget {
               ),
             ),
           ),
+
+          // Changed fields diff table
+          if (hasChanges) ...[
+            Divider(height: 1, color: Colors.grey[200]),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              child: Text(
+                'Changed fields',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Table(
+                columnWidths: const {
+                  0: IntrinsicColumnWidth(),
+                  1: FlexColumnWidth(),
+                  2: FlexColumnWidth(),
+                },
+                children: [
+                  TableRow(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    children: [
+                      _headerCell('Field'),
+                      _headerCell('Current'),
+                      _headerCell('Requested'),
+                    ],
+                  ),
+                  for (final f in request.changedFields)
+                    TableRow(
+                      children: [
+                        _dataCell(f.label, bold: true),
+                        _dataCell(f.oldValue, color: Colors.red[700]),
+                        _dataCell(f.newValue, color: Colors.green[700]),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+
           if (isPending && onRevoke != null)
             Padding(
-              padding: const EdgeInsets.only(right: 16.0, bottom: 8.0, top: 0.0),
+              padding: const EdgeInsets.only(right: 16.0, bottom: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton.icon(
                     onPressed: onRevoke,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
                     icon: const Icon(Icons.cancel_outlined, size: 18),
                     label: const Text('Revoke Request'),
                   ),
@@ -117,6 +177,34 @@ class ProfileUpdateRequestItem extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _headerCell(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.black54,
+        ),
+      ),
+    );
+  }
+
+  Widget _dataCell(String text, {bool bold = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
+          color: color ?? Colors.black87,
+        ),
       ),
     );
   }

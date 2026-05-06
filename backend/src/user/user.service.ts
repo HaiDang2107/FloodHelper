@@ -260,12 +260,14 @@ export class UserService {
     }
 
     // Upload ảnh lên cloudinary và lấy lại link
+    // Dùng timestamp làm suffix để tránh ghi đè ảnh hiện tại khi đang chờ duyệt
     const imageUpdates = await this.uploadProfileImages(
       userId,
       avatarFile,
       citizenFrontFile,
       citizenBackFile,
       rescuerCertificateFile,
+      `req_${Date.now()}`,
     );
 
     const profileUpdateData = {
@@ -307,7 +309,85 @@ export class UserService {
 
   async listProfileUpdateRequests(userId: string) {
     const items = await this.profileRequestRepository.listRequestsForRequester(userId);
-    return { items };
+
+    const FIELD_LABELS: Record<string, string> = {
+      fullname: 'Full name', nickname: 'Nickname', gender: 'Gender', dob: 'Date of birth',
+      occupation: 'Occupation', citizenId: 'Citizen ID', dateOfIssue: 'Date of issue',
+      dateOfExpire: 'Date of expire', avatarUrl: 'Avatar', originProvince: 'Origin province',
+      originWard: 'Origin ward', residenceProvince: 'Residence province',
+      residenceWard: 'Residence ward', frontCitizenIdCardImageUrl: 'ID card (front)',
+      backCitizenIdCardImageUrl: 'ID card (back)', rescuerCertificateUrl: 'Rescuer certificate',
+    };
+
+    const safeIsoDate = (val: any): string | null => {
+      if (val == null) return null;
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return null;
+      return d.toISOString().split('T')[0];
+    };
+
+    const formatVal = (key: string, val: any, profile: any): string => {
+      if (val == null) return '-';
+      if (key === 'dob' || key === 'dateOfIssue' || key === 'dateOfExpire') {
+        return safeIsoDate(val) ?? '-';
+      }
+      if (key === 'originProvince') return profile.originProvince?.name ?? '-';
+      if (key === 'originWard') return profile.originWard?.name ?? '-';
+      if (key === 'residenceProvince') return profile.residenceProvince?.name ?? '-';
+      if (key === 'residenceWard') return profile.residenceWard?.name ?? '-';
+      if (typeof val === 'string' && val.startsWith('http')) return '[File updated]';
+      return String(val);
+    };
+
+    const COMPARABLE_FIELDS = [
+      'fullname', 'nickname', 'gender', 'dob', 'occupation', 'citizenId',
+      'dateOfIssue', 'dateOfExpire', 'avatarUrl', 'frontCitizenIdCardImageUrl',
+      'backCitizenIdCardImageUrl', 'rescuerCertificateUrl',
+      'originProvince', 'originWard', 'residenceProvince', 'residenceWard',
+    ];
+
+    const getVal = (key: string, profile: any) => {
+      if (key === 'originProvince') return profile.originProvince?.name ?? null;
+      if (key === 'originWard') return profile.originWard?.name ?? null;
+      if (key === 'residenceProvince') return profile.residenceProvince?.name ?? null;
+      if (key === 'residenceWard') return profile.residenceWard?.name ?? null;
+      
+      const v = profile[key];
+      if (v instanceof Date || (key.toLowerCase().includes('date') || key === 'dob')) {
+        return safeIsoDate(v);
+      }
+      return v ?? null;
+    };
+
+    const formatted = items.map((item) => {
+      const { currentProfile, newProfile, checker, ...rest } = item as any;
+      const checkerProfile = checker?.profiles?.[0];
+      const authorityName = checkerProfile?.nickname ?? checkerProfile?.fullname ?? null;
+
+      let changedFields: { field: string; label: string; oldValue: string; newValue: string }[] = [];
+
+      if (currentProfile && newProfile) {
+        for (const key of COMPARABLE_FIELDS) { // So sánh
+          const oldVal = getVal(key, currentProfile);
+          const newVal = getVal(key, newProfile);
+
+          if (oldVal !== newVal) {
+            const oldStr = formatVal(key, oldVal, currentProfile);
+            const newStr = formatVal(key, newVal, newProfile);
+            changedFields.push({
+              field: key,
+              label: FIELD_LABELS[key] ?? key,
+              oldValue: oldStr,
+              newValue: newStr,
+            });
+          }
+        }
+      }
+
+      return { ...rest, authorityName, changedFields };
+    });
+
+    return { items: formatted };
   }
 
   async revokeProfileUpdateRequest(userId: string, requestId: string) {
@@ -464,6 +544,7 @@ export class UserService {
     citizenFrontFile?: UploadedFilePayload,
     citizenBackFile?: UploadedFilePayload,
     rescuerCertificateFile?: UploadedFilePayload,
+    suffix?: string,
   ) {
     const imageUpdates: {
       avatarUrl?: string;
@@ -472,6 +553,10 @@ export class UserService {
       rescuerCertificateUrl?: string;
     } = {};
 
+    const getPublicId = (base: string, ext: string) => {
+      return suffix ? `${userId}_${base}_${suffix}.${ext}` : `${userId}_${base}.${ext}`;
+    };
+
     try {
       if (avatarFile) {
         const ext = avatarFile.originalname.split('.').pop() || 'jpg';
@@ -479,7 +564,7 @@ export class UserService {
           avatarFile.buffer,
           {
             folder: 'floodhelper/profiles/avatars',
-            publicId: `${userId}_avatar.${ext}`,
+            publicId: getPublicId('avatar', ext),
           },
         );
       }
@@ -489,7 +574,7 @@ export class UserService {
         imageUpdates.frontCitizenIdCardImageUrl =
           await this.cloudinary.uploadImage(citizenFrontFile.buffer, {
             folder: 'floodhelper/profiles/citizen-id-cards',
-            publicId: `${userId}_citizen_id_front.${ext}`,
+            publicId: getPublicId('citizen_id_front', ext),
           });
       }
 
@@ -499,7 +584,7 @@ export class UserService {
           citizenBackFile.buffer,
           {
             folder: 'floodhelper/profiles/citizen-id-cards',
-            publicId: `${userId}_citizen_id_back.${ext}`,
+            publicId: getPublicId('citizen_id_back', ext),
           },
         );
       }
@@ -510,7 +595,7 @@ export class UserService {
           rescuerCertificateFile.buffer,
           {
             folder: 'floodhelper/profiles/rescuer-certificates',
-            publicId: `${userId}_rescuer_certificate.${ext}`,
+            publicId: getPublicId('rescuer_certificate', ext),
           },
         );
       }

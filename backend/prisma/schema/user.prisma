@@ -74,7 +74,6 @@ model Profile {
   profileRequestsCurrent ProfileUpdatingRequest[] @relation("ProfileRequestCurrent")
   profileRequestsNew ProfileUpdatingRequest[] @relation("ProfileRequestNew")
 
-  @@unique([userId, isCurrent])
   @@index([userId])
   @@map("Profile")
 }
