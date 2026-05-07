@@ -17,7 +17,8 @@ class DetailView extends StatefulWidget {
   final Future<void> Function()? onLoadMoreAnnouncements;
   final VoidCallback onPurchasedSupplies;
   final Future<void> Function() onTransaction;
-  final Future<void> Function(PostAnnouncementPayload payload)? onPostAnnouncement;
+  final Future<void> Function(PostAnnouncementPayload payload)?
+  onPostAnnouncement;
   final Future<void> Function()? onUpdateInformation;
   final Future<void> Function()? onSendRequest;
   final Future<void> Function()? onCheckInLocation;
@@ -111,7 +112,7 @@ class _DetailViewState extends State<DetailView> {
           CharityInfoRow(label: 'Purpose', value: widget.campaign.purpose),
         if (widget.isOwner)
           CharityInfoRow(
-            label: 'Charity Object',
+            label: 'Charity Objectives',
             value: widget.campaign.charityObject,
           ),
         CharityLocationRow(
@@ -253,9 +254,10 @@ class _DetailViewState extends State<DetailView> {
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text('No announcements yet.'),
             )
-          else ...widget.announcements.map(
-            (a) => CharityAnnouncementItem(announcement: a),
-          ),
+          else
+            ...widget.announcements.map(
+              (a) => CharityAnnouncementItem(announcement: a),
+            ),
           if (widget.isAnnouncementsLoadingMore)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),

@@ -106,7 +106,8 @@ class _DetailCard extends StatelessWidget {
       campaign.status == CampaignStatus.finished ||
       campaign.status == CampaignStatus.suspended;
 
-  bool get _showSuspensionDetails => campaign.status == CampaignStatus.suspended;
+  bool get _showSuspensionDetails =>
+      campaign.status == CampaignStatus.suspended;
 
   bool get _showDecisionControls =>
       _canReviewPending || _canRejectApproved || _canSuspendCampaign;
@@ -158,9 +159,12 @@ class _DetailCard extends StatelessWidget {
     return Column(
       children: [
         _InfoRow(label: 'Purpose', value: campaign.purpose),
-        _InfoRow(label: 'Charity object', value: campaign.charityObject),
+        _InfoRow(label: 'Charity Objectives', value: campaign.charityObject),
         _InfoRow(label: 'Location', value: campaign.reliefLocation),
-        _InfoRow(label: 'Created at', value: formatDateTime(campaign.createdAt)),
+        _InfoRow(
+          label: 'Created at',
+          value: formatDateTime(campaign.createdAt),
+        ),
         _InfoRow(
           label: 'Requested at',
           value: formatDateTime(campaign.requestedAt),

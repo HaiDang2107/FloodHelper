@@ -37,12 +37,12 @@ type CharityCampaignListItemPayload = {
   respondedAt: Date | null;
   organizer?: {
     userId: string;
-    fullname: string;
-    nickname: string | null;
-    residenceProvinceCode: number | null;
-    residenceWardCode: number | null;
-    residenceProvince?: { code: number; name: string } | null;
-    residenceWard?: { code: number; name: string } | null;
+    profiles: Array<{
+      fullname: string;
+      nickname?: string | null;
+      residenceProvince?: { name: string } | null;
+      residenceWard?: { name: string } | null;
+    }>;
   } | null;
 };
 
@@ -454,16 +454,18 @@ export class NoruserBenefCharityService {
   }
 
   private mapCampaignListItem(campaign: CharityCampaignListItemPayload) {
+    const profile = campaign.organizer?.profiles?.[0];
+
     return {
       id: campaign.campaignId,
       name: campaign.campaignName,
       organizedBy: campaign.organizer?.userId ?? null,
       organizerResidence: formatLocation(
-        campaign.organizer?.residenceWard,
-        campaign.organizer?.residenceProvince,
+        profile?.residenceWard,
+        profile?.residenceProvince,
       ),
       benefactorName:
-        campaign.organizer?.fullname || campaign.organizer?.nickname || 'Unknown',
+        profile?.fullname || profile?.nickname || 'Unknown',
       state: String(campaign.state).toUpperCase(),
       requestedAt: campaign.requestedAt,
       respondedAt: campaign.respondedAt,

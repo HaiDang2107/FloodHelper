@@ -66,7 +66,9 @@ export class CharityRepository extends BaseRepository<any> {
         bankStatementFileUrl: true,
         bankAccountId: true,
         organizer: {
-          include: {
+          select: {
+            userId: true,
+            role: true,
             profiles: {
               where: { isCurrent: true },
               select: {
@@ -79,10 +81,6 @@ export class CharityRepository extends BaseRepository<any> {
                 residenceWard: { select: { code: true, name: true } },
               }
             }
-          },
-          select: {
-            userId: true,
-            role: true,
           },
         },
 
@@ -137,7 +135,12 @@ export class CharityRepository extends BaseRepository<any> {
             userId: true,
             profiles: {
               where: { isCurrent: true },
-              select: { fullname: true, avatarUrl: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+                residenceProvince: { select: { name: true } },
+                residenceWard: { select: { name: true } },
+              },
             },
           },
         },
@@ -159,7 +162,12 @@ export class CharityRepository extends BaseRepository<any> {
             userId: true,
             profiles: {
               where: { isCurrent: true },
-              select: { fullname: true, avatarUrl: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+                residenceProvince: { select: { name: true } },
+                residenceWard: { select: { name: true } },
+              },
             },
           },
         },

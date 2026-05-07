@@ -75,7 +75,9 @@ class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
     startedDonationAtController.text = _formatDate(_startedDonationAt);
     finishedDonationAtController.text = _formatDate(_finishedDonationAt);
     startedDistributionAtController.text = _formatDate(_startedDistributionAt);
-    finishedDistributionAtController.text = _formatDate(_finishedDistributionAt);
+    finishedDistributionAtController.text = _formatDate(
+      _finishedDistributionAt,
+    );
 
     _loadBanks();
   }
@@ -249,22 +251,24 @@ class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
       purpose: purposeController.text.trim(),
       charityObject: charityObjectController.text.trim(),
       status: existing?.status ?? CampaignStatus.created,
-        destinationProvinceCode: _destinationProvinceCode,
-        destinationProvinceName: _destinationProvinceName,
-        destinationWardCode: _destinationWardCode,
-        destinationWardName: _destinationWardName,
-        destinationDetail: destinationDetailController.text.trim().isEmpty
+      destinationProvinceCode: _destinationProvinceCode,
+      destinationProvinceName: _destinationProvinceName,
+      destinationWardCode: _destinationWardCode,
+      destinationWardName: _destinationWardName,
+      destinationDetail: destinationDetailController.text.trim().isEmpty
           ? null
           : destinationDetailController.text.trim(),
       bankInfo: BankInfo(
         accountNumber: accountController.text.trim(),
-        bankName: selectedBank?.shortName ??
+        bankName:
+            selectedBank?.shortName ??
             existing?.bankInfo.bankShortName ??
             existing?.bankInfo.bankName ??
             'Unknown',
         bankId: selectedBank?.id ?? existing?.bankInfo.bankId,
         bankCode: existing?.bankInfo.bankCode,
-        bankShortName: selectedBank?.shortName ?? existing?.bankInfo.bankShortName,
+        bankShortName:
+            selectedBank?.shortName ?? existing?.bankInfo.bankShortName,
         accountHolder: existing?.bankInfo.accountHolder,
       ),
       bankStatementFileUrl: bankStatementFileUrlController.text.trim().isEmpty
@@ -317,7 +321,8 @@ class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
     if (_destinationWardName != null && _destinationWardName!.isNotEmpty) {
       parts.add(_destinationWardName!);
     }
-    if (_destinationProvinceName != null && _destinationProvinceName!.isNotEmpty) {
+    if (_destinationProvinceName != null &&
+        _destinationProvinceName!.isNotEmpty) {
       parts.add(_destinationProvinceName!);
     }
     return parts.join(', ');
@@ -399,7 +404,7 @@ class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
             TextField(
               controller: charityObjectController,
               decoration: const InputDecoration(
-                labelText: 'Charity Object *',
+                labelText: 'Charity Objectives *',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -435,10 +440,7 @@ class _CreateCampaignDialogState extends ConsumerState<CreateCampaignDialog> {
                 const SizedBox(height: 8),
                 Text(
                   'Bank list could not be loaded.',
-                  style: TextStyle(
-                    color: Colors.orange.shade800,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.orange.shade800, fontSize: 12),
                 ),
               ],
             ],
