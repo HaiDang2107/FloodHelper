@@ -150,7 +150,7 @@ class _ProfileUpdateRequestDetailState
             if (currentRequest.status != RoleRequestStatus.pending) ...[
               const SizedBox(height: 24),
               Text(
-                'Reviewer notes',
+                'Decision notes',
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),

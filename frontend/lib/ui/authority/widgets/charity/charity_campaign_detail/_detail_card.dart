@@ -40,42 +40,12 @@ class _DetailCard extends StatelessWidget {
               _buildHeader(context),
               const SizedBox(height: 18),
               _buildInfoRows(context),
-              if (_showReadOnlyNote) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _showSuspensionDetails
-                      ? 'Suspension notes'
-                      : 'Reviewer notes',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _showSuspensionDetails
-                      ? (campaign.noteForSuspension ?? '-')
-                      : (campaign.noteForResponse ?? '-'),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF475467),
-                  ),
-                ),
-              ],
-              if (_showDecisionControls) ...[
-                const SizedBox(height: 20),
-                TextField(
-                  controller: noteController,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Decision note',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (_canReviewPending) _buildPendingActions(context),
-                if (_canRejectApproved) _buildRejectAction(context),
-                if (_canSuspendCampaign) _buildSuspendAction(context),
-              ],
+              const SizedBox(height: 16),
+              _buildNotesSection(context),
+              const SizedBox(height: 12),
+              if (_canReviewPending) _buildPendingActions(context),
+              if (_canRejectApproved) _buildRejectAction(context),
+              if (_canSuspendCampaign) _buildSuspendAction(context),
             ],
           ),
           if (isDetailLoading)
@@ -101,16 +71,89 @@ class _DetailCard extends StatelessWidget {
       campaign.status == CampaignStatus.donating ||
       campaign.status == CampaignStatus.distributing;
 
-  bool get _showReadOnlyNote =>
-      campaign.status == CampaignStatus.rejected ||
-      campaign.status == CampaignStatus.finished ||
-      campaign.status == CampaignStatus.suspended;
-
   bool get _showSuspensionDetails =>
       campaign.status == CampaignStatus.suspended;
 
-  bool get _showDecisionControls =>
-      _canReviewPending || _canRejectApproved || _canSuspendCampaign;
+  Widget _buildNotesSection(BuildContext context) {
+    final status = campaign.status;
+
+    final bool showReadOnlyDecision = [
+      CampaignStatus.donating,
+      CampaignStatus.distributing,
+      CampaignStatus.suspended,
+      CampaignStatus.rejected,
+      CampaignStatus.finished,
+    ].contains(status);
+
+    final bool showEditableDecision =
+        [CampaignStatus.pending, CampaignStatus.approved].contains(status);
+
+    final bool showReadOnlySuspension = status == CampaignStatus.suspended;
+    final bool showEditableSuspension =
+        [CampaignStatus.donating, CampaignStatus.distributing].contains(status);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showReadOnlyDecision) ...[
+          _buildReadOnlyNote(
+            context,
+            'Decision notes',
+            campaign.noteForResponse,
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        if (showEditableDecision) ...[
+          _buildEditableNote(context, 'Decision notes'),
+          const SizedBox(height: 16),
+        ],
+
+        if (showReadOnlySuspension)
+          _buildReadOnlyNote(
+            context,
+            'Suspension notes',
+            campaign.noteForSuspension,
+          ),
+
+        if (showEditableSuspension)
+          _buildEditableNote(context, 'Suspension notes'),
+      ],
+    );
+  }
+
+  Widget _buildReadOnlyNote(BuildContext context, String label, String? value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value ?? '-',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: const Color(0xFF475467),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditableNote(BuildContext context, String label) {
+    return TextField(
+      controller: noteController,
+      minLines: 2,
+      maxLines: 4,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
 
   Widget _buildHeader(BuildContext context) {
     return Row(
@@ -330,7 +373,7 @@ class _DetailCard extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'Decision note is required when suspending',
+                        'Suspension note is required when suspending',
                       ),
                     ),
                   );

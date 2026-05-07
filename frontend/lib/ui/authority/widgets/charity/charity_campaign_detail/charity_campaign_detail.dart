@@ -63,7 +63,16 @@ class _CharityCampaignRequestDetailState
     }
 
     _lastCampaignId = campaignId;
-    _noteController.text = campaign?.noteForResponse ?? '';
+
+    final status = campaign?.status;
+    if (status == CampaignStatus.donating ||
+        status == CampaignStatus.distributing) {
+      // For active campaigns, the editable note is for Suspension
+      _noteController.text = campaign?.noteForSuspension ?? '';
+    } else {
+      // For pending/approved campaigns, the editable note is for Decision
+      _noteController.text = campaign?.noteForResponse ?? '';
+    }
   }
 
   String? _currentNote() {
