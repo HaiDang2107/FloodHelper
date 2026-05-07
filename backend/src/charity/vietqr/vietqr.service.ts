@@ -76,11 +76,12 @@ export class VietQrService {
         throw new NotFoundException('Transaction not found');
       }
 
-      if (transaction.campaign?.organizedBy !== requesterUserId) {
-        throw new ForbiddenException(
-          'You are not allowed to trigger callback for this transaction',
-        );
-      }
+      // Anyone can trigger test callback for simulation
+      // if (transaction.campaign?.organizedBy !== requesterUserId) {
+      //   throw new ForbiddenException(
+      //     'You are not allowed to trigger callback for this transaction',
+      //   );
+      // }
 
       const state = String(transaction.state).toUpperCase();
       if (state !== 'CREATED' && state !== 'VERIFYING') {

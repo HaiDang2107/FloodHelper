@@ -472,6 +472,7 @@ class CharityItem extends StatelessWidget {
                           longitude,
                         );
                       },
+                onShowMessage: showTopSnackBar,
               );
               break;
           }

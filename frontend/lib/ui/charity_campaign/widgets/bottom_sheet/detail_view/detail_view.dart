@@ -23,6 +23,7 @@ class DetailView extends StatefulWidget {
   final Future<void> Function()? onSendRequest;
   final Future<void> Function()? onCheckInLocation;
   final Future<void> Function()? onFocusCampaignLocation;
+  final void Function(String message, {required bool isError})? onShowMessage;
 
   const DetailView({
     super.key,
@@ -40,6 +41,7 @@ class DetailView extends StatefulWidget {
     this.onSendRequest,
     this.onCheckInLocation,
     this.onFocusCampaignLocation,
+    this.onShowMessage,
   });
 
   @override
@@ -207,10 +209,33 @@ class _DetailViewState extends State<DetailView> {
             canDonate:
                 !(widget.isOwner &&
                     widget.campaign.status == CampaignStatus.donating),
-            onDonate: () => showDialog(
-              context: context,
-              builder: (_) => DonateDialog(campaignId: widget.campaign.id),
-            ),
+            onDonate: () {
+              final now = DateTime.now();
+              final finishDonationAt = widget.campaign.finishedDonationAt;
+              final startedDistributionAt = widget.campaign.startedDistributionAt;
+
+              if (finishDonationAt != null &&
+                  now.isAfter(finishDonationAt) &&
+                  (startedDistributionAt == null ||
+                      now.isBefore(startedDistributionAt))) {
+                if (widget.onShowMessage != null) {
+                  widget.onShowMessage!(
+                    'Donation duration finished.',
+                    isError: true,
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Donation duration finished.')),
+                  );
+                }
+                return;
+              }
+
+              showDialog(
+                context: context,
+                builder: (_) => DonateDialog(campaignId: widget.campaign.id),
+              );
+            },
             onPurchasedSupplies: widget.onPurchasedSupplies,
             onTransaction: widget.onTransaction,
           ),
