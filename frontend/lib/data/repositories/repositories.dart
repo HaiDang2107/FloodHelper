@@ -1,4 +1,5 @@
 // Barrel file for data/repositories
+export 'admin_repository.dart';
 export 'auth_repository.dart';
 
 // Abstract repositories
@@ -20,6 +21,7 @@ export 'mock/mock_charity_campaign_repository.dart';
 
 // Real implementations
 export 'real/real_user_repository.dart';
+export 'real_admin_repository.dart';
 export 'real/real_profile_repository.dart';
 export 'real/real_friend_repository.dart';
 export 'real/real_authority_repository.dart';

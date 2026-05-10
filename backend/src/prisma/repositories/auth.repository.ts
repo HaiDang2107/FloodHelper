@@ -12,6 +12,13 @@ export class AuthRepository extends BaseRepository<any> {
     return this.prisma.account.findUnique({ where: { username } });
   }
 
+  async findAccountByUsernameLite(username: string) {
+    return this.prisma.account.findUnique({
+      where: { username },
+      select: { accountId: true, userId: true, username: true, state: true },
+    });
+  }
+
   async findAccountByUsernameWithDetailedUser(username: string) {
     const account = await this.prisma.account.findUnique({
       where: { username },

@@ -87,3 +87,9 @@ CharityCampaignRepository charityCampaignRepository(Ref ref) {
     charityCampaignService: ref.read(charityCampaignServiceProvider),
   );
 }
+
+/// Provider for AdminRepository
+@riverpod
+AdminRepository adminRepository(Ref ref) {
+  return RealAdminRepository(adminService: ref.read(adminServiceProvider));
+}

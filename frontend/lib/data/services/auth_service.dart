@@ -42,6 +42,23 @@ class AuthService {
     }
   }
 
+  /// Sign in as admin user
+  Future<ApiResponse<SigninDataDto>> signInAdmin(SigninRequestDto request) async {
+    try {
+      final response = await _apiClient.post(
+        '/auth/admin/signin',
+        data: request.toJson(),
+      );
+
+      return ApiResponse<SigninDataDto>.fromJson(
+        response.data,
+        (data) => SigninDataDto.fromJson(data),
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   /// Sign up with user information
   Future<ApiResponse<void>> signUp(SignupRequestDto request) async {
     try {

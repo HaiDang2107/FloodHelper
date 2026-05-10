@@ -14,6 +14,7 @@ import { RoleRequestModule } from './role-request/role-request.module';
 import { SignalModule } from './signal/signal.module';
 import { CharityModule } from './charity/charity.module';
 import { AnnouncementModule } from './announcement/announcement.module';
+import { AdminModule } from './admin/admin.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaRepositoryModule } from './prisma/repositories/prisma-repository.module';
 import { LoggingMiddleware } from './common/logging.middleware';
@@ -32,6 +33,7 @@ import { LoggingMiddleware } from './common/logging.middleware';
     SignalModule,
     CharityModule,
     AnnouncementModule,
+    AdminModule,
     CacheModule.register({
       isGlobal: true, // Để dùng ở mọi nơi không cần import lại
       store: redisStore,

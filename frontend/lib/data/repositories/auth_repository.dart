@@ -68,6 +68,30 @@ class AuthRepository {
     return _createAuthSession(data);
   }
 
+  /// Sign in admin account with role validation on backend
+  Future<AuthSession> signInAdmin({
+    required String username,
+    required String password,
+    required String deviceId,
+  }) async {
+    final request = SigninRequestDto(
+      username: username,
+      password: password,
+      deviceId: deviceId,
+    );
+
+    final response = await _authService.signInAdmin(request);
+
+    if (!response.success || response.data == null) {
+      throw Exception(response.message);
+    }
+
+    final data = response.data!;
+    await _persistSigninData(data, username: username);
+
+    return _createAuthSession(data);
+  }
+
   /// Sign up with user information
   /// Returns message on success (user needs to verify code)
   Future<String> signUp({

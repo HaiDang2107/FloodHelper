@@ -150,5 +150,24 @@ final charityCampaignRepositoryProvider =
 // ignore: unused_element
 typedef CharityCampaignRepositoryRef =
     AutoDisposeProviderRef<CharityCampaignRepository>;
+String _$adminRepositoryHash() => r'87e19163279dd3af649c728efb6257fcdb6e5f1b';
+
+/// Provider for AdminRepository
+///
+/// Copied from [adminRepository].
+@ProviderFor(adminRepository)
+final adminRepositoryProvider = AutoDisposeProvider<AdminRepository>.internal(
+  adminRepository,
+  name: r'adminRepositoryProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$adminRepositoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AdminRepositoryRef = AutoDisposeProviderRef<AdminRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

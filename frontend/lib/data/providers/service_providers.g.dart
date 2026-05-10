@@ -182,6 +182,25 @@ final mqttServiceProvider = Provider<MqttService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef MqttServiceRef = ProviderRef<MqttService>;
+String _$adminServiceHash() => r'b4969f32d78e6d0bdd2c67db75c78793b2aa8e8b';
+
+/// AdminService provider
+///
+/// Copied from [adminService].
+@ProviderFor(adminService)
+final adminServiceProvider = AutoDisposeProvider<AdminService>.internal(
+  adminService,
+  name: r'adminServiceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$adminServiceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef AdminServiceRef = AutoDisposeProviderRef<AdminService>;
 String _$firebaseMessagingServiceHash() =>
     r'578fbe0b5177a63a5213e033fd298262c2ac1fb1';
 

@@ -1,4 +1,5 @@
 // Barrel file for data/services
+export 'admin_service.dart';
 export 'api_client.dart';
 export 'authority_service.dart';
 export 'auth_service.dart';
