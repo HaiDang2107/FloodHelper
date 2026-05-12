@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 
 import '../../view_models/admin_user_management_view_model.dart';
 import '../../../../domain/models/user_profile.dart';
@@ -77,6 +78,9 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
   @override
   Widget build(BuildContext context) {
     final notifier = ref.read(adminUserManagementViewModelProvider.notifier);
+    final grayLabelColor = Colors.grey;
+    final grayHintColor = Colors.grey;
+    final floatingLabelColor = Colors.black;
 
     return AlertDialog(
       title: const Text('Create Authority Account'),
@@ -88,15 +92,34 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
             children: [
               TextField(
                 controller: _fullnameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Full name *',
                   hintText: 'Enter full name',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Phone number *',
+                  hintText: 'Enter phone number',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
                 ),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<Gender>(
                 initialValue: _selectedGender,
-                decoration: const InputDecoration(labelText: 'Gender'),
+                decoration: InputDecoration(
+                  labelText: 'Gender *',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
+                ),
                 items: Gender.values
                     .map((g) => DropdownMenuItem(value: g, child: Text(g.displayName)))
                     .toList(growable: false),
@@ -106,9 +129,12 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
               TextField(
                 controller: _dobController,
                 readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Date of birth',
+                decoration: InputDecoration(
+                  labelText: 'Date of birth *',
                   hintText: 'YYYY-MM-DD',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
                 ),
                 onTap: _pickDob,
               ),
@@ -122,18 +148,13 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone number *',
-                  hintText: 'Enter phone number',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
                 controller: _usernameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Email (username) *',
                   hintText: 'authority@example.com',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
                 ),
               ),
               const SizedBox(height: 12),
@@ -147,17 +168,23 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
               const SizedBox(height: 12),
               TextField(
                 controller: _nicknameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nickname',
                   hintText: 'Enter nickname (optional)',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _occupationController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Occupation',
                   hintText: 'Enter occupation (optional)',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
                 ),
               ),
               const SizedBox(height: 16),
@@ -186,17 +213,48 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
                   final fullname = _fullnameController.text.trim();
                   final phone = _phoneController.text.trim();
                   final username = _usernameController.text.trim();
-                  final residenceOk = _residenceSelection?.province != null && _residenceSelection?.ward != null;
-
-                  if (fullname.isEmpty || phone.isEmpty || username.isEmpty || !residenceOk) {
+                  
+                  // Validate required text fields
+                  if (fullname.isEmpty || phone.isEmpty || username.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please fill in all required fields (including residence)')),
+                      const SnackBar(content: Text('Please fill in all required fields')),
+                    );
+                    return;
+                  }
+
+                  // Validate gender
+                  if (_selectedGender == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select a gender')),
+                    );
+                    return;
+                  }
+
+                  // Validate date of birth
+                  if (_dobController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select date of birth')),
+                    );
+                    return;
+                  }
+                  
+                  // Validate residence: both province and ward are required
+                  if (_residenceSelection?.province == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select residence province')),
+                    );
+                    return;
+                  }
+                  if (_residenceSelection?.ward == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please select residence ward')),
                     );
                     return;
                   }
 
                   final messenger = ScaffoldMessenger.of(context);
                   final navigator = Navigator.of(context);
+                  final dia = context;
                   setState(() => _isSubmitting = true);
                   try {
                     final repo = ref.read(adminRepositoryProvider);
@@ -216,8 +274,6 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
 
                     final created = await repo.createAuthority(dto);
 
-                    
-
                     if (mounted) {
                       messenger.showSnackBar(
                         const SnackBar(content: Text('Authority account created successfully')),
@@ -227,9 +283,29 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
                     }
                   } catch (error) {
                     if (mounted) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Error: ${error.toString()}')),
-                      );
+                      // Handle 409 Conflict error
+                      if (error is DioException && error.response?.statusCode == 409) {
+                        final message = error.response?.data?['message'] ?? 'This ward already has an authority';
+                        showDialog<void>(
+                          // ignore: use_build_context_synchronously
+                          context: dia,
+                          builder: (dialogContext) => AlertDialog(
+                            title: const Text('Cannot Create Authority'),
+                            content: Text(message),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        // Generic error message
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Error: ${error.toString()}')),
+                        );
+                      }
                     }
                   } finally {
                     if (mounted) setState(() => _isSubmitting = false);

@@ -126,9 +126,6 @@ export class AdminService {
     const profile = await this.profileRepository.getCurrentProfileWithRelations(
       user.userId,
     );
-    if (!profile) {
-      throw new NotFoundException('User not found');
-    }
 
     return this.formatUserResponse(this.normalizeProfile(profile));
   }
