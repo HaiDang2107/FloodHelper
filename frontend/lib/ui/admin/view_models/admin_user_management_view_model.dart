@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:dio/dio.dart';
 
 import '../../../domain/models/user.dart';
 import '../../../data/models/profile_model.dart';
@@ -86,6 +87,8 @@ class AdminUserManagementState {
 
 @riverpod
 class AdminUserManagementViewModel extends _$AdminUserManagementViewModel {
+  static const String userNotFoundMessage = '__USER_NOT_FOUND__';
+
   @override
   AdminUserManagementState build() {
     return const AdminUserManagementState();
@@ -97,6 +100,10 @@ class AdminUserManagementViewModel extends _$AdminUserManagementViewModel {
 
   void setProfile(ProfileModel profile) {
     state = state.copyWith(profile: profile, errorMessage: null);
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
   }
 
   Future<void> search() async {
@@ -113,9 +120,17 @@ class AdminUserManagementViewModel extends _$AdminUserManagementViewModel {
       final profile = await repository.searchUserByEmail(email);
       state = state.copyWith(profile: profile, isLoading: false);
     } catch (error) {
+      if (error is DioException && error.response?.statusCode == 404) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: userNotFoundMessage,
+        );
+        return;
+      }
+
       state = state.copyWith(
         isLoading: false,
-        errorMessage: error.toString(),
+        errorMessage: 'Failed to search user. Please try again.',
       );
     }
   }

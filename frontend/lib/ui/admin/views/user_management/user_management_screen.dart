@@ -29,6 +29,29 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
     final state = ref.watch(adminUserManagementViewModelProvider);
     final notifier = ref.read(adminUserManagementViewModelProvider.notifier);
 
+    ref.listen<AdminUserManagementState>(
+      adminUserManagementViewModelProvider,
+      (previous, next) {
+        if (next.errorMessage == AdminUserManagementViewModel.userNotFoundMessage &&
+            previous?.errorMessage != next.errorMessage) {
+          showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Search Result'),
+              content: const Text('Không tìm thấy user với email này.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+          notifier.clearError();
+        }
+      },
+    );
+
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -90,7 +113,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          if (state.errorMessage != null)
+          if (state.errorMessage != null &&
+              state.errorMessage != AdminUserManagementViewModel.userNotFoundMessage)
             Text(
               state.errorMessage!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
