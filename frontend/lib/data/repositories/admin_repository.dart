@@ -1,4 +1,5 @@
 import '../models/profile_model.dart';
+import '../models/admin/admin_dtos.dart';
 
 abstract class AdminRepository {
   Future<ProfileModel> getAdminProfile();
@@ -7,39 +8,14 @@ abstract class AdminRepository {
 
   Future<ProfileModel> getUserById(String userId);
 
-  Future<ProfileModel> createAuthority({
-    required String fullname,
-    required String phoneNumber,
-    required String username,
-    required String password,
-    required int residenceWardCode,
-    String? nickname,
-    String? gender,
-    String? dob,
-    int? originProvinceCode,
-    int? originWardCode,
-    int? residenceProvinceCode,
-    String? dateOfIssue,
-    String? dateOfExpire,
-    String? citizenId,
-    String? occupation,
-  });
+  Future<ProfileModel> createAuthority(CreateAuthorityDto dto);
 
   Future<ProfileModel> updateAuthority(
-    String userId, {
-    String? fullname,
-    String? nickname,
-    String? phoneNumber,
-    String? gender,
-    String? dob,
-    int? originProvinceCode,
-    int? originWardCode,
-    int? residenceProvinceCode,
-    int? residenceWardCode,
-    String? dateOfIssue,
-    String? dateOfExpire,
-    String? citizenId,
-    String? occupation,
-    bool? isAuthority,
-  });
+    String userId,
+    UpdateAuthorityDto dto,
+  );
+
+  Future<ProfileModel> banAccount(String userId);
+
+  Future<ProfileModel> unbanAccount(String userId);
 }

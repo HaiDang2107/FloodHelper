@@ -7,7 +7,7 @@ part of 'admin_user_management_view_model.dart';
 // **************************************************************************
 
 String _$adminUserManagementViewModelHash() =>
-    r'73fadc80b7403b465a977aa1a2f48a8475b1f6ef';
+    r'9cc085009dca1bdc2aba3afc51d1447893f42efe';
 
 /// See also [AdminUserManagementViewModel].
 @ProviderFor(AdminUserManagementViewModel)

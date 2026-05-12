@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import '../../models/authority/authority_profile.dart';
 import '../../models/authority/announcement.dart';
 import '../../models/authority/role_request.dart';
-import '../../models/authority/profile_update_request.dart';
 import '../../mappers/authority_mappers.dart';
 import '../../mappers/charity_campaign_mappers.dart';
 import '../../services/authority_service.dart';

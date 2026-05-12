@@ -92,6 +92,21 @@ export class AuthController {
     return result;
   }
 
+  @Post('admin/signin')
+  async signInAdmin(
+    @Body() signinDto: SigninDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<SigninResponseDto> {
+    const result = await this.authService.signinAdmin(signinDto);
+    response.cookie('refresh_token', result.data.tokens.refreshToken, {
+      httpOnly: true,
+      path: '/auth/token/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    delete result.data.tokens.refreshToken;
+    return result;
+  }
+
   @UseGuards(JwtAuthGuard)
   @Delete('signout')
   async signOut(

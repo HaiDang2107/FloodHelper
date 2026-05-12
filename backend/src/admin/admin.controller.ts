@@ -69,4 +69,16 @@ export class AdminController {
     const data = await this.adminService.updateAuthority(userId, dto);
     return { success: true, message: 'Authority updated', data };
   }
+
+  @Patch('users/:userId/ban')
+  async banAccount(@Param('userId', ParseUUIDPipe) userId: string) {
+    const data = await this.adminService.banAccount(userId);
+    return { success: true, message: 'Account banned', data };
+  }
+
+  @Patch('users/:userId/unban')
+  async unbanAccount(@Param('userId', ParseUUIDPipe) userId: string) {
+    const data = await this.adminService.unbanAccount(userId);
+    return { success: true, message: 'Account unbanned', data };
+  }
 }

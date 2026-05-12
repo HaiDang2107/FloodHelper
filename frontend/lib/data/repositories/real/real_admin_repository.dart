@@ -3,7 +3,7 @@ import 'package:antiflood/data/mappers/profile_mapper.dart';
 import 'package:antiflood/data/models/profile_model.dart';
 import 'package:antiflood/data/models/admin/admin_dtos.dart';
 
-import 'admin_repository.dart';
+import '../admin_repository.dart';
 
 class RealAdminRepository implements AdminRepository {
   final AdminService _adminService;

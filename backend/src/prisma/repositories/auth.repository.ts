@@ -81,16 +81,12 @@ export class AuthRepository extends BaseRepository<any> {
         residenceWard: profile.residenceWard,
         dateOfIssue: profile.dateOfIssue,
         dateOfExpire: profile.dateOfExpire,
-
-
         citizenId: profile.citizenId ?? null,
         citizenIdCardImg: (profile as any).citizenIdCardImg ?? null,
         occupation: (profile as any).occupation ?? null,
       }
     };
   }
-
-
 
   async findAccountByIdWithUser(accountId: string) {
     return this.prisma.account.findUnique({
@@ -124,6 +120,12 @@ export class AuthRepository extends BaseRepository<any> {
     });
   }
 
+  async findAccountByUserId(userId: string) {
+    return this.prisma.account.findUnique({
+      where: { userId },
+    });
+  }
+
   async createUserWithAccount(data: any) {
     return this.prisma.user.create({
       data,
@@ -144,6 +146,13 @@ export class AuthRepository extends BaseRepository<any> {
     return this.prisma.account.update({
       where: { accountId },
       data: { password },
+    });
+  }
+
+  async updateAccountState(accountId: string, state: string) {
+    return this.prisma.account.update({
+      where: { accountId },
+      data: { state: state as any },
     });
   }
 
@@ -229,4 +238,3 @@ export class AuthRepository extends BaseRepository<any> {
     return this.prisma.account.count();
   }
 }
-

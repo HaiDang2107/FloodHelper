@@ -5,8 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { MailerService } from '@nestjs-modules/mailer';
 
 import { AccountState } from '../common/enum/accountState.enum';
+import { PasswordGenerator } from '../common/utils/password-generator';
 import { formatLocation } from '../common/location-format.util';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
 import {
@@ -22,6 +24,7 @@ export class AdminService {
     private readonly authRepository: AuthRepository,
     private readonly userRepository: UserRepository,
     private readonly profileRepository: ProfileRepository,
+    private readonly mailerService: MailerService,
   ) {}
 
   async getProfile(userId: string) {
@@ -68,7 +71,9 @@ export class AdminService {
 
     await this.assertWardAvailability(dto.residenceWardCode);
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    // Auto-generate secure password
+    const generatedPassword = PasswordGenerator.generate();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     const user = await this.authRepository.createUserWithAccount({
       role: ['AUTHORITY'],
@@ -99,6 +104,24 @@ export class AdminService {
         },
       },
     });
+
+    // Send password via email
+    try {
+      await this.mailerService.sendMail({
+        to: dto.username,
+        subject: 'Your Authority Account Credentials',
+        html: `
+          <h2>Welcome to FloodHelper Admin System</h2>
+          <p>Your authority account has been created.</p>
+          <p><strong>Username:</strong> ${dto.username}</p>
+          <p><strong>Password:</strong> ${generatedPassword}</p>
+          <p>Please change your password after your first login.</p>
+        `,
+      });
+    } catch (error) {
+      console.error('Failed to send authority password email:', error);
+      // Continue even if email fails - account is created
+    }
 
     const profile = await this.profileRepository.getCurrentProfileWithRelations(
       user.userId,
@@ -148,6 +171,38 @@ export class AdminService {
     }
 
     await this.applyUserUpdates(userId, dto);
+
+    return this.getProfile(userId);
+  }
+
+  async banAccount(userId: string) {
+    const profile = await this.profileRepository.getCurrentProfileWithRelations(userId);
+    if (!profile) {
+      throw new NotFoundException('User not found');
+    }
+
+    const account = await this.authRepository.findAccountByUserId(userId);
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+
+    await this.authRepository.updateAccountState(account.accountId, AccountState.BANNED);
+
+    return this.getProfile(userId);
+  }
+
+  async unbanAccount(userId: string) {
+    const profile = await this.profileRepository.getCurrentProfileWithRelations(userId);
+    if (!profile) {
+      throw new NotFoundException('User not found');
+    }
+
+    const account = await this.authRepository.findAccountByUserId(userId);
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+
+    await this.authRepository.updateAccountState(account.accountId, AccountState.ACTIVE);
 
     return this.getProfile(userId);
   }

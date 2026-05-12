@@ -53,8 +53,9 @@ class ProfileState {
     final address = current.address;
     if (address?.originProvinceCode == null) missing.add('originProvinceCode');
     if (address?.originWardCode == null) missing.add('originWardCode');
-    if (address?.residenceProvinceCode == null)
+    if (address?.residenceProvinceCode == null) {
       missing.add('residenceProvinceCode');
+    }
     if (address?.residenceWardCode == null) missing.add('residenceWardCode');
 
     final citizen = current.citizenInfo;

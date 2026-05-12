@@ -37,6 +37,19 @@
                 "--web-browser-flag=--ozone-platform=wayland",
                 "--web-browser-flag=--enable-wayland-ime"
             ]
+        },
+        {
+            "name": "Admin Web (Chrome)",
+            "cwd": "frontend",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main_admin.dart",
+            "deviceId": "chrome",
+            "args": [
+                "--web-browser-flag=--enable-features=UseOzonePlatform",
+                "--web-browser-flag=--ozone-platform=wayland",
+                "--web-browser-flag=--enable-wayland-ime"
+            ]
         }
     ]
 }

@@ -233,6 +233,10 @@ export class AuthService {
     return this.signinInternal(signinDto, 'AUTHORITY');
   }
 
+  async signinAdmin(signinDto: SigninDto): Promise<SigninResponseDto> {
+    return this.signinInternal(signinDto, 'ADMIN');
+  }
+
   private async signinInternal(
     signinDto: SigninDto,
     requiredRole?: string,
