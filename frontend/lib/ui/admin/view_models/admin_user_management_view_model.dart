@@ -95,6 +95,10 @@ class AdminUserManagementViewModel extends _$AdminUserManagementViewModel {
     state = state.copyWith(email: email, errorMessage: null);
   }
 
+  void setProfile(ProfileModel profile) {
+    state = state.copyWith(profile: profile, errorMessage: null);
+  }
+
   Future<void> search() async {
     final email = state.email.trim();
     if (email.isEmpty) {

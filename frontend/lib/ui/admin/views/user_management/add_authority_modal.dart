@@ -195,6 +195,8 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
                     return;
                   }
 
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
                   setState(() => _isSubmitting = true);
                   try {
                     final repo = ref.read(adminRepositoryProvider);
@@ -217,15 +219,15 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
                     
 
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(content: Text('Authority account created successfully')),
                       );
                       notifier.toggleAddAuthorityModal();
-                      Navigator.of(context).pop(created);
+                      navigator.pop(created);
                     }
                   } catch (error) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(content: Text('Error: ${error.toString()}')),
                       );
                     }

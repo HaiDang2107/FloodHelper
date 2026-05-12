@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/admin_theme.dart';
 import '../../view_models/admin_user_management_view_model.dart';
+import 'package:antiflood/data/models/profile_model.dart';
 import 'add_authority_modal.dart';
 import 'update_authority_modal.dart';
 import 'ban_confirm_modal.dart';
@@ -45,8 +46,8 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     ),
               ),
               FilledButton.icon(
-                onPressed: () {
-                  showDialog<void>(
+                onPressed: () async {
+                  await showDialog<void>(
                     context: context,
                     builder: (_) => const AddAuthorityModal(),
                   );
@@ -172,11 +173,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                             // Show "Update Authority" only for authority users
                             if (state.shouldShowUpdateAuthorityButton)
                               OutlinedButton.icon(
-                                onPressed: () {
-                                  showDialog<void>(
+                                onPressed: () async {
+                                  final updated = await showDialog<ProfileModel>(
                                     context: context,
                                     builder: (_) => UpdateAuthorityModal(profile: state.profile!),
                                   );
+                                  if (updated != null && mounted) {
+                                    notifier.setProfile(updated);
+                                  }
                                 },
                                 icon: const Icon(Icons.manage_accounts),
                                 label: const Text('Update Authority'),

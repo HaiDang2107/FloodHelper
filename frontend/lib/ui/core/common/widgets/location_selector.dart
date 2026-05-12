@@ -205,6 +205,11 @@ class _LocationSelectorFieldState extends State<LocationSelectorField> {
 
   @override
   Widget build(BuildContext context) {
+    final fieldTextStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Colors.black87,
+          height: 1.25,
+        );
+
     if (_isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
@@ -219,18 +224,19 @@ class _LocationSelectorFieldState extends State<LocationSelectorField> {
           initialValue: _selectedProvince?.code,
           isExpanded: true,
           dropdownColor: Colors.white,
-          style: const TextStyle(color: Colors.black),
+          style: fieldTextStyle,
           decoration: InputDecoration(
             labelText: widget.provinceLabel,
             labelStyle: const TextStyle(color: Colors.grey),
             floatingLabelStyle: const TextStyle(color: Colors.black),
             border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           ),
           items: _provinces
               .map(
                 (province) => DropdownMenuItem<int>(
                   value: province.code,
-                  child: Text(province.displayLabel),
+                  child: Text(province.displayLabel, style: fieldTextStyle),
                 ),
               )
               .toList(growable: false),
@@ -241,18 +247,19 @@ class _LocationSelectorFieldState extends State<LocationSelectorField> {
           initialValue: _selectedWard?.code,
           isExpanded: true,
           dropdownColor: Colors.white,
-          style: const TextStyle(color: Colors.black),
+          style: fieldTextStyle,
           decoration: InputDecoration(
             labelText: widget.wardLabel,
             labelStyle: const TextStyle(color: Colors.grey),
             floatingLabelStyle: const TextStyle(color: Colors.black),
             border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           ),
           items: _wards
               .map(
                 (ward) => DropdownMenuItem<int>(
                   value: ward.code,
-                  child: Text(ward.displayLabel),
+                  child: Text(ward.displayLabel, style: fieldTextStyle),
                 ),
               )
               .toList(growable: false),

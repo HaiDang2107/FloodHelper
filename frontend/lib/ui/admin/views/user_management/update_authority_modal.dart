@@ -105,6 +105,14 @@ class _UpdateAuthorityModalState extends ConsumerState<UpdateAuthorityModal> {
                 ),
               ),
               const SizedBox(height: 12),
+              TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Phone number',
+                  hintText: 'Enter phone number',
+                ),
+              ),
+              const SizedBox(height: 12),
               DropdownButtonFormField<Gender>(
                 initialValue: _selectedGender,
                 decoration: const InputDecoration(labelText: 'Gender'),
@@ -132,22 +140,6 @@ class _UpdateAuthorityModalState extends ConsumerState<UpdateAuthorityModal> {
                 initialWardCode: widget.profile.originWardCode,
                 onChanged: (selection) => setState(() => _originSelection = selection),
                 enabled: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone number',
-                  hintText: 'Enter phone number',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _nicknameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nickname',
-                  hintText: 'Enter nickname',
-                ),
               ),
               const SizedBox(height: 12),
               // Residence selector
@@ -194,6 +186,8 @@ class _UpdateAuthorityModalState extends ConsumerState<UpdateAuthorityModal> {
                     return;
                   }
 
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
                   setState(() => _isSubmitting = true);
                   try {
                     final repo = ref.read(adminRepositoryProvider);
@@ -213,15 +207,15 @@ class _UpdateAuthorityModalState extends ConsumerState<UpdateAuthorityModal> {
                     final updated = await repo.updateAuthority(widget.profile.userId, dto);
 
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(content: Text('Authority updated successfully')),
                       );
                       notifier.toggleUpdateAuthorityModal();
-                      Navigator.of(context).pop(updated);
+                      navigator.pop(updated);
                     }
                   } catch (error) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         SnackBar(content: Text('Error: ${error.toString()}')),
                       );
                     }
