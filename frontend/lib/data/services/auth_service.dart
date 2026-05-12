@@ -155,6 +155,20 @@ class AuthService {
     }
   }
 
+  /// Change password for logged in user
+  Future<ApiResponse<void>> changePassword(ChangePasswordRequestDto request) async {
+    try {
+      final response = await _apiClient.post(
+        '/auth/password/change',
+        data: request.toJson(),
+      );
+
+      return ApiResponse<void>.fromJson(response.data, null);
+    } on DioException catch (e) {
+      throw ApiException.fromDioError(e);
+    }
+  }
+
   /// Refresh token - uses cookie automatically via Dio CookieManager
   Future<ApiResponse<RefreshTokenDataDto>> refreshToken() async {
     try {

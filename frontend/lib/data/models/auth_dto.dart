@@ -106,6 +106,22 @@ class ResetPasswordRequestDto {
   Map<String, dynamic> toJson() => {'newPassword': newPassword};
 }
 
+/// Change password request
+class ChangePasswordRequestDto {
+  final String oldPassword;
+  final String newPassword;
+
+  ChangePasswordRequestDto({
+    required this.oldPassword,
+    required this.newPassword,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'oldPassword': oldPassword,
+    'newPassword': newPassword,
+  };
+}
+
 /// Refresh token request
 class RefreshTokenRequestDto {
   final String refreshToken;

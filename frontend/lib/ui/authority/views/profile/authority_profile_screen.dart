@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../data/providers/repository_providers.dart';
+import '../../../core/common/widgets/change_password_dialog.dart';
 import '../../theme/authority_theme.dart';
 import '../../view_models/authority_profile_view_model.dart';
 
@@ -14,6 +16,47 @@ class AuthorityProfileScreen extends ConsumerStatefulWidget {
 
 class _AuthorityProfileScreenState
     extends ConsumerState<AuthorityProfileScreen> {
+  Future<void> _showChangePasswordDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    final result = await showChangePasswordDialog(context);
+    if (result == null || !mounted) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).changePassword(
+        oldPassword: result.oldPassword,
+        newPassword: result.newPassword,
+      );
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Password changed successfully.')),
+      );
+    } catch (e) {
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to change password: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -150,22 +193,17 @@ class _AuthorityProfileScreenState
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AuthorityTheme.brandBlue.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
                   ],
                 ),
               ),
             )
           else
             const Text('Profile unavailable.'),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: _showChangePasswordDialog,
+            child: const Text('Change Password'),
+          ),
         ],
       ),
     );

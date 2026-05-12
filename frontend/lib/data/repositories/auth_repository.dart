@@ -186,6 +186,22 @@ class AuthRepository {
     }
   }
 
+  /// Change password while logged in
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final request = ChangePasswordRequestDto(
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+    );
+    final response = await _authService.changePassword(request);
+
+    if (!response.success) {
+      throw Exception(response.message);
+    }
+  }
+
   // ==================== Token Management ====================
 
   /// Refresh access token

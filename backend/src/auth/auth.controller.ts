@@ -20,6 +20,7 @@ import {
   SignoutDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
   RefreshTokenDto,
   GoogleCallbackDto,
   SignupResponseDto,
@@ -118,35 +119,7 @@ export class AuthController {
     response.clearCookie('refresh_token', { path: '/auth/token/refresh' });
     return result;
   }
-
-  // @Get('google')
-  // @UseGuards(GoogleAuthGuard)
-  // async googleLogin(): Promise<void> {
-  //   // Initiates Google OAuth flow - redirects to Google
-  //   // No response needed as guard handles redirect
-  // }
-
-  // @Get('google/callback')
-  // @UseGuards(GoogleAuthGuard)
-  // async googleCallback(
-  //   @Req() req: Request,
-  //   @Res({ passthrough: true }) response: Response,
-  // ): Promise<GoogleSigninResponseDto> {
-  //   const googleUser = req.user;
-  //   const result = await this.authService.handleGoogleCallback(googleUser);
-
-  //   // Set refresh token in cookie
-  //   response.cookie('refresh_token', result.data.tokens.refreshToken, {
-  //     httpOnly: true,
-  //     path: 'auth/token/refresh',
-  //   });
-
-  //   // Remove refresh token from response body
-  //   result.data.tokens.refreshToken = undefined as any;
-
-  //   return result;
-  // }
-
+  
   @Post('password/forgot')
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
@@ -168,6 +141,15 @@ export class AuthController {
     @CurrentUser() user: { accountId: string },
   ): Promise<{ success: boolean; message: string }> {
     return this.authService.resetPassword(resetPasswordDto, user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('password/change')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: { accountId: string },
+  ): Promise<{ success: boolean; message: string }> {
+    return this.authService.changePassword(changePasswordDto, user);
   }
 
   @Post('token/refresh')

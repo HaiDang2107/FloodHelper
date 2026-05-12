@@ -20,6 +20,7 @@ import {
   SignoutDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  ChangePasswordDto,
   RefreshTokenDto,
   GoogleCallbackDto,
   SignupResponseDto,
@@ -605,6 +606,33 @@ export class AuthService {
     await this.authRepository.updateAccountPassword(user.accountId, hashedPassword);
 
     return { success: true, message: 'Password has been reset successfully.' };
+  }
+
+  async changePassword(
+    changePasswordDto: ChangePasswordDto,
+    user: { accountId: string },
+  ): Promise<{ success: boolean; message: string }> {
+    const { oldPassword, newPassword } = changePasswordDto;
+    const account = await this.authRepository.findAccountByIdWithUser(
+      user.accountId,
+    );
+
+    if (!account) {
+      throw new NotFoundException('Account not found.');
+    }
+
+    const isOldPasswordMatching = await bcrypt.compare(
+      oldPassword,
+      account.password,
+    );
+    if (!isOldPasswordMatching) {
+      throw new UnauthorizedException('Old password is incorrect.');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.authRepository.updateAccountPassword(user.accountId, hashedPassword);
+
+    return { success: true, message: 'Password changed successfully.' };
   }
 
   async refreshToken(

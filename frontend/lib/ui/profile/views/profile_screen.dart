@@ -12,6 +12,8 @@ import '../widgets/role_management.dart';
 import '../widgets/profile_action_button.dart';
 import '../widgets/fullscreen_image_viewer.dart';
 import '../../core/common/widgets/location_selector.dart';
+import '../../core/common/widgets/change_password_dialog.dart';
+import '../../../../data/providers/repository_providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -411,6 +413,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _showChangePasswordDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    final result = await showChangePasswordDialog(context);
+    if (result == null || !mounted) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).changePassword(
+        oldPassword: result.oldPassword,
+        newPassword: result.newPassword,
+      );
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Password changed successfully.')),
+      );
+    } catch (e) {
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to change password: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileViewModelProvider);
@@ -715,7 +758,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 16),
                   ProfileActionButton(
                     text: 'Change Password',
-                    onPressed: () {},
+                    onPressed: _showChangePasswordDialog,
                     backgroundColor: Colors.grey[200],
                     textColor: Colors.black,
                   ),
