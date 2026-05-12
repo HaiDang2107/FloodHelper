@@ -11,6 +11,7 @@ import { AccountState } from '../common/enum/accountState.enum';
 import { PasswordGenerator } from '../common/utils/password-generator';
 import { formatLocation } from '../common/location-format.util';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
+import { UserRole } from '../common/enum/userRole.enum'
 import {
   AuthRepository,
   UserRepository,
@@ -76,7 +77,7 @@ export class AdminService {
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     const user = await this.authRepository.createUserWithAccount({
-      role: ['AUTHORITY'],
+      role: [UserRole.NORMAL_USER, UserRole.AUTHORITY],
       profiles: {
         create: {
           fullname: dto.fullname,
@@ -142,7 +143,7 @@ export class AdminService {
     const currentRoles: string[] = profile.user?.role ?? [];
     const targetWard = dto.residenceWardCode ?? profile.residenceWardCode;
     const willBeAuthority =
-      dto.isAuthority ?? currentRoles.includes('AUTHORITY');
+      dto.isAuthority ?? currentRoles.includes(UserRole.AUTHORITY);
 
     if (willBeAuthority) {
       if (!targetWard) {
@@ -155,8 +156,8 @@ export class AdminService {
 
     if (dto.isAuthority != null) {
       const nextRoles = dto.isAuthority
-        ? this.ensureRole(currentRoles, 'AUTHORITY')
-        : currentRoles.filter((role) => role !== 'AUTHORITY');
+        ? this.ensureRole(currentRoles, UserRole.AUTHORITY)
+        : currentRoles.filter((role) => role !== UserRole.AUTHORITY);
 
       const rolesChanged =
         nextRoles.length !== currentRoles.length ||

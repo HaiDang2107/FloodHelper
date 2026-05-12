@@ -91,6 +91,17 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Email (username) *',
+                  hintText: 'authority@example.com',
+                  labelStyle: TextStyle(color: grayLabelColor),
+                  hintStyle: TextStyle(color: grayHintColor),
+                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: _fullnameController,
                 decoration: InputDecoration(
                   labelText: 'Full name *',
@@ -145,17 +156,6 @@ class _AddAuthorityModalState extends ConsumerState<AddAuthorityModal> {
                 wardLabel: 'Origin ward',
                 onChanged: (selection) => setState(() => _originSelection = selection),
                 enabled: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Email (username) *',
-                  hintText: 'authority@example.com',
-                  labelStyle: TextStyle(color: grayLabelColor),
-                  hintStyle: TextStyle(color: grayHintColor),
-                  floatingLabelStyle: TextStyle(color: floatingLabelColor),
-                ),
               ),
               const SizedBox(height: 12),
               // Residence location (province -> ward required)
