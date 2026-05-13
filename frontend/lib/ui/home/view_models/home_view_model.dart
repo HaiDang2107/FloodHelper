@@ -122,6 +122,7 @@ class HomeViewModel extends _HomeViewModelBase
       _victimHandledSubscription?.cancel();
       _rescuerReplySubscription?.cancel();
       _mqttService.stopListeningFriendLocations();
+      _locationTrackingService.setUiIsActive(false);
     });
 
     ref.listen(friendViewModelProvider, (previous, next) {

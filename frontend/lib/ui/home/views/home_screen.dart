@@ -176,9 +176,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   markers: pins
                       .map((pin) {
                         final color = switch (pin.pinType) {
-                          HomePinType.me => UserStatus.online.color,
-                          HomePinType.friend => const Color(0xFF0F62FE),
-                          HomePinType.victim => Colors.red,
+                          HomePinType.me => const Color.fromARGB(255, 17, 123, 3),
+                          HomePinType.friend => pin.isOnline == null
+                              ? UserStatus.unknown.color
+                              : (pin.isOnline!
+                                  ? UserStatus.online.color
+                                  : UserStatus.offline.color),
+                          HomePinType.victim => UserStatus.offline.color,
                           HomePinType.campaign => const Color(0xFF0F62FE),
                         };
 
@@ -198,7 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   imageUrl: pin.avatarUrl,
                                   color: color,
                                   isSosState: pin.isSos,
-                                  roles: const [],
+                                  roles: pin.roles,
                                   onTap: () => viewModel.selectPin(pin.userId),
                                 ),
                         );

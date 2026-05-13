@@ -173,11 +173,8 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           '✅ [UI] NHẬN ĐƯỢC VỊ TRÍ BẠN BÈ: ${update.friendId} -> ${update.latitude}, ${update.longitude}',
         );
       }
-      final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
-      updatedLocations[update.friendId] = LatLng(
-        update.latitude,
-        update.longitude,
-      );
+      final updatedLocations = Map<String, FriendLocationUpdate>.from(state.friendLocations);
+      updatedLocations[update.friendId] = update;
       state = state.copyWith(friendLocations: updatedLocations);
     });
 
@@ -245,10 +242,19 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
         );
       }
       if (freezeIds.isNotEmpty) {
+        final newlyFrozenIds = freezeIds.where((id) {
+          final friend = state.friendsWithMapMode.where((f) => f.userId == id).firstOrNull;
+          return friend?.friendMapMode == true; // Previously they were in See Me (true)
+        }).toList();
+
         await _friendRepository.updateFriendMapModes(
           friendIds: freezeIds,
           mapMode: false,
         );
+        
+        if (newlyFrozenIds.isNotEmpty) {
+          _locationTrackingService.publishFreezeLocation(newlyFrozenIds);
+        }
       }
 
       await _loadFriendsWithMapMode();
@@ -437,7 +443,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
   @override
   Future<void> syncAfterAcceptFriendRequest(String friendUserId) async {
-    final updatedLocations = Map<String, LatLng>.from(state.friendLocations);
+    final updatedLocations = Map<String, FriendLocationUpdate>.from(state.friendLocations);
     updatedLocations.remove(friendUserId);
     state = state.copyWith(friendLocations: updatedLocations);
 

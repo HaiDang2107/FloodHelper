@@ -23,14 +23,14 @@ class MqttWorker:
         print(f"[MQTT-WORKER] {message}")
 
     def _publish(self, topic: str, payload: str, qos: int = 0, retain: bool = False) -> None:
-        self._debug(
-            f"Publishing topic={topic} qos={qos} retain={retain} payload={payload}"
-        )
+        # self._debug(
+        #     f"Publishing topic={topic} qos={qos} retain={retain} payload={payload}"
+        # )
         result = self.client.publish(topic, payload=payload, qos=qos, retain=retain)
-        if result.rc == mqtt.MQTT_ERR_SUCCESS:
-            self._debug(f"Publish success topic={topic} rc={result.rc}")
-        else:
-            self._debug(f"Publish failed topic={topic} rc={result.rc}")
+        # if result.rc == mqtt.MQTT_ERR_SUCCESS:
+        #     self._debug(f"Publish success topic={topic} rc={result.rc}")
+        # else:
+        #     self._debug(f"Publish failed topic={topic} rc={result.rc}")
 
     @staticmethod
     def _normalize_signal_data(raw_data: dict[str, Any]) -> dict[str, Any]:
@@ -50,12 +50,17 @@ class MqttWorker:
         fullname = data.get("fullname")
         allowed_friends = data.get("allowed_friends", [])
         is_sos = bool(data.get("isSoS", False))
+        is_online = data.get("isOnline")
 
         if lat is None or lng is None or not sender_user:
             # self._debug(f"Invalid current-location payload: {data}")
             return
 
-        location_payload = json.dumps({"lat": lat, "lng": lng})
+        location_data = {"lat": lat, "lng": lng}
+        if is_online is not None:
+            location_data["isOnline"] = is_online
+
+        location_payload = json.dumps(location_data)
         for friend_id in allowed_friends:
             target_topic = f"{sender_user}/to_{friend_id}/last-location"
             self._publish(
@@ -221,13 +226,13 @@ class MqttWorker:
     def on_message(self, client, userdata, msg) -> None:
         try:
             data = json.loads(msg.payload.decode("utf-8"))
-            self._debug(f"Received topic={msg.topic} payload={data}")
+            # self._debug(f"Received topic={msg.topic} payload={data}")
 
             if msg.topic == self.settings.topic_current_location:
                 self._handle_current_location(data)
                 return
 
-            self._debug(f"Received topic={msg.topic} payload={data}")
+            # self._debug(f"Received topic={msg.topic} payload={data}")
 
             if msg.topic == self.settings.topic_signal:
                 self._handle_signal_command(data)
@@ -237,7 +242,7 @@ class MqttWorker:
                 self._handle_rescuer_handle(data)
                 return
 
-            self._debug(f"Received message on unsupported topic {msg.topic}")
+            # self._debug(f"Received message on unsupported topic {msg.topic}")
         except json.JSONDecodeError:
             self._debug(f"Invalid JSON payload on topic={msg.topic}: {msg.payload!r}")
         except Exception as exc:

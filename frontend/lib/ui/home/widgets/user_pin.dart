@@ -144,11 +144,11 @@ class UserLocationPin extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (roles.contains('Rescuer'))
+                  if (roles.contains('RESCUER'))
                     Container(
                       margin: const EdgeInsets.only(left: 2),
                       padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.orange,
                         shape: BoxShape.circle,
                         boxShadow: [
@@ -165,11 +165,11 @@ class UserLocationPin extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                  if (roles.contains('Benefactor'))
+                  if (roles.contains('BENEFACTOR'))
                     Container(
                       margin: const EdgeInsets.only(left: 2),
                       padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.blue,
                         shape: BoxShape.circle,
                         boxShadow: [
@@ -182,6 +182,48 @@ class UserLocationPin extends StatelessWidget {
                       ),
                       child: Icon(
                         Icons.volunteer_activism,
+                        size: size * 0.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (roles.contains('AUTHORITY'))
+                    Container(
+                      margin: const EdgeInsets.only(left: 2),
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Colors.indigo,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 2,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.local_police,
+                        size: size * 0.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (roles.contains('ADMIN'))
+                    Container(
+                      margin: const EdgeInsets.only(left: 2),
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Colors.black87,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 2,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.admin_panel_settings,
                         size: size * 0.2,
                         color: Colors.white,
                       ),

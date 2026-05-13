@@ -142,9 +142,11 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         userId: entry.key,
         fullname: friendInfo?.name ?? '[Fail to load]',
         avatarUrl: friendInfo?.avatarUrl ?? '',
-        position: entry.value,
+        position: LatLng(entry.value.latitude, entry.value.longitude),
         pinType: HomePinType.friend,
         isSos: false,
+        isOnline: entry.value.isOnline,
+        roles: friendInfo?.roles ?? const [],
       );
     }
 
@@ -163,6 +165,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         position: entry.value,
         pinType: HomePinType.victim,
         isSos: true,
+        roles: friendInfo?.roles ?? const [],
       );
     }
 
@@ -189,6 +192,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         position: state.currentPosition!,
         pinType: HomePinType.me,
         isSos: state.isSosBroadcasting,
+        roles: currentUser.roles.map((r) => r.toBackendString()).toList(),
       );
     }
 

@@ -296,6 +296,7 @@ class LocationTrackingService {
     await _bindUserIdWithRetry(userId, fullname: fullname);
     _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
     _service.invoke('setRescuerMode', {'isRescuer': isRescuer});
+    // setUiIsActive(true); // Đã set true ở home_runtime_mixin
 
     // 4. Lấy vị trí hiện tại từ background
     _service.invoke('requestImmediateLocation'); // Dữ liệu vị trí được bắn ngược lên (xem handler để rõ hơn)
@@ -371,6 +372,11 @@ class LocationTrackingService {
   /// Tell background isolate whether UI isolate is currently active.
   void setUiIsActive(bool isUiActive) {
     _service.invoke('setUiIsActive', {'isUiActive': isUiActive});
+  }
+
+  /// Publish a location update with isOnline = false to frozen friends
+  void publishFreezeLocation(List<String> freezeIds) {
+    _service.invoke('publishFreezeLocation', {'freezeIds': freezeIds});
   }
 
   // -------------------- Private --------------------

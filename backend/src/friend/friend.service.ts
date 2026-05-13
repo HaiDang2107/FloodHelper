@@ -276,6 +276,7 @@ export class FriendService {
       nickname: f.friend.profiles[0]?.nickname || '',
       avatarUrl: f.friend.profiles[0]?.avatarUrl || '',
       friendMapMode: f.friendMapMode,
+      roles: f.friend.role,
     }));
   }
 

@@ -43,30 +43,30 @@ class _DisplayWidgetState extends State<DisplayWidget> {
             ),
           ),
           const SizedBox(height: 12),
-          CheckboxListTile(
-            value: widget.showStrangerLocation,
-            onChanged: (value) {
-              widget.onShowStrangerLocationChanged(value ?? true);
-            },
-            title: const Text(
-              'Show stranger locations',
-              style: TextStyle(color: Colors.black87),
-            ),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-          ),
-          CheckboxListTile(
-            value: widget.showPostLocation,
-            onChanged: (value) {
-              widget.onShowPostLocationChanged(value ?? true);
-            },
-            title: const Text(
-              'Show post locations',
-              style: TextStyle(color: Colors.black87),
-            ),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-          ),
+          // CheckboxListTile(
+          //   value: widget.showStrangerLocation,
+          //   onChanged: (value) {
+          //     widget.onShowStrangerLocationChanged(value ?? true);
+          //   },
+          //   title: const Text(
+          //     'Show stranger locations',
+          //     style: TextStyle(color: Colors.black87),
+          //   ),
+          //   controlAffinity: ListTileControlAffinity.leading,
+          //   contentPadding: EdgeInsets.zero,
+          // ),
+          // CheckboxListTile(
+          //   value: widget.showPostLocation,
+          //   onChanged: (value) {
+          //     widget.onShowPostLocationChanged(value ?? true);
+          //   },
+          //   title: const Text(
+          //     'Show post locations',
+          //     style: TextStyle(color: Colors.black87),
+          //   ),
+          //   controlAffinity: ListTileControlAffinity.leading,
+          //   contentPadding: EdgeInsets.zero,
+          // ),
           CheckboxListTile(
             value: widget.showCharityCampaignLocations,
             onChanged: (value) {

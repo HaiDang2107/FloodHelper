@@ -12,11 +12,13 @@ class FriendLocationUpdate {
   final String friendId;
   final double latitude;
   final double longitude;
+  final bool? isOnline;
 
   const FriendLocationUpdate({
     required this.friendId,
     required this.latitude,
     required this.longitude,
+    this.isOnline,
   });
 }
 
@@ -205,6 +207,7 @@ class MqttService {
             friendId: friendId,
             latitude: (data['lat'] as num).toDouble(),
             longitude: (data['lng'] as num).toDouble(),
+            isOnline: data.containsKey('isOnline') ? data['isOnline'] == true : null,
           );
 
           _friendLocationController.add(update);

@@ -6,6 +6,7 @@ class FriendModel {
   final String? displayName;
   final String? avatarUrl;
   final bool friendMapMode;
+  final List<String> roles;
 
   const FriendModel({
     required this.userId,
@@ -13,6 +14,7 @@ class FriendModel {
     this.displayName,
     this.avatarUrl,
     required this.friendMapMode,
+    this.roles = const [],
   });
 
   String get effectiveDisplayName => displayName ?? name;
@@ -24,6 +26,7 @@ class FriendModel {
       displayName: json['displayName'],
       avatarUrl: json['avatarUrl'],
       friendMapMode: json['friendMapMode'] ?? false,
+      roles: json['roles'] != null ? List<String>.from(json['roles']) : const [],
     );
   }
 
@@ -34,6 +37,7 @@ class FriendModel {
       'displayName': displayName,
       'avatarUrl': avatarUrl,
       'friendMapMode': friendMapMode,
+      'roles': roles,
     };
   }
 
@@ -43,6 +47,7 @@ class FriendModel {
     String? displayName,
     String? avatarUrl,
     bool? friendMapMode,
+    List<String>? roles,
   }) {
     return FriendModel(
       userId: userId ?? this.userId,
@@ -50,6 +55,7 @@ class FriendModel {
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       friendMapMode: friendMapMode ?? this.friendMapMode,
+      roles: roles ?? this.roles,
     );
   }
 }

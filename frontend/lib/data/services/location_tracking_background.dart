@@ -249,6 +249,35 @@ Future<void> onStart(ServiceInstance service) async {
     }
   });
 
+  service.on('publishFreezeLocation').listen((event) async {
+    if (!mqttConnected || userId == null || event == null) return;
+    final freezeIds = List<String>.from(event['freezeIds'] ?? []);
+    if (freezeIds.isEmpty) return;
+
+    final lat = cachedPosition?['latitude'] ?? 0.0;
+    final lng = cachedPosition?['longitude'] ?? 0.0;
+
+    final payload = jsonEncode({
+      'lat': lat,
+      'lng': lng,
+      'user': userId,
+      'fullname': fullname,
+      'allowed_friends': freezeIds,
+      'isSoS': isSos,
+      'isOnline': false,
+    });
+
+    if (kDebugMode && AppConfig.mqttVerboseLogging) {
+      print('📍 [BG] Publishing FREEZE location to ${freezeIds.length} friends: $payload');
+    }
+
+    mqttService.publishRaw(
+      topic: AppConfig.mqttCurrentLocationSuffix,
+      payload: payload,
+      qos: MqttQos.atMostOnce,
+    );
+  });
+
   service.on('stopService').listen((_) {
     teardownRescuerSubscription();
     teardownRescuerReplySubscription();
@@ -338,6 +367,7 @@ Future<void> onStart(ServiceInstance service) async {
           'fullname': fullname,
           'allowed_friends': allowedFriends,
           'isSoS': isSos,
+          'isOnline': isUiActive,
         });
         if (kDebugMode && AppConfig.mqttVerboseLogging) {
           if (kDebugMode) {

@@ -264,6 +264,7 @@ export class FriendRepository extends BaseRepository<any> {
         friend: {
           select: {
             userId: true,
+            role: true,
             profiles: {
               where: { isCurrent: true },
               select: {

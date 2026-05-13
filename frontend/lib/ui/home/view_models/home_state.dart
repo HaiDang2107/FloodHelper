@@ -27,8 +27,10 @@ class HomeMapPin {
   final LatLng position;
   final HomePinType pinType;
   final bool isSos;
+  final bool? isOnline;
   final String? campaignId;
   final String? campaignDestination;
+  final List<String> roles;
 
   const HomeMapPin({
     required this.userId,
@@ -37,8 +39,10 @@ class HomeMapPin {
     required this.position,
     required this.pinType,
     required this.isSos,
+    this.isOnline,
     this.campaignId,
     this.campaignDestination,
+    this.roles = const [],
   });
 }
 
@@ -83,7 +87,7 @@ class HomeState {
   final List<AnnouncementModel> announcements;
   final int unreadAnnouncementsCount;
 
-  final Map<String, LatLng> friendLocations;
+  final Map<String, FriendLocationUpdate> friendLocations;
   final Map<String, LatLng> victimLocations;
   final Map<String, String> victimFullnames;
 
@@ -135,7 +139,7 @@ class HomeState {
     List<PostModel>? posts,
     List<AnnouncementModel>? announcements,
     int? unreadAnnouncementsCount,
-    Map<String, LatLng>? friendLocations,
+    Map<String, FriendLocationUpdate>? friendLocations,
     Map<String, LatLng>? victimLocations,
     Map<String, String>? victimFullnames,
     List<FriendModel>? friendsWithMapMode,
