@@ -13,7 +13,7 @@ class ProfileRole extends StatelessWidget {
   final Future<void> Function(UserRole role) onAddRole;
   final Future<List<ProfileRoleRequestModel>> Function() onRefreshRequests;
   final Future<List<ProfileUpdateRequestModel>> Function()
-      onRefreshProfileUpdateRequests;
+  onRefreshProfileUpdateRequests;
   final Future<void> Function(String requestId) onRevokeProfileUpdateRequest;
   final bool canSubmitRoleRequest;
   final String? roleRequestBlockedReason;
@@ -45,7 +45,10 @@ class ProfileRole extends StatelessWidget {
             const SizedBox(height: 16),
             ListTile(
               title: const Text('Benefactor'),
-              leading: const Icon(Icons.volunteer_activism, color: Colors.green),
+              leading: const Icon(
+                Icons.volunteer_activism,
+                color: Colors.green,
+              ),
               onTap: () async {
                 Navigator.pop(context);
                 await onAddRole(UserRole.benefactor);
@@ -53,7 +56,7 @@ class ProfileRole extends StatelessWidget {
             ),
             ListTile(
               title: const Text('Rescuer'),
-              leading: const Icon(Icons.health_and_safety, color: Colors.orange),
+              leading: const Icon(Icons.shield, color: Colors.orange),
               onTap: () async {
                 Navigator.pop(context);
                 await onAddRole(UserRole.rescuer);
@@ -71,8 +74,6 @@ class ProfileRole extends StatelessWidget {
     );
   }
 
-
-
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Container(
       width: double.infinity,
@@ -81,10 +82,7 @@ class ProfileRole extends StatelessWidget {
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(8),
         border: Border(
-          left: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 4,
-          ),
+          left: BorderSide(color: Theme.of(context).primaryColor, width: 4),
         ),
       ),
       child: Text(
@@ -101,10 +99,10 @@ class ProfileRole extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final roleDisplay = roles.isEmpty 
-        ? 'Normal User' 
+    final roleDisplay = roles.isEmpty
+        ? 'Normal User'
         : roles.map((r) => r.displayName).join(', ');
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -112,7 +110,11 @@ class ProfileRole extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'Current Role: $roleDisplay',
-          style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black87),
+          style: const TextStyle(
+            fontSize: 16,
+            fontStyle: FontStyle.italic,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 16),
         if (!canSubmitRoleRequest)
@@ -158,7 +160,6 @@ class ProfileRole extends StatelessWidget {
   }
 }
 
-
 void showSentRequestsSheet(
   BuildContext context, {
   required List<ProfileRoleRequestModel> requests,
@@ -166,13 +167,15 @@ void showSentRequestsSheet(
   required bool isLoadingRequests,
   required bool isLoadingProfileUpdateRequests,
   required Future<List<ProfileRoleRequestModel>> Function() onRefreshRequests,
-  required Future<List<ProfileUpdateRequestModel>> Function() onRefreshProfileUpdateRequests,
+  required Future<List<ProfileUpdateRequestModel>> Function()
+  onRefreshProfileUpdateRequests,
   required Future<void> Function(String) onRevokeProfileUpdateRequest,
   required Future<void> Function(String) onRevokeRoleRequest,
 }) {
   var sheetRequests = List<ProfileRoleRequestModel>.from(requests);
-  var sheetProfileRequests =
-      List<ProfileUpdateRequestModel>.from(profileUpdateRequests);
+  var sheetProfileRequests = List<ProfileUpdateRequestModel>.from(
+    profileUpdateRequests,
+  );
   var sheetLoading = isLoadingRequests;
   var sheetProfileLoading = isLoadingProfileUpdateRequests;
 
@@ -196,7 +199,7 @@ void showSentRequestsSheet(
                   const Text(
                     'Sent Requests',
                     style: TextStyle(
-                      fontSize: 20, 
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
@@ -263,21 +266,23 @@ void showSentRequestsSheet(
                                     setSheetState(() {
                                       final idx = sheetRequests.indexOf(item);
                                       if (idx != -1) {
-                                        sheetRequests[idx] = ProfileRoleRequestModel(
-                                          requestId: item.requestId,
-                                          type: item.type,
-                                          state: 'REVOKED',
-                                          createdAt: item.createdAt,
-                                          responsedAt: DateTime.now(),
-                                          authorityName: item.authorityName,
-                                          note: item.note,
-                                        );
+                                        sheetRequests[idx] =
+                                            ProfileRoleRequestModel(
+                                              requestId: item.requestId,
+                                              type: item.type,
+                                              state: 'REVOKED',
+                                              createdAt: item.createdAt,
+                                              responsedAt: DateTime.now(),
+                                              authorityName: item.authorityName,
+                                              note: item.note,
+                                            );
                                       }
                                     });
 
                                     await onRevokeRoleRequest(item.requestId);
                                     try {
-                                      final refreshed = await onRefreshRequests();
+                                      final refreshed =
+                                          await onRefreshRequests();
                                       setSheetState(() {
                                         sheetRequests = refreshed;
                                       });
@@ -304,16 +309,19 @@ void showSentRequestsSheet(
                                 ? () async {
                                     // Optimistic UI update
                                     setSheetState(() {
-                                      final idx = sheetProfileRequests.indexOf(item);
+                                      final idx = sheetProfileRequests.indexOf(
+                                        item,
+                                      );
                                       if (idx != -1) {
-                                        sheetProfileRequests[idx] = ProfileUpdateRequestModel(
-                                          requestId: item.requestId,
-                                          state: 'REVOKED',
-                                          createdAt: item.createdAt,
-                                          respondedAt: DateTime.now(),
-                                          authorityName: item.authorityName,
-                                          note: item.note,
-                                        );
+                                        sheetProfileRequests[idx] =
+                                            ProfileUpdateRequestModel(
+                                              requestId: item.requestId,
+                                              state: 'REVOKED',
+                                              createdAt: item.createdAt,
+                                              respondedAt: DateTime.now(),
+                                              authorityName: item.authorityName,
+                                              note: item.note,
+                                            );
                                       }
                                     });
 
@@ -324,7 +332,8 @@ void showSentRequestsSheet(
                                       final refreshedProfiles =
                                           await onRefreshProfileUpdateRequests();
                                       setSheetState(() {
-                                        sheetProfileRequests = refreshedProfiles;
+                                        sheetProfileRequests =
+                                            refreshedProfiles;
                                       });
                                     } catch (_) {}
                                   }
