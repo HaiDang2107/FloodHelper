@@ -873,4 +873,10 @@ export class UserService {
     };
   }
 
+  /**
+   * Update FCM token for push notifications.
+   */
+  async updateFcmToken(userId: string, fcmToken: string) {
+    return this.userRepository.updateFcmToken(userId, fcmToken);
+  }
 }

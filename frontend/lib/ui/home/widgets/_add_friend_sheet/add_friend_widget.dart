@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/common/services/global_notification_controller.dart';
 import '../../view_models/friend_view_model.dart';
 
 class AddFriendWidget extends ConsumerStatefulWidget {
@@ -11,66 +12,63 @@ class AddFriendWidget extends ConsumerStatefulWidget {
 }
 
 class _AddFriendWidgetState extends ConsumerState<AddFriendWidget> {
-  bool _showIdField = false;
-  final TextEditingController _idController = TextEditingController();
+  bool _showEmailField = false;
+  final TextEditingController _emailController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
-    _idController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
   Future<void> _pickQRCodeImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('QR Code loaded: ${image.name}')),
+      ref.read(globalNotificationControllerProvider).showNotification(
+        'QR Code loaded: ${image.name}',
       );
       // TODO: Process QR code image
     }
   }
 
-  void _toggleIdField() {
+  void _toggleEmailField() {
     setState(() {
-      _showIdField = !_showIdField;
-      if (!_showIdField) {
-        _idController.clear();
+      _showEmailField = !_showEmailField;
+      if (!_showEmailField) {
+        _emailController.clear();
       }
     });
   }
 
-  Future<void> _submitId() async {
-    final id = _idController.text.trim();
-    if (id.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a FloodHelper ID')),
+  Future<void> _submitEmail() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ref.read(globalNotificationControllerProvider).showNotification(
+        'Please enter an email address',
+        backgroundColor: Colors.red,
       );
       return;
     }
 
     final viewModel = ref.read(friendViewModelProvider.notifier);
-    final success = await viewModel.sendFriendRequest(id);
+    final success = await viewModel.sendFriendRequest(email);
 
     if (mounted) {
       if (success) {
-        _idController.clear();
+        _emailController.clear();
         setState(() {
-          _showIdField = false;
+          _showEmailField = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Friend request sent successfully!'),
-            backgroundColor: Colors.green,
-          ),
+        ref.read(globalNotificationControllerProvider).showNotification(
+          'Friend request sent successfully!',
+          backgroundColor: Colors.green,
         );
       } else {
         final state = ref.read(friendViewModelProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.errorMessage ?? 'Failed to send friend request'),
-            backgroundColor: Colors.red,
-          ),
+        ref.read(globalNotificationControllerProvider).showNotification(
+          state.errorMessage ?? 'Failed to send friend request',
+          backgroundColor: Colors.red,
         );
       }
     }
@@ -110,23 +108,24 @@ class _AddFriendWidgetState extends ConsumerState<AddFriendWidget> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildActionButton(
-                  icon: Icons.badge,
-                  label: 'FloodHelper ID',
-                  onTap: _toggleIdField,
-                  isActive: _showIdField,
+                  icon: Icons.alternate_email,
+                  label: 'Email',
+                  onTap: _toggleEmailField,
+                  isActive: _showEmailField,
                 ),
               ),
             ],
           ),
-          if (_showIdField) ...[
+          if (_showEmailField) ...[
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _idController,
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      hintText: 'Enter FloodHelper ID',
+                      hintText: 'Enter email address',
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
@@ -134,7 +133,7 @@ class _AddFriendWidgetState extends ConsumerState<AddFriendWidget> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: state.isSending ? null : _submitId,
+                  onPressed: state.isSending ? null : _submitEmail,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0F62FE),
                     foregroundColor: Colors.white,

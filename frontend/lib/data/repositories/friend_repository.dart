@@ -3,9 +3,9 @@ import '../models/friend_model.dart';
 
 /// Abstract repository for friend request operations
 abstract class FriendRepository {
-  /// Send a friend request by receiver's user ID
+  /// Send a friend request by receiver's email
   Future<SendFriendRequestResponse> sendFriendRequest({
-    required String receiverId,
+    required String email,
     String? note,
   });
 
@@ -24,8 +24,8 @@ abstract class FriendRepository {
   /// Cancel a sent friend request
   Future<void> cancelFriendRequest(String requestId);
 
-  /// Update FCM token on the server
-  Future<void> updateFcmToken(String fcmToken);
+  /// Remove a friend
+  Future<void> removeFriend(String userId);
 
   /// Get all friends with map mode status
   Future<List<FriendModel>> getFriends();

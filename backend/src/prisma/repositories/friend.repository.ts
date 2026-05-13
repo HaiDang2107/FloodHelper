@@ -82,7 +82,36 @@ export class FriendRepository extends BaseRepository<any> {
   async getFriendRequest(requestId: string) {
     return this.prisma.friendMakingRequest.findUnique({
       where: { requestId },
-
+      include: {
+        sender: {
+          select: {
+            userId: true,
+            fcmToken: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        receiver: {
+          select: {
+            userId: true,
+            fcmToken: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -198,6 +227,26 @@ export class FriendRepository extends BaseRepository<any> {
       data: {
         state: 'REJECTED',
         responsedAt: new Date(),
+      },
+      include: {
+        sender: {
+          select: {
+            userId: true,
+            fcmToken: true,
+          },
+        },
+        receiver: {
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                nickname: true,
+              },
+            },
+          },
+        },
       },
     });
   }

@@ -11,14 +11,14 @@ class FriendService {
 
   /// Send a friend request
   Future<SendFriendRequestResponse> sendFriendRequest({
-    required String receiverId,
+    required String email,
     String? note,
   }) async {
     try {
       final response = await _apiClient.post(
         '/friend/request',
         data: {
-          'receiverId': receiverId,
+          'email': email,
           if (note case final String n) 'note': n,
         },
       );
@@ -96,17 +96,6 @@ class FriendService {
     }
   }
 
-  /// Update FCM token for push notifications
-  Future<void> updateFcmToken(String fcmToken) async {
-    try {
-      await _apiClient.patch(
-        '/friend/fcm-token',
-        data: {'fcmToken': fcmToken},
-      );
-    } on DioException catch (e) {
-      throw ApiException.fromDioError(e);
-    }
-  }
 
   /// Get all friends with map mode status
   Future<List<FriendModel>> getFriends() async {

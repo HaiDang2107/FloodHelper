@@ -51,7 +51,11 @@ class FriendRequestUserInfo {
     this.avatarUrl,
   });
 
-  String get effectiveDisplayName => displayName ?? name;
+  String get effectiveDisplayName {
+    if (displayName != null && displayName!.isNotEmpty) return displayName!;
+    if (name.isNotEmpty) return name;
+    return 'Unknown User';
+  }
 
   factory FriendRequestUserInfo.fromJson(Map<String, dynamic> json) {
     return FriendRequestUserInfo(

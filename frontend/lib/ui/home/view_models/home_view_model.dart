@@ -1,6 +1,4 @@
 import 'dart:async';
-
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +8,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/repositories/repositories.dart';
-import '../../../data/services/firebase_messaging_service.dart';
 import '../../../data/services/location_tracking_service.dart';
 import '../../../data/services/mqtt_service.dart';
 import '../../../data/services/signal_service.dart';
@@ -89,15 +86,17 @@ class HomeViewModel extends _HomeViewModelBase
 
   // Repositories
   @override
-  late final UserRepository _userRepository;
+  UserRepository get _userRepository => ref.read(userRepositoryProvider);
   @override
-  late final PostRepository _postRepository;
+  PostRepository get _postRepository => ref.read(postRepositoryProvider);
   @override
-  late final AnnouncementRepository _announcementRepository;
+  AnnouncementRepository get _announcementRepository =>
+      ref.read(announcementRepositoryProvider);
   @override
-  late final FriendRepository _friendRepository;
+  FriendRepository get _friendRepository => ref.read(friendRepositoryProvider);
   @override
-  late final CharityCampaignRepository _charityCampaignRepository;
+  CharityCampaignRepository get _charityCampaignRepository =>
+      ref.read(charityCampaignRepositoryProvider);
 
   // Location stream subscription
   StreamSubscription<LocationUpdate>? _locationSubscription;
@@ -115,13 +114,6 @@ class HomeViewModel extends _HomeViewModelBase
 
   @override
   HomeState build() {
-    // Initialize repositories
-    _userRepository = ref.read(userRepositoryProvider);
-    _postRepository = ref.read(postRepositoryProvider);
-    _announcementRepository = ref.read(announcementRepositoryProvider);
-    _friendRepository = ref.read(friendRepositoryProvider);
-    _charityCampaignRepository = ref.read(charityCampaignRepositoryProvider);
-
     ref.onDispose(() {
       _locationSubscription?.cancel();
       _friendLocationSubscription?.cancel();

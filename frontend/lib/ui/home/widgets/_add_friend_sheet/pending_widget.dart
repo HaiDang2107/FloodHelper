@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/common/widgets/user_avatar.dart';
 import '../../../core/common/constants/user_state.dart';
+import '../../../core/common/services/global_notification_controller.dart';
 import '../../view_models/friend_view_model.dart';
 
 enum RequestType {
@@ -19,10 +20,27 @@ class PendingWidget extends ConsumerStatefulWidget {
 class _PendingWidgetState extends ConsumerState<PendingWidget> {
   RequestType _selectedType = RequestType.received;
 
+  @override
+  void initState() {
+    super.initState();
+    // Load initial selection
+    Future.microtask(() => _loadData());
+  }
+
+  void _loadData() {
+    final notifier = ref.read(friendViewModelProvider.notifier);
+    if (_selectedType == RequestType.sent) {
+      notifier.loadSentRequests();
+    } else {
+      notifier.loadReceivedRequests();
+    }
+  }
+
   void _acceptRequest(String requestId, String name) {
     ref.read(friendViewModelProvider.notifier).acceptFriendRequest(requestId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Bạn và $name đã trở thành bạn bè')),
+    ref.read(globalNotificationControllerProvider).showNotification(
+      'Bạn và $name đã trở thành bạn bè',
+      backgroundColor: Colors.green,
     );
   }
 
@@ -75,6 +93,7 @@ class _PendingWidgetState extends ConsumerState<PendingWidget> {
               setState(() {
                 _selectedType = newSelection.first;
               });
+              _loadData();
             },
             style: ButtonStyle(
               backgroundColor: WidgetStateProperty.resolveWith<Color>(
@@ -157,6 +176,8 @@ class _PendingWidgetState extends ConsumerState<PendingWidget> {
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     if (request.note != null && request.note!.isNotEmpty)
                       Text(

@@ -3,7 +3,7 @@ import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 export class SendFriendRequestDto {
   @IsNotEmpty()
   @IsString()
-  receiverId: string;
+  email: string;
 
   @IsOptional()
   @IsString()

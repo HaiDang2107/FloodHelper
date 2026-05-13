@@ -29,7 +29,6 @@ UserRepository userRepository(Ref ref) {
   }
   return RealUserRepository(
     userService: ref.read(userServiceProvider),
-    friendService: ref.read(friendServiceProvider),
   );
 }
 

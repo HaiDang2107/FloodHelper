@@ -55,46 +55,61 @@ class FriendRequestState {
 
 @riverpod
 class FriendViewModel extends _$FriendViewModel {
-  late final FriendRepository _friendRepository;
+  FriendRepository get _friendRepository => ref.read(friendRepositoryProvider);
 
   @override
   FriendRequestState build() {
-    _friendRepository = ref.read(friendRepositoryProvider);
-
-    // Auto-load requests on build
-    Future.microtask(() => loadRequests());
-
     return const FriendRequestState();
   }
 
   /// Load both sent and received requests
   Future<void> loadRequests() async {
+    await Future.wait([
+      loadSentRequests(),
+      loadReceivedRequests(),
+    ]);
+  }
+
+  /// Load sent requests only
+  Future<void> loadSentRequests() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final results = await Future.wait([
-        _friendRepository.getSentRequests(),
-        _friendRepository.getReceivedRequests(),
-      ]);
-
+      final requests = await _friendRepository.getSentRequests();
       state = state.copyWith(
-        sentRequests: results[0],
-        receivedRequests: results[1],
+        sentRequests: requests,
         isLoading: false,
       );
     } catch (e) {
       state = state.copyWith(
+        errorMessage: 'Failed to load sent requests: $e',
         isLoading: false,
-        errorMessage: 'Failed to load requests: $e',
       );
     }
   }
 
-  /// Send a friend request by user ID
-  Future<bool> sendFriendRequest(String receiverId, {String? note}) async {
+  /// Load received requests only
+  Future<void> loadReceivedRequests() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final requests = await _friendRepository.getReceivedRequests();
+      state = state.copyWith(
+        receivedRequests: requests,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        errorMessage: 'Failed to load received requests: $e',
+        isLoading: false,
+      );
+    }
+  }
+
+  /// Send a friend request by email
+  Future<bool> sendFriendRequest(String email, {String? note}) async {
     state = state.copyWith(isSending: true, clearError: true, clearSuccess: true);
     try {
       await _friendRepository.sendFriendRequest(
-        receiverId: receiverId,
+        email: email,
         note: note,
       );
 
@@ -111,7 +126,7 @@ class FriendViewModel extends _$FriendViewModel {
       String errorMsg = 'Failed to send friend request';
       final errorStr = e.toString();
       if (errorStr.contains('not found') || errorStr.contains('Not found')) {
-        errorMsg = 'User not found. Please check the ID.';
+        errorMsg = 'User with this email not found.';
       } else if (errorStr.contains('already friends')) {
         errorMsg = 'You are already friends with this user.';
       } else if (errorStr.contains('already exists')) {
@@ -212,5 +227,10 @@ class FriendViewModel extends _$FriendViewModel {
 
   void clearAcceptedFriendSyncEvent() {
     state = state.copyWith(clearAcceptedFriendUserId: true);
+  }
+
+  /// Trigger sync event after a friend request is accepted (called from push notification)
+  void triggerAcceptedFriendSync(String userId) {
+    state = state.copyWith(acceptedFriendUserId: userId);
   }
 }

@@ -10,13 +10,12 @@ import '../widgets/home_map_actions_fab.dart';
 import '../widgets/user_pin.dart';
 import '../widgets/pin_action_bubble.dart';
 import '../../core/common/widgets/bottom_sheet.dart';
+import '../../core/common/services/global_notification_controller.dart';
 import '../../core/common/constants/user_state.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../charity_campaign/views/existing_charity_screen.dart';
 import '../../charity_campaign/widgets/charity_item.dart';
 import '../widgets/campaign_pin.dart';
-import '../../../data/providers/providers.dart';
-import '../../../data/services/firebase_messaging_service.dart';
 import 'settings/_settings_sheet.dart';
 import 'rescuer/_broadcasting_signals_sheet.dart';
 
@@ -96,8 +95,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cannot open campaign detail: $error')),
+      ref.read(globalNotificationControllerProvider).showNotification(
+        'Cannot open campaign detail: $error',
+        backgroundColor: Colors.red,
       );
     }
   }
@@ -133,20 +133,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           HomeUiEventType.error => Colors.red,
           HomeUiEventType.info => const Color(0xFF0F62FE),
         };
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.uiEvent!.message),
-            backgroundColor: color,
-          ),
-        );
+        ref.read(globalNotificationControllerProvider).showNotification(
+              next.uiEvent!.message,
+              backgroundColor: color,
+            );
         viewModel.clearUiEvent();
       }
 
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+        ref.read(globalNotificationControllerProvider).showNotification(
+              next.errorMessage!,
+              backgroundColor: Colors.red,
+            );
         viewModel.clearError();
       }
     });
@@ -304,12 +303,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       );
 
                       if (!focusedOnPin && mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Focused on campaign location. Turn on campaign pins in Settings to highlight the pin.',
-                            ),
-                          ),
+                        ref.read(globalNotificationControllerProvider).showNotification(
+                          'Focused on campaign location. Turn on campaign pins in Settings to highlight the pin.',
                         );
                       }
                     });

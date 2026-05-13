@@ -85,29 +85,39 @@ class FirebaseMessagingService {
 
     // Kênh 1: Lời mời kết bạn (Bình thường)
     const AndroidNotificationChannel friendRequestChannel = AndroidNotificationChannel(
-      'friend_requests', // ID phải KHỚP 100% với chuỗi gửi từ NestJS
-      'Friend Request',  // Tên hiển thị trong mục Cài đặt của Android
+      'friend_requests',
+      'Friend Request',
       description: 'Thông báo khi có người muốn kết bạn với bạn',
       importance: Importance.high,
     );
 
-    // Kênh 2: Thông báo từ Authority
+    // Kênh 2: Cập nhật bạn bè (Accept/Reject)
+    const AndroidNotificationChannel friendUpdateChannel = AndroidNotificationChannel(
+      'friend_updates',
+      'Friend Updates',
+      description: 'Thông báo khi lời mời kết bạn được chấp nhận hoặc từ chối',
+      importance: Importance.high,
+    );
+
+    // Kênh 3: Thông báo từ Authority
     const AndroidNotificationChannel announcementFromAuthorityChannel = AndroidNotificationChannel(
-      'announcements_from_authority', // ID phải KHỚP 100% với chuỗi gửi từ NestJS
-      'Announcements From Authority',  // Tên hiển thị trong mục Cài đặt của Android
+      'announcements_from_authority',
+      'Announcements From Authority',
       description: 'Thông báo khi Authority publish announcement',
       importance: Importance.high,
     );
 
     // Đăng ký các kênh này với hệ điều hành
     await _localNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(friendRequestChannel);
     
     await _localNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(friendUpdateChannel);
+    
+    await _localNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(announcementFromAuthorityChannel);
   }
 
@@ -120,7 +130,7 @@ class FirebaseMessagingService {
       // CHỈ GỌI API NẾU: bị ép buộc (force) HOẶC token đã bị đổi
       if (force || cachedToken != token) {
         await _apiClient.patch(
-          '/friend/fcm-token',
+          '/user/fcm-token',
           data: {'fcmToken': token},
         );
         

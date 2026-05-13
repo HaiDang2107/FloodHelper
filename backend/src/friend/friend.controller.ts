@@ -29,7 +29,7 @@ export class FriendController {
   ) {
     const result = await this.friendService.sendFriendRequest(
       user.userId,
-      dto.receiverId,
+      dto.email,
       dto.note,
     );
 
@@ -129,22 +129,6 @@ export class FriendController {
     };
   }
 
-  /**
-   * PATCH /friend/fcm-token
-   * Update FCM token for push notifications
-   */
-  @Patch('fcm-token')
-  async updateFcmToken(
-    @CurrentUser() user: any,
-    @Body('fcmToken') fcmToken: string,
-  ) {
-    await this.friendService.updateFcmToken(user.userId, fcmToken);
-
-    return {
-      success: true,
-      message: 'FCM token updated successfully',
-    };
-  }
 
   /**
    * GET /friend/list

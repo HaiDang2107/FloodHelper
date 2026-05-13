@@ -354,6 +354,24 @@ export class UserController {
   }
 
   /**
+   * PATCH /user/fcm-token
+   * Update FCM token for push notifications
+   */
+  @UseGuards(JwtAuthGuard)
+  @Patch('fcm-token')
+  async updateFcmToken(
+    @CurrentUser() user: any,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    await this.userService.updateFcmToken(user.userId, fcmToken);
+
+    return {
+      success: true,
+      message: 'FCM token updated successfully',
+    };
+  }
+
+  /**
    * Get all users (paginated)
    * GET /user?page=1&limit=20
    */

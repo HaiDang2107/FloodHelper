@@ -7,7 +7,8 @@ import {
 } from '@nestjs/common';
 import { FriendRequestState } from '../common/enum/friendRequestState.enum';
 import { FirebaseService } from '../firebase/firebase.service';
-import { FriendRepository, UserRepository } from '../prisma/repositories';
+import { FriendRepository, UserRepository, AnnouncementRepository } from '../prisma/repositories';
+import { PublicAnnouncementType } from 'src/common/enum/publicAnnoucementType.enum';
 
 @Injectable()
 export class FriendService {
@@ -17,18 +18,20 @@ export class FriendService {
     private readonly firebaseService: FirebaseService,
     private readonly friendRepository: FriendRepository,
     private readonly userRepository: UserRepository,
+    private readonly announcementRepository: AnnouncementRepository,
   ) {}
 
-  async sendFriendRequest(senderId: string, receiverId: string, note?: string) {
+  async sendFriendRequest(senderId: string, email: string, note?: string) {
+    const receiver = await this.userRepository.findUserByEmail(email);
+    if (!receiver) {
+      throw new NotFoundException('User with this email not found');
+    }
+    const receiverId = receiver.userId;
+
     if (senderId === receiverId) {
       throw new BadRequestException(
         'You cannot send a friend request to yourself',
       );
-    }
-
-    const receiver = await this.userRepository.getPublicProfile(receiverId);
-    if (!receiver) {
-      throw new NotFoundException('User not found');
     }
 
     const existingFriendship = await this.friendRepository.getFriendship(
@@ -56,20 +59,32 @@ export class FriendService {
     );
 
     if (friendRequest.receiver.fcmToken) {
-      const senderName = friendRequest.sender.profiles?.[0]?.nickname || friendRequest.sender.profiles?.[0]?.fullname || '';
+      const senderName =
+        friendRequest.sender.profiles?.[0]?.nickname ||
+        friendRequest.sender.profiles?.[0]?.fullname ||
+        '';
+      const title = 'New Friend Request';
+      const caption = `${senderName} sent you a friend request`;
+
       await this.firebaseService.sendNotification(
         friendRequest.receiver.fcmToken,
-        'New Friend Request',
-        `${senderName} sent you a friend request`,
-
+        title,
+        caption,
         {
           type: 'FRIEND_REQUEST',
           requestId: friendRequest.requestId,
           senderId,
           senderName,
         },
-        'friend-request',
+        'friend_requests',
       );
+
+      await this.announcementRepository.createAnnouncement({
+        title,
+        caption,
+        publishedBy: senderId,
+        type: PublicAnnouncementType.DAILY,
+      });
     }
 
     return {
@@ -96,24 +111,20 @@ export class FriendService {
   async getSentRequests(userId: string) {
     const requests = await this.friendRepository.getSentRequests(userId);
 
-
-      return requests.map((r) => ({
-        requestId: r.requestId,
-        state: r.state,
-        note: r.note,
-        createdAt: r.createdAt,
-        user: {
-          userId: r.receiver.userId,
-          name: r.receiver.profiles?.[0]?.fullname || '',
-          displayName: r.receiver.profiles?.[0]?.nickname || '',
-          fullname: r.receiver.profiles?.[0]?.fullname || '',
-          nickname: r.receiver.profiles?.[0]?.nickname || '',
-          avatarUrl: r.receiver.profiles?.[0]?.avatarUrl || '',
-        },
-      }));
-
-
-
+    return requests.map((r) => ({
+      requestId: r.requestId,
+      state: r.state,
+      note: r.note,
+      createdAt: r.createdAt,
+      user: {
+        userId: r.receiver.userId,
+        name: r.receiver.profiles?.[0]?.fullname || '',
+        displayName: r.receiver.profiles?.[0]?.nickname || '',
+        fullname: r.receiver.profiles?.[0]?.fullname || '',
+        nickname: r.receiver.profiles?.[0]?.nickname || '',
+        avatarUrl: r.receiver.profiles?.[0]?.avatarUrl || '',
+      },
+    }));
   }
 
   async getReceivedRequests(userId: string) {
@@ -153,20 +164,34 @@ export class FriendService {
       throw new BadRequestException('This request is no longer pending');
     }
 
-    if (request.sender.fcmToken) {
-      const accepterName = request.receiver.profiles?.[0]?.nickname || request.receiver.profiles?.[0]?.fullname || '';
+    const accepterName =
+      request.receiver.profiles?.[0]?.nickname ||
+      request.receiver.profiles?.[0]?.fullname ||
+      'Someone';
+    const title = 'Friend Request Accepted';
+    const caption = `${accepterName} accepted your friend request`;
 
+    if (request.sender.fcmToken) {
       await this.firebaseService.sendNotification(
         request.sender.fcmToken,
-        'Friend Request Accepted',
-        `${accepterName} accepted your friend request`,
+        title,
+        caption,
         {
           type: 'FRIEND_REQUEST_ACCEPTED',
           requestId,
           userId,
         },
+        'friend_updates',
       );
     }
+
+    // Create a PublicAnnouncement (type: DAILY) for the sender
+    await this.announcementRepository.createAnnouncement({
+      title,
+      caption,
+      publishedBy: userId,
+      type: PublicAnnouncementType.DAILY,
+    });
 
     return updatedRequest;
   }
@@ -186,7 +211,40 @@ export class FriendService {
       throw new BadRequestException('This request is no longer pending');
     }
 
-    return this.friendRepository.rejectFriendRequest(requestId);
+    const updatedRequest = await this.friendRepository.rejectFriendRequest(
+      requestId,
+    );
+
+    const rejecterName =
+      updatedRequest.receiver.profiles?.[0]?.nickname ||
+      updatedRequest.receiver.profiles?.[0]?.fullname ||
+      'Someone';
+    const title = 'Friend Request Rejected';
+    const caption = `${rejecterName} rejected your friend request`;
+
+    if (updatedRequest.sender.fcmToken) {
+      await this.firebaseService.sendNotification(
+        updatedRequest.sender.fcmToken,
+        title,
+        caption,
+        {
+          type: 'FRIEND_REQUEST_REJECTED',
+          requestId,
+          userId,
+        },
+        'friend_updates',
+      );
+    }
+
+    // Create a PublicAnnouncement (type: APP) for the sender
+    await this.announcementRepository.createAnnouncement({
+      title,
+      caption,
+      publishedBy: userId,
+      type: PublicAnnouncementType.DAILY,
+    });
+
+    return updatedRequest;
   }
 
   async cancelFriendRequest(requestId: string, userId: string) {
@@ -205,10 +263,6 @@ export class FriendService {
     }
 
     return this.friendRepository.cancelFriendRequest(requestId);
-  }
-
-  async updateFcmToken(userId: string, fcmToken: string) {
-    return this.userRepository.updateFcmToken(userId, fcmToken);
   }
 
   async getFriends(userId: string) {

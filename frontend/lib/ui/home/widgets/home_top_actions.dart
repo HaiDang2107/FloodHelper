@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../views/friends/_add_friend_sheet.dart';
 import '../views/announcements/_announcements_sheet.dart';
 import '../views/distress_signal/_distress_signal_sheet.dart';
+import '../view_models/friend_view_model.dart';
 import '../../../domain/models/distress_signal_input.dart';
 import '../../../../data/providers/global_session_provider.dart';
 
@@ -86,8 +87,10 @@ class _HomeTopActionsState extends ConsumerState<HomeTopActions>
       ),
       (
         icon: Icons.person_add,
-        onPressed: () =>
-            widget.onShowBottomSheet('Add Friend', const AddFriendSheet()),
+        onPressed: () {
+          ref.invalidate(friendViewModelProvider);
+          widget.onShowBottomSheet('Add Friend', const AddFriendSheet());
+        },
         isSpecial: false,
       ),
       (

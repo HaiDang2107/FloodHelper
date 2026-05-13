@@ -396,6 +396,24 @@ export class UserRepository extends BaseRepository<any> {
     return !!user;
   }
 
+  async findUserByEmail(email: string) {
+    const account = await this.prisma.account.findUnique({
+      where: { username: email },
+      include: {
+        user: {
+          include: {
+            profiles: {
+              where: { isCurrent: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!account) return null;
+    return account.user;
+  }
+
   async getVisibility(userId: string) {
     return this.prisma.user.findUnique({
       where: { userId },

@@ -91,18 +91,11 @@ class MockUserRepository implements UserRepository {
     ),
   ];
 
-  final List<UserModel> _pendingRequests = [];
 
   @override
   Future<UserModel?> getCurrentUser() async {
     await _simulateDelay();
     return _currentUser;
-  }
-
-  @override
-  Future<List<UserModel>> getFriends() async {
-    await _simulateDelay();
-    return _mockUsers.where((u) => u.isFriend).toList();
   }
 
   @override
@@ -127,36 +120,6 @@ class MockUserRepository implements UserRepository {
   }
 
   @override
-  Future<bool> sendFriendRequest(String userId) async {
-    await _simulateDelay();
-    return true;
-  }
-
-  @override
-  Future<bool> acceptFriendRequest(String userId) async {
-    await _simulateDelay();
-    return true;
-  }
-
-  @override
-  Future<bool> rejectFriendRequest(String userId) async {
-    await _simulateDelay();
-    return true;
-  }
-
-  @override
-  Future<bool> removeFriend(String userId) async {
-    await _simulateDelay();
-    return true;
-  }
-
-  @override
-  Future<List<UserModel>> getPendingRequests() async {
-    await _simulateDelay();
-    return _pendingRequests;
-  }
-
-  @override
   Future<void> updateLocation({
     required double latitude,
     required double longitude,
@@ -166,43 +129,6 @@ class MockUserRepository implements UserRepository {
       latitude: latitude,
       longitude: longitude,
     );
-  }
-
-  @override
-  Future<bool> broadcastSos({
-    required int trappedCounts,
-    required int childrenNumbers,
-    required int elderlyNumbers,
-    required bool hasFood,
-    required bool hasWater,
-    String? other,
-  }) async {
-    await _simulateDelay();
-    _currentUser = _currentUser?.copyWith(
-      isSosState: true,
-      trappedCounts: trappedCounts,
-      childrenNumbers: childrenNumbers,
-      elderlyNumbers: elderlyNumbers,
-      hasFood: hasFood,
-      hasWater: hasWater,
-      other: other,
-    );
-    return true;
-  }
-
-  @override
-  Future<bool> revokeSos() async {
-    await _simulateDelay();
-    _currentUser = _currentUser?.copyWith(
-      isSosState: false,
-      trappedCounts: null,
-      childrenNumbers: null,
-      elderlyNumbers: null,
-      hasFood: null,
-      hasWater: null,
-      other: null,
-    );
-    return true;
   }
 
   Future<void> _simulateDelay() async {

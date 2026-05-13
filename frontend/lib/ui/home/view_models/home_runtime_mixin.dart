@@ -446,12 +446,8 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
   Future<void> removeFriend(String userId) async {
     try {
-      final success = await _userRepository.removeFriend(userId);
-      if (success) {
-        await _loadFriendsWithMapMode();
-      } else {
-        state = state.copyWith(errorMessage: 'Failed to remove friend');
-      }
+      await _friendRepository.removeFriend(userId);
+      await _loadFriendsWithMapMode();
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to remove friend: $e');
     }

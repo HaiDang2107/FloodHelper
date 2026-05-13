@@ -12,11 +12,11 @@ class RealFriendRepository implements FriendRepository {
 
   @override
   Future<SendFriendRequestResponse> sendFriendRequest({
-    required String receiverId,
+    required String email,
     String? note,
   }) async {
     return await _friendService.sendFriendRequest(
-      receiverId: receiverId,
+      email: email,
       note: note,
     );
   }
@@ -47,9 +47,15 @@ class RealFriendRepository implements FriendRepository {
   }
 
   @override
-  Future<void> updateFcmToken(String fcmToken) async {
-    return await _friendService.updateFcmToken(fcmToken);
+  Future<void> removeFriend(String userId) async {
+    // TODO: Implement when unfriend endpoint is available
+    throw UnimplementedError('Unfriend endpoint not implemented yet');
   }
+
+  // @override
+  // Future<void> updateFcmToken(String fcmToken) async {
+  //   return await _friendService.updateFcmToken(fcmToken);
+  // }
 
   @override
   Future<List<FriendModel>> getFriends() async {

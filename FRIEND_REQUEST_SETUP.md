@@ -104,7 +104,6 @@ frontend/
 | PATCH | `/friend/request/:id/accept` | Chấp nhận lời mời |
 | PATCH | `/friend/request/:id/reject` | Từ chối lời mời |
 | DELETE | `/friend/request/:id` | Hủy lời mời đã gửi |
-| PATCH | `/friend/fcm-token` | Cập nhật FCM token |
 
 ### Request Body Examples
 
@@ -113,13 +112,6 @@ frontend/
 {
   "receiverId": "uuid-string",
   "note": "Optional note"
-}
-```
-
-**PATCH /friend/fcm-token**
-```json
-{
-  "fcmToken": "firebase-token-string"
 }
 ```
 
