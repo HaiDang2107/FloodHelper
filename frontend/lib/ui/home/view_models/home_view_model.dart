@@ -112,7 +112,6 @@ class HomeViewModel extends _HomeViewModelBase
   StreamSubscription<VictimSignalEvent>? _victimHandledSubscription;
   @override
   StreamSubscription<RescuerReplyEvent>? _rescuerReplySubscription;
-  bool _isMessagingSetup = false;
 
   @override
   HomeState build() {
@@ -150,13 +149,4 @@ class HomeViewModel extends _HomeViewModelBase
     return const HomeState();
   }
 
-  void setupFirebaseMessaging(FirebaseMessagingService messagingService) {
-    if (_isMessagingSetup) {
-      return;
-    }
-
-    _isMessagingSetup = true;
-    messagingService.onForegroundMessage(_handleForegroundMessage);
-    messagingService.onMessageOpenedApp(_handleMessageOpenedApp);
-  }
 }

@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'routing/routes.dart';
+import 'ui/core/common/constants/global_keys.dart';
 
-class MyApp extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'ui/core/common/services/global_notification_controller.dart';
+
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Initialize global messaging
+    ref.read(globalNotificationControllerProvider).init();
+
     return MaterialApp(
       title: 'FloodHelper',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: GlobalKeys.messengerKey,
+      navigatorKey: GlobalKeys.navigatorKey,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color.fromARGB(255, 18, 32, 47),
       ),
