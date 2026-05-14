@@ -13,7 +13,7 @@ import '../widgets/profile_action_button.dart';
 import '../widgets/fullscreen_image_viewer.dart';
 import '../../core/common/widgets/location_selector.dart';
 import '../../core/common/widgets/change_password_dialog.dart';
-import '../../../../data/providers/repository_providers.dart';
+import '../../../../data/providers/providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -383,6 +383,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     try {
+      // Send final offline packet before signing out
+      ref.read(locationTrackingServiceProvider).publishSignOut();
+
       // Call sign out through provider
       await ref.read(profileViewModelProvider.notifier).signOut();
 

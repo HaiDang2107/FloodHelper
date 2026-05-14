@@ -365,8 +365,13 @@ class LocationTrackingService {
   }
 
   /// Publish rescuer handle action through background isolate to MQTT `rescuer/handle`.
-  void publishRescuerHandleCommand(Map<String, dynamic> commandPayload) {
-    _service.invoke('publishRescuerHandleCommand', commandPayload);
+  void publishRescuerHandleCommand(Map<String, dynamic> payload) {
+    _service.invoke('publishRescuerHandleCommand', payload);
+  }
+
+  /// Sends a final offline status packet before sign out
+  void publishSignOut() {
+    _service.invoke('publishSignOut');
   }
 
   /// Tell background isolate whether UI isolate is currently active.

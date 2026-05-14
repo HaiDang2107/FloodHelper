@@ -249,6 +249,29 @@ Future<void> onStart(ServiceInstance service) async {
     }
   });
 
+  service.on('publishSignOut').listen((event) async {
+    if (!mqttConnected || userId == null) return;
+
+    final lat = cachedPosition?['latitude'] ?? 0.0;
+    final lng = cachedPosition?['longitude'] ?? 0.0;
+
+    final payload = jsonEncode({
+      'lat': lat,
+      'lng': lng,
+      'user': userId,
+      'fullname': fullname,
+      'allowed_friends': allowedFriends,
+      'isSoS': isSos,
+      'isOnline': false,
+    });
+
+    mqttService.publishRaw(
+      topic: AppConfig.mqttCurrentLocationSuffix,
+      payload: payload,
+      qos: MqttQos.atLeastOnce,
+    );
+  });
+
   service.on('publishFreezeLocation').listen((event) async {
     if (!mqttConnected || userId == null || event == null) return;
     final freezeIds = List<String>.from(event['freezeIds'] ?? []);
