@@ -73,7 +73,7 @@ class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Friends Management',
+                'Friend Management',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -153,13 +153,19 @@ class _ModificationWidgetState extends ConsumerState<ModificationWidget> {
                   itemCount: users.length,
                   itemBuilder: (context, index) {
                     final user = users[index];
+                    final friendLocations = ref.watch(homeViewModelProvider).friendLocations;
+                    final isOnline = friendLocations[user.userId]?.isOnline;
+                    final status = isOnline == true
+                        ? UserStatus.online
+                        : (isOnline == false ? UserStatus.offline : UserStatus.unknown);
+
                     return Padding(
                       padding: const EdgeInsets.only(right: 16.0),
                       child: Column(
                         children: [
                           UserAvatar(
                             imageUrl: user.avatarUrl,
-                            status: UserStatus.offline,
+                            status: status,
                             size: 60,
                             topRightIcon: _isModifying ? Icons.remove : null,
                             topRightIconBackgroundColor: iconColor,

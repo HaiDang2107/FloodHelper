@@ -157,9 +157,9 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       return;
     }
 
-    final allowedFriends = _computeAllowedFriendModels();
+    final friendsToTrack = state.friendsWithMapMode;
 
-    for (final friend in allowedFriends) {
+    for (final friend in friendsToTrack) {
       _mqttService.subscribeFriendLocation(friend.userId, myUserId);
     }
 
@@ -180,7 +180,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
     if (kDebugMode) {
       print(
-        '📡 [UI] Subscribed to ${allowedFriends.length} friend location topics',
+        '📡 [UI] Subscribed to ${friendsToTrack.length} friend location topics',
       );
     }
   }
@@ -216,7 +216,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           final allowedIds = _computeAllowedFriends();
           _locationTrackingService.updateAllowedFriends(allowedIds);
 
-          for (final friend in _computeAllowedFriendModels()) {
+          for (final friend in state.friendsWithMapMode) {
             _mqttService.subscribeFriendLocation(friend.userId, currentUser.id);
           }
         }
@@ -264,10 +264,6 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       if (currentUser != null) {
         for (final friend in state.friendsWithMapMode) {
           _mqttService.unsubscribeFriendLocation(friend.userId, currentUser.id);
-        }
-        for (final friend in state.friendsWithMapMode.where(
-          (f) => f.friendMapMode,
-        )) {
           _mqttService.subscribeFriendLocation(friend.userId, currentUser.id);
         }
       }
@@ -299,13 +295,6 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
         .where((f) => f.friendMapMode)
         .map((f) => f.userId)
         .toList();
-  }
-
-  List<FriendModel> _computeAllowedFriendModels() {
-    final visibility = state.locationVisibility;
-    if (visibility == 'NO_ONE') return [];
-    if (visibility == 'PUBLIC') return state.friendsWithMapMode;
-    return state.friendsWithMapMode.where((f) => f.friendMapMode).toList();
   }
 
   Future<void> _loadVisibility() async {

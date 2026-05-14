@@ -96,9 +96,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         return;
       }
       ref.read(globalNotificationControllerProvider).showNotification(
-        'Cannot open campaign detail: $error',
-        backgroundColor: Colors.red,
-      );
+            'Cannot open campaign detail: $error',
+            backgroundColor: Colors.red,
+          );
     }
   }
 
@@ -178,10 +178,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         final color = switch (pin.pinType) {
                           HomePinType.me => const Color.fromARGB(255, 17, 123, 3),
                           HomePinType.friend => pin.isOnline == null
-                              ? UserStatus.unknown.color
-                              : (pin.isOnline!
-                                  ? UserStatus.online.color
-                                  : UserStatus.offline.color),
+                                ? UserStatus.unknown.color
+                                : (pin.isOnline!
+                                      ? UserStatus.online.color
+                                      : UserStatus.offline.color),
                           HomePinType.victim => UserStatus.offline.color,
                           HomePinType.campaign => const Color(0xFF0F62FE),
                         };
@@ -301,15 +301,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       }
 
                       final focusedOnPin = await viewModel.focusOnCampaignLocation(
-                        focusRequest.campaignId,
-                        latitude: focusRequest.latitude,
-                        longitude: focusRequest.longitude,
-                      );
+                            focusRequest.campaignId,
+                            latitude: focusRequest.latitude,
+                            longitude: focusRequest.longitude,
+                          );
 
                       if (!focusedOnPin && mounted) {
                         ref.read(globalNotificationControllerProvider).showNotification(
-                          'Focused on campaign location. Turn on campaign pins in Settings to highlight the pin.',
-                        );
+                              'Focused on campaign location. Turn on campaign pins in Settings to highlight the pin.',
+                            );
                       }
                     });
                   },

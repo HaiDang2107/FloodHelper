@@ -124,6 +124,7 @@ class _AddFriendWidgetState extends ConsumerState<AddFriendWidget> {
                   child: TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.black),
                     decoration: const InputDecoration(
                       hintText: 'Enter email address',
                       border: OutlineInputBorder(),

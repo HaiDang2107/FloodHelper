@@ -39,7 +39,7 @@ class _PendingWidgetState extends ConsumerState<PendingWidget> {
   void _acceptRequest(String requestId, String name) {
     ref.read(friendViewModelProvider.notifier).acceptFriendRequest(requestId);
     ref.read(globalNotificationControllerProvider).showNotification(
-      'Bạn và $name đã trở thành bạn bè',
+      'You and $name are now friends',
       backgroundColor: Colors.green,
     );
   }

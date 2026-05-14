@@ -184,7 +184,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
       }
     }
 
-    if (state.currentPosition != null) {
+    if (state.currentPosition != null) { // role của bản thân
       pinsById[currentUser.id] = HomeMapPin(
         userId: currentUser.id,
         fullname: currentUser.name,

@@ -20,7 +20,7 @@ import 'friend_view_model.dart';
 
 part 'home_state.dart';
 part 'home_runtime_mixin.dart';
-part 'home_campaign_map_mixin.dart';
+part 'home_map_mixin.dart';
 part 'home_content_mixin.dart';
 part 'home_ui_feedback_mixin.dart';
 part 'home_view_model.g.dart';

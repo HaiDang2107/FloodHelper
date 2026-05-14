@@ -6,6 +6,7 @@ Frontend:
 - Khi code, cố gắng decouple các components, tránh phụ thuộc chồng chéo ở cùng một layer.
 - Không xóa những comment trong code mà tôi đã tạo
 - Nếu code trong một file quá dài (> 600 dòng), nên chia nhỏ ra làm nhiều file
+- Với thông báo lỗi/kết quả từ backend, sử dụng widget thông báo nằm trong frontend/lib/ui/core/common/widgets/global_notification.dart
 
 Backend:
 - Nếu code trong một file quá dài (> 600 dòng), nên chia nhỏ ra làm nhiều file
