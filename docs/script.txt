@@ -1,0 +1,5 @@
+Tôi cần thêm tính năng sau: Rescuer cần nhìn thấy vị trí của Rescuer khác và victim cũng cần nhìn thấy vị trí của Rescuer. Topic "rescuer-location" sẽ là nơi User có thể lấy được vị trí Rescuer. Bạn hãy:
+- Thêm trường isRescuer vào ...
+- Tại ..., thêm phần xử lý: nếu isRescuer == true thì publish lên channel "rescuer-location" với các trường: lat, lng, fullName, isOnline, isSos.
+- Tại ..., đối với Rescuer, luôn thực hiện subscribe topic "rescuer-location". Nếu không phải Rescuer, chỉ subscribe khi user đó đang trong trạng thái SOS.
+- Khi hiển thị lên UI, có thể cùng 1 userId sẽ có nhiều entry, ví dụ như vừa là Rescuer, vừa là Victim, vừa là Friend

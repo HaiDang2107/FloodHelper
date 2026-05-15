@@ -82,7 +82,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
       _victimStoppedSubscription?.cancel();
       _victimStoppedSubscription = _locationTrackingService.victimStoppedStream
-          .listen((event) {
+          .listen((event) { // event chính là cục dữ liệu
             final updated = Map<String, LatLng>.from(state.victimLocations);
             final names = Map<String, String>.from(state.victimFullnames);
             updated.remove(event.userId);
@@ -325,7 +325,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           'created_by': currentUser.id,
           'data': _toDistressCommandData(data),
         });
-        _emitUiEvent(
+        _emitUiEvent( // Hiển thị SnackBar
           'Distress signal is now broadcasting',
           HomeUiEventType.success,
         );
@@ -358,7 +358,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       }
 
       _locationTrackingService.publishSignalCommand({
-        'command': 'STOPPED',
+        'command': 'STOP',
         'stopped_by': currentUser.id,
         'data': <String, dynamic>{},
       });

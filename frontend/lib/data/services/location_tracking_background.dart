@@ -86,16 +86,16 @@ Future<void> onStart(ServiceInstance service) async {
           final data = jsonDecode(payload) as Map<String, dynamic>;
 
           final type = (data['type'] ?? '').toString().toUpperCase();
-          if (type == 'STOPPED') {
+          if (type == 'STOP') {
             service.invoke('onVictimStopped', {
               // Báo cho UI isolate rằng user X stopped
               'userId': (data['userId'] ?? '').toString(),
-              'fullname': (data['fullname'] ?? '').toString(),
+              // 'fullname': (data['fullname'] ?? '').toString(),
             });
             continue;
           }
 
-          if (type == 'HANDLED') {
+          if (type == 'HANDLE') {
             // Báo cho UI isolate rằng X đã được handled.
             final handledBy = (data['handled_by'] ?? '').toString();
             service.invoke('onVictimHandled', {

@@ -31,6 +31,7 @@ class HomeMapPin {
   final String? campaignId;
   final String? campaignDestination;
   final List<String> roles;
+  final bool isFriend;
 
   const HomeMapPin({
     required this.userId,
@@ -43,6 +44,7 @@ class HomeMapPin {
     this.campaignId,
     this.campaignDestination,
     this.roles = const [],
+    this.isFriend = false,
   });
 }
 
@@ -62,7 +64,7 @@ class HomePinBubbleData {
   });
 }
 
-class HomeUiEvent {
+class HomeUiEvent { // HomeScreen listen HomeState, do đó khi HomeUIEvent thay đổi, sẽ có một SnackBar hiển thị
   final HomeUiEventType type;
   final String message;
 

@@ -203,6 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   color: color,
                                   isSosState: pin.isSos,
                                   roles: pin.roles,
+                                  isFriend: pin.isFriend,
                                   onTap: () => viewModel.selectPin(pin.userId),
                                 ),
                         );

@@ -256,7 +256,7 @@ class LocationTrackingService {
       _victimStoppedController.add(
         VictimSignalEvent(
           userId: victimUserId,
-          fullname: (event['fullname'] ?? '').toString(),
+          // fullname: (event['fullname'] ?? '').toString(),
         ),
       );
     });

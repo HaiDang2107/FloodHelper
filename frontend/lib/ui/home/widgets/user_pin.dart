@@ -6,6 +6,7 @@ class UserLocationPin extends StatelessWidget {
   final Color color;
   final bool isSosState;
   final List<String> roles;
+  final bool isFriend;
   final VoidCallback? onTap;
 
   const UserLocationPin({
@@ -15,6 +16,7 @@ class UserLocationPin extends StatelessWidget {
     this.color = const Color(0xFF00E676),
     this.isSosState = false,
     this.roles = const [],
+    this.isFriend = false,
     this.onTap,
   });
 
@@ -145,13 +147,34 @@ class UserLocationPin extends StatelessWidget {
               ),
 
             // Biểu tượng Roles (nếu có)
-            if (roles.isNotEmpty)
+            if (roles.isNotEmpty || isFriend)
               Positioned(
                 bottom: tailHeight + 4,
                 right: -8,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (isFriend)
+                      Container(
+                        margin: const EdgeInsets.only(left: 2),
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 2,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.people,
+                          size: size * 0.2,
+                          color: Colors.white,
+                        ),
+                      ),
                     if (roles.contains('RESCUER'))
                       Container(
                         margin: const EdgeInsets.only(left: 2),

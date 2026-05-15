@@ -134,13 +134,13 @@ class MqttWorker:
                 self.settings.topic_rescuer_common,
                 payload=json.dumps(
                     {
-                        "type": "STOPPED",
-                        "userId": stopped_by,
-                        "fullname": (
-                            user.get("fullname")
-                            if isinstance(user, dict)
-                            else None
-                        ),
+                        "type": "STOP",
+                        "userId": stopped_by
+                        # "fullname": (
+                        #     user.get("fullname")
+                        #     if isinstance(user, dict)
+                        #     else None
+                        # ),
                     }
                 ),
                 qos=1,
@@ -198,7 +198,7 @@ class MqttWorker:
             self.settings.topic_rescuer_common,
             payload=json.dumps(
                 {
-                    "type": "HANDLED",
+                    "type": "HANDLE",
                     "userId": user_id,
                     "handled_by": handled_by,
                     "rescuer_fullname": handled_fullname,

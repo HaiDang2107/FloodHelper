@@ -147,6 +147,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         isSos: false,
         isOnline: entry.value.isOnline,
         roles: friendInfo?.roles ?? const [],
+        isFriend: true,
       );
     }
 
@@ -166,6 +167,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         pinType: HomePinType.victim,
         isSos: true,
         roles: friendInfo?.roles ?? const [],
+        isFriend: friendInfo != null,
       );
     }
 
