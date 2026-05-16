@@ -42,6 +42,7 @@ Future<void> onStart(ServiceInstance service) async {
   List<String> allowedFriends = [];
   StreamSubscription? rescuerSubscription;
   StreamSubscription? rescuerReplySubscription;
+  StreamSubscription? rescuerLocationSubscription;
 
   Map<String, double>? cachedPosition; // Lưu tạm vị trí mới nhất để focus lúc vào app
 
@@ -59,6 +60,53 @@ Future<void> onStart(ServiceInstance service) async {
     }
     rescuerReplySubscription?.cancel();
     rescuerReplySubscription = null;
+  }
+
+  void teardownRescuerLocationSubscription() {
+    rescuerLocationSubscription?.cancel();
+    rescuerLocationSubscription = null;
+    mqttService.unsubscribeTopic(AppConfig.mqttRescuerLocationTopic);
+  }
+
+  void setupRescuerLocationSubscription() {
+    if (!mqttConnected || (!isRescuer && !isSos)) {
+      return;
+    }
+
+    teardownRescuerLocationSubscription();
+    mqttService.subscribeTopic(
+      AppConfig.mqttRescuerLocationTopic,
+      qos: MqttQos.atMostOnce,
+    );
+
+    rescuerLocationSubscription = mqttService.messageStream?.listen((messages) async {
+      for (final msg in messages) {
+        try {
+          if (msg.topic != AppConfig.mqttRescuerLocationTopic) {
+            continue;
+          }
+
+          final recMsg = msg.payload as MqttPublishMessage;
+          final payload = MqttPublishPayload.bytesToStringAsString(
+            recMsg.payload.message,
+          );
+          final data = jsonDecode(payload) as Map<String, dynamic>;
+
+          service.invoke('onRescuerLocation', {
+            'rescuerId': (data['rescuerId'] ?? '').toString(),
+            'fullname': (data['fullname'] ?? '').toString(),
+            'lat': (data['lat'] as num?)?.toDouble(),
+            'long': (data['lng'] as num?)?.toDouble(),
+            'isOnline': data['isOnline'] == true,
+            'isSos': data['isSos'] == true,
+          });
+        } catch (e) {
+          if (kDebugMode) {
+            print('📡 [BG] Failed to process rescuer location payload: $e');
+          }
+        }
+      }
+    });
   }
 
   void setupRescuerSubscription() {
@@ -184,8 +232,17 @@ Future<void> onStart(ServiceInstance service) async {
   }
 
   service.on('setUserId').listen((event) async {
-    userId = event?['userId'] as String?;
-    fullname = (event?['fullname'] ?? '').toString();
+    final incomingUserId = event?['userId'] as String?;
+    final incomingFullname = event?['fullname'] as String?;
+    
+    if (incomingUserId != null) userId = incomingUserId;
+    if (incomingFullname != null && incomingFullname.isNotEmpty) {
+      fullname = incomingFullname;
+    }
+
+    if (kDebugMode) {
+      print('📍 [BG] setUserId received: userId=$userId, fullname=$fullname');
+    }
     if (userId != null && !mqttConnected) {
       mqttConnected = await mqttService.connect('${userId!}_bg');
       if (kDebugMode) {
@@ -193,6 +250,7 @@ Future<void> onStart(ServiceInstance service) async {
       }
       setupRescuerSubscription();
       setupRescuerReplySubscription();
+      setupRescuerLocationSubscription();
     }
 
     if (userId != null) {
@@ -201,12 +259,33 @@ Future<void> onStart(ServiceInstance service) async {
   });
 
   service.on('setSoSStatus').listen((event) {
-    isSos = event?['isSoS'] == true;
+    final newSos = event?['isSoS'] == true; // newSos chính là event['isSos'] và loại bỏ trường hợp dữ liệu fail
+    if (isSos != newSos) { // Dữ liệu mới khác dữ liệu cũ
+      isSos = newSos;
+      if (!isRescuer) {
+        if (isSos) {
+          setupRescuerLocationSubscription();
+        } else {
+          teardownRescuerLocationSubscription();
+        }
+      }
+    }
   });
 
   service.on('setRescuerMode').listen((event) {
-    isRescuer = event?['isRescuer'] == true;
-    setupRescuerSubscription();
+    final newRescuer = event?['isRescuer'] == true;
+    if (isRescuer != newRescuer) {
+      isRescuer = newRescuer;
+      if (isRescuer) {
+        setupRescuerSubscription();
+        setupRescuerLocationSubscription();
+      } else {
+        teardownRescuerSubscription();
+        if (!isSos) {
+          teardownRescuerLocationSubscription();
+        }
+      }
+    }
   });
 
   service.on('setUiIsActive').listen((event) {
@@ -387,16 +466,16 @@ Future<void> onStart(ServiceInstance service) async {
           'lat': position.latitude,
           'lng': position.longitude,
           'user': userId,
-          'fullname': fullname,
+          'fullname': (fullname != null && fullname!.isNotEmpty) ? fullname : 'User $userId',
           'allowed_friends': allowedFriends,
           'isSoS': isSos,
           'isOnline': isUiActive,
+          'isRescuer': isRescuer,
         });
         if (kDebugMode && AppConfig.mqttVerboseLogging) {
           if (kDebugMode) {
-            print(payload);
+            print('📍 [BG] Publishing location: $payload');
           }
-          print(AppConfig.mqttCurrentLocationSuffix);
         }
         mqttService.publishRaw(
           topic: AppConfig.mqttCurrentLocationSuffix,

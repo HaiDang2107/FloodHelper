@@ -18,6 +18,7 @@ class Settings:
     topic_signal: str
     topic_rescuer_handle: str
     topic_rescuer_common: str
+    topic_rescuer_location: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -40,4 +41,5 @@ class Settings:
             topic_signal=os.getenv("TOPIC_SIGNAL", "signal"),
             topic_rescuer_handle=os.getenv("TOPIC_RESCUER_HANDLE", "rescuer/handle"),
             topic_rescuer_common=os.getenv("TOPIC_RESCUER_COMMON", "rescuer/common"),
+            topic_rescuer_location=os.getenv("TOPIC_RESCUER_LOCATION", "rescuer-location"),
         )

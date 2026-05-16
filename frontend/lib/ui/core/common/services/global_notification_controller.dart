@@ -51,6 +51,12 @@ class GlobalNotificationController {
       displayMessage = 'Your friend request was rejected';
     } else if (type == 'EMERGENCY_ALERT') {
       color = Colors.red;
+    } else if (type == 'NEW_SIGNAL') {
+      color = Colors.red;
+      displayMessage = notification?.body ?? 'New distress signal nearby';
+    } else if (type == 'SIGNAL_HANDLED') {
+      color = Colors.green;
+      displayMessage = notification?.body ?? 'Your distress signal is being handled';
     } else if (data['announcementType'] == 'AUTHORITY' ||
         data['type'] == 'ANNOUNCEMENT_FROM_AUTHORITY') {
       displayMessage = notification?.title ?? 'Authority posted a new announcement';

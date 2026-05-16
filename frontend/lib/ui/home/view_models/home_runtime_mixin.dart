@@ -18,6 +18,10 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
       final allowedFriendIds = _computeAllowedFriends();
 
+      if (kDebugMode) {
+        print('📍 [UI] Starting location tracking for ${currentUser.id} (${currentUser.effectiveDisplayName})');
+      }
+
       final initialUpdate = await _locationTrackingService.start(
         currentUser.id,
         fullname: currentUser.effectiveDisplayName,
@@ -69,14 +73,46 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           .listen((alert) {
             final updated = Map<String, LatLng>.from(state.victimLocations);
             final names = Map<String, String>.from(state.victimFullnames);
+            final onlines = Map<String, bool>.from(state.victimIsOnline);
+
             updated[alert.userId] = LatLng(alert.latitude, alert.longitude);
+            onlines[alert.userId] = alert.isOnline;
+
             final fullname = (alert.fullname ?? '').trim();
             if (fullname.isNotEmpty) {
               names[alert.userId] = fullname;
             }
+
             state = state.copyWith(
               victimLocations: updated,
               victimFullnames: names,
+              victimIsOnline: onlines,
+            );
+          });
+
+      _rescuerLocationSubscription?.cancel();
+      _rescuerLocationSubscription = _locationTrackingService
+          .rescuerLocationStream
+          .listen((alert) {
+            final updated = Map<String, LatLng>.from(state.rescuerLocations);
+            final names = Map<String, String>.from(state.rescuerFullnames);
+            final isSosMap = Map<String, bool>.from(state.rescuerIsSos);
+            final onlines = Map<String, bool>.from(state.rescuerIsOnline);
+
+            updated[alert.userId] = LatLng(alert.latitude, alert.longitude);
+            isSosMap[alert.userId] = alert.isSos;
+            onlines[alert.userId] = alert.isOnline;
+
+            final fullname = (alert.fullname ?? '').trim();
+            if (fullname.isNotEmpty) {
+              names[alert.userId] = fullname;
+            }
+
+            state = state.copyWith(
+              rescuerLocations: updated,
+              rescuerFullnames: names,
+              rescuerIsSos: isSosMap,
+              rescuerIsOnline: onlines,
             );
           });
 
@@ -85,11 +121,14 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           .listen((event) { // event chính là cục dữ liệu
             final updated = Map<String, LatLng>.from(state.victimLocations);
             final names = Map<String, String>.from(state.victimFullnames);
+            final onlines = Map<String, bool>.from(state.victimIsOnline);
             updated.remove(event.userId);
             names.remove(event.userId);
+            onlines.remove(event.userId);
             state = state.copyWith(
               victimLocations: updated,
               victimFullnames: names,
+              victimIsOnline: onlines,
             );
             _clearSelectionIfHidden();
           });
@@ -99,11 +138,14 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           .listen((event) {
             final updated = Map<String, LatLng>.from(state.victimLocations);
             final names = Map<String, String>.from(state.victimFullnames);
+            final onlines = Map<String, bool>.from(state.victimIsOnline);
             updated.remove(event.userId);
             names.remove(event.userId);
+            onlines.remove(event.userId);
             state = state.copyWith(
               victimLocations: updated,
               victimFullnames: names,
+              victimIsOnline: onlines,
             );
             _clearSelectionIfHidden();
           });
@@ -114,6 +156,10 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
             state = state.copyWith(
               isSosBroadcasting: false,
               clearSosData: true,
+              rescuerLocations: currentUser.isRescuer ? null : const {},
+              rescuerFullnames: currentUser.isRescuer ? null : const {},
+              rescuerIsSos: currentUser.isRescuer ? null : const {},
+              rescuerIsOnline: currentUser.isRescuer ? null : const {},
             );
             _locationTrackingService.setSosStatus(false);
             await SosLocalStorage.clearBroadcastingState(currentUser.id);
@@ -364,7 +410,14 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       });
       _locationTrackingService.setSosStatus(false);
 
-      state = state.copyWith(isSosBroadcasting: false, clearSosData: true);
+      state = state.copyWith(
+        isSosBroadcasting: false,
+        clearSosData: true,
+        rescuerLocations: currentUser.isRescuer ? null : const {},
+        rescuerFullnames: currentUser.isRescuer ? null : const {},
+        rescuerIsSos: currentUser.isRescuer ? null : const {},
+        rescuerIsOnline: currentUser.isRescuer ? null : const {},
+      );
       await SosLocalStorage.clearBroadcastingState(currentUser.id);
       _emitUiEvent('Distress signal has been revoked', HomeUiEventType.info);
     } catch (e) {
@@ -374,12 +427,12 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
   Map<String, dynamic> _toDistressCommandData(DistressSignalInput data) {
     return {
-      'trappedCounts': data.trappedCounts,
-      'childrenNumbers': data.childrenNumbers,
-      'elderlyNumbers': data.elderlyNumbers,
+      'trappedCount': data.trappedCounts,
+      'childrenNum': data.childrenNumbers,
+      'elderlyNum': data.elderlyNumbers,
       'hasFood': data.hasFood,
       'hasWater': data.hasWater,
-      'other': data.other,
+      'note': data.other,
     };
   }
 

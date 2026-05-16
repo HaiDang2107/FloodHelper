@@ -15,7 +15,7 @@ import '../../../data/services/sos_local_storage.dart';
 import '../../../domain/models/auth_session.dart';
 import '../../../domain/models/charity_campaign.dart';
 import '../../../domain/models/distress_signal_input.dart';
-import '../../../domain/models/rescuer_distress_alert.dart';
+import '../../../domain/models/victim_rescuer_distress_alert.dart';
 import 'friend_view_model.dart';
 
 part 'home_state.dart';
@@ -25,7 +25,8 @@ part 'home_content_mixin.dart';
 part 'home_ui_feedback_mixin.dart';
 part 'home_view_model.g.dart';
 
-abstract class _HomeViewModelBase extends _$HomeViewModel { // Định nghĩa các state chung, các mixin đều có thể sử dụng.
+abstract class _HomeViewModelBase extends _$HomeViewModel {
+  // Định nghĩa các state chung, các mixin đều có thể sử dụng.
   @override
   HomeState get state;
   @override
@@ -44,15 +45,23 @@ abstract class _HomeViewModelBase extends _$HomeViewModel { // Định nghĩa c�
   CharityCampaignRepository get _charityCampaignRepository;
 
   set _locationSubscription(StreamSubscription<LocationUpdate>? value);
-  set _friendLocationSubscription(StreamSubscription<FriendLocationUpdate>? value);
-  StreamSubscription<VictimAlert>? get _victimLocationSubscription;
-  set _victimLocationSubscription(StreamSubscription<VictimAlert>? value);
+  set _friendLocationSubscription(
+    StreamSubscription<FriendLocationUpdate>? value,
+  );
+  StreamSubscription<VictimOrRescuerAlert>? get _victimLocationSubscription;
+  set _victimLocationSubscription(
+    StreamSubscription<VictimOrRescuerAlert>? value,
+  );
   StreamSubscription<VictimSignalEvent>? get _victimStoppedSubscription;
   set _victimStoppedSubscription(StreamSubscription<VictimSignalEvent>? value);
   StreamSubscription<VictimSignalEvent>? get _victimHandledSubscription;
   set _victimHandledSubscription(StreamSubscription<VictimSignalEvent>? value);
   StreamSubscription<RescuerReplyEvent>? get _rescuerReplySubscription;
   set _rescuerReplySubscription(StreamSubscription<RescuerReplyEvent>? value);
+  StreamSubscription<VictimOrRescuerAlert>? get _rescuerLocationSubscription;
+  set _rescuerLocationSubscription(
+    StreamSubscription<VictimOrRescuerAlert>? value,
+  );
 
   Future<void> refreshFriends();
   Future<void> syncAfterAcceptFriendRequest(String friendUserId);
@@ -64,11 +73,11 @@ abstract class _HomeViewModelBase extends _$HomeViewModel { // Định nghĩa c�
 
 @riverpod
 class HomeViewModel extends _HomeViewModelBase
-  with
-    HomeRuntimeMixin,
-    HomeCampaignMapMixin,
-    HomeContentMixin,
-    HomeUiFeedbackMixin {
+    with
+        HomeRuntimeMixin,
+        HomeCampaignMapMixin,
+        HomeContentMixin,
+        HomeUiFeedbackMixin {
   @override
   final MapController mapController = MapController();
   @override
@@ -104,13 +113,15 @@ class HomeViewModel extends _HomeViewModelBase
   // Friend location stream subscription
   StreamSubscription<FriendLocationUpdate>? _friendLocationSubscription;
   @override
-  StreamSubscription<VictimAlert>? _victimLocationSubscription;
+  StreamSubscription<VictimOrRescuerAlert>? _victimLocationSubscription;
   @override
   StreamSubscription<VictimSignalEvent>? _victimStoppedSubscription;
   @override
   StreamSubscription<VictimSignalEvent>? _victimHandledSubscription;
   @override
   StreamSubscription<RescuerReplyEvent>? _rescuerReplySubscription;
+  @override
+  StreamSubscription<VictimOrRescuerAlert>? _rescuerLocationSubscription;
 
   @override
   HomeState build() {
@@ -121,6 +132,7 @@ class HomeViewModel extends _HomeViewModelBase
       _victimStoppedSubscription?.cancel();
       _victimHandledSubscription?.cancel();
       _rescuerReplySubscription?.cancel();
+      _rescuerLocationSubscription?.cancel();
       _mqttService.stopListeningFriendLocations();
       _locationTrackingService.setUiIsActive(false);
     });
@@ -141,5 +153,4 @@ class HomeViewModel extends _HomeViewModelBase
 
     return const HomeState();
   }
-
 }

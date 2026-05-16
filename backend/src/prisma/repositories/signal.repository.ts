@@ -30,7 +30,8 @@ export class SignalRepository extends BaseRepository<any> {
       },
       include: {
         user: {
-          include: {
+          select: {
+            userId: true,
             profiles: {
               where: { isCurrent: true },
               select: {
@@ -38,9 +39,6 @@ export class SignalRepository extends BaseRepository<any> {
                 avatarUrl: true,
               }
             }
-          },
-          select: {
-            userId: true,
           },
         },
       },
@@ -55,22 +53,9 @@ export class SignalRepository extends BaseRepository<any> {
       where: { signalId },
       include: {
         user: {
-          include: {
-            profiles: {
-              where: { isCurrent: true },
-              select: {
-                fullname: true,
-                avatarUrl: true,
-              }
-            }
-          },
           select: {
             userId: true,
             role: true,
-          },
-        },
-        handledByUser: {
-          include: {
             profiles: {
               where: { isCurrent: true },
               select: {
@@ -79,8 +64,17 @@ export class SignalRepository extends BaseRepository<any> {
               }
             }
           },
+        },
+        handledByUser: {
           select: {
             userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: {
+                fullname: true,
+                avatarUrl: true,
+              }
+            }
           },
         },
       },
@@ -134,7 +128,8 @@ export class SignalRepository extends BaseRepository<any> {
       where,
       include: {
         user: {
-          include: {
+          select: {
+            userId: true,
             profiles: {
               where: { isCurrent: true },
               select: {
@@ -145,12 +140,10 @@ export class SignalRepository extends BaseRepository<any> {
               }
             }
           },
-          select: {
-            userId: true,
-          },
         },
         handledByUser: {
-          include: {
+          select: {
+            userId: true,
             profiles: {
               where: { isCurrent: true },
               select: {
@@ -159,9 +152,6 @@ export class SignalRepository extends BaseRepository<any> {
                 avatarUrl: true,
               }
             }
-          },
-          select: {
-            userId: true,
           },
         },
       },
@@ -240,6 +230,27 @@ export class SignalRepository extends BaseRepository<any> {
         handledBy: handledBy || undefined,
         handledAt: handledBy ? new Date() : undefined,
       },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            fcmToken: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
+          },
+        },
+        handledByUser: {
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -252,6 +263,17 @@ export class SignalRepository extends BaseRepository<any> {
       data: {
         state: 'STOPPED' as any,
         stoppedAt: new Date(),
+      },
+      include: {
+        user: {
+          select: {
+            userId: true,
+            profiles: {
+              where: { isCurrent: true },
+              select: { fullname: true, avatarUrl: true },
+            },
+          },
+        },
       },
     });
   }

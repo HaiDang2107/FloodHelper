@@ -182,7 +182,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 : (pin.isOnline!
                                       ? UserStatus.online.color
                                       : UserStatus.offline.color),
-                          HomePinType.victim => UserStatus.offline.color,
+                          HomePinType.victim => pin.isOnline == null
+                                ? UserStatus.unknown.color
+                                : (pin.isOnline!
+                                      ? UserStatus.online.color
+                                      : UserStatus.offline.color),
                           HomePinType.campaign => const Color(0xFF0F62FE),
                         };
 

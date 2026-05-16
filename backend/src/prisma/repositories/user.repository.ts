@@ -31,6 +31,7 @@ export class UserRepository extends BaseRepository<any> {
             curLatitude: true,
             visibilityMode: true,
             showCharityCampaignLocations: true,
+            fcmToken: true,
             account: {
               select: {
                 username: true,
@@ -321,6 +322,29 @@ export class UserRepository extends BaseRepository<any> {
     return profiles.map((profile) => ({
       userId: profile.userId,
       fullname: profile.fullname,
+      fcmToken: profile.user.fcmToken,
+    }));
+  }
+
+  async findRescuersByWard(wardCode: number) {
+    const profiles = await this.prisma.profile.findMany({
+      where: {
+        isCurrent: true,
+        residenceWardCode: wardCode,
+        user: {
+          role: { has: 'RESCUER' },
+        },
+      },
+      select: {
+        userId: true,
+        user: {
+          select: { fcmToken: true },
+        },
+      },
+    });
+
+    return profiles.map((profile) => ({
+      userId: profile.userId,
       fcmToken: profile.user.fcmToken,
     }));
   }

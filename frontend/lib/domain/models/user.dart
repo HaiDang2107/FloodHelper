@@ -21,7 +21,16 @@ class User {
   });
 
   /// Get the display name or fallback to name
-  String get effectiveDisplayName => displayName ?? name;
+  String get effectiveDisplayName {
+    if (displayName != null && displayName!.trim().isNotEmpty) {
+      return displayName!.trim();
+    }
+    if (name.trim().isNotEmpty) {
+      return name.trim();
+    }
+    // Fallback to ID if no name is available
+    return 'User ${id.length > 8 ? id.substring(0, 8) : id}';
+  }
 
   /// Check if user has a specific role
   bool hasRole(UserRole role) => roles.contains(role);

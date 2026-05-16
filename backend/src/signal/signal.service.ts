@@ -13,17 +13,60 @@ import {
   QuerySignalsDto,
   UpdateSignalInfoDto,
 } from './dto';
-import { SignalRepository } from '../prisma/repositories';
+import { UserRepository, AnnouncementRepository, SignalRepository } from '../prisma/repositories';
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Injectable()
 export class SignalService {
-  constructor(private readonly signalRepository: SignalRepository) {}
+  constructor(
+    private readonly signalRepository: SignalRepository,
+    private readonly userRepository: UserRepository,
+    private readonly firebaseService: FirebaseService,
+    private readonly announcementRepository: AnnouncementRepository,
+  ) {}
 
   async createSignal(createdBy: string, dto: CreateSignalDto) {
     await this.ensureNoBroadcastingSignal(createdBy);
 
     try {
-      return await this.signalRepository.createSignal(createdBy, dto);
+      const signal = await this.signalRepository.createSignal(createdBy, dto);
+
+      // 1. Get creator profile to find their ward
+      const creatorProfile = await this.userRepository.getProfileWithRelations(createdBy);
+      if (creatorProfile && creatorProfile.residenceWardCode) {
+        // 2. Find Rescuers in the same ward
+        const rescuers = await this.userRepository.findRescuersByWard(creatorProfile.residenceWardCode);
+        
+        // Exclude the creator themselves if they are a rescuer
+        const rescuerTokens = rescuers
+          .filter(r => r.userId !== createdBy && r.fcmToken)
+          .map(r => r.fcmToken!);
+
+        // Send push notification to rescuers
+        if (rescuerTokens.length > 0) {
+          await this.firebaseService.sendMulticastNotification(
+            rescuerTokens,
+            'New Distress Signal',
+            `${creatorProfile.fullname} needs help in your ward!`,
+            {
+              type: 'NEW_SIGNAL',
+              signalId: signal.signalId,
+            },
+            'distress_signals' // Ensure we use a specific channel
+          );
+        }
+
+        // Create PublicAnnouncement
+        await this.announcementRepository.create({
+          title: 'Emergency: Distress Signal Created',
+          caption: `A distress signal was created by ${creatorProfile.fullname} in your ward.`,
+          documentUrl: null,
+          publishedBy: createdBy,
+          type: 'DAILY',
+        });
+      }
+
+      return signal;
     } catch (error) {
       if (this.isBroadcastingUniqueViolation(error)) {
         throw new ConflictException(
@@ -186,7 +229,37 @@ export class SignalService {
 
     await this.changeState(activeSignal.signalId, handledBy, { state: SignalState.HANDLED, handledBy });
 
-    return this.signalRepository.getSignal(activeSignal.signalId);
+    const signal = await this.signalRepository.getSignal(activeSignal.signalId);
+
+    // Get handler profile to notify the victim
+    const handlerProfile = await this.userRepository.getProfileWithRelations(handledBy);
+    const creatorProfile = await this.userRepository.getProfileWithRelations(createdBy);
+
+    if (handlerProfile && creatorProfile && creatorProfile.user.fcmToken) {
+      // Send push notification to the victim
+      await this.firebaseService.sendNotification(
+        creatorProfile.user.fcmToken,
+        'Signal Handled',
+        `Your distress signal is being handled by Rescuer ${handlerProfile.fullname}.`,
+        {
+          type: 'SIGNAL_HANDLED',
+          signalId: activeSignal.signalId,
+          handlerId: handledBy,
+        },
+        'distress_signals'
+      );
+
+      // Create PublicAnnouncement
+      await this.announcementRepository.create({
+        title: 'Update: Distress Signal Handled',
+        caption: `A distress signal from ${creatorProfile.fullname} is now being handled by ${handlerProfile.fullname}.`,
+        documentUrl: null,
+        publishedBy: handledBy,
+        type: 'DAILY',
+      });
+    }
+
+    return signal;
   }
 
   private async ensureNoBroadcastingSignal(createdBy: string) {

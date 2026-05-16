@@ -26,6 +26,9 @@ class AppConfig {
   // MQTT topic for rescuer distress stream.
   static const String mqttRescuerCommonTopic = 'rescuer/common';
 
+  // MQTT topic for rescuer locations.
+  static const String mqttRescuerLocationTopic = 'rescuer-location';
+
   // MQTT topic for rescuer handle actions.
   static const String mqttRescuerHandleTopic = 'rescuer/handle';
 

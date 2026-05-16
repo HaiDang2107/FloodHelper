@@ -92,6 +92,11 @@ class HomeState {
   final Map<String, FriendLocationUpdate> friendLocations;
   final Map<String, LatLng> victimLocations;
   final Map<String, String> victimFullnames;
+  final Map<String, bool> victimIsOnline;
+  final Map<String, LatLng> rescuerLocations;
+  final Map<String, String> rescuerFullnames;
+  final Map<String, bool> rescuerIsSos;
+  final Map<String, bool> rescuerIsOnline;
 
   final List<FriendModel> friendsWithMapMode;
   final List<HomeCampaignLocationPin> campaignLocations;
@@ -117,6 +122,11 @@ class HomeState {
     this.friendLocations = const {},
     this.victimLocations = const {},
     this.victimFullnames = const {},
+    this.victimIsOnline = const {},
+    this.rescuerLocations = const {},
+    this.rescuerFullnames = const {},
+    this.rescuerIsSos = const {},
+    this.rescuerIsOnline = const {},
     this.friendsWithMapMode = const [],
     this.campaignLocations = const [],
     this.locationVisibility = 'JUST_FRIEND',
@@ -144,6 +154,11 @@ class HomeState {
     Map<String, FriendLocationUpdate>? friendLocations,
     Map<String, LatLng>? victimLocations,
     Map<String, String>? victimFullnames,
+    Map<String, bool>? victimIsOnline,
+    Map<String, LatLng>? rescuerLocations,
+    Map<String, String>? rescuerFullnames,
+    Map<String, bool>? rescuerIsSos,
+    Map<String, bool>? rescuerIsOnline,
     List<FriendModel>? friendsWithMapMode,
     List<HomeCampaignLocationPin>? campaignLocations,
     String? locationVisibility,
@@ -171,6 +186,11 @@ class HomeState {
       friendLocations: friendLocations ?? this.friendLocations,
       victimLocations: victimLocations ?? this.victimLocations,
       victimFullnames: victimFullnames ?? this.victimFullnames,
+      victimIsOnline: victimIsOnline ?? this.victimIsOnline,
+      rescuerLocations: rescuerLocations ?? this.rescuerLocations,
+      rescuerFullnames: rescuerFullnames ?? this.rescuerFullnames,
+      rescuerIsSos: rescuerIsSos ?? this.rescuerIsSos,
+      rescuerIsOnline: rescuerIsOnline ?? this.rescuerIsOnline,
       friendsWithMapMode: friendsWithMapMode ?? this.friendsWithMapMode,
       campaignLocations: campaignLocations ?? this.campaignLocations,
       locationVisibility: locationVisibility ?? this.locationVisibility,

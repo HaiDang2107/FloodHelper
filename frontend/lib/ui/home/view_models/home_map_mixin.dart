@@ -133,6 +133,27 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
 
     final pinsById = <String, HomeMapPin>{};
 
+    for (final entry in state.rescuerLocations.entries) {
+      final friendInfo = state.friendsWithMapMode
+          .where((f) => f.userId == entry.key)
+          .firstOrNull;
+      final rescuerName = state.rescuerFullnames[entry.key];
+
+      pinsById[entry.key] = HomeMapPin(
+        userId: entry.key,
+        fullname: (rescuerName != null && rescuerName.trim().isNotEmpty)
+            ? rescuerName
+            : (friendInfo?.name ?? '[Fail to load]'),
+        avatarUrl: friendInfo?.avatarUrl ?? '',
+        position: entry.value,
+        pinType: HomePinType.friend, // Placeholder, UI logic relies on roles
+        isSos: state.rescuerIsSos[entry.key] ?? false,
+        isOnline: state.rescuerIsOnline[entry.key],
+        roles: { ...?friendInfo?.roles, 'RESCUER' }.toList(),
+        isFriend: friendInfo != null,
+      );
+    }
+
     for (final entry in state.friendLocations.entries) {
       final friendInfo = state.friendsWithMapMode
           .where((f) => f.userId == entry.key)
@@ -146,7 +167,7 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         pinType: HomePinType.friend,
         isSos: false,
         isOnline: entry.value.isOnline,
-        roles: friendInfo?.roles ?? const [],
+        roles: { ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles }.toList(),
         isFriend: true,
       );
     }
@@ -166,7 +187,8 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         position: entry.value,
         pinType: HomePinType.victim,
         isSos: true,
-        roles: friendInfo?.roles ?? const [],
+        isOnline: state.victimIsOnline[entry.key],
+        roles: { ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles }.toList(),
         isFriend: friendInfo != null,
       );
     }
@@ -213,12 +235,27 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
       return null;
     }
 
-    final title = switch (pin.pinType) {
-      HomePinType.me => 'Me',
-      HomePinType.friend => 'Friend',
-      HomePinType.victim => 'Victim',
-      HomePinType.campaign => 'Charity Campaign',
-    };
+    final rolesList = <String>[];
+    if (pin.pinType == HomePinType.campaign) {
+      rolesList.add('Charity Campaign');
+    } else if (pin.pinType == HomePinType.me) {
+      rolesList.add('Me');
+    } else {
+      if (pin.pinType == HomePinType.victim || pin.isSos) {
+        rolesList.add('Victim');
+      }
+      if (pin.isFriend) {
+        rolesList.add('Friend');
+      }
+      for (final role in pin.roles) {
+        if (role == 'RESCUER') rolesList.add('Rescuer');
+        if (role == 'AUTHORITY') rolesList.add('Authority');
+        if (role == 'ADMIN') rolesList.add('Admin');
+        if (role == 'BENEFACTOR') rolesList.add('Benefactor');
+      }
+    }
+
+    final title = rolesList.isNotEmpty ? rolesList.toSet().join(', ') : 'User';
 
     return HomePinBubbleData(
       title: title,

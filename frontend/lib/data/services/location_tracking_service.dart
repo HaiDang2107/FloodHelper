@@ -6,7 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../config/app_config.dart';
-import '../../domain/models/rescuer_distress_alert.dart';
+import '../../domain/models/victim_rescuer_distress_alert.dart';
 import 'location_tracking_background.dart';
 
 // ================================================================
@@ -67,8 +67,9 @@ class LocationTrackingService {
   final _locationController = StreamController<LocationUpdate>.broadcast();
   Stream<LocationUpdate> get locationStream => _locationController.stream;
 
-  final _victimLocationController = StreamController<VictimAlert>.broadcast();
-  Stream<VictimAlert> get victimLocationStream =>
+  final _victimLocationController =
+      StreamController<VictimOrRescuerAlert>.broadcast();
+  Stream<VictimOrRescuerAlert> get victimLocationStream =>
       _victimLocationController.stream;
 
   final _victimStoppedController =
@@ -86,11 +87,23 @@ class LocationTrackingService {
   Stream<RescuerReplyEvent> get rescuerReplyStream =>
       _rescuerReplyController.stream;
 
+  final _rescuerLocationController =
+      StreamController<
+        VictimOrRescuerAlert
+      >.broadcast(); // Reuse VictimAlert as it has userId, fullname, lat, long
+  Stream<VictimOrRescuerAlert> get rescuerLocationStream =>
+      _rescuerLocationController.stream;
+// THE SAME:  
+//   Stream<VictimOrRescuerAlert> getRescuerLocationStream() {
+//   return _rescuerLocationController.stream;
+// }
+
   StreamSubscription? _bgSubscription; // dùng để quản lý listener
   StreamSubscription? _rescuerSubscription;
   StreamSubscription? _victimStoppedSubscription;
   StreamSubscription? _victimHandledSubscription;
   StreamSubscription? _rescuerReplySubscription;
+  StreamSubscription? _rescuerLocationSubscription;
 
   Future<void> _bindUserIdWithRetry(String userId, {String? fullname}) async {
     final completer = Completer<void>();
@@ -105,6 +118,9 @@ class LocationTrackingService {
 
     try {
       for (var i = 0; i < 6; i++) {
+        if (kDebugMode) {
+          print('📍 [UI] Binding userId: $userId, fullname: $fullname');
+        }
         _service.invoke('setUserId', {'userId': userId, 'fullname': fullname});
 
         if (i == 0) {
@@ -215,7 +231,6 @@ class LocationTrackingService {
       // print('📍 Background service already running, skip startService()');
     }
 
-
     // 2. Listen for location updates coming back from background
     // Khi gọi hàm .listen(...), ta đang ra lệnh cho hệ thống: "Hãy mở một luồng liên tục chạy ngầm trong RAM để nghe ngóng tin tức từ kênh onLocationUpdate
     // lưu vào _bgSubscription để dễ quản lý (có thể hủy bất cứ lúc nào)
@@ -239,11 +254,13 @@ class LocationTrackingService {
       if (userId.isEmpty || lat == null || lng == null) return;
 
       _victimLocationController.add(
-        VictimAlert(
+        VictimOrRescuerAlert(
           userId: userId,
           fullname: (event['fullname'] ?? '').toString(),
           latitude: lat,
           longitude: lng,
+          isSos: true,
+          isOnline: event['isOnline'] == true,
         ),
       );
     });
@@ -264,8 +281,6 @@ class LocationTrackingService {
     _victimHandledSubscription = _service.on('onVictimHandled').listen((event) {
       if (event == null) return;
       final victimUserId = (event['userId'] ?? '').toString();
-      if (victimUserId.isEmpty) return;
-
       _victimHandledController.add(
         VictimSignalEvent(
           userId: victimUserId,
@@ -281,25 +296,48 @@ class LocationTrackingService {
       final rescuerFullname =
           (event['rescuerFullname'] ?? event['rescuer_fullname'] ?? '')
               .toString();
-      if (rescuerFullname.isEmpty) return;
 
       _rescuerReplyController.add(
         RescuerReplyEvent(
           rescuerFullname: rescuerFullname,
-          handledBy: (event['handledBy'] ?? event['handled_by'])?.toString(),
+          handledBy: (event['handledBy'] ?? '').toString(),
+        ),
+      );
+    });
+
+    _rescuerLocationSubscription = _service.on('onRescuerLocation').listen((
+      event,
+    ) {
+      if (event == null) return;
+
+      final rescuerId = (event['rescuerId'] ?? '').toString();
+      final lat = (event['lat'] as num?)?.toDouble();
+      final lng = (event['long'] as num?)?.toDouble();
+      if (rescuerId.isEmpty || lat == null || lng == null) return;
+
+      _rescuerLocationController.add(
+        VictimOrRescuerAlert(
+          userId: rescuerId,
+          fullname: (event['fullname'] ?? '').toString(),
+          latitude: lat,
+          longitude: lng,
+          isSos: event['isSos'] == true,
+          isOnline: event['isOnline'] == true,
         ),
       );
     });
 
     // 3. Send userId so background isolate can connect MQTT (with retry handshake)
-    // Đồng bộ cấu hình xuống background 
+    // Đồng bộ cấu hình xuống background
     await _bindUserIdWithRetry(userId, fullname: fullname);
     _service.invoke('setAllowedFriends', {'friendIds': allowedFriendIds});
     _service.invoke('setRescuerMode', {'isRescuer': isRescuer});
     // setUiIsActive(true); // Đã set true ở home_runtime_mixin
 
     // 4. Lấy vị trí hiện tại từ background
-    _service.invoke('requestImmediateLocation'); // Dữ liệu vị trí được bắn ngược lên (xem handler để rõ hơn)
+    _service.invoke(
+      'requestImmediateLocation',
+    ); // Dữ liệu vị trí được bắn ngược lên (xem handler để rõ hơn)
     // Chờ hứng cục dữ liệu đầu tiên để trả về cho UI vẽ bản đồ
     try {
       // Lắng nghe stream và chỉ lấy phần tử đầu tiên (first). Quá 5 giây sẽ quăng lỗi Timeout
@@ -312,10 +350,12 @@ class LocationTrackingService {
       return firstLocation;
     } catch (e) {
       if (kDebugMode) {
-        print('📍 [UI] Chờ Background lấy tọa độ bị Timeout. App vẫn tiếp tục mở: $e');
+        print(
+          '📍 [UI] Chờ Background lấy tọa độ bị Timeout. App vẫn tiếp tục mở: $e',
+        );
       }
       // Trả về null để app vượt qua được Splash Screen, không bị kẹt nữa
-      return null; 
+      return null;
     }
   }
 
@@ -331,6 +371,8 @@ class LocationTrackingService {
     _victimHandledSubscription = null;
     _rescuerReplySubscription?.cancel();
     _rescuerReplySubscription = null;
+    _rescuerLocationSubscription?.cancel();
+    _rescuerLocationSubscription = null;
     _service.invoke('stopService');
 
     if (kDebugMode) {
@@ -346,6 +388,7 @@ class LocationTrackingService {
     _victimStoppedController.close();
     _victimHandledController.close();
     _rescuerReplyController.close();
+    _rescuerLocationController.close();
   }
 
   /// Update the allowed friends list in the background isolate.

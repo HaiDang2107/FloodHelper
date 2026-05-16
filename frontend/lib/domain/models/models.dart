@@ -9,5 +9,5 @@ export 'announcement.dart';
 export 'charity_campaign.dart';
 export 'map_user.dart';
 export 'distress_signal_input.dart';
-export 'rescuer_distress_alert.dart';
+export 'victim_rescuer_distress_alert.dart';
 export 'broadcasting_signal.dart';

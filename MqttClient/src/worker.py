@@ -1,5 +1,6 @@
 import json
 import ssl
+import time
 from typing import Any
 
 import paho.mqtt.client as mqtt
@@ -17,6 +18,7 @@ class MqttWorker:
             client_id="FastAPI_Location_Worker",
             clean_session=True,
         )
+        self.handled_victims: dict[str, float] = {}
 
     @staticmethod
     def _debug(message: str) -> None:
@@ -51,12 +53,23 @@ class MqttWorker:
         allowed_friends = data.get("allowed_friends", [])
         is_sos = bool(data.get("isSoS", False))
         is_online = data.get("isOnline")
+        is_rescuer = bool(data.get("isRescuer", False))
 
         if lat is None or lng is None or not sender_user:
             # self._debug(f"Invalid current-location payload: {data}")
             return
 
-        location_data = {"lat": lat, "lng": lng}
+        # Override is_sos if the user was recently handled (prevent race condition)
+        if sender_user in self.handled_victims:
+            # Lazy cleanup
+            last_handled_time = self.handled_victims[sender_user]
+            if time.time() - last_handled_time < 7:
+                is_sos = False
+            else:
+                # Nếu thời gian qúa 7s thì xóa cache
+                del self.handled_victims[sender_user] 
+
+        location_data = {"lat": lat, "lng": lng, "isSos": is_sos}
         if is_online is not None:
             location_data["isOnline"] = is_online
 
@@ -70,11 +83,30 @@ class MqttWorker:
                 retain=True,
             )
 
+        if is_rescuer:
+            rescuer_loc_payload = json.dumps(
+                {
+                    "lat": lat,
+                    "lng": lng,
+                    "rescuerId": sender_user,
+                    "fullname": fullname,
+                    "isOnline": is_online,
+                    "isSos": is_sos,
+                }
+            )
+            self._publish(
+                self.settings.topic_rescuer_location,
+                payload=rescuer_loc_payload,
+                qos=0,
+                retain=False,
+            )
+
         if is_sos:
             rescuer_payload = json.dumps(
                 {
                     "userId": sender_user,
                     "fullname": fullname,
+                    "isOnline": is_online,
                     "lat": lat,
                     "long": lng,
                 }
@@ -129,6 +161,11 @@ class MqttWorker:
 
             signal = response.get("data") if isinstance(response, dict) else None
             user = signal.get("user") if isinstance(signal, dict) else None
+            fullname = None
+            if isinstance(user, dict):
+                profiles = user.get("profiles", [])
+                if profiles and len(profiles) > 0:
+                    fullname = profiles[0].get("fullname")
 
             self._publish(
                 self.settings.topic_rescuer_common,
@@ -171,15 +208,18 @@ class MqttWorker:
             self._debug(f"Failed to mark broadcasting signal as handled for user {user_id}")
             return
 
+        # Cache this victim ID to prevent race conditions (isSoS=true sent by app shortly after handle)
+        self.handled_victims[user_id] = time.time() # Lấy timestamp hiện tại
+
         signal = response.get("data") if isinstance(response, dict) else None
         handled_by_user = (
             signal.get("handledByUser") if isinstance(signal, dict) else None
         )
-        handled_fullname = (
-            handled_by_user.get("fullname")
-            if isinstance(handled_by_user, dict)
-            else None
-        )
+        handled_fullname = None
+        if isinstance(handled_by_user, dict):
+            profiles = handled_by_user.get("profiles", [])
+            if profiles and len(profiles) > 0:
+                handled_fullname = profiles[0].get("fullname")
 
         reply_topic = f"{user_id}/rescuer-reply"
         self._publish(

@@ -107,6 +107,16 @@ class FirebaseMessagingService {
       importance: Importance.high,
     );
 
+    // Kênh 4: Tín hiệu SOS
+    const AndroidNotificationChannel distressSignalsChannel = AndroidNotificationChannel(
+      'distress_signals',
+      'Distress Signals',
+      description: 'Thông báo liên quan đến tín hiệu cứu nạn (SOS)',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
+
     // Đăng ký các kênh này với hệ điều hành
     await _localNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
@@ -119,6 +129,10 @@ class FirebaseMessagingService {
     await _localNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(announcementFromAuthorityChannel);
+
+    await _localNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(distressSignalsChannel);
   }
 
   /// Gửi Token lên Backend có cơ chế Cache
