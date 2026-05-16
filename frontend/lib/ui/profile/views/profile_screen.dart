@@ -11,8 +11,8 @@ import '../widgets/profile_info.dart';
 import '../widgets/role_management.dart';
 import '../widgets/profile_action_button.dart';
 import '../widgets/fullscreen_image_viewer.dart';
-import '../../core/common/widgets/location_selector.dart';
-import '../../core/common/widgets/change_password_dialog.dart';
+import '../../../core/common/widgets/location_selector.dart';
+import '../../../core/common/widgets/change_password_dialog.dart';
 import '../../../../data/providers/providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {

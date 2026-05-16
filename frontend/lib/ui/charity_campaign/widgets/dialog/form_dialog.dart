@@ -5,7 +5,7 @@ import '../../../../data/providers/service_providers.dart';
 import '../../../../data/services/charity_campaign_service.dart';
 import '../../../../domain/models/bank_option.dart';
 import '../../../../domain/models/charity_campaign.dart';
-import '../../../core/common/widgets/location_selector.dart';
+import '../../../../core/common/widgets/location_selector.dart';
 
 class CreateCampaignDialog extends ConsumerStatefulWidget {
   final CharityCampaign? campaignToEdit;

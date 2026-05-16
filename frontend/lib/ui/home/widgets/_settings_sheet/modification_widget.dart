@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/common/widgets/user_avatar.dart';
-import '../../../core/common/constants/user_state.dart';
+import '../../../../core/common/widgets/user_avatar.dart';
+import '../../../../core/common/constants/user_state.dart';
 import '../../../../data/models/friend_model.dart';
 import '../../view_models/home_view_model.dart';
 

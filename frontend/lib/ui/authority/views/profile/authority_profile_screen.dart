@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../data/providers/repository_providers.dart';
-import '../../../core/common/widgets/change_password_dialog.dart';
+import '../../../../core/common/widgets/change_password_dialog.dart';
 import '../../theme/authority_theme.dart';
 import '../../view_models/authority_profile_view_model.dart';
 

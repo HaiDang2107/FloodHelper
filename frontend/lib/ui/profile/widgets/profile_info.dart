@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../domain/models/user_profile.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../core/common/widgets/location_selector.dart';
+import '../../../core/common/widgets/location_selector.dart';
 import 'citizen_id_card_picker.dart';
 
 class ProfileInfo extends StatelessWidget {

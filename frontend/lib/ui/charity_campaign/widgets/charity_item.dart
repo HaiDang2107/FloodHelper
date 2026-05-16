@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../core/common/widgets/bottom_sheet.dart';
+import '../../../core/common/widgets/bottom_sheet.dart';
 import '../../../domain/models/charity_campaign.dart';
 import 'bottom_sheet/allocation_view.dart';
 import 'bottom_sheet/transaction_list_view.dart';

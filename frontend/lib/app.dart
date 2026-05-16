@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'routing/routes.dart';
-import 'ui/core/common/constants/global_keys.dart';
+import 'core/common/constants/global_keys.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'ui/core/common/services/global_notification_controller.dart';
+import 'core/common/services/global_notification_controller.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});

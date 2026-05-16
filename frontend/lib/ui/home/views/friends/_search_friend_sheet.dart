@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:antiflood/ui/home/widgets/_search_friend_sheet/friend_search_item.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../data/models/user_model.dart';
-import '../../../core/common/services/global_notification_controller.dart';
+import '../../../../core/common/services/global_notification_controller.dart';
 import '../../view_models/home_view_model.dart';
 
 class SearchFriendSheet extends ConsumerWidget {

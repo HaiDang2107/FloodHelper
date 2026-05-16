@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../data/models/location_option.dart';
-import '../../../../data/services/location_service.dart';
+import '../../../data/models/location_option.dart';
+import '../../../data/services/location_service.dart';
 
 class LocationSelection {
   final ProvinceOption? province;

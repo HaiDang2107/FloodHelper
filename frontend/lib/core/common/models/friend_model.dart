@@ -1,4 +1,4 @@
-import 'package:antiflood/ui/core/common/constants/user_state.dart';
+import 'package:antiflood/core/common/constants/user_state.dart';
 import 'package:latlong2/latlong.dart';
 
 class FriendModel {

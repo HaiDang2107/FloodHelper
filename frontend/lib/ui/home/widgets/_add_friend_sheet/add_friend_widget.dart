@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/common/services/global_notification_controller.dart';
+import '../../../../core/common/services/global_notification_controller.dart';
 import '../../view_models/friend_view_model.dart';
 
 class AddFriendWidget extends ConsumerStatefulWidget {

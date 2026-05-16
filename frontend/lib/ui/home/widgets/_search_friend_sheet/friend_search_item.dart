@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:antiflood/data/models/user_model.dart';
-import 'package:antiflood/ui/core/common/widgets/user_avatar.dart';
-import 'package:antiflood/ui/core/common/constants/user_state.dart';
+import 'package:antiflood/core/common/widgets/user_avatar.dart';
+import 'package:antiflood/core/common/constants/user_state.dart';
 
 class FriendSearchItem extends StatelessWidget {
   final UserModel user;

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../view_models/admin_user_management_view_model.dart';
 import '../../../../domain/models/user_profile.dart';
-import '../../../core/common/widgets/location_selector.dart';
+import '../../../../core/common/widgets/location_selector.dart';
 import 'package:antiflood/data/models/profile_model.dart';
 import 'package:antiflood/data/models/admin/admin_dtos.dart';
 import 'package:antiflood/data/providers/repository_providers.dart';

@@ -1,9 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../data/providers/service_providers.dart';
-import '../../../home/view_models/friend_view_model.dart';
-import '../../../home/view_models/home_view_model.dart';
+import '../../../data/providers/service_providers.dart';
+import '../../../ui/home/view_models/friend_view_model.dart';
+import '../../../ui/home/view_models/home_view_model.dart';
 import '../constants/global_keys.dart';
 import '../widgets/global_notification.dart';
 

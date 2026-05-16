@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/common/widgets/user_avatar.dart';
-import '../../../core/common/constants/user_state.dart';
-import '../../../core/common/services/global_notification_controller.dart';
+import '../../../../core/common/widgets/user_avatar.dart';
+import '../../../../core/common/constants/user_state.dart';
+import '../../../../core/common/services/global_notification_controller.dart';
 import '../../view_models/friend_view_model.dart';
 
 enum RequestType {
