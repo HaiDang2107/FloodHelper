@@ -27,6 +27,7 @@ model User {
   roleRequestsReceived RoleUpdatingRequest[] @relation("RoleRequestChecker")
   profileRequestsChecked ProfileUpdatingRequest[] @relation("ProfileRequestChecker")
   publicAnnouncements  PublicAnnouncement[]  @relation("PublicAnnouncementPublisher")
+  receivedAnnouncements PublicAnnouncement[] @relation("PublicAnnouncementReceiver")
   friendRequestsSent   FriendMakingRequest[] @relation("FriendRequestSender")
   friendRequestsRcved  FriendMakingRequest[] @relation("FriendRequestReceiver")
   

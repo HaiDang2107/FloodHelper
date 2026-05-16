@@ -56,14 +56,19 @@ export class SignalService {
           );
         }
 
-        // Create PublicAnnouncement
-        await this.announcementRepository.create({
-          title: 'Emergency: Distress Signal Created',
-          caption: `A distress signal was created by ${creatorProfile.fullname} in your ward.`,
-          documentUrl: null,
-          publishedBy: createdBy,
-          type: 'DAILY',
-        });
+        // Create PublicAnnouncement for each rescuer in the ward
+        for (const rescuer of rescuers) {
+          if (rescuer.userId === createdBy) continue;
+          
+          await this.announcementRepository.create({
+            title: 'Emergency: Distress Signal Created',
+            caption: `A distress signal was created by ${creatorProfile.fullname} in your ward.`,
+            documentUrl: null,
+            publishedBy: createdBy,
+            publishedTo: rescuer.userId,
+            type: 'DAILY',
+          });
+        }
       }
 
       return signal;
@@ -252,9 +257,10 @@ export class SignalService {
       // Create PublicAnnouncement
       await this.announcementRepository.create({
         title: 'Update: Distress Signal Handled',
-        caption: `A distress signal from ${creatorProfile.fullname} is now being handled by ${handlerProfile.fullname}.`,
+        caption: `Your distress signal from ${creatorProfile.fullname} is now being handled by ${handlerProfile.fullname}.`,
         documentUrl: null,
         publishedBy: handledBy,
+        publishedTo: createdBy,
         type: 'DAILY',
       });
     }

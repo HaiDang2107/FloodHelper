@@ -83,6 +83,7 @@ export class FriendService {
         title,
         caption,
         publishedBy: senderId,
+        publishedTo: receiverId,
         type: PublicAnnouncementType.DAILY,
       });
     }
@@ -190,6 +191,7 @@ export class FriendService {
       title,
       caption,
       publishedBy: userId,
+      publishedTo: request.createdBy,
       type: PublicAnnouncementType.DAILY,
     });
 
@@ -236,11 +238,12 @@ export class FriendService {
       );
     }
 
-    // Create a PublicAnnouncement (type: APP) for the sender
+    // Create a PublicAnnouncement (type: DAILY) for the sender
     await this.announcementRepository.createAnnouncement({
       title,
       caption,
       publishedBy: userId,
+      publishedTo: updatedRequest.createdBy,
       type: PublicAnnouncementType.DAILY,
     });
 

@@ -27,10 +27,11 @@ export class AnnouncementNoruserService {
     const limit = this.normalizeLimit(query.limit);
     const beforeCreatedAt = this.parseBeforeCreatedAt(query.beforeCreatedAt);
 
-    const where: { // Một object
-      type?: PublicAnnouncementType; // Các thuộc tính
-      createdAt?: { lt: Date }; // less than một Date nào đó
+    const where: {
+      type?: PublicAnnouncementType;
+      createdAt?: { lt: Date };
       publishedBy?: string;
+      publishedTo?: string;
     } = {};
 
     // Thêm thuộc tính cho bộ lọc where
@@ -40,6 +41,10 @@ export class AnnouncementNoruserService {
 
     if (beforeCreatedAt) {
       where.createdAt = { lt: beforeCreatedAt };
+    }
+
+    if (query.type === 'DAILY') {
+      where.publishedTo = userId;
     }
 
     if (query.type === 'AUTHORITY') {

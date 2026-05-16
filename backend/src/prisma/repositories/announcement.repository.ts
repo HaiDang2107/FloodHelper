@@ -22,6 +22,7 @@ export class AnnouncementRepository extends BaseRepository<any> {
         caption: data.caption,
         documentUrl: data.documentUrl,
         publishedBy: data.publishedBy,
+        publishedTo: data.publishedTo,
         type: data.type,
       },
     });

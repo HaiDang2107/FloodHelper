@@ -14,10 +14,12 @@ model PublicAnnouncement {
   caption        String? @map("text_content")
   documentUrl    String? @map("document_url")
   publishedBy    String  @db.Uuid @map("publisher_id")
+  publishedTo    String? @db.Uuid @map("published_to")
   type           PublicAnnouncementType
   createdAt      DateTime @default(now()) @map("created_at")
 
   publisher User @relation("PublicAnnouncementPublisher", fields: [publishedBy], references: [userId])
+  receiver  User? @relation("PublicAnnouncementReceiver", fields: [publishedTo], references: [userId])
 
   @@map("PublicAnnouncement")
 }
