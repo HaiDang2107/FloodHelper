@@ -188,7 +188,7 @@ Future<void> onStart(ServiceInstance service) async {
           }
         } catch (e) {
           if (kDebugMode) {
-            print('📡 [BG] Failed to process rescuer/common payload: $e');
+            // print('📡 [BG] Failed to process rescuer/common payload: $e');
           }
         }
       }
@@ -369,9 +369,9 @@ Future<void> onStart(ServiceInstance service) async {
       'isOnline': false,
     });
 
-    if (kDebugMode && AppConfig.mqttVerboseLogging) {
-      print('📍 [BG] Publishing FREEZE location to ${freezeIds.length} friends: $payload');
-    }
+    // if (kDebugMode && AppConfig.mqttVerboseLogging) {
+    //   print('📍 [BG] Publishing FREEZE location to ${freezeIds.length} friends: $payload');
+    // }
 
     mqttService.publishRaw(
       topic: AppConfig.mqttCurrentLocationSuffix,
@@ -417,7 +417,7 @@ Future<void> onStart(ServiceInstance service) async {
       // Chú ý: Ở bước này ta chỉ bắn lên UI cho bản đồ vẽ nhanh, 
       // không cần publish MQTT để tránh rác server, việc publish cứ để Timer lo.
     } catch (e) {
-      if (kDebugMode) print('📍 [BG] Lỗi khi lấy GPS tức thì: $e');
+      // if (kDebugMode) print('📍 [BG] Lỗi khi lấy GPS tức thì: $e');
       // Thử lấy vị trí cuối cùng nếu lỗi
       final lastPosition = await Geolocator.getLastKnownPosition();
       if (lastPosition != null) {

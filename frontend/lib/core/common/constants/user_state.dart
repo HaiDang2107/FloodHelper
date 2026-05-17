@@ -12,7 +12,7 @@ extension UserStatusColors on UserStatus {
       case UserStatus.online:
         return const Color(0xFF00E676); // Green
       case UserStatus.offline:
-        return Colors.red;
+        return const Color.fromARGB(255, 0, 0, 0);
       case UserStatus.unknown:
         return Colors.grey;
     }
