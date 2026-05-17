@@ -54,8 +54,11 @@ class _DistressSignalFormState extends State<DistressSignalForm> {
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.number,
+      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(color: Color.fromARGB(137, 105, 103, 103)),
+        floatingLabelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
         prefixIcon: Icon(icon, color: Colors.red[700]),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -171,8 +174,11 @@ class _DistressSignalFormState extends State<DistressSignalForm> {
           TextFormField(
             controller: _otherController,
             maxLines: 4,
+            style: const TextStyle(color: Colors.black),
             decoration: InputDecoration(
               labelText: 'Other Information (Optional)',
+              labelStyle: const TextStyle(color: Color.fromARGB(137, 105, 103, 103)),
+              floatingLabelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
               hintText: 'Describe your situation in detail...',
               alignLabelWithHint: true,
               border: OutlineInputBorder(
