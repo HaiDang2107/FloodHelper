@@ -82,14 +82,20 @@ class SignalService {
     }
   }
 
-  BroadcastingSignal _toBroadcastingSignal(Map<String, dynamic> raw) { // chuyển từ raw sang BroadcastingSignal
+  BroadcastingSignal _toBroadcastingSignal(Map<String, dynamic> raw) {
     final user = raw['user'];
     final userJson = user is Map<String, dynamic>
         ? user
         : const <String, dynamic>{};
 
+    // profiles is a list: [{ fullname, phoneNumber, avatarUrl }]
+    final profiles = userJson['profiles'];
+    final profile = (profiles is List && profiles.isNotEmpty)
+        ? profiles.first as Map<String, dynamic>
+        : const <String, dynamic>{};
+
     final createdAtRaw = raw['createdAt'];
-    final createdAt = DateTime.tryParse(createdAtRaw?.toString() ?? '');
+    final createdAt = DateTime.tryParse(createdAtRaw?.toString() ?? '')?.toLocal();
 
     return BroadcastingSignal(
       signalId: (raw['signalId'] ?? '').toString(),
@@ -103,10 +109,10 @@ class SignalService {
       note: (raw['note'] ?? '').toString().trim().isEmpty
           ? null
           : raw['note'].toString().trim(),
-      userFullname: (userJson['fullname'] ?? '').toString().trim(),
-      userPhoneNumber: (userJson['phoneNumber'] ?? '').toString().trim().isEmpty
+      userFullname: (profile['fullname'] ?? '').toString().trim(),
+      userPhoneNumber: (profile['phoneNumber'] ?? '').toString().trim().isEmpty
           ? null
-          : userJson['phoneNumber'].toString().trim(),
+          : profile['phoneNumber'].toString().trim(),
     );
   }
 

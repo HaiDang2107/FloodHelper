@@ -93,7 +93,7 @@ export class SignalRepository extends BaseRepository<any> {
             userId: true,
             profiles: {
               where: { isCurrent: true },
-              select: { fullname: true, avatarUrl: true },
+              select: { fullname: true, phoneNumber: true, avatarUrl: true },
             },
           },
         },
