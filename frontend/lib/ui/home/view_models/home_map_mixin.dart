@@ -125,35 +125,15 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
     );
   }
 
-  List<HomeMapPin> get mapPins {
+  List<HomeMapPin> get mapPins { // Quản lý trạng thái mapPins
     final currentUser = ref.read(currentUserProvider);
     if (currentUser == null) {
       return const [];
     }
 
-    final pinsById = <String, HomeMapPin>{};
+    final pinsById = <String, HomeMapPin>{}; // Một map tạm thời để loại bỏ trùng lặp
 
-    for (final entry in state.rescuerLocations.entries) {
-      final friendInfo = state.friendsWithMapMode
-          .where((f) => f.userId == entry.key)
-          .firstOrNull;
-      final rescuerName = state.rescuerFullnames[entry.key];
-
-      pinsById[entry.key] = HomeMapPin(
-        userId: entry.key,
-        fullname: (rescuerName != null && rescuerName.trim().isNotEmpty)
-            ? rescuerName
-            : (friendInfo?.name ?? '[Fail to load]'),
-        avatarUrl: friendInfo?.avatarUrl ?? '',
-        position: entry.value,
-        pinType: HomePinType.friend, // Placeholder, UI logic relies on roles
-        isSos: state.rescuerIsSos[entry.key] ?? false,
-        isOnline: state.rescuerIsOnline[entry.key],
-        roles: { ...?friendInfo?.roles, 'RESCUER' }.toList(),
-        isFriend: friendInfo != null,
-      );
-    }
-
+    // 1. Duyệt qua danh sách friend
     for (final entry in state.friendLocations.entries) {
       final friendInfo = state.friendsWithMapMode
           .where((f) => f.userId == entry.key)
@@ -167,11 +147,35 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         pinType: HomePinType.friend,
         isSos: false,
         isOnline: entry.value.isOnline,
-        roles: { ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles }.toList(),
+        roles: <String>{ ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles }.toList(),
         isFriend: true,
       );
     }
 
+    // 2. Duyệt qua danh sách rescuer
+    for (final entry in state.rescuerLocations.entries) {
+      // Kiểm tra xem rescuer có phải bạn bè không. Nếu là bạn bè thì thông tin bạn bè được lưu trong friendInfo
+      final friendInfo = state.friendsWithMapMode
+          .where((f) => f.userId == entry.key)
+          .firstOrNull;
+      final rescuerName = state.rescuerFullnames[entry.key];
+
+      pinsById[entry.key] = HomeMapPin(
+        userId: entry.key,
+        fullname: (rescuerName != null && rescuerName.trim().isNotEmpty)
+            ? rescuerName
+            : (friendInfo?.name ?? (pinsById[entry.key]?.fullname ?? '[Fail to load]')),
+        avatarUrl: friendInfo?.avatarUrl ?? (pinsById[entry.key]?.avatarUrl ?? ''),
+        position: entry.value,
+        pinType: HomePinType.friend, // Placeholder, UI logic relies on roles
+        isSos: state.rescuerIsSos[entry.key] ?? (pinsById[entry.key]?.isSos ?? false),
+        isOnline: state.rescuerIsOnline[entry.key] ?? (pinsById[entry.key]?.isOnline),
+        roles: <String>{ ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles, 'RESCUER' }.toList(),
+        isFriend: friendInfo != null || (pinsById[entry.key]?.isFriend ?? false),
+      );
+    }
+
+    // 3. Duyệt qua danh sách victim
     for (final entry in state.victimLocations.entries) {
       final friendInfo = state.friendsWithMapMode
           .where((f) => f.userId == entry.key)
@@ -182,14 +186,14 @@ mixin HomeCampaignMapMixin on _HomeViewModelBase {
         userId: entry.key,
         fullname: (victimName != null && victimName.trim().isNotEmpty)
             ? victimName
-            : (friendInfo?.name ?? '[Fail to load]'),
-        avatarUrl: friendInfo?.avatarUrl ?? '',
+            : (friendInfo?.name ?? (pinsById[entry.key]?.fullname ?? '[Fail to load]')),
+        avatarUrl: friendInfo?.avatarUrl ?? (pinsById[entry.key]?.avatarUrl ?? ''),
         position: entry.value,
         pinType: HomePinType.victim,
         isSos: true,
-        isOnline: state.victimIsOnline[entry.key],
-        roles: { ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles }.toList(),
-        isFriend: friendInfo != null,
+        isOnline: state.victimIsOnline[entry.key] ?? (pinsById[entry.key]?.isOnline),
+        roles: <String>{ ...(pinsById[entry.key]?.roles ?? []), ...?friendInfo?.roles }.toList(),
+        isFriend: friendInfo != null || (pinsById[entry.key]?.isFriend ?? false),
       );
     }
 

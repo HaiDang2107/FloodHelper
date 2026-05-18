@@ -175,20 +175,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 MarkerLayer(
                   markers: pins
                       .map((pin) {
-                        final color = switch (pin.pinType) {
-                          HomePinType.me => const Color.fromARGB(255, 17, 123, 3),
-                          HomePinType.friend => pin.isOnline == null
-                                ? UserStatus.unknown.color
-                                : (pin.isOnline!
-                                      ? UserStatus.online.color
-                                      : UserStatus.offline.color),
-                          HomePinType.victim => pin.isOnline == null
-                                ? UserStatus.unknown.color
-                                : (pin.isOnline!
-                                      ? UserStatus.online.color
-                                      : UserStatus.offline.color),
-                          HomePinType.campaign => const Color(0xFF0F62FE),
-                        };
+                        final color = pin.isSos
+                            ? UserStatus.sos.color
+                            : switch (pin.pinType) {
+                                HomePinType.me => const Color.fromARGB(255, 17, 123, 3),
+                                HomePinType.friend => pin.isOnline == null
+                                      ? UserStatus.unknown.color
+                                      : (pin.isOnline!
+                                            ? UserStatus.online.color
+                                            : UserStatus.offline.color),
+                                HomePinType.victim => UserStatus.sos.color,
+                                HomePinType.campaign => const Color(0xFF0F62FE),
+                              };
 
                         return Marker(
                           point: pin.position,

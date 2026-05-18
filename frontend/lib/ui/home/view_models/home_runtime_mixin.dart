@@ -49,16 +49,16 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       state = state.copyWith(currentPosition: initialLatLng, isLoading: false);
       mapController.move(initialLatLng, 15.0);
 
-      _locationSubscription = _locationTrackingService.locationStream.listen(
+      _locationSubscription = _locationTrackingService.locationStream.listen( // Track vị trí của mình
         (update) {
           state = state.copyWith(
             currentPosition: LatLng(update.latitude, update.longitude),
           );
         },
         onError: (error) {
-          if (kDebugMode) {
-            print('📍 Location stream error: $error');
-          }
+          // if (kDebugMode) {
+          //   print('📍 Location stream error: $error');
+          // }
           state = state.copyWith(
             errorMessage: 'Location tracking error: $error',
           );
@@ -188,18 +188,18 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       final friends = await _friendRepository.getFriends();
       state = state.copyWith(friendsWithMapMode: friends);
     } catch (e) {
-      if (kDebugMode) {
-        print('📍 Failed to load friends with map mode: $e');
-      }
+      // if (kDebugMode) {
+      //   print('📍 Failed to load friends with map mode: $e');
+      // }
     }
   }
 
   Future<void> _setupFriendSubscriptions(String myUserId) async {
     final connected = await _mqttService.connect('${myUserId}_ui');
     if (!connected) {
-      if (kDebugMode) {
-        print('📡 [UI] MQTT connect failed for friend subscriptions');
-      }
+      // if (kDebugMode) {
+      //   print('📡 [UI] MQTT connect failed for friend subscriptions');
+      // }
       return;
     }
 
@@ -215,9 +215,9 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
       update,
     ) {
       if (kDebugMode) {
-        print(
-          '✅ [UI] NHẬN ĐƯỢC VỊ TRÍ BẠN BÈ: ${update.friendId} -> ${update.latitude}, ${update.longitude}',
-        );
+        // print(
+        //   '✅ [UI] NHẬN ĐƯỢC VỊ TRÍ BẠN BÈ: ${update.friendId} -> ${update.latitude}, ${update.longitude}',
+        // );
       }
       final updatedLocations = Map<String, FriendLocationUpdate>.from(state.friendLocations);
       updatedLocations[update.friendId] = update;
@@ -225,9 +225,9 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
     });
 
     if (kDebugMode) {
-      print(
-        '📡 [UI] Subscribed to ${friendsToTrack.length} friend location topics',
-      );
+      // print(
+      //   '📡 [UI] Subscribed to ${friendsToTrack.length} friend location topics',
+      // );
     }
   }
 
@@ -455,25 +455,30 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
     try {
       final latest = await _signalService.getMyLatestSignal();
       if (latest != null && latest.isBroadcasting && latest.signal != null) {
-        state = state.copyWith(
+        // latest.isBroadcasting là isSos
+        // latest.signal là content của signal (trappedCount, ...)
+        state = state.copyWith( // update UI
           isSosBroadcasting: true,
           sosData: latest.signal,
         );
-        _locationTrackingService.setSosStatus(true);
-        await SosLocalStorage.saveBroadcastingState(
+        _locationTrackingService.setSosStatus(true); // Cập nhật trạng thái cho background (phục vụ cho track rescuer location)
+        await SosLocalStorage.saveBroadcastingState( // Update local storage phục vụ khi mất mạng
           userId,
           latest.signal!,
         );
-        return;
+        return; // Không thực hiện lệnh bên dưới
       }
 
+      // Khi call API thành công nhưng user đang không hề broadcast (latest.isBroadcasting == false) hoặc lỗi dữ liệu (latest.signal bị lỗi)
+      // ==> Dọn dẹp dữ liệu rác trong local storage để tránh trường hợp user reset app nhưng local vẫn còn dữ liệu cũ 
       await SosLocalStorage.clearBroadcastingState(userId);
     } catch (_) {
       // Fallback to local snapshot when API is unreachable.
     }
 
+    // Trong trường hợp không call được API, giả định trạng thái sos trong local storage là đúng
     final local = await SosLocalStorage.getBroadcastingState(userId);
-    if (local != null) {
+    if (local != null) { // Khi revoke sos, frontend đã thực hiện xóa khỏi local storage rồi nên nếu local == false, sosStatus == false
       state = state.copyWith(isSosBroadcasting: true, sosData: local);
       _locationTrackingService.setSosStatus(true);
       return;

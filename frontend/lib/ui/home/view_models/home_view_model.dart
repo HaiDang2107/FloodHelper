@@ -48,8 +48,8 @@ abstract class _HomeViewModelBase extends _$HomeViewModel {
   set _friendLocationSubscription(
     StreamSubscription<FriendLocationUpdate>? value,
   );
-  StreamSubscription<VictimOrRescuerAlert>? get _victimLocationSubscription;
-  set _victimLocationSubscription(
+  StreamSubscription<VictimOrRescuerAlert>? get _victimLocationSubscription; // Getter của property _victimLocationSubscription
+  set _victimLocationSubscription( // Setter của property _victimLocationSubscription
     StreamSubscription<VictimOrRescuerAlert>? value,
   );
   StreamSubscription<VictimSignalEvent>? get _victimStoppedSubscription;

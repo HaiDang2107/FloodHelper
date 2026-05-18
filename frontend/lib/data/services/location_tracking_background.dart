@@ -69,7 +69,7 @@ Future<void> onStart(ServiceInstance service) async {
   }
 
   void setupRescuerLocationSubscription() {
-    if (!mqttConnected || (!isRescuer && !isSos)) {
+    if (!mqttConnected || (!isRescuer && !isSos)) { // Nếu user không phải rescuer và cũng không đang broadcast thì không cần subscribe
       return;
     }
 
@@ -159,6 +159,7 @@ Future<void> onStart(ServiceInstance service) async {
             'fullname': (data['fullname'] ?? '').toString(),
             'lat': (data['lat'] as num?)?.toDouble(),
             'long': (data['long'] as num?)?.toDouble(),
+            'isOnline': data['isOnline'] == true,
           };
 
           if (alertData['userId'] == '' ||
