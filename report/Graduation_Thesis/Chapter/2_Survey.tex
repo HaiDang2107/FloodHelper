@@ -1,0 +1,410 @@
+\documentclass[../Main.tex]{subfiles}
+\begin{document}
+Chapter 2 presents a comprehensive survey and analysis of the system requirements. The chapter begins with a status survey to establish the project context, followed by a functional overview that illustrates the system's scope through general and detailed use case diagrams as well as business processes. Subsequently, specific features are examined in depth in the functional description section. Finally, the chapter concludes by outlining the essential non-functional requirements necessary to ensure the system's performance and quality standards.
+
+\section{Status survey}
+\label{section:2.1}
+
+In November 2025, a web-based platform called “An toàn mùa lũ” was launched by engineering teams from FPT and Quy Nhon AI. Currently, the system is only available through a website and does not have a dedicated mobile application, which limits user access during emergency situations. Moreover, the platform only allows communication between users and authorities, while communication with family members and friends is not supported. In addition, although emergency rescue is a key focus, post-disaster support and recovery are also important but have not received sufficient attention.
+
+Our system is designed as a cross-platform application to ensure broad accessibility for users across different devices. It enables communication not only with authorities but also with family members, friends, or the wider community, thereby strengthening information sharing and mutual support during emergency situations. In addition, the platform facilitates direct connections between benefactors and relevant authorities, helping to reduce unnecessary administrative procedures and improve coordination efficiency. Furthermore, the system provides tools to manage and monitor the entire charitable donation process in a transparent manner, allowing all stakeholders to track contributions and their utilization clearly and reliably.
+
+
+\section{Functional Overview}
+\label{section:2.2}
+\subsection{General use case diagram}
+\label{subsection:2.2.1}
+Sinh viên vẽ biểu đồ use case tổng quan và giải thích các tác nhân tham gia là gì, nêu vai trò của từng tác nhân, và mô tả ngắn gọn các use case chính.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/General Usecase_0.png}
+    \caption{General usecase diagram}
+    \label{fig:Fig1}
+\end{figure}
+
+The system identifies five main actors: normal user, rescuer, benefactor, authority, and administrator. Each actor plays a distinct role and is granted different levels of access and functionality based on their responsibilities.
+
+A normal user represents the general public using the system to access information, communicate with others, and receive support during emergency situations. This actor forms the foundation of the user base and can utilize all standard features provided by the platform.
+
+A rescuer has all the capabilities of a normal user, with additional access to rescue-related functions. These functions support activities such as reporting rescue operations, coordinating with authorities, and assisting affected individuals in emergency scenarios.
+
+A benefactor also inherits all features available to a normal user and is granted additional functionalities related to charitable activities. This actor can participate in donation processes, support relief efforts, and coordinate with relevant parties to ensure effective and transparent aid delivery.
+
+An authority is responsible for approving and supervising actions performed by rescuers and benefactors. In addition, this actor has the ability to issue official announcements and critical information to other users, ensuring accuracy, coordination, and public safety.
+
+An administrator (admin) is responsible for overall system management. This includes maintaining system stability, managing user accounts and permissions, and ensuring that the platform operates securely and efficiently.
+
+The Authentication and Account Management use case group includes all functions related to user identity verification and account handling. These use cases ensure secure login, registration, role assignment, and profile management for all actors within the system.
+
+The Map use case group covers interactions related to map display and navigation. It supports the visualization of locations, emergency areas, rescue points, and other relevant geographic information to enhance situational awareness.
+
+The Social Interaction use case group focuses on communication and interaction between users. These use cases enable users to connect with family members, friends, rescuers, benefactors, and authorities, facilitating information sharing and community support during both emergency response and recovery phases.
+
+\subsection{Detailed use case diagram}
+\label{subsection:2.2.2}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/Authentication and Account Management.png}
+    \caption{Usecases in package "Authentication and Account Management"}
+    \label{fig:Fig2}
+\end{figure}
+
+The Authentication and Account Management use case group includes core functions related to user identification and account handling within the system. These use cases cover user registration, login, logout, and profile management, ensuring that users can securely access the platform and maintain their personal information.
+
+Most actors in the system are allowed to create accounts through the registration process and manage their profiles independently. However, authority accounts are handled differently. Authorities are not permitted to register accounts on their own; instead, their accounts are created and assigned directly by the system administrator.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/Map_0.png}
+    \caption{Usecases in package "Map"}
+    \label{fig:Fig3}
+\end{figure}
+
+The Map use case group includes functionalities related to displaying and interacting with map components within the system. These use cases support the visualization of geographical information that is essential for situational awareness and decision-making.
+
+Users are provided with the option to select between two types of maps based on their specific needs. The weather map presents information related to weather conditions and potential hazards, supporting users in monitoring environmental risks. In contrast, the transportation map focuses on road networks and transportation conditions, helping users identify accessible routes and plan safe movement during emergency situations.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/Social Interaction_0.png}
+    \caption{Usecases in package "Social Interaction "}
+    \label{fig:Fig4}
+\end{figure}
+
+The Social Interaction use case group includes features that support communication and information sharing among users. It is divided into five main categories.
+
+Friend Interaction allows users to communicate and share status information with family members and friends.
+
+Stranger Interaction enables users to interact with other users outside their personal network, which is especially useful in emergency situations.
+
+The Campaign category focuses on charitable activities, supporting interaction related to donation campaigns and relief efforts.
+
+Weather Condition Sharing allows users to share updates about weather and environmental conditions to improve overall awareness.
+
+Finally, the Signal category includes use cases for sending emergency alerts to warn others and request timely assistance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/Plan-making_0.png}
+    \caption{Usecases for Rescuer and Benefactor}
+    \label{fig:Fig5}
+\end{figure}
+
+Finally, the system includes a set of use cases specifically designed for Rescuers and Benefactors, focusing on rescue operations and charitable activities.
+
+\subsection{Business process}
+\label{subsection:2.2.3}
+
+This section outlines the core operational workflows of the application, illustrating the interactions between system actors (Benefactors, Rescuers, Users, and Authorities) and the platform. The business processes are designed to ensure transparency in charity campaigns, accuracy in financial tracking, and efficiency in emergency rescue coordination. The following subsections detail the logic and sequential steps for the primary modules: Charity Campaign Lifecycle, Donation Processing, and Rescue Operations.
+
+\subsubsection{Charity Campaign}
+
+\begin{center}
+    \includegraphics[width=1.0\linewidth]{Figure/Charity Campaign.png}
+    \captionof{figure}{Charity Campaign} 
+    \label{fig:Fig6}
+\end{center}
+
+The charity campaign lifecycle begins with the benefactor declaring the campaign details and submitting a formal request to the authority for verification. Once approved, the campaign is authorized to accept donations. Upon the conclusion of the fundraising period, the campaign transitions to the 'Distributing' status. During this phase, the benefactor utilizes the funds to purchase essential supplies or distribute financial aid. Finally, to formally conclude the campaign and ensure transparency, the benefactor is required to upload the bank statement for review.
+
+\subsubsection{Donate}
+
+\begin{center}
+    \includegraphics[width=1.0\linewidth]{Figure/Donate.png}
+    \captionof{figure}{Donate} 
+    \label{fig:Fig7}
+\end{center}
+
+The donation process commences when the user selects a target campaign from the list of projects currently accepting contributions. Following this selection, the user downloads a system-generated QR code, which embeds a specific transaction message containing the user's identification details. The process concludes when the user utilizes an external banking application to scan the QR code and execute the fund transfer, ensuring the transaction is automatically tracked by the system.
+
+\subsubsection{Rescue}
+
+\begin{center}
+    \includegraphics[width=1.0\linewidth]{Figure/Rescue.png}
+    \captionof{figure}{Rescue} 
+    \label{fig:Fig8}
+\end{center}
+
+The rescue workflow initiates when a user in distress transmits an emergency warning signal. Upon receiving the alert, the Rescuer may respond via two scenarios: deploying immediately to the location or manually selecting a target from the signal list based on severity levels. In the latter case, the Rescuer utilizes the application's optimal route generation feature to plan the most efficient path before proceeding. The process concludes based on the outcome: if the rescue is successful, the victim confirms their status by selecting 'Safe and Sound'; conversely, if the attempt fails, the Rescuer updates the system by marking the status as 'Cannot save'.
+
+\section{Functional description}
+\label{section:2.3}
+\subsection{Description of use case "View precipitation map"}
+
+\begingroup
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|l|X|}
+\caption{Use Case Specification: View Precipitation Map}
+\label{tab:usecase_view_precipitation_map} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endfirsthead
+
+\multicolumn{2}{c}{\small \textit{Table \thetable{} continued from previous page}} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endhead
+
+\hline
+\multicolumn{2}{r}{\small \textit{Continued on next page}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
+Use Case Name & View Precipitation Map \\ \hline
+
+Pre-condition &
+\begin{itemize}
+    \item[] The system is operational.
+    \item[] Precipitation data is stored in the database.
+    \item[] The user has access permission to view the map.
+    \item[] Stable network connection is available.
+\end{itemize} \\ \hline
+
+Main Flow &
+\begin{enumerate}
+    \item The user selects the \textit{View Precipitation Map} function.
+    \item The frontend displays the basemap.
+    \item The frontend sends a request to the backend for precipitation data.
+    \item The backend retrieves precipitation data from the database.
+    \item The backend returns the data to the frontend.
+    \item The frontend overlays a precipitation heatmap based on the retrieved data.
+    \item The user views the precipitation map.
+\end{enumerate} \\ \hline
+
+Alternative / Exception Flows &
+\textbf{AF1: No precipitation data available}
+\begin{itemize}
+    \item[] The backend returns an empty dataset.
+    \item[] The frontend displays the basemap with a notification indicating no data.
+\end{itemize}
+\par\medskip
+\textbf{AF2: Database query error}
+\begin{itemize}
+    \item[] The backend encounters a database error.
+    \item[] The frontend displays an error message.
+\end{itemize}
+\par\medskip
+\textbf{AF3: Heatmap rendering error}
+\begin{itemize}
+    \item[] The frontend fails to render the heatmap.
+    \item[] The frontend displays the basemap with an error notification.
+\end{itemize} \\ \hline
+
+Post-condition &
+\begin{itemize}
+    \item[] The precipitation map (basemap + heatmap) is displayed successfully, or
+    \item[] An appropriate error or notification message is shown.
+    \item[] No data in the database is modified.
+\end{itemize} \\
+
+\end{xltabular}
+\endgroup
+
+\subsection{Description of use case "Share weather condition"}
+
+\begingroup
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|l|X|}
+\caption{Use Case Specification: Share Weather Condition}
+\label{tab:usecase_share_weather_condition} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endfirsthead
+
+\multicolumn{2}{c}{\small \textit{Table \thetable{} continued from previous page}} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endhead
+
+\hline
+\multicolumn{2}{r}{\small \textit{Continued on next page}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
+Use Case Name & Share Weather Condition \\ \hline
+
+Pre-condition &
+\begin{itemize}
+    \item[] The user is logged into the system.
+    \item[] The user has permission to access the camera.
+    \item[] Location services are enabled on the user's device.
+    \item[] The system is operational and connected to the network.
+\end{itemize} \\ \hline
+
+Main Flow &
+\begin{enumerate}
+    \item The user selects the \textit{Share Weather Condition} function.
+    \item The system activates the device camera.
+    \item The user captures a photo of the current surroundings.
+    \item The user enters a caption describing the weather condition.
+    \item The user selects the sharing visibility (public or friends only).
+    \item The user presses the \textit{Post} button.
+    \item The system retrieves the user's current location.
+    \item The system stores the post, including image, caption, visibility setting, and location.
+    \item The system publishes the post according to the selected visibility.
+\end{enumerate} \\ \hline
+
+Alternative / Exception Flows &
+\textbf{AF1: Camera access denied}
+\begin{itemize}
+    \item[] The system cannot access the camera.
+    \item[] The system displays a permission request or error message.
+\end{itemize}
+\par\medskip
+\textbf{AF2: Location service disabled}
+\begin{itemize}
+    \item[] The system fails to retrieve the user's location.
+    \item[] The system prompts the user to enable location services or continues without location data.
+\end{itemize}
+\par\medskip
+\textbf{AF3: Network error during posting}
+\begin{itemize}
+    \item[] The system cannot upload the post due to network issues.
+    \item[] The system displays an error message and allows the user to retry.
+\end{itemize} \\ \hline
+
+Post-condition &
+\begin{itemize}
+    \item[] The weather condition post is successfully shared with the selected audience, or
+    \item[] An appropriate error message is displayed if the process fails.
+    \item[] The post data is stored in the system database.
+\end{itemize} \\
+
+\end{xltabular}
+\endgroup
+
+\subsection{Description of use case "Donate"}
+
+\begingroup
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|l|X|}
+\caption{Use Case Specification: Donate to Campaign}
+\label{tab:usecase_donate_campaign} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endfirsthead
+
+\multicolumn{2}{c}{\small \textit{Table \thetable{} continued from previous page}} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endhead
+
+\hline
+\multicolumn{2}{r}{\small \textit{Continued on next page}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
+Use Case Name & Donate to Campaign \\ \hline
+
+Pre-condition &
+\begin{itemize}
+    \item[] The user is logged into the system.
+    \item[] The system has a list of active donation campaigns.
+\end{itemize} \\ \hline
+
+Main Flow &
+\begin{enumerate}
+    \item The user selects a specific campaign from the active list and initiates the donation process.
+    \item The system generates and displays a dynamic QR code containing the unique transaction syntax required for tracking.
+    \item The user saves the QR code image to the device.
+    \item The user completes the payment via a banking application using the saved QR code.
+    \item The system automatically verifies the transaction upon receiving bank notification and updates the donation records.
+\end{enumerate} \\ \hline
+
+Alternative / Exception Flows &
+\textbf{AF1: Manual transfer / Incorrect syntax (at step 4)}
+\begin{itemize}
+    \item[] The user manually enters bank details instead of using the generated QR code.
+    \item[] The transaction message does not match the system's tracking syntax.
+    \item[] The system fails to auto-verify the donation; the transaction is flagged for manual review.
+\end{itemize} \\ \hline
+
+Post-condition &
+\begin{itemize}
+    \item[] Donation is recorded and added to the campaign fund.
+\end{itemize} \\
+
+\end{xltabular}
+\endgroup
+
+\subsection{Description of use case "View Charity Transaction History"}
+
+\begingroup
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|l|X|}
+\caption{Use Case Specification: View Charity Transaction History}
+\label{tab:usecase_view_transaction_history} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endfirsthead
+
+\multicolumn{2}{c}{\small \textit{Table \thetable{} continued from previous page}} \\
+\hline
+\textbf{Item} & \textbf{Description} \\ \hline
+\endhead
+
+\hline
+\multicolumn{2}{r}{\small \textit{Continued on next page}} \\
+\endfoot
+
+\hline
+\endlastfoot
+
+Use Case Name & View Charity Transaction History \\ \hline
+
+Pre-condition &
+\begin{itemize}
+    \item[] The user accesses the application.
+    \item[] The system's webhook listener is active and connected to the bank's system.
+    \item[] Transaction data has been synchronized via webhook.
+\end{itemize} \\ \hline
+
+Main Flow &
+\begin{enumerate}
+    \item The user navigates to the \textit{Transparency / Transaction History} section.
+    \item The system retrieves the list of transactions from the database (which are continuously updated via Bank Webhook events).
+    \item The system displays the public statement of the charity account (including transaction time, amount, and content).
+    \item The user filters or searches for specific transactions (e.g., by date or message).
+    \item The system updates the view to match the filter criteria.
+\end{enumerate} \\ \hline
+
+Alternative / Exception Flows &
+\textbf{AF1: Webhook service delay / Outdated data}
+\begin{itemize}
+    \item[] The bank's webhook service experiences a delay in sending data.
+    \item[] The system displays the history but shows a "Last updated: [Time]" notification to inform the user that recent transactions might not appear yet.
+\end{itemize}
+\par\medskip
+\textbf{AF2: No transactions found}
+\begin{itemize}
+    \item[] The system database contains no transaction records for the selected period.
+    \item[] The system displays an empty state message: "No transactions recorded yet."
+\end{itemize} \\ \hline
+
+Post-condition &
+\begin{itemize}
+    \item[] The user successfully views the transparency statement of the charity account.
+    \item[] No sensitive information (like full account balance or donor's private details) is compromised.
+\end{itemize} \\
+
+\end{xltabular}
+\endgroup
+
+\section{Non-functional requirement}
+\label{section:2.4}
+To ensure the system operates effectively under real-world conditions, particularly in emergency scenarios, specific non-functional requirements regarding device permissions and network performance must be met.
+
+The functionality for sharing weather conditions and coordinating rescue efforts relies heavily on precise geolocation data. Therefore, to utilize the location-sharing feature, it is a mandatory requirement that users explicitly enable Global Positioning System (GPS) or location services on their mobile devices. The system must prompt the user for permission if these services are detected as disabled.
+
+Given that the application is intended for use in flood-affected areas where telecommunication infrastructure may be compromised, the system must prioritize connectivity stability. To maintain functionality in environments with weak or unstable signals, the transmission of critical data will be implemented using the MQTT (Message Queuing Telemetry Transport) protocol. MQTT is selected for its lightweight overhead and low bandwidth consumption, ensuring that essential communication remains consistent and efficient even when high-speed internet is unavailable.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

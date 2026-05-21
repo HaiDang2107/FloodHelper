@@ -1,0 +1,19 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+\begin{center}
+    \Large{\textbf{ABSTRACT}}\\
+\end{center}
+\vspace{1cm}
+
+In Vietnam, particularly in the central region, severe flooding frequently traps residents, creating an urgent need for accurate location tracking to facilitate rescue operations. Currently, rescue applications in the country are scarce and exhibit significant limitations, such as being strictly web-based, lacking family location-sharing features, and completely failing without stable Internet access. The primary challenge during flood emergencies is the unstable or completely disconnected Internet environment, which critically hinders the ability to pinpoint victims' locations and transmit SOS alerts. Furthermore, post-flood relief efforts often suffer from a lack of transparency in fundraising and resource distribution, leading to public distrust and legal concerns. 
+
+To address these critical issues, this thesis proposes a comprehensive rescue and relief system, named FloodHelper, designed to operate effectively in adverse conditions. The core technical approach utilizes the MQTT protocol for communication and location sharing, selected specifically for its lightweight footprint and high resilience in weak network environments. To mitigate intermittent connectivity, the mobile application implements a mechanism to save the victim's last known location, ensuring rescue teams always have a starting reference point. Additionally, to resolve transparency issues in relief efforts, the system features a dedicated charity module that meticulously tracks the entire lifecycle of a campaign—from initial donations to the final distribution of resources. The main contributions of this thesis include the development of a resilient platform combining a mobile application for victim location sharing in weak networks and a transparent management dashboard for charity operations. The final results demonstrate a functional system that successfully maintains critical data flows under simulated weak network conditions while ensuring strict transparency in charity tracking. Finally, the study outlines future directions, including the exploration of Delay-Tolerant Networking (DTN) to support communication in completely offline scenarios.
+\begin{flushright}
+    \begin{tabular}{@{}c@{}}
+        Student \\
+        \textit{Đăng} \\
+        \textit{Vũ Hải Đăng}
+    \end{tabular}
+\end{flushright}
+\end{document}
