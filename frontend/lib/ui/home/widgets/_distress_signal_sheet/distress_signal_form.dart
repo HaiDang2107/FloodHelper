@@ -3,10 +3,12 @@ import '../../../../domain/models/distress_signal_input.dart';
 
 class DistressSignalForm extends StatefulWidget {
   final ValueChanged<DistressSignalInput> onSubmit;
+  final DistressSignalInput? initialData;
 
   const DistressSignalForm({
     super.key,
     required this.onSubmit,
+    this.initialData,
   });
 
   @override
@@ -21,6 +23,20 @@ class _DistressSignalFormState extends State<DistressSignalForm> {
   final _otherController = TextEditingController();
   bool _hasFood = false;
   bool _hasWater = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      final data = widget.initialData!;
+      _trappedCountsController.text = data.trappedCounts > 0 ? data.trappedCounts.toString() : '';
+      _childrenNumbersController.text = data.childrenNumbers > 0 ? data.childrenNumbers.toString() : '';
+      _elderlyNumbersController.text = data.elderlyNumbers > 0 ? data.elderlyNumbers.toString() : '';
+      _otherController.text = data.other ?? '';
+      _hasFood = data.hasFood;
+      _hasWater = data.hasWater;
+    }
+  }
 
   @override
   void dispose() {
@@ -195,8 +211,8 @@ class _DistressSignalFormState extends State<DistressSignalForm> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _handleSubmit,
-              icon: const Icon(Icons.broadcast_on_personal),
-              label: const Text('Broadcast Signal'),
+              icon: Icon(widget.initialData != null ? Icons.save : Icons.broadcast_on_personal),
+              label: Text(widget.initialData != null ? 'Update Signal' : 'Broadcast Signal'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[700],
                 foregroundColor: Colors.white,

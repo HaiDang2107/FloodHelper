@@ -69,6 +69,9 @@ class _BroadcastingSignalsSheetState
                 onPressed: () => _showSortDialog(context, state.sortCriteria),
                 icon: const Icon(Icons.sort, size: 18),
                 label: const Text('Sort'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black,
+                ),
               ),
               IconButton(
                 onPressed: state.isLoading ? null : viewModel.refresh,
@@ -215,6 +218,7 @@ class _SignalCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -298,7 +302,11 @@ class _InfoChip extends StatelessWidget {
       ),
       child: Text(
         '$label: $value',
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
       ),
     );
   }

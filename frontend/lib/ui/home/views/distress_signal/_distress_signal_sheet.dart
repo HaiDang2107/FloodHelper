@@ -106,6 +106,7 @@ class _DistressSignalSheetState extends State<DistressSignalSheet> {
               onRevoke: _handleRevoke,
             )
           : DistressSignalForm(
+              initialData: _isEditing ? widget.currentSignalData : null,
               onSubmit: (data) {
                 if (widget.isBroadcasting) {
                   // If editing, directly update
