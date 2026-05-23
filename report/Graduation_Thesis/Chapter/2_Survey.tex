@@ -5,10 +5,88 @@ Chapter 2 presents a comprehensive survey and analysis of the system requirement
 \section{Status survey}
 \label{section:2.1}
 
-In November 2025, a web-based platform called “An toàn mùa lũ” was launched by engineering teams from FPT and Quy Nhon AI. Currently, the system is only available through a website and does not have a dedicated mobile application, which limits user access during emergency situations. Moreover, the platform only allows communication between users and authorities, while communication with family members and friends is not supported. In addition, although emergency rescue is a key focus, post-disaster support and recovery are also important but have not received sufficient attention.
+A thorough survey of the current landscape is essential to identify the precise software requirements and ensure the proposed solution effectively addresses practical challenges. This survey analyzes data from three primary sources: target users in flood-prone areas, existing emergency response systems, and similar location-sharing applications on the market.
 
-Our system is designed as a cross-platform application to ensure broad accessibility for users across different devices. It enables communication not only with authorities but also with family members, friends, or the wider community, thereby strengthening information sharing and mutual support during emergency situations. In addition, the platform facilitates direct connections between benefactors and relevant authorities, helping to reduce unnecessary administrative procedures and improve coordination efficiency. Furthermore, the system provides tools to manage and monitor the entire charitable donation process in a transparent manner, allowing all stakeholders to track contributions and their utilization clearly and reliably.
+\subsection{User and Practical Context Survey}
+\label{subsection:2.1.1}
 
+\subsection{Analysis of Existing Systems and Similar Applications}
+\label{subsection:2.1.2}
+
+Currently, several applications are utilized by the community during emergencies; however, they exhibit fundamental architectural and functional gaps when applied to severe flood scenarios and post-disaster relief.
+
+\textbf{Zalo / Instant Messaging Applications:} Zalo is the most popular communication tool in Vietnam. Users can share their live location with contacts; however, this feature is strictly session-based and requires manual activation within a specific chat box. Crucially, it lacks continuous background tracking and entirely fails when the Internet connection drops. It also does not provide a centralized mechanism to broadcast SOS signals directly to authorized rescue teams.
+
+\textbf{Web-based SOS Platforms (An toàn cứu hộ):} These are dedicated platforms designed to transmit distress signals. While directly connected to rescue operations, their primary limitation is their reliance on web browsers, meaning they operate strictly online. If a victim loses network connectivity, the system immediately drops the connection, preventing any signal transmission. Furthermore, these platforms often lack features for victims to share their status with family members.
+
+\textbf{"Whoo" and Social Location Apps:} "Whoo" is a mobile application designed for sharing locations among friends. It successfully implements a mechanism to save the user's last known location (last-location caching). However, it is primarily built for social networking rather than emergency response, meaning it cannot link victims with professional rescue units. Additionally, the application has been reported to suffer from synchronization instability.
+
+None of the aforementioned systems incorporate functionalities to manage post-disaster charity campaigns, leaving the transparency of relief distribution entirely unaddressed.
+
+To provide a clearer perspective, Table 2.1 summarizes the comparison between existing applications and the proposed FloodHelper system.
+
+\begin{table}[htpb]
+    \centering
+    \caption{Comparison of existing applications and the proposed system}
+    \label{table:2.1}
+    \renewcommand{\arraystretch}{1.3} % Tăng khoảng cách các dòng để bảng nhìn thoáng hơn
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Feature} & \textbf{Zalo} & \textbf{Web SOS} & \textbf{Whoo} & \textbf{Proposed System} \\
+        \hline
+        Platform & Mobile / PC & Web & Mobile & Mobile \& Web \\
+        \hline
+        Offline Last-Location Saving & No & No & Yes & Yes \\
+        \hline
+        Continuous Background Tracking & No & No & Yes & Yes \\
+        \hline
+        Direct Rescue Team Integration & No & Yes & No & Yes \\
+        \hline
+        Transparent Charity Management & No & No & No & Yes \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Essential Software Features to be Developed}
+\label{subsection:2.1.3}
+
+Derived from the critical analysis of existing solutions and the specific demands of flood rescue operations, the proposed FloodHelper system must integrate a comprehensive suite of functionalities. These essential features are categorized into four primary subsystems:
+
+\subsubsection{Rescue and Location Tracking Subsystem (Mobile Application)}
+\label{subsubsection:a.}
+
+\textbf{Background Synchronization and Privacy Control:} The application must maintain a persistent background isolate to periodically capture and push GPS coordinates. Crucially, the user's real-time online/offline status is continuously embedded directly within this location data payload. Users can share this comprehensive real-time data with connected friends. Additionally, a "freeze" mechanism is implemented, allowing users to pause live tracking for specific friends, who will then only have access to the user's last known location and status.
+
+\textbf{MQTT-Driven SOS Broadcasting:} Victims can trigger distress signals encompassing their current coordinates and specific physical conditions. To guarantee low latency and high transmission success rates in intermittent networks, all location sharing and SOS broadcasting strictly utilize the MQTT protocol.
+
+\textbf{Rescue Coordination and Visualization:} Rescuers can retrieve a dynamically updated list of active SOS signals, automatically sorted by severity to prioritize urgent cases. During an active rescue, victims can view the rescuer's live location on their screen. Once a victim is successfully rescued, the system immediately halts the specific SOS broadcast, notifying all other rescuers to prevent redundant deployment.
+
+\textbf{Inter-Rescuer Collaboration:} Rescuers operating within the same administrative ward can share live locations with each other to orchestrate joint operations. Furthermore, a dedicated distress feature allows rescuers to broadcast their own SOS signals to peer rescuers in case of secondary emergencies.
+
+\textbf{Offline Tracking and Perimeter Establishment} In scenarios involving complete network disconnection, Rescuers can securely query the MQTT broker to retrieve a victim's last recorded coordinates along with their last known connection status. This allows rescue teams to establish a reliable search perimeter even when the victim is entirely offline.
+
+\subsubsection{Transparent Charity Management Subsystem (Mobile Application)}
+\label{subsubsection:b.}
+
+\textbf{Campaign Lifecycle and Spatial Tracking:} The system manages the strict state transitions of a charity campaign. During the distribution phase, the system visually marks the Benefactor's real-time geographical positions on the map, providing spatial proof of relief delivery.
+
+\textbf{Donation Processing and Traceability:} The application integrates the VietQR API to automatically generate payment QR codes for donors. Users can seamlessly donate and track the detailed transaction flow, ensuring financial transparency.
+
+\textbf{Campaign Announcements:} Benefactors are equipped with tools to publish official announcements, keeping donors updated on the campaign's progress and relief distribution.
+
+\subsubsection{Administration and Moderation Subsystem (Web Platform)}
+\label{subsubsection:c.}
+
+\textbf{Role Verification and Campaign Moderation:} A dedicated web dashboard empowers Authorities to rigorously verify the credentials of registered Rescuers and Benefactors. Authorities govern campaign lifecycles by approving activations, monitoring ongoing states, and executing immediate suspensions if fraudulent activities are detected.
+
+\textbf{Regional Broadcast Notifications:} Authorities have the capability to publish official warnings, weather updates, or emergency directives to all users residing within their specific administrative jurisdictions.
+
+\textbf{System Administration:} A high-level Admin role is established to manage the overall user base, specifically focusing on creating, assigning, and updating Authority accounts.
+
+\subsubsection{Social Connectivity Subsystem (Mobile Application)}
+\label{subsubsection:d.}
+
+\textbf{Network Establishment:} To facilitate the foundational location-sharing feature among peers, the application allows users to establish connections and add friends via email addresses securely.
 
 \section{Functional Overview}
 \label{section:2.2}
@@ -18,80 +96,82 @@ Sinh viên vẽ biểu đồ use case tổng quan và giải thích các tác nh
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{Figure/General Usecase_0.png}
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/General Usecase.png}
     \caption{General usecase diagram}
     \label{fig:Fig1}
 \end{figure}
 
-The system identifies five main actors: normal user, rescuer, benefactor, authority, and administrator. Each actor plays a distinct role and is granted different levels of access and functionality based on their responsibilities.
-
-A normal user represents the general public using the system to access information, communicate with others, and receive support during emergency situations. This actor forms the foundation of the user base and can utilize all standard features provided by the platform.
-
-A rescuer has all the capabilities of a normal user, with additional access to rescue-related functions. These functions support activities such as reporting rescue operations, coordinating with authorities, and assisting affected individuals in emergency scenarios.
-
-A benefactor also inherits all features available to a normal user and is granted additional functionalities related to charitable activities. This actor can participate in donation processes, support relief efforts, and coordinate with relevant parties to ensure effective and transparent aid delivery.
-
-An authority is responsible for approving and supervising actions performed by rescuers and benefactors. In addition, this actor has the ability to issue official announcements and critical information to other users, ensuring accuracy, coordination, and public safety.
-
-An administrator (admin) is responsible for overall system management. This includes maintaining system stability, managing user accounts and permissions, and ensuring that the platform operates securely and efficiently.
-
-The Authentication and Account Management use case group includes all functions related to user identity verification and account handling. These use cases ensure secure login, registration, role assignment, and profile management for all actors within the system.
-
-The Map use case group covers interactions related to map display and navigation. It supports the visualization of locations, emergency areas, rescue points, and other relevant geographic information to enhance situational awareness.
-
-The Social Interaction use case group focuses on communication and interaction between users. These use cases enable users to connect with family members, friends, rescuers, benefactors, and authorities, facilitating information sharing and community support during both emergency response and recovery phases.
 
 \subsection{Detailed use case diagram}
 \label{subsection:2.2.2}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{Figure/Authentication and Account Management.png}
-    \caption{Usecases in package "Authentication and Account Management"}
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Manage my account.png}
+    \caption{Decompose use case "manage my account"}
     \label{fig:Fig2}
 \end{figure}
 
-The Authentication and Account Management use case group includes core functions related to user identification and account handling within the system. These use cases cover user registration, login, logout, and profile management, ensuring that users can securely access the platform and maintain their personal information.
 
-Most actors in the system are allowed to create accounts through the registration process and manage their profiles independently. However, authority accounts are handled differently. Authorities are not permitted to register accounts on their own; instead, their accounts are created and assigned directly by the system administrator.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{Figure/Map_0.png}
-    \caption{Usecases in package "Map"}
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Interact with map.png}
+    \caption{Decompose use case "interact with map"}
     \label{fig:Fig3}
 \end{figure}
 
-The Map use case group includes functionalities related to displaying and interacting with map components within the system. These use cases support the visualization of geographical information that is essential for situational awareness and decision-making.
 
-Users are provided with the option to select between two types of maps based on their specific needs. The weather map presents information related to weather conditions and potential hazards, supporting users in monitoring environmental risks. In contrast, the transportation map focuses on road networks and transportation conditions, helping users identify accessible routes and plan safe movement during emergency situations.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{Figure/Social Interaction_0.png}
-    \caption{Usecases in package "Social Interaction "}
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Make Friend.png}
+    \caption{Decompose use case "make friend"}
     \label{fig:Fig4}
 \end{figure}
 
-The Social Interaction use case group includes features that support communication and information sharing among users. It is divided into five main categories.
 
-Friend Interaction allows users to communicate and share status information with family members and friends.
-
-Stranger Interaction enables users to interact with other users outside their personal network, which is especially useful in emergency situations.
-
-The Campaign category focuses on charitable activities, supporting interaction related to donation campaigns and relief efforts.
-
-Weather Condition Sharing allows users to share updates about weather and environmental conditions to improve overall awareness.
-
-Finally, the Signal category includes use cases for sending emergency alerts to warn others and request timely assistance.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{Figure/Plan-making_0.png}
-    \caption{Usecases for Rescuer and Benefactor}
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Manage charity campaign.png}
+    \caption{Decompose use case "manage charity campaign"}
     \label{fig:Fig5}
 \end{figure}
 
-Finally, the system includes a set of use cases specifically designed for Rescuers and Benefactors, focusing on rescue operations and charitable activities.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Manage distress signal.png}
+    \caption{Decompose use case "manage distress signal"}
+    \label{fig:Fig6}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Manage user.png}
+    \caption{Decompose use case "manage user"}
+    \label{fig:Fig7}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Review role requests.png}
+    \caption{Decompose use case "manage charity campaign"}
+    \label{fig:Fig8}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/UCDiagram/Review updating-profile requests.png}
+    \caption{Decompose use case "manage charity campaign"}
+    \label{fig:Fig9}
+\end{figure}
 
 \subsection{Business process}
 \label{subsection:2.2.3}
@@ -103,7 +183,7 @@ This section outlines the core operational workflows of the application, illustr
 \begin{center}
     \includegraphics[width=1.0\linewidth]{Figure/Charity Campaign.png}
     \captionof{figure}{Charity Campaign} 
-    \label{fig:Fig6}
+    \label{fig:Fig10}
 \end{center}
 
 The charity campaign lifecycle begins with the benefactor declaring the campaign details and submitting a formal request to the authority for verification. Once approved, the campaign is authorized to accept donations. Upon the conclusion of the fundraising period, the campaign transitions to the 'Distributing' status. During this phase, the benefactor utilizes the funds to purchase essential supplies or distribute financial aid. Finally, to formally conclude the campaign and ensure transparency, the benefactor is required to upload the bank statement for review.
@@ -113,7 +193,7 @@ The charity campaign lifecycle begins with the benefactor declaring the campaign
 \begin{center}
     \includegraphics[width=1.0\linewidth]{Figure/Donate.png}
     \captionof{figure}{Donate} 
-    \label{fig:Fig7}
+    \label{fig:Fig11}
 \end{center}
 
 The donation process commences when the user selects a target campaign from the list of projects currently accepting contributions. Following this selection, the user downloads a system-generated QR code, which embeds a specific transaction message containing the user's identification details. The process concludes when the user utilizes an external banking application to scan the QR code and execute the fund transfer, ensuring the transaction is automatically tracked by the system.
@@ -123,7 +203,7 @@ The donation process commences when the user selects a target campaign from the 
 \begin{center}
     \includegraphics[width=1.0\linewidth]{Figure/Rescue.png}
     \captionof{figure}{Rescue} 
-    \label{fig:Fig8}
+    \label{fig:Fig12}
 \end{center}
 
 The rescue workflow initiates when a user in distress transmits an emergency warning signal. Upon receiving the alert, the Rescuer may respond via two scenarios: deploying immediately to the location or manually selecting a target from the signal list based on severity levels. In the latter case, the Rescuer utilizes the application's optimal route generation feature to plan the most efficient path before proceeding. The process concludes based on the outcome: if the rescue is successful, the victim confirms their status by selecting 'Safe and Sound'; conversely, if the attempt fails, the Rescuer updates the system by marking the status as 'Cannot save'.
