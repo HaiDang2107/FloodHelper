@@ -2,7 +2,6 @@ services:
   postgres:
     image: postgres:15
     restart: unless-stopped
-    # Chỉ giữ lại các biến thực sự cần cho DB để tránh lộ secret
     environment:
       POSTGRES_DB: ${DB_NAME:-floodhelper}
       POSTGRES_USER: ${DB_USER:-floodhelper_user}
@@ -17,7 +16,10 @@ services:
     deploy:
       resources:
         reservations:
-          memory: 256M # Khắc phục cảnh báo missing memory
+          memory: 256M
+    # Thêm phần luu dữ liệu riêng ở đây
+    volumes:
+      - floodhelper_postgres_data:/var/lib/postgresql/data
     networks:
       - floodhelper_network
 
@@ -35,42 +37,16 @@ services:
       resources:
         reservations:
           memory: 128M
+    # Thêm phần lưu dữ liệu riêng cho Redis
+    volumes:
+      - floodhelper_redis_data:/data
     networks:
       - floodhelper_network
 
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   restart: unless-stopped
-  #   ports:
-  #     - "${PORT:-3000}:${PORT:-3000}"
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     PORT: ${PORT:-3000}
-  #     DB_HOST: postgres
-  #     DB_PORT: 5432
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #     DATABASE_URL: postgresql://${DB_USER:-floodhelper_user}:${DB_PASSWORD:-floodhelper_password}@postgres:5432/${DB_NAME:-floodhelper}?schema=${DB_SCHEMA:-public}
-  #   healthcheck:
-  #     # Thêm healthcheck để Defang biết khi nào app sẵn sàng
-  #     test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT:-3000}/"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         memory: 512M
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   networks:
-  #     - floodhelper_network
-
 networks:
   floodhelper_network:
+
+# Khai báo các Volume định danh riêng biệt ở cuối file
+volumes:
+  floodhelper_postgres_data:
+  floodhelper_redis_data:
