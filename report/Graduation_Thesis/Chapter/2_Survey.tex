@@ -255,7 +255,7 @@ Upon approval, the FloodHelper system automatically executes the "start donation
 \label{section:2.3.1}
 
 \subsubsection{Use Case Name}
-Broadcast Signal
+Broadcast signal
 
 \subsubsection{Pre-condition}
 \begin{enumerate}
@@ -313,7 +313,7 @@ Broadcast Signal
 \end{enumerate}
 
 \subsubsection{Alternative / Exception Flows}
-\textbf{AF1: When User is a Rescuer} \par
+\textbf{Alternative Flow 1: When User is a Rescuer} \par
 This flow is identical to the Main Flow up to Step 11. The divergence happens at Step 12 when checking the role.
 \begin{enumerate}
     \item MQTT Client checks the user's role. Since [user is rescuer], it publishes the location to the topic "rescuer-location/<ward\_id>".
@@ -323,7 +323,7 @@ This flow is identical to the Main Flow up to Step 11. The divergence happens at
 \end{enumerate}
 
 \vspace{0.5em}
-\textbf{AF2: Signal Already Exists (Broadcasting Signal != null)} \par
+\textbf{Alternative Flow 2: Signal Already Exists (Broadcasting Signal != null)} \par
 This exception occurs in the Backend during the Signal Creation Handling (Step 7 of Main Flow).
 \begin{enumerate}
     \item Backend checks the existence of the user's broadcasting signal.
@@ -339,17 +339,25 @@ This exception occurs in the Backend during the Signal Creation Handling (Step 7
     \item On Failure/Exception (Signal Already Exists): No new signal is created in the database. No new notifications are sent to rescuers. The user is prompted to stop or update their current active signal.
 \end{enumerate}
 
+\subsubsection{Activity Diagram}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_BroadcastSignal.png}
+    \caption{Activity Diagram "Broadcast signal"}
+    \label{fig:Fig231}
+\end{figure}
+
 \subsection{Description of use case "Handle signal"}
 \label{section:2.3.2}
 
 \subsubsection{Use Case Name}
-Handle Signal
+Handle signal
 
 \subsubsection{Pre-condition}
 \begin{enumerate}
     \item The Rescuer is logged into the application and is viewing the map with active emergency pins.
     \item The Victim (User) has an active broadcasting signal.
-    \item Required Topic Subscriptions:
+    \item Required topic subscriptions:
     \begin{itemize}
         \item Victim Frontend must be currently subscribed to "<user\_id>/rescuer-reply" to listen for incoming rescue confirmations.
         \item Rescuer Frontends (both the acting Rescuer and Other Rescuers) must be subscribed to "rescuer/common/<ward\_id>" to listen for global state changes of emergency signals in their area.
@@ -374,23 +382,23 @@ Handle Signal
     \item MQTT Client receives the response and triggers two parallel broadcasting processes:
     \begin{itemize}
         \item Parallel Process A (Notify Victim):
-        \begin{itemize}
-            \item[] Publishes a handling message to the topic "<user\_id>/rescuer-reply".
-            \item[] MQTT Broker forwards this message to the Victim Frontend.
-            \item[] Victim Frontend receives the handling message, unsubscribes from the topics "rescuer-location/<ward\_id>" and "current-ward/<user\_id>", and updates the UI (remove rescuer pin, update button state).
-        \end{itemize}
+        \begin{enumerate}
+            \item Publishes a handling message to the topic "<user\_id>/rescuer-reply".
+            \item MQTT Broker forwards this message to the Victim Frontend.
+            \item Victim Frontend receives the handling message, unsubscribes from the topics "rescuer-location/<ward\_id>" and "current-ward/<user\_id>", set isSos = false in each message published to MQTT Broker, and updates the UI (remove rescuer pin, update button state).
+        \end{enumerate}
         \item Parallel Process B (Notify Rescuers):
-        \begin{itemize}
-            \item[] Publishes a handling message to the topic "rescuer/common/<ward\_id>".
-            \item[] MQTT Broker forwards this message to the rescuers in that ward.
-            \item[] Both the acting Rescuer Frontend and the Other Rescuer Frontend receive the handling message and update their respective UIs
-        \end{itemize}
+        \begin{enumerate}
+            \item Publishes a handling message to the topic "rescuer/common/<ward\_id>".
+            \item MQTT Broker forwards this message to the rescuers in that ward.
+            \item Both the acting Rescuer Frontend and the Other Rescuer Frontend receive the handling message and update their respective UIs
+        \end{enumerate}
     \end{itemize}
     \item The activity converges and terminates after all respective frontends have successfully updated their UIs.
 \end{enumerate}
 
 \subsubsection{Alternative / Exception Flows}
-\textbf{AF1: When Victim is a Rescuer} \par
+\textbf{Alternative Flow 1: When Victim is a Rescuer} \par
 \begin{enumerate}
     \item The flow executes identically to the Main Flow from Step 1 to Step 8.
     \item In Parallel Process A, the Victim Frontend receives the handling message from "<user\_id>/rescuer-reply".
@@ -404,111 +412,154 @@ Handle Signal
     \item System UI State: All rescuer applications in the designated ward are synchronized; their maps are updated to show that the specific distress signal is currently being handled, preventing duplicated rescue efforts.
 \end{enumerate}
 
+\subsubsection{Activity Diagram}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_HandleSignal.png}
+    \caption{Activity Diagram "Broadcast signal"}
+    \label{fig:Fig232}
+\end{figure}
 
-\subsection{Description of use case "Freeze Friend"}
+\subsection{Description of use case "Revoke signal"}
 \label{section:2.3.3}
 
 \subsubsection{Use Case Name}
-Freeze Friend
+Revoke signal
 
 \subsubsection{Pre-condition}
 \begin{enumerate}
-    \item 
+    \item The Victim is logged into the application and currently has an active broadcasting emergency signal.
+    \item Required topic subscriptions:
     \begin{itemize}
-        \item
+        \item Rescuer Frontends in the affected area must be actively subscribed to "rescuer/common/<ward\_id>" to listen for real-time updates regarding signal cancellations or status changes.
     \end{itemize}
 \end{enumerate}
 
 \subsubsection{Main Flow}
 \begin{enumerate}
-    \item 
+    \item Victim clicks the "revoke signal" button on their interface.
+    \item Victim Frontend publishes a signal revoking message to the MQTT topic "signal".
+    \item The flow then splits into two parallel processes that execute concurrently:
     \begin{itemize}
-        \item
+        \item Parallel Process A (Local and UI Update):
+        \begin{enumerate}
+            \item Victim Frontend updates the signal state on its local storage.
+            \item Victim Frontend sets the flag isSos = false in each subsequent message published to the MQTT Broker (ensuring future location updates are no longer treated as emergency signals).
+            \item Victim Frontend updates the UI to reflect that the signal has been successfully revoked.
+        \end{enumerate}
+        \item Parallel Process B (Backend and Rescuer Notification):
+        \begin{enumerate}
+            \item MQTT Broker forwards the signal revoking message to the MQTT Client.
+            \item MQTT Client receives the message and sends a request to the Backend to update the signal state.
+            \item Backend receives the request, updates the signal state in the database (marking it as canceled/revoked), and sends a response back.
+            \item Upon receiving the response, the MQTT Client publishes a signal revoking message to the topic "rescuer/common/<ward\_id>".
+            \item MQTT Broker forwards this message to the related rescuers in that ward.
+            \item Rescuer Frontend receives the message and updates its UI
+        \end{enumerate}
     \end{itemize}
+    \item Both parallel processes converge, and the activity successfully terminates.
 \end{enumerate}
 
 \subsubsection{Alternative / Exception Flows}
-\textbf{AF1: } \par
+\textbf{Exception 1: Network Failure / MQTT Broker Unreachable} \par
+This exception occurs if the Victim's device loses internet connection right after clicking the button.
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item Victim Frontend successfully executes Parallel Process A (updates local storage, sets isSos = false, and updates local UI).
+    \item The publish action to the topic "signal" fails to reach the MQTT Broker.
+    \item Backend and Rescuer Frontends are not notified immediately.
+    \item System behavior: The system must rely on MQTT Quality of Service (QoS) configurations to queue the message and retry publishing once the connection is restored, ensuring eventual consistency between the local state and the Backend.
 \end{enumerate}
 
 \vspace{0.5em}
-\textbf{AF1: } \par
+\textbf{Exception 2: Backend Update Failure} \par
+This exception occurs in Parallel Process B (Backend lane).
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item MQTT Client requests the Backend to update the signal state.
+    \item Backend encounters a database error or validation issue and fails to update the signal state.
+    \item Backend returns an error response to the MQTT Client.
+    \item MQTT Client aborts publishing the revocation message to the "rescuer/common/<ward\_id>" topic.
+    \item The Rescuer Frontend continues to display the signal as active until the issue is resolved or manually synced.
 \end{enumerate}
 
 \subsubsection{Post-condition}
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item Database State: The user's emergency signal is marked as inactive/revoked in the backend system.
+    \item Local State: The victim's local device recognizes the signal as revoked, and all future location broadcasts operate in normal mode (isSos = false).
+    \item System UI State: All related rescuer applications in the designated ward have their maps updated, clearing the revoked distress signal to prevent unnecessary deployment.
 \end{enumerate}
 
-\subsection{Description of use case "Publish Public Announcement"}
+\subsubsection{Activity Diagram}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_RevokeSignal.png}
+    \caption{Activity Diagram "Revoke signal"}
+    \label{fig:Fig233}
+\end{figure}
+
+
+\subsection{Description of use case "Publish public announcement"}
 \label{section:2.3.4}
 
 \subsubsection{Use Case Name}
-Publish Public Announcement
+Publish public announcement
 
 \subsubsection{Pre-condition}
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item The Authority user is authenticated and logged into the system (Authority Frontend).
+    \item The Authority has the appropriate administrative privileges to create and broadcast announcements to their designated ward.
 \end{enumerate}
 
 \subsubsection{Main Flow}
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item Authority clicks the "Create Announcements" button.
+    \item Authority Frontend displays the announcement creation form.
+    \item Authority enters the title and caption for the announcement.
+    \item Assuming the authority does not want to add a file, the Authority Frontend sends the form directly to the Backend.
+    \item Backend receives the request.
+    \item Backend inserts the new announcement into the database with the default state fileUrl = NULL.
+    \item Backend checks if a file is attached to the request. Since there is no file, it skips the cloud upload process.
+    \item Backend sends a push notification to users residing in the same ward.
+    \item Backend sends a success response back to the Authority Frontend.
+    \item Authority Frontend updates the UI to reflect the newly published announcement, and the activity terminates.
 \end{enumerate}
 
 \subsubsection{Alternative / Exception Flows}
-\textbf{AF1: } \par
+\textbf{Exception 1: Database Insert Failure} \par
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item If the Backend fails to insert the new announcement into the database (e.g., due to a database connection error or schema validation failure), the flow is interrupted. The Backend returns an error response, and the Authority Frontend displays an error message without updating the active announcements list.
 \end{enumerate}
 
 \vspace{0.5em}
-\textbf{AF1: } \par
+\textbf{Exception 2: Cloud Upload Failure } \par
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item If the condition [file is attached to request] is met but the Backend fails to upload the file to the cloud service, the system should ideally catch this exception, return an error response to the Authority Frontend, and halt the push notification process to avoid broadcasting an incomplete announcement.
 \end{enumerate}
 
 \subsubsection{Post-condition}
 \begin{enumerate}
-    \item 
-    \begin{itemize}
-        \item
-    \end{itemize}
+    \item Database State: A new public announcement record is successfully created and persisted in the database.
+    \item System/Cloud State: If an attachment was included, the file is successfully stored in the cloud storage provider.
+    \item User State: Citizens/Users located in the authority's ward have received a push notification alerting them of the new announcement.
+    \item UI State: The Authority's frontend dashboard is refreshed and displays the newly published announcement.
 \end{enumerate}
 
+\subsubsection{Activity Diagram}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_PublishPublicAnnouncement.png}
+    \caption{Activity Diagram "Publish public announcement"}
+    \label{fig:Fig234}
+\end{figure}
 
 \section{Non-functional requirement}
 \label{section:2.4}
-To ensure the system operates effectively under real-world conditions, particularly in emergency scenarios, specific non-functional requirements regarding device permissions and network performance must be met.
+Performance (Latency): Real-time location tracking and signal broadcasting via the MQTT broker must maintain a delivery latency of under 500ms to ensure accurate, up-to-date mapping of victims and rescuers.
 
-The functionality for sharing weather conditions and coordinating rescue efforts relies heavily on precise geolocation data. Therefore, to utilize the location-sharing feature, it is a mandatory requirement that users explicitly enable Global Positioning System (GPS) or location services on their mobile devices. The system must prompt the user for permission if these services are detected as disabled.
+Reliability (Network Resilience): The mobile application must utilize delay-tolerant networking strategies and background isolates to queue emergency signals and location data locally, ensuring eventual transmission even when operating in unstable or heavily degraded network environments.
 
-Given that the application is intended for use in flood-affected areas where telecommunication infrastructure may be compromised, the system must prioritize connectivity stability. To maintain functionality in environments with weak or unstable signals, the transmission of critical data will be implemented using the MQTT (Message Queuing Telemetry Transport) protocol. MQTT is selected for its lightweight overhead and low bandwidth consumption, ensuring that essential communication remains consistent and efficient even when high-speed internet is unavailable.
+Scalability (Concurrency): The containerized backend infrastructure must be capable of automatically scaling to handle sudden, massive spikes in concurrent connections and API requests during widespread emergency events without system degradation.
+
+Maintainability (Architecture): The system's codebase must strictly adhere to clean architecture principles (such as the MVVM pattern for the frontend) to ensure straightforward unit testing, predictable state management, and the seamless integration of future communication protocols.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

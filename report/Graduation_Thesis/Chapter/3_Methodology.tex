@@ -73,21 +73,28 @@ Given the requirement to operate in potentially weak network environments during
     \item[] \textbf{Pub/Sub Model:} This decouples the sender and receiver, allowing for efficient real-time data distribution (e.g., broadcasting emergency alerts).
 \end{itemize}
 
-\section{MQTT Broker: Eclipse Mosquitto}
-To facilitate real-time data transmission during the development and testing phases, the system utilizes Eclipse Mosquitto, an open-source message broker that implements the MQTT protocol versions 5.0, 3.1.1, and 3.1.
+\section{MQTT Broker: EMQX Cloud}
+To facilitate highly reliable and scalable real-time data transmission, the system utilizes EMQX Cloud, a fully managed, cloud-based messaging service that implements the MQTT protocol versions 5.0, 3.1.1, and 3.1.
 
 \textbf{Key Strengths:}
 \begin{itemize}
-    \item[] \textbf{Lightweight and Efficient:} Written in C, Mosquitto is extremely lightweight and consumes minimal resources (CPU and RAM). This makes it ideal for running on local development machines or low-power IoT gateways (edge devices) without causing system lag.
-    \item[] \textbf{Standard Compliance:} It strictly adheres to MQTT standards, ensuring that the client implementations (Flutter app and backend services) remain compatible with other brokers if the system needs to switch in the future.
-    \item[] \textbf{Ease of Deployment:} Mosquitto provides official Docker images, allowing developers to spin up a fully functional broker with a single command (`docker run`), drastically reducing the time required for environment setup.
+    \item[] \textbf{High Scalability and Availability:} Built for distributed architectures, EMQX Cloud can effortlessly scale to handle massive concurrent connections. This ensures the system remains highly responsive even under heavy traffic loads, which is critical for real-time tracking and emergency coordination.
+    \item[] \textbf{Fully Managed Infrastructure:} As a cloud-native service, it eliminates the need for manual server provisioning, maintenance, and DevOps overhead. This allows the development team to focus entirely on the application logic and system features rather than infrastructure management.
+    \item[] \textbf{Advanced Rules Engine and Integration:} EMQX Cloud provides built-in, powerful data integration capabilities. It can seamlessly process, filter, and route real-time message streams directly to backend services and databases, streamlining the data flow from client devices.
 \end{itemize}
 
-\textbf{Role in Development Environment:}
-In this project, Mosquitto serves as the central hub for testing the "Publish/Subscribe" mechanism. It allows the development team to simulate unstable network conditions and verify that the IoT devices and the mobile application can successfully reconnect and sync data (e.g., location coordinates, emergency alerts) without data loss.
+\textbf{Role in the System:}
+In this project, EMQX Cloud serves as the robust central hub for the "Publish/Subscribe" mechanism. It handles critical data streams—such as continuous location coordinates and emergency alerts from the Flutter application and IoT devices—ensuring guaranteed message delivery. By leveraging a production-ready cloud broker, the system can reliably synchronize data across distributed environments and maintain seamless connectivity, even when dealing with the intermittent network conditions inherent in mobile and IoT deployments.
 
-\textbf{Comparison with EMQX / HiveMQ:}
-While **Mosquitto** is excellent for development and edge computing due to its simplicity, **EMQX** or **HiveMQ** are often preferred for large-scale production environments requiring clustering and massive concurrency (millions of connections). However, for the scope of this project and the current development stage, Mosquitto offers the best balance between performance and ease of use, avoiding the configuration overhead of complex enterprise brokers.
+\section{MQTT Client Implementation: Python (Paho-MQTT)}
+For the edge devices and data processing modules, the system implements the MQTT client using Python's \texttt{paho-mqtt} library. This library provides a comprehensive and highly stable client class that seamlessly connects to the EMQX Cloud broker, enabling robust "Publish/Subscribe" operations.
+
+\textbf{Key Strengths:}
+\begin{itemize}
+    \item[] \textbf{Event-Driven and Asynchronous Handling:} The \texttt{paho-mqtt} library is built around a robust callback architecture (e.g., \texttt{on\_connect}, \texttt{on\_message}, \texttt{on\_disconnect}). This allows the client to process incoming, high-frequency real-time data streams asynchronously without blocking the main execution thread, ensuring smooth and efficient system performance.
+    \item[] \textbf{Resilience in Unstable Networks:} Designed to handle intermittent connectivity, the library natively supports critical MQTT features such as configurable Keep-Alive intervals, automatic reconnections, and Quality of Service (QoS) levels. This guarantees that vital messages, such as emergency alerts or sensor coordinates, are successfully buffered and delivered even when network conditions fluctuate.
+    \item[] \textbf{Seamless Ecosystem Integration:} Python is the industry standard for advanced data processing, scripting, and integrating with AI/machine learning models. Utilizing \texttt{paho-mqtt} allows the system to easily bridge the gap between raw messaging protocols and complex backend logic, maintaining a clean, readable, and highly extensible codebase.
+\end{itemize}
 
 \section{Containerization: Docker}
 **Docker** is employed to containerize the application, packaging the code along with its dependencies into standardized units for development and deployment.
@@ -102,17 +109,73 @@ While **Mosquitto** is excellent for development and edge computing due to its s
 \textbf{Comparison with Virtual Machines (VMs):}
 Unlike traditional Virtual Machines that require a full Operating System for each instance, Docker containers share the host system's kernel. This makes containers significantly more lightweight (occupying MBs instead of GBs) and much faster to start up (seconds vs. minutes), resulting in better resource efficiency and scalability for the application.
 
-\section{Third-Party Services and APIs}
+\section{Deployment Platform: Render}
+To host the backend services efficiently without the overhead of managing underlying infrastructure, the system utilizes Render, a modern cloud application hosting platform (Platform as a Service - PaaS).
+
+\textbf{Key Strengths:}
 \begin{itemize}
-    \item[] \textbf{Google Authentication:} Integrated to provide a secure and convenient login mechanism (SSO), reducing the friction of user registration.
-    \item[] \textbf{Google Maps API:} Used to visualize the rescue map, precipitation heatmaps, and route navigation. Google Maps is the industry standard for accuracy and detail.
-    \item[] \textbf{Webhooks:} The system utilizes webhooks to receive real-time updates from external banking systems. This eliminates the need for constant polling (checking the server repeatedly), thereby saving server resources and ensuring immediate transaction verification.
+    \item[] \textbf{Automated CI/CD Pipeline:} Render integrates directly with GitHub, enabling automatic deployments whenever new code is pushed to the production branch. This continuous integration accelerates the development cycle and ensures the latest features are reliably deployed.
+    \item[] \textbf{Fully Managed Environment:} By abstracting away server configuration, OS updates, and network management, Render allows the development team to focus entirely on backend business logic and API performance.
+\end{itemize}
+
+\section{Cloud Storage: Cloudinary}
+For managing dynamic media assets, such as user avatars or images uploaded during field operations, the system integrates Cloudinary as its primary cloud-based image and video management service.
+
+\textbf{Key Strengths:}
+\begin{itemize}
+    \item[] \textbf{On-the-fly Transformation:} Cloudinary provides powerful URL-based APIs to resize, crop, and optimize images dynamically before they are delivered to the client. This significantly reduces payload sizes and improves application load times.
+    \item[] \textbf{Global CDN Delivery:} Assets are cached and delivered via a global Content Delivery Network (CDN), ensuring fast and reliable access for mobile clients regardless of their geographical location, while simultaneously offloading bandwidth from the main backend servers.
+\end{itemize}
+
+\section{Push Notifications: Firebase Cloud Messaging (FCM)}
+To guarantee that critical updates reach users immediately, Firebase Cloud Messaging (FCM) is employed as the push notification service bridging the backend and the Flutter mobile application.
+
+\textbf{Key Strengths:}
+\begin{itemize}
+    \item[] \textbf{Reliable Cross-Platform Delivery:} FCM provides a unified, robust infrastructure to send messages to both Android and iOS devices, ensuring that emergency alerts and system notifications are delivered consistently across different operating systems.
+    \item[] \textbf{Targeted Routing:} It supports topic-based subscription and device-token targeting, allowing the backend to broadcast alerts to specific groups of users or route critical updates to individual devices with minimal latency.
+\end{itemize}
+
+\section{In-Memory Caching: Redis}
+To optimize backend performance and reduce the load on the primary relational database, Redis—an advanced, open-source, in-memory data structure store—is deployed as the caching layer.
+
+\textbf{Key Strengths:}
+\begin{itemize}
+    \item[] \textbf{Ultra-Low Latency:} Operating entirely in RAM, Redis provides sub-millisecond read and write operations. This makes it exceptionally well-suited for high-frequency data access requirements.
+    \item[] \textbf{State Management and TTL features:} Redis is strategically used to manage temporary states, such as caching OTPs (One-Time Passwords) for authentication. Its built-in Time-To-Live (TTL) mechanism automatically expires old data, ensuring security and optimal memory utilization without manual intervention.
+\end{itemize}
+
+\section{Version Control and Collaboration: Git and GitHub}
+To maintain codebase integrity and facilitate seamless collaboration among developers, Git is used for local version control, with GitHub serving as the central remote repository.
+
+\textbf{Key Strengths:}
+\begin{itemize}
+    \item[] \textbf{Robust Branching and Merging:} Git's decentralized architecture allows developers to work on isolated feature branches without affecting the stable main codebase. This enables safe experimentation and parallel development of different system modules.
+    \item[] \textbf{Centralized Collaboration:} GitHub provides a comprehensive platform for code reviews, issue tracking, and repository management. It enforces quality control before merging changes and seamlessly triggers automated deployment pipelines, ensuring a highly organized and traceable development lifecycle.
+\end{itemize}
+
+\section{Third-Party Services and APIs}
+To enhance the system's functionality and user experience, the following external services and standards are integrated:
+
+\begin{itemize}
+    \item[] \textbf{OpenStreetMap (OSM):} Utilized as the primary mapping service to visualize geographic data, such as real-time locations, tracking routes, and operational maps. As an open, community-driven geographic database, OSM offers high flexibility and customization without the restrictive licensing constraints or recurring costs associated with proprietary mapping APIs, making it an ideal choice for this system.
+    
+    \item[] \textbf{VietQR API:} Integrated to facilitate secure, rapid, and standardized bank transfers. By dynamically generating QR codes embedded with precise transaction details (including account information, exact transfer amount, and descriptive messages), VietQR significantly streamlines the payment process. This reduces user friction, minimizes manual entry errors, and ensures seamless financial transactions within the application.
 \end{itemize}
 
 \section{Development and Testing Tools}
 \begin{itemize}
     \item[] \textbf{IDE: Visual Studio Code (VS Code):} Selected for its lightweight nature and vast ecosystem of extensions (for Dart, TypeScript, Docker, etc.). Its IntelliSense and debugging tools significantly enhance developer productivity.
     \item[] \textbf{API Testing: Postman:} Used to design, document, and test API endpoints. Postman allows developers to simulate requests, inspect responses, and automate testing scenarios before integrating APIs into the frontend.
+\end{itemize}
+
+\section{Diagramming: Astah and draw.io}
+Thorough architectural planning and system design were conducted prior to implementation, utilizing a combination of Astah and draw.io to create comprehensive software blueprints.
+
+\textbf{Key Strengths:}
+\begin{itemize}
+    \item[] \textbf{Strict UML Compliance (Astah):} Astah is utilized for creating rigorous Unified Modeling Language (UML) diagrams, such as Class Diagrams and Sequence Diagrams. Its strict adherence to UML standards ensures that complex object-oriented structures and logic flows are documented accurately for the development phase.
+    \item[] \textbf{Flexible Visualization (draw.io):} For broader system architecture, deployment diagrams, and user flowcharts, draw.io offers a highly flexible and collaborative canvas. Its integration with cloud storage allows for seamless sharing and iterative refinement of the system's structural overviews.
 \end{itemize}
 
 \end{document}
