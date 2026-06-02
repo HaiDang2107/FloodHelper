@@ -3,8 +3,19 @@
 
 \section{Architecture design}
 \subsection{Software architecture selection}
-Mục này có độ dài từ một đến ba trang. Sinh viên cần lựa chọn kiến trúc phần mềm cho ứng dụng của mình như: kiến trúc ba lớp MVC, MVP, SOA, Microservice, v.v. rồi giải thích sơ bộ về kiến trúc đó (không giải thích chi tiết/dài dòng).
-Sử dụng kiến trúc phần mềm đã chọn ở trên, sinh viên mô tả kiến trúc cụ thể cho ứng dụng của mình. Gợi ý: sinh viên áp dụng lý thuyết chung vào hệ thống/sản phẩm của mình như thế nào, có thay đổi, bổ sung hoặc cải tiến gì không. Ví dụ, thành phần M trong kiến trúc lý thuyết MVC sẽ là những thành phần cụ thể nào (ví dụ: là interface I + class C1 + class C2, v.v.) trong kiến trúc phần mềm của sinh viên.
+
+To meet the complex requirements and urgency of the FloodHelper system, the project adopts a combination of the Client-Server model and the Publisher-Subscriber architecture as the overall foundation. Theoretically, the Client-Server model strictly separates the roles of the client (interaction) and the server (centralized processing). Meanwhile, the Publisher-Subscriber pattern decouples message senders (Publishers) from receivers (Subscribers) via an intermediary (Broker), making it highly optimal for real-time data flows. Applied practically to FloodHelper, alongside standard HTTP communication, this architecture is actualized through the MQTT protocol. The mobile application acts as a Publisher, continuously broadcasting urgent data packets (such as location coordinate updates), while the Server and web management system act as Subscribers listening to specific topics. This ensures immediate processing and rescue map updates, maintaining continuity even in unstable network conditions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SoftwareArchitecture.png}
+    \caption{Software Architecture}
+    \label{fig:Fig411}
+\end{figure}
+
+Diving into the internal structure, the Client application moves beyond traditional MVVM by dividing the system into two distinct main layers: the ui layer and the data layer. The ui layer comprises Views and ViewModels (state management), while the data layer handles API interactions via Repositories, Services, DTOs, and Mappers. A significant architectural enhancement is the introduction of a domain buffer layer in between, acting as a framework-independent zone for data conversion. This architecture strictly adheres to a unidirectional dependency rule: upper layers can only call lower layers, and upper layers react to lower-layer changes via an observation mechanism (watch). The entire initialization and Dependency Injection (DI) process on the Client is automated using the @Riverpod package.
+
+On the Server side, a Layered Architecture is utilized to organize the source code into horizontal layers with distinct responsibilities, where the data flow moves unidirectionally downwards. This is realized through three components: Controller (receiving HTTP requests and routing), Service (handling core business logic), and Repository (executing database queries). To couple these layers loosely and adhere to the Inversion of Control (IoC) principle, the backend thoroughly leverages the built-in Dependency Injection mechanism of the NestJS framework. The consistent application of DI across both Client and Server ensures that components operate independently, enhancing maintainability and facilitating the automated testing process.
 
 \subsection{Overall design}
 Sinh viên vẽ biểu đồ gói UML (UML package diagram), nêu rõ sự phụ thuộc giữa các gói (package). SV cần vẽ các gói sao cho chúng được phân theo các tầng rõ ràng, không được sắp đặt package lộn xộn trong hình vẽ. Sinh viên chú ý các quy tắc thiết kế (Các gói không phụ thuộc lẫn nhau, gói tầng dưới không phụ thuộc gói tầng trên, không phụ thuộc bỏ qua tầng, v.v.) và cần giải thích sơ lược về mục đích/nhiệm vụ của từng package. SV tham khảo ví dụ minh họa trong Hình \ref{fig:Fig1}
