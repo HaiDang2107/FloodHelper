@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../../data/services/broadcasting_signals_local_storage.dart';
-import '../../../data/services/signal_service.dart';
+import '../../../data/repositories/repositories.dart';
 import '../../../domain/models/broadcasting_signal.dart';
 
 part 'broadcasting_signals_view_model.g.dart';
@@ -39,7 +39,7 @@ class BroadcastingSignalsState {
 @riverpod
 class BroadcastingSignalsViewModel
     extends _$BroadcastingSignalsViewModel {
-  late final SignalService _signalService = ref.read(signalServiceProvider);
+  late final SignalRepository _signalRepository = ref.read(signalRepositoryProvider);
 
   @override
   BroadcastingSignalsState build() {
@@ -53,7 +53,7 @@ class BroadcastingSignalsViewModel
     }
 
     final sortCriteria =
-        await BroadcastingSignalsLocalStorage.getSortCriteriaOrder(
+        await _signalRepository.getSortCriteriaOrder(
           currentUser.id,
         );
     state = state.copyWith(sortCriteria: sortCriteria);
@@ -64,7 +64,7 @@ class BroadcastingSignalsViewModel
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final fetched = await _signalService.getRescuerBroadcastingSignals();
+      final fetched = await _signalRepository.getRescuerBroadcastingSignals();
       state = state.copyWith(
         isLoading: false,
         signals: _sortSignals(fetched, state.sortCriteria),
@@ -101,7 +101,7 @@ class BroadcastingSignalsViewModel
       return;
     }
 
-    await BroadcastingSignalsLocalStorage.saveSortCriteriaOrder(
+    await _signalRepository.saveSortCriteriaOrder(
       rescuerId: currentUser.id,
       criteria: normalized,
     );

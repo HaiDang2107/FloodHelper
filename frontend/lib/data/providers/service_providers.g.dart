@@ -245,5 +245,46 @@ final locationTrackingServiceProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef LocationTrackingServiceRef = ProviderRef<LocationTrackingService>;
+String _$sosLocalStorageHash() => r'36d1b51f12c06887a380b3ac8e653eeb89735ed8';
+
+/// SosLocalStorage provider (keepAlive: true)
+///
+/// Copied from [sosLocalStorage].
+@ProviderFor(sosLocalStorage)
+final sosLocalStorageProvider = Provider<SosLocalStorage>.internal(
+  sosLocalStorage,
+  name: r'sosLocalStorageProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$sosLocalStorageHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SosLocalStorageRef = ProviderRef<SosLocalStorage>;
+String _$broadcastingSignalsLocalStorageHash() =>
+    r'035d255373f891e24282d001f8c95010479fc06b';
+
+/// BroadcastingSignalsLocalStorage provider (keepAlive: true)
+///
+/// Copied from [broadcastingSignalsLocalStorage].
+@ProviderFor(broadcastingSignalsLocalStorage)
+final broadcastingSignalsLocalStorageProvider =
+    Provider<BroadcastingSignalsLocalStorage>.internal(
+      broadcastingSignalsLocalStorage,
+      name: r'broadcastingSignalsLocalStorageProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$broadcastingSignalsLocalStorageHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef BroadcastingSignalsLocalStorageRef =
+    ProviderRef<BroadcastingSignalsLocalStorage>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

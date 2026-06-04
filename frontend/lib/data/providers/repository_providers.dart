@@ -92,3 +92,13 @@ CharityCampaignRepository charityCampaignRepository(Ref ref) {
 AdminRepository adminRepository(Ref ref) {
   return RealAdminRepository(adminService: ref.read(adminServiceProvider));
 }
+
+/// Provider for SignalRepository
+@riverpod
+SignalRepository signalRepository(Ref ref) {
+  return RealSignalRepository(
+    signalService: ref.read(signalServiceProvider),
+    sosLocalStorage: ref.read(sosLocalStorageProvider),
+    broadcastingSignalsLocalStorage: ref.read(broadcastingSignalsLocalStorageProvider),
+  );
+}

@@ -25,7 +25,7 @@ final authRepositoryProvider = AutoDisposeProvider<AuthRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRepositoryRef = AutoDisposeProviderRef<AuthRepository>;
-String _$userRepositoryHash() => r'fe3106f7a2310f07627b7a69643b27526aa922a2';
+String _$userRepositoryHash() => r'7ab23f96be956411e94b5f9ebac4fbefae9106ed';
 
 /// Provider for UserRepository
 /// Automatically switches between mock and real implementation
@@ -169,5 +169,24 @@ final adminRepositoryProvider = AutoDisposeProvider<AdminRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminRepositoryRef = AutoDisposeProviderRef<AdminRepository>;
+String _$signalRepositoryHash() => r'3944203c19967c0181d4cc1635963896a61c8e83';
+
+/// Provider for SignalRepository
+///
+/// Copied from [signalRepository].
+@ProviderFor(signalRepository)
+final signalRepositoryProvider = AutoDisposeProvider<SignalRepository>.internal(
+  signalRepository,
+  name: r'signalRepositoryProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$signalRepositoryHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef SignalRepositoryRef = AutoDisposeProviderRef<SignalRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

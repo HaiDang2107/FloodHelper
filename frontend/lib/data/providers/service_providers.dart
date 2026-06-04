@@ -91,3 +91,15 @@ LocationTrackingService locationTrackingService(Ref ref) {
   ref.onDispose(() => service.dispose());
   return service;
 }
+
+/// SosLocalStorage provider (keepAlive: true)
+@Riverpod(keepAlive: true)
+SosLocalStorage sosLocalStorage(Ref ref) {
+  return SosLocalStorage();
+}
+
+/// BroadcastingSignalsLocalStorage provider (keepAlive: true)
+@Riverpod(keepAlive: true)
+BroadcastingSignalsLocalStorage broadcastingSignalsLocalStorage(Ref ref) {
+  return BroadcastingSignalsLocalStorage();
+}

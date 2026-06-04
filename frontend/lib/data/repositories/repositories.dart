@@ -10,6 +10,7 @@ export 'profile_repository.dart';
 export 'friend_repository.dart';
 export 'authority_repository.dart';
 export 'charity_campaign_repository.dart';
+export 'signal_repository.dart';
 
 // Mock implementations
 export 'mock/mock_user_repository.dart';
@@ -27,3 +28,4 @@ export 'real/real_friend_repository.dart';
 export 'real/real_authority_repository.dart';
 export 'real/real_announcement_repository.dart';
 export 'real/real_charity_campaign_repository.dart';
+export 'real/real_signal_repository.dart';

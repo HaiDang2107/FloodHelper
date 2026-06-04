@@ -10,8 +10,7 @@ import '../../../data/providers/providers.dart';
 import '../../../data/repositories/repositories.dart';
 import '../../../data/services/location_tracking_service.dart';
 import '../../../data/services/mqtt_service.dart';
-import '../../../data/services/signal_service.dart';
-import '../../../data/services/sos_local_storage.dart';
+// imports removed
 import '../../../domain/models/auth_session.dart';
 import '../../../domain/models/charity_campaign.dart';
 import '../../../domain/models/distress_signal_input.dart';
@@ -36,7 +35,7 @@ abstract class _HomeViewModelBase extends _$HomeViewModel {
   ImagePicker get _imagePicker;
   LocationTrackingService get _locationTrackingService;
   MqttService get _mqttService;
-  SignalService get _signalService;
+  SignalRepository get _signalRepository;
 
   UserRepository get _userRepository;
   PostRepository get _postRepository;
@@ -91,7 +90,7 @@ class HomeViewModel extends _HomeViewModelBase
   @override
   late final MqttService _mqttService = ref.read(mqttServiceProvider);
   @override
-  late final SignalService _signalService = ref.read(signalServiceProvider);
+  late final SignalRepository _signalRepository = ref.read(signalRepositoryProvider);
 
   // Repositories
   @override

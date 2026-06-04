@@ -5,9 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/models/distress_signal_input.dart';
 
 class SosLocalStorage {
-  static String _keyForUser(String userId) => 'sos_state_$userId';
+  String _keyForUser(String userId) => 'sos_state_$userId';
 
-  static Future<void> saveBroadcastingState(
+  Future<void> saveBroadcastingState(
     String userId,
     DistressSignalInput data,
   ) async {
@@ -26,7 +26,7 @@ class SosLocalStorage {
     );
   }
 
-  static Future<DistressSignalInput?> getBroadcastingState(String userId) async {
+  Future<DistressSignalInput?> getBroadcastingState(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_keyForUser(userId));
     if (raw == null || raw.isEmpty) {
@@ -54,12 +54,12 @@ class SosLocalStorage {
     );
   }
 
-  static Future<void> clearBroadcastingState(String userId) async {
+  Future<void> clearBroadcastingState(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyForUser(userId));
   }
 
-  static int _asInt(dynamic value) {
+  int _asInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return 0;

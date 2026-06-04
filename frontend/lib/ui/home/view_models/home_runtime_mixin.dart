@@ -162,7 +162,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
               rescuerIsOnline: currentUser.isRescuer ? null : const {},
             );
             _locationTrackingService.setSosStatus(false);
-            await SosLocalStorage.clearBroadcastingState(currentUser.id);
+            await _signalRepository.clearLocalSosState(currentUser.id);
             _emitUiEvent(
               'Your distress signal is now handled by ${event.rescuerFullname}',
               HomeUiEventType.success,
@@ -389,7 +389,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
       _locationTrackingService.setSosStatus(true);
       state = state.copyWith(isSosBroadcasting: true, sosData: data);
-      await SosLocalStorage.saveBroadcastingState(currentUser.id, data);
+      await _signalRepository.saveLocalSosState(currentUser.id, data);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to broadcast SOS: $e');
     }
@@ -418,7 +418,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
         rescuerIsSos: currentUser.isRescuer ? null : const {},
         rescuerIsOnline: currentUser.isRescuer ? null : const {},
       );
-      await SosLocalStorage.clearBroadcastingState(currentUser.id);
+      await _signalRepository.clearLocalSosState(currentUser.id);
       _emitUiEvent('Distress signal has been revoked', HomeUiEventType.info);
     } catch (e) {
       state = state.copyWith(errorMessage: 'Failed to revoke SOS: $e');
@@ -453,7 +453,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
   Future<void> _restoreSosState(String userId) async {
     try {
-      final latest = await _signalService.getMyLatestSignal();
+      final latest = await _signalRepository.getMyLatestSignal();
       if (latest != null && latest.isBroadcasting && latest.signal != null) {
         // latest.isBroadcasting là isSos
         // latest.signal là content của signal (trappedCount, ...)
@@ -462,7 +462,7 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
           sosData: latest.signal,
         );
         _locationTrackingService.setSosStatus(true); // Cập nhật trạng thái cho background (phục vụ cho track rescuer location)
-        await SosLocalStorage.saveBroadcastingState( // Update local storage phục vụ khi mất mạng
+        await _signalRepository.saveLocalSosState( // Update local storage phục vụ khi mất mạng
           userId,
           latest.signal!,
         );
@@ -471,13 +471,13 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
       // Khi call API thành công nhưng user đang không hề broadcast (latest.isBroadcasting == false) hoặc lỗi dữ liệu (latest.signal bị lỗi)
       // ==> Dọn dẹp dữ liệu rác trong local storage để tránh trường hợp user reset app nhưng local vẫn còn dữ liệu cũ 
-      await SosLocalStorage.clearBroadcastingState(userId);
+      await _signalRepository.clearLocalSosState(userId);
     } catch (_) {
       // Fallback to local snapshot when API is unreachable.
     }
 
     // Trong trường hợp không call được API, giả định trạng thái sos trong local storage là đúng
-    final local = await SosLocalStorage.getBroadcastingState(userId);
+    final local = await _signalRepository.getLocalSosState(userId);
     if (local != null) { // Khi revoke sos, frontend đã thực hiện xóa khỏi local storage rồi nên nếu local == false, sosStatus == false
       state = state.copyWith(isSosBroadcasting: true, sosData: local);
       _locationTrackingService.setSosStatus(true);

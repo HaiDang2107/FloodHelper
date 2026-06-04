@@ -8,8 +8,7 @@ import '../../domain/models/user.dart';
 import '../../domain/models/auth_session.dart';
 import 'repository_providers.dart';
 import 'service_providers.dart';
-import '../services/broadcasting_signals_local_storage.dart';
-import '../services/sos_local_storage.dart';
+// imports removed
 
 part 'global_session_provider.g.dart';
 
@@ -69,8 +68,9 @@ class GlobalSessionManager extends _$GlobalSessionManager {
       await authRepository.signOut(logoutAll: logoutAll);
     } finally {
       if (userId != null && userId.isNotEmpty) {
-        await SosLocalStorage.clearBroadcastingState(userId);
-        await BroadcastingSignalsLocalStorage.clearSortCriteriaOrder(userId);
+        final signalRepository = ref.read(signalRepositoryProvider);
+        await signalRepository.clearLocalSosState(userId);
+        await signalRepository.clearSortCriteriaOrder(userId);
       }
       state = const AsyncValue.data(null);
     }

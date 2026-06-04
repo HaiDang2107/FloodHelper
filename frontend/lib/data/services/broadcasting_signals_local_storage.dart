@@ -17,10 +17,10 @@ class BroadcastingSignalsLocalStorage {
     BroadcastingSignalsSortCriterion.hasWater,
   ];
 
-  static String _sortCriteriaKey(String rescuerId) =>
+  String _sortCriteriaKey(String rescuerId) =>
       'rescuer_broadcasting_sort_criteria_$rescuerId';
 
-  static Future<void> saveSortCriteriaOrder({
+  Future<void> saveSortCriteriaOrder({
     required String rescuerId,
     required List<BroadcastingSignalsSortCriterion> criteria,
   }) async {
@@ -29,7 +29,7 @@ class BroadcastingSignalsLocalStorage {
     await prefs.setString(_sortCriteriaKey(rescuerId), encoded);
   }
 
-  static Future<List<BroadcastingSignalsSortCriterion>> getSortCriteriaOrder(
+  Future<List<BroadcastingSignalsSortCriterion>> getSortCriteriaOrder(
     String rescuerId,
   ) async {
     final prefs = await SharedPreferences.getInstance();
@@ -65,7 +65,7 @@ class BroadcastingSignalsLocalStorage {
     return normalized;
   }
 
-  static Future<void> clearSortCriteriaOrder(String rescuerId) async {
+  Future<void> clearSortCriteriaOrder(String rescuerId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sortCriteriaKey(rescuerId));
   }
