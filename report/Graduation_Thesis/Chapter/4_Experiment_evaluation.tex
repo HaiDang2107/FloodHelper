@@ -10,38 +10,167 @@ To meet the complex requirements and urgency of the FloodHelper system, the proj
     \centering
     \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SoftwareArchitecture.png}
     \caption{Software Architecture}
-    \label{fig:Fig411}
+    \label{fig:Fig411a}
 \end{figure}
 
 Diving into the internal structure, the Client application moves beyond traditional MVVM by dividing the system into two distinct main layers: the ui layer and the data layer. The ui layer comprises Views and ViewModels (state management), while the data layer handles API interactions via Repositories, Services, DTOs, and Mappers. A significant architectural enhancement is the introduction of a domain buffer layer in between, acting as a framework-independent zone for data conversion. This architecture strictly adheres to a unidirectional dependency rule: upper layers can only call lower layers, and upper layers react to lower-layer changes via an observation mechanism (watch). The entire initialization and Dependency Injection (DI) process on the Client is automated using the @Riverpod package.
 
 On the Server side, a Layered Architecture is utilized to organize the source code into horizontal layers with distinct responsibilities, where the data flow moves unidirectionally downwards. This is realized through three components: Controller (receiving HTTP requests and routing), Service (handling core business logic), and Repository (executing database queries). To couple these layers loosely and adhere to the Inversion of Control (IoC) principle, the backend thoroughly leverages the built-in Dependency Injection mechanism of the NestJS framework. The consistent application of DI across both Client and Server ensures that components operate independently, enhancing maintainability and facilitating the automated testing process.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/LayerArchitecture.png}
+    \caption{Layer Architecture for Frontend and Backend}
+    \label{fig:Fig411b}
+\end{figure}
+
 \subsection{Overall design}
-Sinh viên vẽ biểu đồ gói UML (UML package diagram), nêu rõ sự phụ thuộc giữa các gói (package). SV cần vẽ các gói sao cho chúng được phân theo các tầng rõ ràng, không được sắp đặt package lộn xộn trong hình vẽ. Sinh viên chú ý các quy tắc thiết kế (Các gói không phụ thuộc lẫn nhau, gói tầng dưới không phụ thuộc gói tầng trên, không phụ thuộc bỏ qua tầng, v.v.) và cần giải thích sơ lược về mục đích/nhiệm vụ của từng package. SV tham khảo ví dụ minh họa trong Hình \ref{fig:Fig1}
+
+The overall architecture of the FloodHelper system is modeled through UML Package Diagrams, clearly demonstrating the separation of layers and strict dependency management principles. The packages are organized following a unidirectional dependency rule: the design ensures no circular dependencies, upper-layer packages depend on lower-layer packages, lower-layer packages strictly do not depend on upper ones, and the call flow does not skip layers. To provide a comprehensive view, the system design is divided into three diagrams: General Package Diagram, Package Diagram for Frontend, and Package Diagram for Backend.
+
+\subsubsection{General Package Diagram}
+
+The general diagram outlines the highest-level structure of the entire system. This structure comprises three main blocks: \textit{frontend}, \textit{backend}, and \textit{client\_server}. Here, \textit{frontend} and \textit{client\_server} act as clients, maintaining a one-way dependency on the \textit{backend} for data exchange and retrieval. Internally, both the \textit{frontend} and \textit{backend} blocks are subdivided into smaller packages that adhere strictly to layered design principles.
+
 \begin{figure}[H]
     \centering
-    \includegraphics{Figure/Picture1.png}
-    \caption{Ví dụ biểu đồ phụ thuộc gói}
-    \label{fig:Fig1}
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/GeneralPackageDiagram.png}
+    \caption{General Package Diagram}
+    \label{fig:Fig412a}
 \end{figure}
+
+\subsubsection{Package Diagram for Backend}
+
+The backend architecture is designed with two distinct layers: the \textit{feature} layer (business logic) positioned at the top and the \textit{common} layer (shared infrastructure) at the bottom. The \textit{feature} layer depends on \textit{common} for resources, while \textit{common} operates entirely independently.
+
+Package \textit{feature}: Contains packages handling the core business logic of the application, including \textit{charity} (charity campaign management categorized by \textit{authority} and \textit{user}), \textit{admin} (system administration), \textit{authentication} (user authentication), \textit{profile} (profile management), \textit{role\_request} (handling permission requests), \textit{signal} (transmitting and receiving distress signals), \textit{announcement}, \textit{address}, and \textit{friend} (rescue contact management).
+
+Package \textit{common}: Provides shared tools and infrastructure connections utilized across the entire backend. This layer encompasses \textit{prisma} (the ORM for database interactions), \textit{vietqr} (payment/donation gateway integration), \textit{firebase} (push notification services), and \textit{cloud} (file storage services).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/PackageDiagramForBackend.png}
+    \caption{Package Diagram for Backend}
+    \label{fig:Fig412b}
+\end{figure}
+
+\subsubsection{Package Diagram for Frontend}
+
+This diagram illustrates the client-side architecture with three primary package blocks: \textit{ui} (user interface), \textit{data}, and \textit{common} (shared utilities). Dependency arrows clearly indicate that \textit{ui} depends on \textit{data} and \textit{common}, while \textit{data} simultaneously depends on \textit{common}.
+
+Package \textit{ui}: Logically segregated by user roles to optimize management and navigation. It includes: \textit{user} (end-users/victims with sub-packages like \textit{home}, \textit{charity}, \textit{auth}), \textit{admin} (administrative dashboard), and \textit{authority} (dedicated workspace for functional agencies or rescue organizations).
+
+Package \textit{common}: Contains constants, utility classes, or configuration components utilized globally across the mobile and web applications.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/PackageDiagramForFrontend.png}
+    \caption{Package Diagram for Frontend}
+    \label{fig:Fig412c}
+\end{figure}
+
 \subsection{Detailed package design}
-Sinh viên thiết kế và lần lượt vẽ biểu đồ thiết kế cho từng package, hoặc một nhóm các package liên quan để giải quyết một vấn đề gì đó. Khi vẽ thiết kế gói, sinh viên chỉ cần đưa tên lớp, không cần chỉ ra các thành viên phương thức và thuộc tính. SV tham khảo ví dụ minh họa trong Hình \ref{fig:Fig2}.
 
-Sinh viên cần vẽ rõ ràng quan hệ giữa các lớp trong biểu đồ. Các quan hệ bao gồm: phụ thuộc (dependency), kết hợp (association), kết tập (aggregation), hợp thành (composition), kế thừa (inheritance), và thực thi (implementation). Các quan hệ này đều đã được minh họa trong \ref{fig:Fig2}.
-
-Sau khi vẽ hình minh họa, sinh viên cần giải thích ngắn gọn về thiết kế của mình. 
+To elucidate how the system handles its core business logic, this section analyzes the detailed package design diagram for the Rescue module (encompassing distress signaling and location tracking). This module spans all three architectural components: Frontend, Backend, and Client Server (Worker).
 
 \begin{figure}[H]
     \centering
-    \includegraphics{Figure/Picture2.png}
-    \caption{Ví dụ thiết kế gói}
-    \label{fig:Fig2}
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/DetailedPackageDiagramForRescueFeature.png}
+    \caption{Package Diagram for Frontend}
+    \label{fig:Fig413}
 \end{figure}
+
+\subsubsection{Frontend Subsystem}
+
+The design strictly adheres to the MVVM pattern and Clean Architecture, ensuring a unidirectional data flow.
+
+Package \textit{ui.user.home}: The core of the interface is the \textit{HomeScreen} class. This class uses aggregation to integrate smaller UI components like \textit{HomeMapPin}, \textit{UserLocationPin}, \textit{PinActionBubble}, and \textit{HomeTopActions} to render the overview map. For user interactions, \textit{HomeScreen} has a dependency on \textit{DistressSignalSheet} (for signal creation) and \textit{BroadcastingSignalsSheet} (for viewing broadcasting signal lists). Logically, \textit{HomeScreen} depends on \textit{HomeViewModel}. Following the design pattern, the ViewModels (\textit{HomeViewModel} and \textit{BroadcastingSignalsViewModel}) have a strict composition relationship with their respective state classes (\textit{HomeState} and \textit{BroadcastingSignalsState}).
+
+Package \textit{data}: To decouple the UI logic from data retrieval, the ViewModel only depends on the \textit{SignalRepository} interface. The \textit{RealSignalRepository} class provides the implementation of this interface. The \textit{RealSignalRepository} maintains an aggregation relationship with underlying services such as \textit{SignalService} (which calls APIs via \textit{ApiClient}), \textit{SosLocalStorage}, and \textit{BroadcastingSignalsLocalStorage}.
+
+To support Real-time Processing, the \textit{HomeViewModel} depends directly on the \textit{LocationTrackingService}. This service manages the background isolate/process (\textit{LocationTrackingBackground}), which in turn depends on the \textit{MqttService} to stream coordinates continuously via the MQTT protocol. Additionally, the \textit{GlobalNotificationController} in the \textit{common} package aggregates the \textit{FirebaseMessagingService} to handle global push notifications.
+
+\subsubsection{Backend Subsystem}
+
+On the backend, the Layered Architecture is clearly demonstrated through the separation of responsibilities.
+
+The \textit{SignalController} class is responsible for receiving requests and maintains a dependency on the \textit{SignalService}.
+
+The \textit{SignalController} also depends on a set of Data Transfer Objects (\textit{dto} package) such as \textit{ChangeSignalState}, \textit{CreateSignal}, etc., to validate and standardize inputs and outputs.
+
+The \textit{SignalService} encapsulates the business logic and depends on the \textit{SignalRepository}. Finally, the \textit{SignalRepository} depends on the \textit{PrismaService} (located in the \textit{common.prisma} package) to execute direct queries against the PostgreSQL database.
+
+\subsubsection{Client Server Subsystem}
+
+To offload processing from the main Backend API, the system employs an independent Worker.
+
+The \textit{MqttWorker} class has an aggregation relationship with \textit{BackendApiClient} and \textit{Settings}. This class acts as a Subscriber, listening to coordinate data streams over MQTT, and depends on the Backend infrastructure to update rescue data in real-time without disrupting the primary HTTP traffic flow.
 
 \section{Detailed design}
 \subsection{User interface design}
-Phần này có độ dài từ hai đến ba trang. Sinh viên đặc tả thông tin về màn hình mà ứng dụng của mình hướng tới, bao gồm độ phân giải màn hình, kích thước màn hình, số lượng màu sắc hỗ trợ, v.v. Tiếp đến, sinh viên đưa ra các thống nhất/chuẩn hóa của mình khi thiết kế giao diện như thiết kế nút, điều khiển, vị trí hiển thị thông điệp phản hồi, phối màu, v.v. Sau cùng sinh viên đưa ra một số hình ảnh minh họa thiết kế giao diện cho các chức năng quan trọng nhất. Lưu ý, sinh viên không nhầm lẫn giao diện thiết kế với giao diện của sản phẩm sau cùng.
+\subsubsection{Target Device Specifications}
+
+The FloodHelper project is designed to serve two main target groups with two distinct platforms: a Mobile App for citizens and a Web App for Authorities and Admins. Detailed specifications for each platform are described in the table \ref{table:device_spec}.
+
+\begin{table}[H]
+    \centering
+    \caption{Target Device Specifications}
+    \label{table:device_spec}
+    \renewcommand{\arraystretch}{1.3} % Tăng khoảng cách các dòng để bảng nhìn thoáng hơn
+    \begin{tabularx}{\textwidth}{|l|X|X|}
+        \hline
+        \textbf{Feature}     & \textbf{Mobile App}                                                                                                                                                                                                            & \textbf{Web App}                                                                                                                                                                             \\
+        \hline
+        Target Screen Size   & Supports sizes from 4.7 inches to 6.9 inches (Common aspect ratios: 16:9, 18:9, 19.5:9, and 20:9)                                                                                                                              & Laptop/Desktop screens from 13 inches up to 27 inches and above.                                                                                                                             \\
+        \hline
+        Screen Resolution    & Minimum: 720 x 1280 pixels (HD). Standard \& Optimal: 1080 x 1920 pixels (FHD) up to 1440 x 3200 pixels (QHD+).                                                                                                                & Minimum: 1024 x 768 pixels (Supports horizontal/vertical scrolling for older devices). Recommended \& Optimal: 1366 x 768 pixels (Standard laptops), 1920 x 1080 pixels (Full HD) and above. \\
+        \hline
+        Color Support        & Supports standard sRGB color gamut and DCI-P3 (for high-end devices) with 16 million colors (24-bit color depth), ensuring that warning icons and color-coded maps remain clearly visible even under bright outdoor lighting.  & Supports True Color (24-bit) or 32-bit. High color contrast must be ensured to facilitate the distinction of terrain layers and flooded areas on satellite maps.                             \\
+        \hline
+        Touch \& Interaction & Supports Multi-touch. Optimizes tap target sizes to a minimum of 44x44 pt according to Apple and Google accessibility standards, ensuring users can interact effortlessly during panicky situations or when the screen is wet. & No                                                                                                                                                                                           \\
+        \hline
+        Input Devices        & No                                                                                                                                                                                                                             & Optimized for Mouse and Keyboard operations. Supports shortcuts to help dispatchers execute actions rapidly.                                                                                 \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\subsubsection{UI Conventions}
+
+The user interface design system of FloodHelper is built upon three core criteria: Clarity, Speed, and Safety. Regarding the color palette, the project utilizes dark blue as the primary color to convey reliability, combined with a light background for the Web platform and Dark Mode for Mobile to optimize battery life during power outages. A crucial emphasis is placed on the strictly regulated semantic color system: red is exclusively used for emergencies (SOS), orange for risk warnings, and green indicates safety or a successful status. To ensure optimal legibility across all devices, the system employs modern sans-serif fonts such as Inter or Roboto, featuring a clear size hierarchy ranging from large headings (24-32px) to caption text (12px).
+
+Interactive components, such as buttons and input fields, are designed with a transparent visual hierarchy to guide the user. Primary action buttons consistently stand out with a solid background color and rounded corners (8px on Web and 12-16px on Mobile for easy tapping), whereas secondary or text buttons feature a more minimalist design with outlines or no borders. Input fields and controls (checkboxes, radio buttons, toggles) are all mandated to have a minimum touch target size (e.g., 44px on Mobile) and display a blue border effect when focused. All user interactions, including pressing, hovering, or disabled states, provide synchronized visual feedback to simulate a realistic tactile feel.
+
+In terms of spatial organization and navigation, the Web interface utilizes a 12-column grid system with a left sidebar to accommodate a spacious administrative workspace, while the Mobile platform optimizes a 4-column grid combined with Bottom and Right Navigation bar for thumb-friendly reachability. The feedback messaging system is layered by priority: quick notifications (Toasts) appear at the bottom edge on Mobile or the top corner on Web, input errors are highlighted in red in real-time (Inline Validation), and critical decisions require a centralized Modal dialog with a dimmed background overlay. Finally, all icons within the system adhere to a unified stroke style, with a strict mandatory rule: life-or-death functions like SOS or location sharing must always be accompanied by text labels and absolutely never stand alone to prevent any misinterpretation during moments of user panic.
+
+\subsubsection{Key Features Interface Mockups}
+
+For the rescue feature, these mockups in figure \ref{fig:Fig421a} illustrate the primary home screen of the mobile application and its interactive state, featuring a comprehensive, full-screen map layout. The design utilizes a light theme to maximize the contrast of semantic color-coded status markers, where red pins with radiating rings denote active distress signals ("BROADCASTING") and green pins represent active rescue personnel or safe individuals. The base interface includes a bottom navigation bar, a top toggle control for filtering map data layers like "Transport" and "Weather," and a right-aligned vertical toolbar culminating in a prominent, solid blue "SOS" button for immediate emergency reporting. Upon specific user interaction, an "Active Distress Signals" Bottom Sheet slides up over a dimmed map overlay, maintaining spatial context while displaying a card-based list of ongoing emergencies. Each card prioritizes critical victim data—such as name, contact information, and essential survival metrics (number of trapped individuals, vulnerable demographics, and resource availability) displayed via intuitive pill-shaped tags—alongside a solid dark blue "Locate" button to guide the rescuer's immediate response.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/Mockup/HomeScreen.png}
+    \caption{Mockup for Home Screen}
+    \label{fig:Fig421a}
+\end{figure}
+
+For charity campaign feature, these mockups in figure \ref{fig:Fig421b} illustrate the user's charity campaign management flow. The left screen displays an overview list utilizing a horizontally scrollable tab bar (Created, Pending, Approved, Rejected, Done), enabling users to easily track and filter campaigns by their current stage. Campaigns are presented using a minimalist, card-based layout with a light gray background to visually separate them from the overarching white theme, clearly highlighting the campaign name and its creator. The right screen delves into the details of a specific campaign, providing a structured timeline of the donation and distribution phases. These specific dates are utilized by the system to execute the automated campaign state transition mechanism. In terms of interaction, the detailed interface employs a segmented control using a distinct orange color for the active "Allocation" tab to differentiate it from the inactive "Transaction" tab. Directly below is a standardized, prominent dark blue primary button for the "Post Announcement" action. The remaining screen space is dedicated to a feed of operational updates and announcements, complete with image attachment support, thereby ensuring continuous information transparency throughout the project's lifecycle.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/Mockup/Charity.png}
+    \caption{Mockup for Charity Campaign Management}
+    \label{fig:Fig421b}
+\end{figure}
+
+For the web platform, the mockup in figure \ref{fig:Fig421c} illustrates the Web Dashboard interface exclusively designed for functional agencies and administrators (Authority Desk). The design strictly adheres to the established grid system and layout conventions, featuring a dark-themed Left Sidebar to create visual depth. This sidebar houses the primary functional modules and an expandable dropdown menu to filter charity campaigns by their specific states (ranging from Pending and Approved to Finished and Suspended). The Main Content area utilizes a clean white background and is structured using a Master-Detail layout to maximize the expansive display area of desktop screens. The left pane displays a chronological list of campaign requests, utilizing a blue-bordered card to distinctly highlight the currently active selection. The right pane presents the comprehensive details of the selected campaign, including its purpose, specific location, timeline milestones, and banking information for disbursement. Notably, this design rigorously applies the Semantic Colors guidelines: the "APPROVED" status badge utilizes green (Success) to indicate authorization, while the secondary "Reject campaign" action is styled as an Outlined Button with a red border and text (Danger) to visually caution against the rejection action. Furthermore, the interface incorporates a prominently sized text area input for authorities to append a "Decision note" prior to executing any action, ensuring that the approval workflow remains fully transparent and traceable.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/Mockup/Authority.png}
+    \caption{Mockup for Auhtority Screen}
+    \label{fig:Fig421c}
+\end{figure}
+
 \subsection{Layer design}
 Phần này có độ dài từ ba đến bốn trang. Sinh viên trình bày thiết kế chi tiết các thuộc tính và phương thức cho một số lớp chủ đạo/quan trọng nhất của ứng dụng (từ 2-4 lớp). Thiết kế chi tiết cho các lớp khác, nếu muốn trình bày, sinh viên đưa vào phần phụ lục.
 
@@ -54,13 +183,13 @@ Phần này có độ dài từ hai đến bốn trang. Sinh viên thiết kế,
 Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư viện, IDE, công cụ kiểm thử, v.v. mà mình sử dụng để phát triển ứng dụng. Mỗi công cụ phải được chỉ rõ phiên bản sử dụng. SV nên kẻ bảng mô tả tương tự như Bảng \ref{table:my_label}. Nếu có nhiều nội dung trình bày, sinh viên cần xoay ngang bảng.
 
 \begin{table}[H]
-\centering{}
+    \centering{}
     \begin{tabular}{lll}
         \hline
         \textbf{Mục đích} & \textbf{Công cụ}       & \textbf{Địa chỉ URL}    \\ \hline
         IDE lập trình     & Eclipse Oxygen a64 bit & http://www.eclipse.org/ \\ \hline
         v.v.              & v.v.                   & v.v.                    \\ \hline
-        \end{tabular}
+    \end{tabular}
     \caption{Danh sách thư viện và công cụ sử dụng}
     \label{fig:my_label}
 \end{table}

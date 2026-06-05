@@ -1,0 +1,65 @@
+@startuml
+actor Rescuer
+participant SignalController as Ctrl
+participant SignalService as Svc
+participant SignalRepository as SigRepo
+participant UserRepository as UsrRepo
+participant FirebaseService as FB
+participant AnnouncementRepository as AnnRepo
+
+Rescuer -> Ctrl: PATCH /signal/state/handle-by-user
+activate Ctrl
+
+Ctrl -> Svc: handleBroadcastingByRescuer(createdBy, handledBy)
+activate Svc
+
+== Tìm tín hiệu đang phát ==
+Svc -> SigRepo: findActiveSignalByUser(createdBy)
+activate SigRepo
+SigRepo --> Svc: Active Signal
+deactivate SigRepo
+
+== Đổi trạng thái sang HANDLED ==
+Svc -> Svc: changeState(signalId, handledBy, HANDLED)
+Svc -> SigRepo: getSignal(signalId)
+activate SigRepo
+SigRepo --> Svc: Existing Signal Details
+deactivate SigRepo
+
+Svc -> SigRepo: updateSignalState(signalId, HANDLED, handledBy)
+activate SigRepo
+SigRepo --> Svc: Updated Signal
+deactivate SigRepo
+
+Svc -> SigRepo: getSignal(signalId)
+activate SigRepo
+SigRepo --> Svc: Final Signal Entity
+deactivate SigRepo
+
+== Gửi thông báo cho nạn nhân ==
+Svc -> UsrRepo: getProfileWithRelations(handledBy)
+activate UsrRepo
+UsrRepo --> Svc: Handler Profile
+deactivate UsrRepo
+
+Svc -> UsrRepo: getProfileWithRelations(createdBy)
+activate UsrRepo
+UsrRepo --> Svc: Creator Profile (chứa fcmToken)
+deactivate UsrRepo
+
+Svc -> FB: sendNotification(creatorFcmToken, "Signal Handled", ...)
+activate FB
+FB --> Svc: Success
+deactivate FB
+
+Svc -> AnnRepo: create(PublicAnnouncement)
+activate AnnRepo
+AnnRepo --> Svc: Announcement Entity
+deactivate AnnRepo
+
+Svc --> Ctrl: Signal Entity
+deactivate Svc
+
+Ctrl --> Rescuer: { success: true, data: Signal }
+deactivate Ctrl
+@enduml

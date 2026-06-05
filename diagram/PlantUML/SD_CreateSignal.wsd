@@ -1,0 +1,57 @@
+@startuml
+actor "User (Victim)" as User
+participant SignalController as Ctrl
+participant SignalService as Svc
+participant SignalRepository as SigRepo
+participant UserRepository as UsrRepo
+participant FirebaseService as FB
+participant AnnouncementRepository as AnnRepo
+
+User -> Ctrl: POST /signal (CreateSignalDto)
+activate Ctrl
+
+Ctrl -> Svc: createSignal(createdBy, dto)
+activate Svc
+
+== Kiểm tra tín hiệu đang phát ==
+Svc -> Svc: ensureNoBroadcastingSignal(createdBy)
+Svc -> SigRepo: findActiveSignalByUser(createdBy)
+activate SigRepo
+SigRepo --> Svc: null (Cho phép tiếp tục)
+deactivate SigRepo
+
+== Tạo tín hiệu mới ==
+Svc -> SigRepo: createSignal(createdBy, dto)
+activate SigRepo
+SigRepo --> Svc: Signal Entity
+deactivate SigRepo
+
+== Gửi thông báo cho Rescuer ==
+Svc -> UsrRepo: getProfileWithRelations(createdBy)
+activate UsrRepo
+UsrRepo --> Svc: Creator Profile (chứa wardCode)
+deactivate UsrRepo
+
+Svc -> UsrRepo: findRescuersByWard(wardCode)
+activate UsrRepo
+UsrRepo --> Svc: Danh sách Rescuers
+deactivate UsrRepo
+
+Svc -> FB: sendMulticastNotification(rescuerTokens, ...)
+activate FB
+FB --> Svc: Success
+deactivate FB
+
+loop For each rescuer (except creator)
+    Svc -> AnnRepo: create(PublicAnnouncement)
+    activate AnnRepo
+    AnnRepo --> Svc: Announcement Entity
+    deactivate AnnRepo
+end
+
+Svc --> Ctrl: Signal Entity
+deactivate Svc
+
+Ctrl --> User: { success: true, data: Signal }
+deactivate Ctrl
+@enduml
