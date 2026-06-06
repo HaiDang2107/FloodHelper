@@ -172,9 +172,245 @@ For the web platform, the mockup in figure \ref{fig:Fig421c} illustrates the Web
 \end{figure}
 
 \subsection{Layer design}
-Phần này có độ dài từ ba đến bốn trang. Sinh viên trình bày thiết kế chi tiết các thuộc tính và phương thức cho một số lớp chủ đạo/quan trọng nhất của ứng dụng (từ 2-4 lớp). Thiết kế chi tiết cho các lớp khác, nếu muốn trình bày, sinh viên đưa vào phần phụ lục.
 
-Để minh họa thiết kế lớp, sinh viên thiết kế luồng truyền thông điệp giữa các đối tượng tham gia cho 2 đến 3 use case quan trọng nào đó bằng biểu đồ trình tự (hoặc biểu đồ giao tiếp).
+The following tables are the detailed class specifications for three key classes in the rescue feature: SignalController, SignalService, and SignalRepository.
+
+\subsubsection{SignalController}
+
+% ==========================================
+% SIGNAL CONTROLLER
+% ==========================================
+
+\begin{xltabular}{\textwidth}{|c|P{3.5cm}|P{4cm}|c|P{4.5cm}|}
+    \caption{SignalController - Attribute Design}
+    \label{table:signal_controller_attr} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Data type} & \textbf{Default} & \textbf{Description} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{5}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Data type} & \textbf{Default} & \textbf{Description} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{5}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    1 & \texttt{signalService} & \texttt{SignalService} & - & The injected service used to handle the business logic related to distress signals. \\
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{|c|P{3.65cm}|P{3.5cm}|P{3.35cm}|P{4.0cm}|}
+    \caption{SignalController - Operation Design}
+    \label{table:signal_controller_ops} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Return type} & \textbf{Parameter} & \textbf{Description} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{5}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Return type} & \textbf{Parameter} & \textbf{Description} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{5}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    1 & \texttt{create} & \texttt{Promise$<$any$>$} & \texttt{dto: CreateSignalDto} & Receives a request from a user to create a new distress signal. \\
+    \hline
+    2 & \texttt{update\-Broadcasting\-InfoByUser} & \texttt{Promise$<$any$>$} & \texttt{dto: UpdateSignalInfoDto} & Handles the request to update the information of an actively broadcasting distress signal by the user. \\
+    \hline
+    3 & \texttt{stop\-Broadcasting\-ByUser} & \texttt{Promise$<$any$>$} & \texttt{dto: Stop\-Broadcasting\-ByUserDto} & Handles the request to stop broadcasting a distress signal by its creator. \\
+    \hline
+    4 & \texttt{handle\-Broadcasting\-ByUser} & \texttt{Promise$<$any$>$} & \texttt{dto: Handle\-Broadcasting\-ByUserDto} & Handles the request to mark a broadcasting distress signal as being handled by a rescuer. \\
+    \hline
+    5 & \texttt{listRescuer\-Broadcasting} & \texttt{Promise$<$any$>$} & - & Returns a list of actively broadcasting distress signals (for the Rescuer role). \\
+    \hline
+    6 & \texttt{listRescuer\-Handled} & \texttt{Promise$<$any$>$} & \texttt{user: any} & Retrieves a list of distress signals that have been handled by the current rescuer. \\
+    \hline
+    7 & \texttt{getMyLatest} & \texttt{Promise$<$any$>$} & \texttt{user: any} & Retrieves the latest distress signal created by the current user. \\
+\end{xltabular}
+
+\subsubsection{SignalService}
+% ==========================================
+% SIGNAL SERVICE
+% ==========================================
+
+\begin{xltabular}{\textwidth}{|c|P{3.5cm}|P{3.75cm}|c|P{4.5cm}|}
+    \caption{SignalService - Attribute Design}
+    \label{table:signal_service_attr} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Data type} & \textbf{Default} & \textbf{Description} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{5}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Data type} & \textbf{Default} & \textbf{Description} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{5}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    1 & \texttt{signal\-Repository} & \texttt{Signal\-Repository} & - & Repository used to interact with the Signal table in the database. \\
+    \hline
+    2 & \texttt{user\-Repository} & \texttt{User\-Repository} & - & Repository used to query user and rescuer information. \\
+    \hline
+    3 & \texttt{firebase\-Service} & \texttt{Firebase\-Service} & - & Service used to send push notifications via Firebase. \\
+    \hline
+    4 & \texttt{announcement\-Repository} & \texttt{Announcement\-Repository} & - & Repository used to create system announcements (Public Announcements). \\
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{|c|P{3.5cm}|P{3.5cm}|P{3cm}|P{4cm}|}
+    \caption{SignalService - Operation Design}
+    \label{table:signal_service_ops} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Return type} & \textbf{Parameter} & \textbf{Description} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{5}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Return type} & \textbf{Parameter} & \textbf{Description} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{5}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    1 & \texttt{createSignal} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string,} \texttt{dto: CreateSignalDto} & Creates a distress signal, sends push notifications, and creates announcements for rescuers in the same ward. \\
+    \hline
+    2 & \texttt{updateInfo} & \texttt{Promise$<$any$>$} & \texttt{signalId: string,} \texttt{actorUserId: string,} \texttt{dto: UpdateSignalInfoDto} & Updates the details of a broadcasting signal, ensuring ownership validation. \\
+    \hline
+    3 & \texttt{deleteSignal} & \texttt{Promise$<$any$>$} & \texttt{signalId: string,} \texttt{actorUserId: string} & Deletes a distress signal from the system (restricted to the creator only). \\
+    \hline
+    4 & \texttt{changeState} & \texttt{Promise$<$any$>$} & \texttt{signalId: string,} \texttt{actorUserId: string,} \texttt{dto: ChangeSignalStateDto} & Changes the signal state to either HANDLED or STOPPED. \\
+    \hline
+    5 & \texttt{listSignals} & \texttt{Promise$<$any$>$} & \texttt{query: QuerySignalsDto} & Queries a list of signals based on \texttt{createdBy} or \texttt{handledBy} filters. \\
+    \hline
+    6 & \texttt{list\-Broadcasting\-Signals} & \texttt{Promise$<$any$>$} & - & Returns a list of all distress signals currently in the BROADCASTING state. \\
+    \hline
+    7 & \texttt{listHandled\-Signals\-ByRescuer} & \texttt{Promise$<$any$>$} & \texttt{handledBy: string} & Returns a list of signals that have been handled by a specific rescuer. \\
+    \hline
+    8 & \texttt{getLatest\-SignalByUser} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string} & Returns the most recently created distress signal by a specific user. \\
+    \hline
+    9 & \texttt{update\-Broadcasting\-InfoByUser} & \texttt{Promise$<$any$>$} & \texttt{dto: UpdateSignalInfoDto} & Finds the user's actively broadcasting signal and updates its information. \\
+    \hline
+    10 & \texttt{stop\-Broadcasting\-ByUser} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string} & Finds the user's actively broadcasting signal and updates its state to STOPPED. \\
+    \hline
+    11 & \texttt{handle\-Broadcasting\-ByRescuer} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string,} \texttt{handledBy: string} & Marks the signal as handled by a rescuer and sends push and system notifications to the victim. \\
+    \hline
+    12 & \texttt{ensureNo\-Broadcasting\-Signal} & \texttt{Promise$<$void$>$} & \texttt{createdBy: string} & (Private) Ensures the user does not create a new signal if they already have one actively broadcasting. \\
+    \hline
+    13 & \texttt{getById\-OrThrow} & \texttt{Promise$<$any$>$} & \texttt{signalId: string} & (Private) Fetches a signal by ID or throws a NotFoundException if it does not exist. \\
+    \hline
+    14 & \texttt{is\-Broadcasting\-Unique\-Violation} & \texttt{boolean} & \texttt{error: unknown} & (Private) Checks for the Prisma P2002 error code to catch Unique Constraint violations. \\
+\end{xltabular}
+
+\subsubsection{SignalRepository}
+% ==========================================
+% SIGNAL REPOSITORY
+% ==========================================
+
+\begin{xltabular}{\textwidth}{|c|P{3cm}|P{3.5cm}|c|P{4.5cm}|}
+    \caption{SignalRepository - Attribute Design}
+    \label{table:signal_repository_attr} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Data type} & \textbf{Default} & \textbf{Description} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{5}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Data type} & \textbf{Default} & \textbf{Description} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{5}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    1 & \texttt{prisma} & \texttt{PrismaService} & - & The Prisma client instance used to directly query the database. \\
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{|c|P{3.5cm}|P{3.5cm}|P{3.5cm}|P{4cm}|}
+    \caption{SignalRepository - Operation Design}
+    \label{table:signal_repository_ops} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Return type} & \textbf{Parameter} & \textbf{Description} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{5}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{No} & \textbf{Name} & \textbf{Return type} & \textbf{Parameter} & \textbf{Description} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{5}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    1 & \texttt{createSignal} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string,} \texttt{data: any} & Inserts a new signal record into the database with a default state of BROADCASTING. \\
+    \hline
+    2 & \texttt{getSignal} & \texttt{Promise$<$any$>$} & \texttt{signalId: string} & Retrieves a specific signal record along with information about its creator and the handler. \\
+    \hline
+    3 & \texttt{listActive\-Signals} & \texttt{Promise$<$any$>$} & - & Retrieves a list of all signal records currently in the BROADCASTING state. \\
+    \hline
+    4 & \texttt{listSignals\-ByUser} & \texttt{Promise$<$any$>$} & \texttt{userId: string} & Queries all distress signals created by a specific user. \\
+    \hline
+    5 & \texttt{listSignals} & \texttt{Promise$<$any$>$} & \texttt{where: Prisma.Sig\-nalWhereInput} & Searches for signals based on a customized Prisma \texttt{where} condition object. \\
+    \hline
+    6 & \texttt{findActive\-SignalByUser} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string} & Finds the single active (BROADCASTING) signal created by a user. \\
+    \hline
+    7 & \texttt{getLatest\-SignalByUser} & \texttt{Promise$<$any$>$} & \texttt{createdBy: string} & Returns the most recently created signal record for a specific user. \\
+    \hline
+    8 & \texttt{listHandled\-SignalsBy\-Rescuer} & \texttt{Promise$<$any$>$} & \texttt{handledBy: string} & Retrieves a list of signal records in the HANDLED state that were processed by a specific rescuer. \\
+    \hline
+    9 & \texttt{updateSignal\-State} & \texttt{Promise$<$any$>$} & \texttt{signalId: string,} \texttt{state: string,} \texttt{handledBy?: string} & Updates a signal record's state and records the timestamp and handler information if applicable. \\
+    \hline
+    10 & \texttt{stopSignal} & \texttt{Promise$<$any$>$} & \texttt{signalId: string} & Updates a signal's state to STOPPED and logs the timestamp of when it was stopped. \\
+    \hline
+    11 & \texttt{deleteSignal} & \texttt{Promise$<$any$>$} & \texttt{signalId: string} & Deletes a distress signal record from the database. \\
+    \hline
+    12 & \texttt{findById} & \texttt{Promise$<$any$>$} & \texttt{id: string} & Overrides the Base method: Calls the \texttt{getSignal} method internally. \\
+    \hline
+    13 & \texttt{findAll} & \texttt{Promise$<$any$>$} & - & Overrides the Base method: Calls the \texttt{listActiveSignals} method internally. \\
+    \hline
+    14 & \texttt{create} & \texttt{Promise$<$any$>$} & \texttt{data: any} & Overrides the Base method: Throws an error instructing the use of the specialized \texttt{createSignal} method instead. \\
+    \hline
+    15 & \texttt{update} & \texttt{Promise$<$any$>$} & \texttt{id: string,} \texttt{data: any} & Overrides the Base method: Arbitrarily updates a record's data based on its ID. \\
+    \hline
+    16 & \texttt{delete} & \texttt{Promise$<$any$>$} & \texttt{id: string} & Overrides the Base method: Calls the \texttt{deleteSignal} method internally. \\
+    \hline
+    17 & \texttt{count} & \texttt{Promise\-$<$number$>$} & - & Returns the total count of distress signal records currently in the database. \\
+\end{xltabular}
+
 \subsection{Database design}
 Phần này có độ dài từ hai đến bốn trang. Sinh viên thiết kế, vẽ và giải thích biểu đồ thực thể liên kết (E-R diagram). Từ đó, sinh viên thiết kế cơ sở dữ liệu tùy theo hệ quản trị cơ sở dữ liệu mà mình sử dụng (SQL, NoSQL, Firebase, v.v.)
 
