@@ -411,8 +411,53 @@ The following tables are the detailed class specifications for three key classes
     17 & \texttt{count} & \texttt{Promise\-$<$number$>$} & - & Returns the total count of distress signal records currently in the database. \\
 \end{xltabular}
 
+\subsubsection{Design Illustration}
+
+To further illustrate the dynamic interactions between the designed classes, the following sequence diagrams detail the execution flow of two core use cases: Creating a Signal and Handling a Signal. These diagrams map out the exact sequence of method calls across the Controller, Service, and Repository layers.
+
+The sequence diagram in figure \ref{fig:Fig422a} demonstrates the execution flow when a user initiates a new distress signal. The process begins with the \texttt{SignalController} receiving the creation request and delegating it to the \texttt{SignalService}. First, the service queries the \texttt{SignalRepository} to ensure the user does not already have an actively broadcasting signal. Once validated, the system persists the new signal entity in the database. To alert the appropriate personnel, the service retrieves the creator's profile via the \texttt{UserRepository} to identify their specific ward and subsequently fetches a list of available rescuers within that area. Finally, the \texttt{FirebaseService} dispatches a multicast push notification to these designated rescuers, while the system iteratively logs a formal system announcement for each rescuer through the \texttt{AnnouncementRepository}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SD_CreateSignal.png}
+    \caption{Sequence Diagram for Usecase "Create Signal" on the server side}
+    \label{fig:Fig422a}
+\end{figure}
+
+Next, this sequence diagram in figure \ref{fig:Fig422b} illustrates the backend operations triggered when a rescuer acknowledges and commits to handling a victim's active signal. Initially, the \texttt{SignalController} invokes the state update process within the \texttt{SignalService}. The service then uses the \texttt{SignalRepository} to locate the victim's active signal and immediately updates its status to "HANDLED", linking it directly to the rescuer's ID. Following this database update, the system retrieves the comprehensive profile information of both the handler (rescuer) and the creator (victim) through the \texttt{UserRepository}. Utilizing the victim's retrieved FCM token, the \texttt{FirebaseService} sends a direct push notification to inform the victim that assistance is underway. The transaction is completed when the \texttt{AnnouncementRepository} logs an official system announcement to permanently record the handling event.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SD_HandleSignal.png}
+    \caption{Sequence Diagram for Usecase "Handle Signal" on the server side}
+    \label{fig:Fig422b}
+\end{figure}
+
 \subsection{Database design}
-Phần này có độ dài từ hai đến bốn trang. Sinh viên thiết kế, vẽ và giải thích biểu đồ thực thể liên kết (E-R diagram). Từ đó, sinh viên thiết kế cơ sở dữ liệu tùy theo hệ quản trị cơ sở dữ liệu mà mình sử dụng (SQL, NoSQL, Firebase, v.v.)
+
+The Entity-Relationship Diagram (ERD) of the system in figure \ref{fig:Fig423a} is designed to encompass a multi-functional platform that integrates social networking, emergency rescue support, and charity campaign management. At the core of the system is the user and authentication module, where the \texttt{User} entity plays a central role. Each \texttt{User} is linked to a single \texttt{Account} to manage login credentials in a one-to-one relationship, while simultaneously possessing multiple \texttt{Profile} entities to record personal profile modification history in a one-to-many relationship. The system also manages active sessions through the \texttt{Session} entity and supports third-party authentication via \texttt{Provider}. Expanding from this core is the social network module, allowing users to create \texttt{Post} entries, leave \texttt{Comment} records, and drop \texttt{Like} reactions. Social interactions are further strengthened through the \texttt{Friendship} entity, and the friend-making process is managed by the \texttt{FriendMakingRequest} entity.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/DatabaseDesign/ERD.png}
+    \caption{Entity-Relationship Diagram}
+    \label{fig:Fig423a}
+\end{figure}
+
+In addition to social features, the charity and rescue modules are crucial highlights of the system. The \texttt{CharityCampaign} entity represents philanthropic campaigns organized by a \texttt{User}, which is closely linked to \texttt{Transaction} entities for donation management, \texttt{Supply} for relief items, \texttt{FinancialSupport} for direct financial aid, and \texttt{AnnouncementFromBenefactor} for posting updates. The transparency of cash flow is ensured through links with the \texttt{Bank} and \texttt{BankAccount} entities. In emergency situations, the rescue module allows victims to generate \texttt{Signal} entities containing information about trapped individuals and necessary supplies, directly connecting them with other \texttt{User} entities acting as rescuers for timely assistance. Finally, the system integrates a messaging module featuring \texttt{ChatRoom}, \texttt{Message}, and the intermediary \texttt{RoomMember} entity, along with system-level entities such as \texttt{Province} and \texttt{Ward} for geographical standardization, and \texttt{WeatherMap} to provide weather data for rescue operations.
+
+The logical database design process, specifically the transition from the ERD to the PostgreSQL database management system, is strictly executed based on standard mapping rules. Initially, strong entities in the ERD are directly converted into corresponding tables, with their identifying attributes becoming primary keys. To ensure uniqueness in a distributed environment, the majority of primary keys utilize PostgreSQL's specific \texttt{UUID} data type rather than auto-incrementing integers, whereas simple attributes are mapped to appropriate data types such as \texttt{VARCHAR}, \texttt{TIMESTAMP}, or \texttt{DECIMAL}. For one-to-one relationships, such as the one between \texttt{User} and \texttt{Account}, the primary key of the \texttt{User} table is embedded into the \texttt{Account} table as a foreign key accompanied by a \texttt{UNIQUE} constraint. Similarly, for the highly prevalent one-to-many relationships within the system, the primary key of the "one" side is added to the "many" side as a foreign key; for instance, the \texttt{province\_code} column in the \texttt{Ward} table references the \texttt{Province} table, or the \texttt{created\_by} column in the \texttt{Post} table references the \texttt{User} table.
+
+The handling of more complex data structures is also flexibly applied according to the specific characteristics of PostgreSQL. For many-to-many relationships, the system resolves them by establishing intermediate junction tables, such as the \texttt{Like} table for post interactions or the \texttt{RoomMember} table for chat rooms, where the primary key is typically a composite key combining the foreign keys of the two original tables. A distinctive feature of this design is the treatment of multivalued attributes; rather than separating them into distinct tables per traditional First Normal Form (1NF) standards, the system directly leverages PostgreSQL's \texttt{Array} data type, as seen with the \texttt{role} string array in the \texttt{User} table, to optimize data query performance. Derived attributes, typically exemplified by the member count in a chat room, are also materialized into actual columns—such as \texttt{member\_count}—rather than being recalculated during each query to enhance the system's read speed. Lastly, recursive relationships are addressed by using the table's own primary key as a foreign key within the same table, illustrated by an \texttt{Account} creating another \texttt{Account} or a \texttt{User} sending a friend request to another \texttt{User}.
+
+The resulting database schema is illustrated in the figure \ref{fig:Fig423b}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/DatabaseDesign/tables.png}
+    \caption{Database Schema}
+    \label{fig:Fig423b}
+\end{figure}
 
 \section{Application Building}
 \subsection{Libraries and Tools}

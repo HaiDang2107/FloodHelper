@@ -237,7 +237,7 @@ export class SignalService {
     const signal = await this.signalRepository.getSignal(activeSignal.signalId);
 
     // Get handler profile to notify the victim
-    const handlerProfile = await this.userRepository.getProfileWithRelations(handledBy);
+    const handlerProfile = await this.userRepository.getProfileWithRelations(handledBy); // Để lấy fullname
     const creatorProfile = await this.userRepository.getProfileWithRelations(createdBy);
 
     if (handlerProfile && creatorProfile && creatorProfile.user.fcmToken) {
