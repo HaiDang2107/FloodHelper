@@ -463,20 +463,87 @@ The resulting database schema is illustrated in the figure \ref{fig:Fig423b}.
 \subsection{Libraries and Tools}
 Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư viện, IDE, công cụ kiểm thử, v.v. mà mình sử dụng để phát triển ứng dụng. Mỗi công cụ phải được chỉ rõ phiên bản sử dụng. SV nên kẻ bảng mô tả tương tự như Bảng \ref{table:my_label}. Nếu có nhiều nội dung trình bày, sinh viên cần xoay ngang bảng.
 
-\begin{table}[H]
-    \centering{}
-    \begin{tabular}{lll}
-        \hline
-        \textbf{Mục đích} & \textbf{Công cụ}       & \textbf{Địa chỉ URL}    \\ \hline
-        IDE lập trình     & Eclipse Oxygen a64 bit & http://www.eclipse.org/ \\ \hline
-        v.v.              & v.v.                   & v.v.                    \\ \hline
-    \end{tabular}
-    \caption{Danh sách thư viện và công cụ sử dụng}
-    \label{fig:my_label}
-\end{table}
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{ p{0.28\textwidth} p{0.22\textwidth} p{0.15\textwidth} p{0.25\textwidth} }
+    \caption{List of languages, libraries, APIs, and tools used in the entire system}
+    \label{table:tools_libraries_versions}                                                                                                                       \\
+    \hline
+    \textbf{Module / Purpose}       & \textbf{Tool / Library}               & \textbf{Version} & \textbf{URL}                                                    \\ \hline
+    \endfirsthead
+
+    % --- Header repeated on new pages ---
+    \multicolumn{4}{c}{\textit{Table \ref{table:tools_libraries_versions} (continued)}}                                                                          \\
+    \hline
+    \textbf{Module / Purpose}       & \textbf{Tool / Library}               & \textbf{Version} & \textbf{URL}                                                    \\ \hline
+    \endhead
+
+    % --- Footer at the bottom of each page (except the last one) ---
+    \hline \multicolumn{4}{r}{\textit{Continued on next page...}}                                                                                                \\
+    \endfoot
+
+    % --- Footer on the last page ---
+    \hline
+    \endlastfoot
+
+    % --- TABLE DATA ---
+    \multicolumn{4}{l}{\textbf{1. Frontend Module (Mobile \& Web App - Flutter/Dart)}}                                                                           \\ \hline
+    Programming language            & Dart SDK                              & >=3.10.1 <4.0.0  & \url{https://dart.dev/}                                         \\
+    Development framework           & Flutter SDK                           & >=3.38.1         & \url{https://flutter.dev/}                                      \\
+    State management                & flutter\_riverpod                     & 2.6.1            & \url{https://pub.dev/packages/flutter_riverpod}                 \\
+    HTTP API Client                 & dio                                   & 5.9.1            & \url{https://pub.dev/packages/dio}                              \\
+    Digital map display             & flutter\_map                          & 8.2.2            & \url{https://pub.dev/packages/flutter_map}                      \\
+    Get GPS coordinates             & geolocator                            & 14.0.2           & \url{https://pub.dev/packages/geolocator}                       \\
+    Distance calculation            & latlong2                              & 0.9.1            & \url{https://pub.dev/packages/latlong2}                         \\
+    Cloud push notifications        & firebase\_messaging                   & 15.2.10          & \url{https://pub.dev/packages/firebase_messaging}               \\
+    Firebase core library           & firebase\_core                        & 3.15.2           & \url{https://pub.dev/packages/firebase_core}                    \\
+    MQTT connection \& messaging    & mqtt\_client                          & 10.11.9          & \url{https://pub.dev/packages/mqtt_client}                      \\
+    Screen routing (Navigation)     & go\_router                            & 14.8.1           & \url{https://pub.dev/packages/go_router}                        \\
+    Background service              & flutter\_background\newline\_service  & 5.1.0            & \url{https://pub.dev/packages/flutter_background_service}       \\
+    Local push notifications        & flutter\_local\newline\_notifications & 21.0.0           & \url{https://pub.dev/packages/flutter_local_notifications}      \\
+    Local configuration storage     & shared\_preferences                   & 2.2.3            & \url{https://pub.dev/packages/shared_preferences}               \\
+    Localization \& Formatting      & intl                                  & 0.20.2           & \url{https://pub.dev/packages/intl}                             \\
+    Image picker (gallery/camera)   & image\_picker                         & 1.2.1            & \url{https://pub.dev/packages/image_picker}                     \\
+    Device file picker              & file\_picker                          & 8.3.7            & \url{https://pub.dev/packages/file_picker}                      \\
+    Image display \& zoom           & photo\_view                           & 0.14.0           & \url{https://pub.dev/packages/photo_view}                       \\
+    SVG vector image display        & flutter\_svg                          & 2.2.3            & \url{https://pub.dev/packages/flutter_svg}                      \\ \hline
+
+    \multicolumn{4}{l}{\textbf{2. Backend Module (NestJS/Node.js Application Server)}}                                                                           \\ \hline
+    Programming language            & TypeScript                            & 5.9.3            & \url{https://www.typescriptlang.org/}                           \\
+    Server runtime environment      & Node.js                               & >= 20.x          & \url{https://nodejs.org/}                                       \\
+    Core development framework      & NestJS (@nestjs/core)                 & 11.1.9           & \url{https://nestjs.com/}                                       \\
+    Database ORM                    & Prisma (@prisma/client)               & 5.22.0           & \url{https://www.prisma.io/}                                    \\
+    PostgreSQL connection library   & pg (node-postgres)                    & 8.16.3           & \url{https://node-postgres.com/}                                \\
+    Firebase Admin (FCM Sending)    & firebase-admin                        & 13.7.0           & \url{https://firebase.google.com/}                              \\
+    Cloud image upload \& storage   & cloudinary                            & 2.10.0           & \url{https://cloudinary.com/}                                   \\
+    Quick QR payment integration    & vietqr                                & 1.1.9            & \url{https://vietqr.io/}                                        \\
+    System email sender             & nodemailer                            & 7.0.12           & \url{https://nodemailer.com/}                                   \\
+    NestJS mailer module            & @nestjs-modules/mailer                & 2.0.2            & \url{https://github.com/nest-modules/mailer}                    \\
+    Security \& password encryption & bcrypt                                & 5.1.1            & \url{https://github.com/kelektiv/node.bcrypt.js}                \\
+    JWT authentication              & passport-jwt                          & 4.0.1            & \url{https://www.passportjs.org/}                               \\
+    Google account authentication   & passport-google-oauth20               & 2.0.0            & \url{https://www.passportjs.org/}                               \\
+    Cache management                & cache-manager                         & 7.2.8            & \url{https://github.com/jakec/node-cache-manager}               \\
+    Redis support                   & cache-manager-redis-store             & 3.0.1            & \url{https://github.com/dabroek/node-cache-manager-redis-store} \\
+    DTO validation                  & class-validator                       & 0.14.3           & \url{https://github.com/typestack/class-validator}              \\
+    Environment variable loader     & dotenv                                & 17.2.3           & \url{https://github.com/motdotla/dotenv}                        \\ \hline
+
+    \multicolumn{4}{l}{\textbf{3. MqttClient Module (MQTT Communication - Python)}}                                                                              \\ \hline
+    Programming language            & Python                                & 3.x              & \url{https://www.python.org/}                                   \\
+    API Client building             & FastAPI                               & >= 0.100.0       & \url{https://fastapi.tiangolo.com/}                             \\
+    API execution server (ASGI)     & Uvicorn                               & >= 0.23.0        & \url{https://www.uvicorn.org/}                                  \\
+    MQTT Broker connection          & paho-mqtt                             & >= 1.6.1         & \url{https://pypi.org/project/paho-mqtt/}                       \\
+    HTTP communication to Backend   & requests                              & >= 2.31.0        & \url{https://requests.readthedocs.io/}                          \\ \hline
+
+    \multicolumn{4}{l}{\textbf{4. IDE, Testing, Code Standards \& Deployment}}                                                                                   \\ \hline
+    Programming IDE                 & Visual Studio Code                    & Latest           & \url{https://code.visualstudio.com/}                            \\
+    Source code version control     & Git                                   & Latest           & \url{https://git-scm.com/}                                      \\
+    Virtualization environment      & Docker                                & Latest           & \url{https://www.docker.com/}                                   \\
+    Backend testing tool            & Jest                                  & 30.2.0           & \url{https://jestjs.io/}                                        \\
+    Code quality linter             & ESLint                                & 9.18.0           & \url{https://eslint.org/}                                       \\
+    Source code formatter           & Prettier                              & 3.4.2            & \url{https://prettier.io/}                                      \\ \hline
+\end{longtable}
 
 \subsection{Achievement}
-Sinh viên trước tiên mô tả kết quả đạt được của mình là gì, ví dụ như các sản phẩm được đóng gói là gì, bao gồm những thành phần nào, ý nghĩa, vai trò?
+Sinh viên cần đưa ra kết quả đạt được của mình là gì, ví dụ như các sản phẩm được đóng gói là gì, bao gồm những thành phần nào, ý nghĩa, vai trò?
 
 Sinh viên cần thống kê các thông tin về ứng dụng của mình như: số dòng code, số lớp, số gói, dung lượng toàn bộ mã nguồn, dung lượng của từng sản phẩm đóng gói, v.v. Tương tự như phần liệt kê về công cụ sử dụng, sinh viên cũng nên dùng bảng để mô tả phần thông tin thống kê này.
 
