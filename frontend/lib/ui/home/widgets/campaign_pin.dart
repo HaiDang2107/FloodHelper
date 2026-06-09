@@ -43,7 +43,7 @@ class CampaignLocationPin extends StatelessWidget {
               ),
             ),
 
-            // Lớp hình ảnh bài post
+            
             Container(
               width: size,
               height: size,
@@ -84,7 +84,6 @@ class CampaignLocationPin extends StatelessWidget {
               ),
             ),
 
-            // Icon post nhỏ ở góc trên phải
             Positioned(
               top: -4,
               right: -4,
