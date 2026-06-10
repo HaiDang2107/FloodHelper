@@ -238,4 +238,42 @@ void main() {
     await tester.pumpAndSettle();
     await exportHighResImage(tester, 'campaign_pin.png');
   });
+
+  testWidgets('Export Red SOS Button', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(
+            child: RepaintBoundary(
+              key: const ValueKey('export_key'),
+              child: Padding(
+                padding: const EdgeInsets.all(10.0), // Padding to prevent shadow clipping
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red[100]!,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.sos, color: Colors.red[700]!),
+                    onPressed: () {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await exportHighResImage(tester, 'button_sos_red.png');
+  });
 }

@@ -543,17 +543,222 @@ Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư việ
 \end{longtable}
 
 \subsection{Achievement}
-Sinh viên cần đưa ra kết quả đạt được của mình là gì, ví dụ như các sản phẩm được đóng gói là gì, bao gồm những thành phần nào, ý nghĩa, vai trò?
 
-Sinh viên cần thống kê các thông tin về ứng dụng của mình như: số dòng code, số lớp, số gói, dung lượng toàn bộ mã nguồn, dung lượng của từng sản phẩm đóng gói, v.v. Tương tự như phần liệt kê về công cụ sử dụng, sinh viên cũng nên dùng bảng để mô tả phần thông tin thống kê này.
+The primary achievement of the FloodHelper project is the successful design, implementation, and packaging of a comprehensive, multi-platform software ecosystem designed to facilitate disaster response and charity coordination activities. The system has been fully built, packaged, and verified through local deployments, comprising three distinct packaged products operating concurrently on a unified relational database.
+
+\subsubsection{Packaged Software Products and Component Details}
+
+This section describes the delivery package formats, key components, and architectural roles of each product within the FloodHelper ecosystem. For clarity, these details are summarized in Table \ref{table:packaged_products_details}.
+
+\renewcommand{\arraystretch}{1.4}
+\begin{xltabular}{\textwidth}{|P{2.8cm}|P{3.2cm}|X|X|}
+    \caption{Details of Packaged Software Products}
+    \label{table:packaged_products_details} \\
+    \hline
+    \textbf{Product / Module} & \textbf{Delivery Package} & \textbf{Key Components} & \textbf{Significance and Role} \\
+    \hline
+    \endfirsthead
+
+    \multicolumn{4}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{Product / Module} & \textbf{Delivery Package} & \textbf{Key Components} & \textbf{Significance and Role} \\
+    \hline
+    \endhead
+
+    \hline
+    \multicolumn{4}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    \textbf{Frontend Client} (Mobile App \& Web Admin Desk) &
+    Compiled Android APK (\texttt{app-debug.apk}: 106.49 MB, \texttt{app-release.apk}: $\approx$ 22 MB) and compiled static HTML/JS assets. &
+    Flutter layout widgets (\texttt{HomeScreen} map dashboard, \texttt{DistressSignalSheet}, \texttt{Charity} transaction cards, authority views), state providers (\texttt{Riverpod}), and client communication integrations (\texttt{Dio}, \texttt{Geolocator}, \texttt{MqttClient}). &
+    Serves as the interactive touchpoint. The mobile app lets users stream real-time coordinate changes via MQTT and dispatch SOS signals. The web app acts as the dispatch dashboard for rescue organizations to coordinate operations and approve charity requests. \\
+    \hline
+    \textbf{Backend Server} (NestJS API App) &
+    Self-contained Docker Image (\texttt{floodhelper-backend:latest} $\approx$ 320 MB) containing NestJS compiled JavaScript in \texttt{dist/} folder (1.60 MB, 430 files). &
+    REST Controllers mapping API routes, NestJS services for SOS validation and auth filters, Prisma database clients, and third-party integrations (Firebase Admin SDK, VietQR integration, Cloudinary API). &
+    Acts as the central business engine of the system, verifying accounts, securing data access boundaries, checking DTO inputs, managing notification triggers, and handling transactional email dispatches. \\
+    \hline
+    \textbf{MQTT Worker} (Data Coordinator) &
+    Lightweight Docker Image (\texttt{floodhelper-mqtt-worker:latest} $\approx$ 120 MB) running Python 3 and FastAPI. &
+    Persistent Paho-MQTT connection client, temporary background message queue handlers, and API request forwarding dispatcher. &
+    Acts as a real-time data coordinator. It subscribes to high-frequency MQTT coordinate streams from active devices. Instead of writing directly to the database, it processes and forwards coordinate payloads to main NestJS server REST endpoints to offload HTTP connection traffic and preserve architecture layers. \\
+    \hline
+    \textbf{Database Schema} (PostgreSQL) &
+    Database initialization scripts and migration files generated via \texttt{prisma/schema.\newline prisma}. &
+    Structured tables (\texttt{User}, \texttt{Account}, \texttt{Profile}, \texttt{Signal}, \texttt{Friendship}, \texttt{CharityCampaign}, \texttt{Transaction}, geocoded tables for \texttt{Province} and \texttt{Ward}). &
+    Provides persistent storage with transactional integrity, enforcing one-to-one mapping for accounts, one-to-many associations for tracking history, and multi-relational structures for volunteer messaging and spatial tracking. \\
+    \hline
+\end{xltabular}
+
+\subsubsection{Source Code and Package Metrics}
+
+To evaluate the engineering scope of the system, a static code analysis was conducted across all active repositories. Excluded from this assessment are third-party libraries (\texttt{node\_modules}, generated Flutter assets in \texttt{.dart\_tool}, test cache files, and report documents). Table \ref{table:code_statistics} details the breakdown of source files, package modules, class counts, source lines of code (SLOC), and physical sizes.
+
+\begin{table}[H]
+    \centering
+    \caption{Summary of Source Code and Packaged Product Statistics}
+    \label{table:code_statistics}
+    \renewcommand{\arraystretch}{1.3} % Tighten row margins for legibility
+
+    % Sử dụng tabular thay vì tabularx
+    % Đặt kích thước thủ công bằng p{...}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{2cm}|c|c|c|c|>{\centering\arraybackslash}p{1.5cm}|>{\raggedright\arraybackslash}p{3cm}|}
+        \hline
+        \textbf{Module / Product}                 & \textbf{Language}   & \textbf{Files} & \textbf{Packages} & \textbf{Classes} & \textbf{Lines of Code*}  & \textbf{Packaged Product \& Size}                                  \\
+        \hline
+        \textbf{Frontend Client} (Mobile \& Web)  & Dart                & 279            & 81                & 409              & 41,667 (36,311 code)     & \texttt{app-debug.apk} (106.49 MB) / Release APK ($\approx$ 22 MB) \\
+        \hline
+        \textbf{Backend Server} (API Application) & TypeScript          & 145            & 36                & 123              & 13,299 (11,106 code)     & Docker Container ($\approx$ 320 MB) / Dist folder (1.60 MB)        \\
+        \hline
+        \textbf{MQTT Client} (Real-time Worker)   & Python              & 6              & 2                 & 3                & 455 (364 code)           & Docker Container ($\approx$ 120 MB) / Source code (15.39 KB)       \\
+        \hline
+        \textbf{Total System}                     & \textbf{Dart/TS/Py} & \textbf{430}   & \textbf{119}      & \textbf{535}     & \textbf{55,421 (47,781)} & \textbf{Full software suite}                                       \\
+        \hline
+    \end{tabular}
+    \vspace{0.1cm}
+    \caption*{\textit{*Note: Lines of code are shown as Total Lines (Source Lines of Code excluding blanks and comments in parentheses).}}
+\end{table}
 
 \subsection{Illustration of main functions}
-Sinh viên lựa chọn và đưa ra màn hình cho các chức năng chính, quan trọng, và thú vị nhất. Mỗi giao diện cần phải có lời giải thích ngắn gọn. Khi giải thích, sinh viên có thể kết hợp với các chú thích ở trong hình ảnh giao diện.
+
+This section highlights the core interfaces of the application, detailing the most critical and interactive features designed for the users. Please refer to the annotated figure \ref{fig:Fig433a} for a detailed visual breakdown of these elements.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ScreenShot/Home.png}
+    \caption{Home Screen}
+    \label{fig:Fig433a}
+\end{figure}
+
+The central component of the user experience is the Home screen, an interactive, real-time map dashboard that appears immediately upon successful login. This interface utilizes a color-coded pin system to represent real-time user statuses, allowing users to easily identify their own location with a green pin, alongside others who are online (cyan), offline (black), or unknown (grey). Crucially, users actively broadcasting an emergency are marked with a distinct red "SOS" pin. To further facilitate quick decision-making, these map pins are accompanied by specific icons denoting user roles, including Friend, Rescuer, Benefactor, Authority, and Admin. By tapping on any user's pin, an interactive pop-up window emerges, displaying essential identification details such as the selected user's assigned roles, User ID, and full name.
+
+Navigating the application is streamlined through a floating, vertical menu on the right side of the screen. This panel provides one-tap access to general features like account settings, user profiles, friend management, system announcements, and charity campaigns. It also serves as the hub for emergency tools, featuring a dedicated SOS broadcast signal button that visibly turns red during an active transmission, as well as a broadcasting list exclusively accessible to users holding the 'Rescuer' role. Finally, the interface provides essential mapping controls at the bottom, allowing users to quickly focus on their current location or find friends on the map. The screen also strategically integrates placeholders for planned future developments, including options to create new posts, access messages, toggle map types (such as transport or weather overlays), and apply various map effects.
+
+Following the SOS broadcast feature introduced on the Home screen, the application provides tailored interfaces for both victims and rescuers to manage emergencies efficiently. Looking at the figure \ref{fig:Fig433b}, we can observe the distress signal process specifically designed from the victim's perspective. Before broadcasting, the user is presented with a comprehensive "Distress Signal" form. Here, they are prompted to input critical details about their current situation, such as the total number of trapped individuals, the specific count of vulnerable people like children and the elderly, and the availability of essential resources including food and water. An optional text field is also provided for any additional crucial information. Once the user clicks the prominent red "Broadcast Signal" button, the interface seamlessly transitions to its active state. After broadcasting, the screen displays a summary of the submitted data under an "Active Distress Signal" warning, clearly marked with a red "BROADCASTING" tag. From this active view, the victim retains control over their alert and can choose to either "Edit" the information if their situation changes or completely "Revoke Signal" once they are safe and no longer require assistance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ScreenShot/BroadcastSignal.png}
+    \caption{Broadcast Signal for User}
+    \label{fig:Fig433b}
+\end{figure}
+
+Conversely, the system equips authorized responders with specialized tools to track and manage these incoming emergencies. As illustrated in the figure \ref{fig:Fig433c}, users holding the Rescuer role have access to a dedicated "Broadcasting Signals" interface. This screen acts as a centralized dashboard displaying a sortable list of all currently active distress signals in the network. Each active emergency is represented by a detailed card that provides the rescuer with immediate, vital context without needing to open a separate page. This information includes the victim's name, contact phone number, the time the signal was created, and a quick-read breakdown of their specific situation parameters, such as the exact counts of trapped individuals and resource scarcity. Most importantly, as highlighted by the annotation in the figure, each emergency card features a dedicated "Locate" button. Tapping this button directly focuses the main map on that specific victim's coordinates, allowing rescuers to swiftly pinpoint their exact location and coordinate a physical response.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ScreenShot/BroadcastSignal.png}
+    \caption{Signal List for Rescuer}
+    \label{fig:Fig433c}
+\end{figure}
+
+Following the critical emergency response features, the application also facilitates long-term community support through its dedicated charity campaign system. Looking at the figure \ref{fig:Fig433d}, we can observe the general "Charity Campaign" interface that is accessible to the entire user base. This screen provides a centralized feed of ongoing relief efforts, which are neatly organized into intuitive tabs based on their current operational phase, such as "Donating," "Distributing," and "Finished." Each campaign card displays the campaign's title along with the organizer's name, allowing the community to easily browse and follow various initiatives. Furthermore, as highlighted by the annotation in the figure, this public-facing screen includes a specific "My Campaigns" link positioned at the top right corner. This link serves as a secure gateway and is exclusively visible to users who hold the 'Benefactor' role, granting them access to their personalized management dashboard.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ScreenShot/CampaignForEveryone.png}
+    \caption{View campaigns for everyone}
+    \label{fig:Fig433d}
+\end{figure}
+
+Transitioning to the administrative side of these relief efforts, the figure \ref{fig:Fig433e} illustrates the specialized tools provided to campaign organizers. The left side of this figure shows the "My Charity Campaigns" view, where benefactors can track their specific initiatives across a more granular set of statuses, including suspended operations. A prominent plus ("+") icon at the top of the screen allows these users to seamlessly create a new campaign. When a benefactor opens a specific initiative, as seen on the right side of the figure, a comprehensive detail panel emerges. This panel consolidates crucial logistical and financial transparency data, displaying the organizer's name, designated bank account details, the campaign's core purpose, and strict timelines for both the donation and distribution phases. Notably, next to the "Relief Location" text, there is a dedicated map icon that allows organizers to quickly "check in location" on the main map. Below these details, the interface equips benefactors with essential management controls, including buttons to handle allocations and transactions, as well as a "Post Announcement" feature to publish real-time updates directly to the campaign's timeline.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/ScreenShot/CampaignForBenefactor.png}
+    \caption{Campaign Management for benefactor}
+    \label{fig:Fig433e}
+\end{figure}
 
 \section{Testing}
-Phần này có độ dài từ hai đến ba trang. Sinh viên thiết kế các trường hợp kiểm thử cho hai đến ba chức năng quan trọng nhất. Sinh viên cần chỉ rõ các kỹ thuật kiểm thử đã sử dụng. Chi tiết các trường hợp kiểm thử khác, nếu muốn trình bày, sinh viên đưa vào phần phụ lục.
-Sinh viên sau cùng tổng kết về số lượng các trường hợp kiểm thử và kết quả kiểm thử. Sinh viên cần phân tích lý do nếu kết quả kiểm thử không đạt.
-\section{Deployment}
-Sinh viên trình bày mô hình và/hoặc cách thức triển khai thử nghiệm/thực tế. Ứng dụng của sinh viên được triển khai trên server/thiết bị gì, cấu hình như thế nào. Kết quả triển khai thử nghiệm nếu có (số lượng người dùng, số lượng truy cập, thời gian phản hồi, phản hồi người dùng, khả năng chịu tải, các thống kê, v.v.)
+
+To verify that the FloodHelper ecosystem operates reliably under field conditions, a multi-layered testing strategy was implemented. The testing workflow covers individual components, data pipelines, real-time protocols, and interactive user journeys.
+
+\subsection{Testing Methodology and Techniques}
+
+The system quality assurance process was conducted across three distinct testing levels:
+\begin{itemize}
+    \item \textbf{Unit Testing:} Implemented on the NestJS backend (using Jest) to test services, and on the Flutter frontend (using Flutter Test) to verify Riverpod view models and business validation logic.
+    \item \textbf{Integration and E2E Testing:} Focused on data transfers between the mobile client, the Python MQTT Worker, the NestJS server, and the database. Payment callbacks (VietQR hook) were also validated.
+    \item \textbf{UI and Widget Testing:} Performed UI verification using Flutter's widget testing framework. This includes golden image rendering tests to ensure map pins and role badges render consistently across varied resolutions.
+\end{itemize}
+
+The test cases were designed using the following techniques:
+\begin{itemize}
+    \item \textbf{State Transition Testing:} Used to verify status transitions for SOS signals (\texttt{BROADCASTING} $\rightarrow$ \texttt{HANDLED} $\rightarrow$ \texttt{STOPPED}) and charity campaigns (\texttt{Pending} $\rightarrow$ \texttt{Approved}/\texttt{Rejected} $\rightarrow$ \texttt{Finished}) without deadlock.
+    \item \textbf{Equivalence Partitioning (EP) and Boundary Value Analysis (BVA):} Utilized to define validation boundaries for geographic coordinates, integer limits (such as trapped victims count), and payment limits.
+    \item \textbf{Use Case Testing:} Developed based on user stories representing critical field actions to verify collaboration across multiple systems.
+\end{itemize}
+
+\subsection{Test Case Design for Core Functions}
+
+Testing was focused on three core functionalities: Distress Signaling, Real-time Location Tracking, and Charity Campaign Management. Representative test cases highlighting these core features are summarized in Table \ref{table:representative_test_cases}.
+
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|l|l|X|c|}
+    \caption{Representative Core Test Cases Summary}
+    \label{table:representative_test_cases} \\
+    \hline
+    \textbf{Test ID} & \textbf{Feature} & \textbf{Key Action \& Expected Outcome} & \textbf{Status} \\
+    \hline
+    \endfirsthead
+    \multicolumn{4}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{Test ID} & \textbf{Feature} & \textbf{Key Action \& Expected Outcome} & \textbf{Status} \\
+    \hline
+    \endhead
+    \hline \multicolumn{4}{r}{\textit{Continued on next page}} \\
+    \endfoot
+    \hline
+    \endlastfoot
+
+    TC-SOS-001 & Distress Signal & Victim submits SOS request; status transitions to \texttt{BROADCASTING} and alerts are dispatched. & Pass \\ \hline
+    TC-SOS-003 & Distress Signal & Rescuer accepts signal; status transitions to \texttt{HANDLED} and victim receives push notification. & Pass \\ \hline
+    TC-GPS-001 & GPS Tracking & App publishes coordinate changes; MQTT worker parses and updates backend in real-time. & Pass \\ \hline
+    TC-GPS-003 & GPS Tracking & Network drops; updates buffer locally and sync to database chronologically upon recovery. & Pass \\ \hline
+    TC-CHA-002 & Charity Campaign & Admin approves pending campaign; campaign is activated and QR code generated via VietQR. & Pass \\ \hline
+    TC-CHA-003 & Charity Campaign & Bank payment callback matches transaction ID; system automatically updates campaign funds. & Pass \\ \hline
+\end{xltabular}
+
+\subsection{Summary of Test Results}
+
+A total of 85 automated and manual test cases were executed across different system modules. The distribution of test counts, testing frameworks, and execution results are summarized in Table \ref{table:testing_summary}.
+
+\renewcommand{\arraystretch}{1.3}
+\begin{table}[H]
+    \centering
+    \caption{Summary of Test Executions and Pass Rates}
+    \label{table:testing_summary}
+    \begin{tabularx}{\textwidth}{|l|X|c|c|c|}
+        \hline
+        \textbf{Module}       & \textbf{Testing Tool / Framework}     & \textbf{Total Test Cases} & \textbf{Passed} & \textbf{Pass Rate} \\
+        \hline
+        Frontend Unit         & Flutter Test (Riverpod, Repositories) & 35                        & 35              & 100\%              \\
+        \hline
+        Frontend UI           & Widget \& Golden Visual Tests         & 15                        & 15              & 100\%              \\
+        \hline
+        Backend Unit          & Jest (Services, DTO validators)       & 17                        & 17              & 100\%              \\
+        \hline
+        Backend E2E           & Supertest (HTTP REST endpoints)       & 10                        & 10              & 100\%              \\
+        \hline
+        MQTT worker           & Pytest (MQTT packet forwarding)       & 8                         & 8               & 100\%              \\
+        \hline
+        \textbf{Total System} & -                                     & \textbf{85}               & \textbf{85}     & \textbf{100\%}     \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\subsection{Retrospective: Failure Analysis and Resolutions}
+
+During development testing cycles, several test runs initially failed. A retrospective analysis details the root causes and the engineering solutions implemented:
+
+\begin{itemize}
+    \item \textbf{Background Location Tracking Failures:} Android OS power-saving routines put the background location collection to sleep after 10 minutes. This was resolved by wrapping the background isolate inside a native foreground service using the \texttt{flutter\_background\_service} plugin and showing a persistent notification.
+    \item \textbf{State Synchronization Delay in SOS Handling:} When a rescuer accepts a victim's request, a handling confirmation message is sent to the MQTT worker. However, due to network transit time, the victim's device may not receive this confirmation immediately and continues to broadcast active SOS signals. As a result, the victim's distress pin fails to disappear from the rescuers' map interfaces. This was resolved by implementing a short-term caching mechanism on the MQTT worker: when a "handled" event for Victim X is processed, their ID is temporarily cached for 10 seconds. If any further SOS packets are received from Victim X during this time window, the worker intercepts the packet and mutates the \texttt{sos} status flag to \texttt{false} before forwarding it, ensuring consistent map UI updates across all clients.
+\end{itemize}
 
 \end{document}
