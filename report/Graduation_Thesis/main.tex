@@ -30,6 +30,7 @@
 \usepackage{appendix}
 \usepackage{outlines}
 \usepackage[font=small,labelfont=bf]{caption}
+\usepackage{seqsplit}
 
 \usepackage{listings}
 \usepackage{float}
@@ -295,27 +296,28 @@
 \label{chapter:Experiment}
 \subfile{Chapter/4_Experiment_evaluation}
 
-\newpage
-%\pagestyle{fancy} % Áp dụng header và footer
-\chapter{SOLUTION AND CONTRIBUTION}
-\label{chapter:SolutionAndContribution}
-\subfile{Chapter/5_Solution_contribution}
+% \newpage
+% %\pagestyle{fancy} % Áp dụng header và footer
+% \chapter{SOLUTION AND CONTRIBUTION}
+% \label{chapter:SolutionAndContribution}
+% \subfile{Chapter/5_Solution_contribution}
 \newpage
 %\pagestyle{fancy} % Áp dụng header và footer
 \chapter{CONCLUSION AND FUTURE WORK} %Kết luận và hướng phát triển}
 \label{chapter:conclusion}
 \subfile{Chapter/6_Conclusion}
 
-\newpage
-%\pagestyle{fancy} % Áp dụng header và footer
-\chapter*{SHORT NOTICES ON REFERENCE} %Kết luận và hướng phát triển}
-\label{chapter:reference}
-\subfile{Chapter/7_Reference}
+% \newpage
+% %\pagestyle{fancy} % Áp dụng header và footer
+% \chapter*{SHORT NOTICES ON REFERENCE} %Kết luận và hướng phát triển}
+% \label{chapter:reference}
+% \subfile{Chapter/7_Reference}
 
 
 % ===================================================
 \newpage
 \renewcommand\bibname{REFERENCE}
+\nocite{*}
 \printbibliography
 \phantomsection\addcontentsline{toc}{chapter}{REFERENCE}
 
