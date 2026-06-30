@@ -13,9 +13,9 @@ To meet the complex requirements and urgency of the FloodHelper system, the proj
     \label{fig:Fig411a}
 \end{figure}
 
-Diving into the internal structure, the Client application moves beyond traditional MVVM by dividing the system into two distinct main layers: the ui layer and the data layer. The ui layer comprises Views and ViewModels (state management), while the data layer handles API interactions via Repositories, Services, DTOs, and Mappers. A significant architectural enhancement is the introduction of a domain buffer layer in between, acting as a framework-independent zone for data conversion. This architecture strictly adheres to a unidirectional dependency rule: upper layers can only call lower layers, and upper layers react to lower-layer changes via an observation mechanism (watch). The entire initialization and Dependency Injection (DI) process on the Client is automated using the @Riverpod package.
+Diving into the internal structure, the Client application moves beyond traditional MVVM by dividing the system into two distinct main layers: the ui layer and the data layer. The ui layer comprises Views and ViewModels (state management), while the data layer handles API interactions via Repositories, Services, DTOs, and Mappers. A significant architectural enhancement is the introduction of a domain buffer layer in between, acting as a framework-independent zone for data conversion. This architecture strictly adheres to a unidirectional dependency rule: upper layers can only call lower layers, and upper layers react to lower-layer changes via an observation mechanism (watch). The entire initialization and Dependency Injection (DI) process on the Client is automated using the Riverpod package.
 
-On the Server side, a Layered Architecture is utilized to organize the source code into horizontal layers with distinct responsibilities, where the data flow moves unidirectionally downwards. This is realized through three components: Controller (receiving HTTP requests and routing), Service (handling core business logic), and Repository (executing database queries). To couple these layers loosely and adhere to the Inversion of Control (IoC) principle, the backend thoroughly leverages the built-in Dependency Injection mechanism of the NestJS framework. The consistent application of DI across both Client and Server ensures that components operate independently, enhancing maintainability and facilitating the automated testing process.
+On the server side, a Layered Architecture is utilized to organize the source code into horizontal layers with distinct responsibilities, where the data flow moves unidirectionally downwards. This is realized through three components: Controller (receiving HTTP requests and routing), Service (handling core business logic), and Repository (executing database queries). To couple these layers loosely and adhere to the Inversion of Control (IoC) principle, the backend thoroughly leverages the built-in Dependency Injection mechanism of the NestJS framework. The consistent application of DI across both client and server ensures that components operate independently, enhancing maintainability and facilitating the automated testing process.
 
 \begin{figure}[H]
     \centering
@@ -551,7 +551,7 @@ The primary achievement of the FloodHelper project is the successful design, imp
 This section describes the delivery package formats, key components, and architectural roles of each product within the FloodHelper ecosystem. For clarity, these details are summarized in Table \ref{table:packaged_products_details}.
 
 \renewcommand{\arraystretch}{1.4}
-\begin{xltabular}{\textwidth}{|P{2.8cm}|P{3.2cm}|X|X|}
+\begin{xltabular}{\textwidth}{|P{2.8cm}|P{3.6cm}|X|X|}
     \caption{Details of Packaged Software Products}
     \label{table:packaged_products_details} \\
     \hline
