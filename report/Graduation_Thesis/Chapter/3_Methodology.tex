@@ -3,179 +3,49 @@
 
 \label{sec:methodology}
 
-This section outlines the technology stack and development tools employed in the implementation of the system. The selection of these technologies is based on criteria such as performance, scalability, community support, and suitability for the specific requirements of a flood relief and charity management application.
+This section describes the technology stack, services, and development tools selected for the FloodHelper system. The selection is based on their suitability to meet specific system demands: real-time location sharing under unstable network conditions, transactional integrity for donation management, and cross-platform accessibility.
 
-\section{Frontend Development: Flutter}
-For the mobile application development, Flutter, an open-source UI software development kit created by Google, was selected.
+\section{Frontend framework: Flutter}
+Flutter \cite{flutterwebsite} is selected to develop the mobile application for both normal users (victims) and rescuers. In the FloodHelper system, the mobile app must handle real-time location updates, render interactive maps (utilizing OpenStreetMap \cite{osmwebsite}), and update UI states dynamically. Flutter is chosen because it renders UI components directly using its own graphic engine (Skia/Impeller). This direct rendering ensures smooth map interactions and continuous background rendering, which are critical when victims and rescuers need to track coordinates in emergency situations. Furthermore, Flutter enables development for both Android and iOS from a single Dart codebase, significantly reducing development and maintenance overhead.
 
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Cross-Platform Capabilities:} Flutter allows the creation of natively compiled applications for mobile, web, and desktop from a single codebase (Dart language). This significantly reduces development time compared to maintaining separate codebases for Android and iOS.
-    \item[] \textbf{High Performance:} Unlike other frameworks that rely on a Javascript bridge, Flutter uses the Skia graphics engine to render UI components directly, resulting in smooth animations (60fps) and native-like performance.
-    \item[] \textbf{Hot Reload:} This feature enables developers to see changes in the code instantly without restarting the app, accelerating the debugging process.
-\end{itemize}
+\section{Backend framework: NestJS}
+The backend server of the system is built using NestJS \cite{nestjswebsite}, a progressive Node.js \cite{nodejswebsite} framework. The backend is responsible for processing REST API requests, coordinating real-time message routing, and managing transactional workflows such as role applications and charity campaigns. NestJS is selected over Express.js \cite{expressjswebsite} because of its opinionated, modular architecture (modules, controllers, and services). This structure prevents code degradation as the system grows and ensures that critical donation logic is separated from authentication and notification systems. Additionally, NestJS's native support for TypeScript provides compile-time type safety, minimizing runtime exceptions in processing financial records and emergency states.
 
-\textbf{Comparison with React Native:}
-While React Native is a popular alternative, Flutter provides a more consistent UI across platforms because it does not rely on OEM widgets. Furthermore, Flutter's performance is generally superior in complex animation scenarios due to the absence of the JavaScript bridge bottleneck.
+\section{Database management: PostgreSQL}
+PostgreSQL \cite{postgresqlwebsite} is chosen as the primary relational database to store persistent records, including user profiles, emergency signal histories, and campaign transaction logs. In a system managing charitable donations, transactional reliability is paramount. PostgreSQL's strict ACID (Atomicity, Consistency, Isolation, Durability) compliance guarantees that donation operations are recorded accurately without data corruption during concurrent write-heavy events. Compared to MySQL \cite{mysqlwebsite}, PostgreSQL offers superior support for complex queries and extensibility for potential geospatial indexing, which is necessary for geographic search operations in flood areas.
 
-\section{Backend Development: NestJS}
-The server-side logic is built using NestJS, a progressive Node.js framework for building efficient, reliable, and scalable server-side applications.
+\section{Object-relational mapping: Prisma ORM}
+To interact with the database, the backend utilizes the Prisma \cite{prismawebsite} Object-Relational Mapper (ORM) instead of TypeORM \cite{typeormwebsite}. Prisma is selected because it uses a centralized, human-readable schema file (`schema.prisma`) as the single source of truth, automating database migrations. Prisma auto-generates a strongly-typed database client, ensuring that database queries in NestJS are validated at compile-time, which eliminates common database query errors during execution.
 
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Modular Architecture:} NestJS is built around the concept of modules, controllers, and services (inspired by Angular). This structure forces code organization, making the system easier to maintain and scale.
-    \item[] \textbf{TypeScript Support:} It fully supports TypeScript, providing strong typing which helps prevent runtime errors and improves code readability.
-    \item[] \textbf{Dependency Injection:} Its built-in Dependency Injection (DI) container promotes loose coupling and enhances testability.
-\end{itemize}
+\section{Real-time communication: MQTT and EMQX cloud}
+Real-time communication is crucial for distress broadcasting and rescuer coordination. The system utilizes MQTT \cite{mqttwebsite} (Message Queuing Telemetry Transport) as the primary protocol for real-time location tracking and signal sharing. Unlike HTTP or standard WebSockets, MQTT has an extremely lightweight header size (minimizing bandwidth consumption) and operates on a Publish/Subscribe model. This is essential for FloodHelper, as victims often broadcast signals in areas with degraded mobile networks. MQTT's built-in Quality of Service (QoS) levels guarantee that critical SOS signals and location updates are retried and delivered once a connection is re-established.
 
-\textbf{Comparison with Express.js:}
-Express.js is a minimalist and unopinionated framework, which often leads to "spaghetti code" in large projects as developers must define their own architecture. NestJS, conversely, provides an "opinionated" structure out-of-the-box, which is crucial for maintaining the complexity of a system handling financial transactions (donations) and real-time rescue operations.
+The system uses EMQX cloud \cite{emqxwebsite} as the managed MQTT broker to route messages between the mobile clients and the backend. EMQX cloud is selected over a self-hosted broker because it is built for distributed clustering, allowing the system to scale automatically and handle spikes in concurrent connections during active flood disasters without manual infrastructure administration.
 
-\section{Database Management System: PostgreSQL}
-PostgreSQL is utilized as the primary relational database management system (RDBMS) for storing user data, campaign details, and transaction logs.
+On the server side, Python with the `paho-mqtt` \cite{pahomqttwebsite} library is used to run background processes that listen to incoming location streams. Python's event-driven, asynchronous client handles high-frequency location data from EMQX cloud without blocking the main NestJS API server, maintaining optimal server responsiveness.
 
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{ACID Compliance:} PostgreSQL ensures validity even in the event of errors or power failures, which is critical for financial transactions in the donation module.
-    \item[] \textbf{Advanced Data Types:} It supports JSON/JSONB natively, allowing for a hybrid approach (relational + NoSQL) when handling flexible data structures.
-    \item[] \textbf{Geospatial Support (PostGIS):} Although not explicitly detailed here, PostgreSQL's extensibility supports complex geospatial queries, which is beneficial for location-based services in rescue operations.
-\end{itemize}
+\section{Support services and infrastructure}
 
-\textbf{Comparison with MySQL:}
-While MySQL is widely used for web applications, PostgreSQL is generally considered more robust for complex queries and write-heavy operations. Its strict adherence to SQL standards and superior handling of concurrent transactions make it a better choice for this system's reliability requirements.
+\subsection{Cloud storage: Cloudinary}
+Cloudinary \cite{cloudinarywebsite} is integrated to manage dynamic media assets, such as images uploaded for charity verification campaigns or user profiles. In disaster zones, network speed is highly limited. Cloudinary is chosen because it allows on-the-fly image optimization and resizing via URL parameters, reducing the file size delivered to mobile devices. Images are served through a global Content Delivery Network (CDN), offloading bandwidth from the primary backend server and ensuring fast image loading on the mobile client.
 
-\section{Object-Relational Mapping: Prisma}
-To interact with the PostgreSQL database, the system utilizes **Prisma**, a next-generation open-source ORM. It acts as the data access layer, connecting the NestJS backend to the database.
+\subsection{Push notifications: Firebase Cloud Messaging}
+Firebase Cloud Messaging (FCM) \cite{firebasefcmwebsite} is employed to deliver push notifications, such as emergency alerts, rescue status updates, and announcement broadcasts. Since the mobile app must alert users even when it is running in the background or closed, FCM is selected as it is natively supported by both Android and iOS notification systems. It supports topic-based subscription, allowing the backend to broadcast notifications to all users in a specific ward simultaneously.
 
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Type Safety:} Prisma automatically generates a strongly-typed TypeScript client based on the schema definition. This ensures that database queries are validated at compile-time, significantly reducing runtime errors caused by data type mismatches.
-    \item[] \textbf{Schema-First Approach:} The database structure is defined in a centralized, human-readable file (`schema.prisma`). This file serves as the single source of truth, making it easy to model data and manage database migrations.
-    \item[] \textbf{Intuitive API:} Prisma's query syntax is designed to be readable and concise, simplifying complex operations like nested writes or filtering deep relationships.
-\end{itemize}
+\subsection{In-memory caching: Redis}
+Redis \cite{rediswebsite} is utilized as an in-memory database to store temporary, high-frequency data such as One-Time Passwords (OTPs) for phone authentication and user session states. Storing these short-lived tokens in Redis prevents unnecessary write operations to the primary PostgreSQL database. Redis's sub-millisecond read/write latency and automatic Time-To-Live (TTL) expiration ensure rapid, secure authentication workflows.
 
-\textbf{Comparison with TypeORM:}
-TypeORM is the traditional default for NestJS and relies heavily on classes and decorators. While powerful, TypeORM can be verbose and prone to synchronization issues between the entity classes and the actual database state. Prisma outperforms TypeORM in terms of Developer Experience (DX) by offering superior auto-completion (IntelliSense) and a more predictable query engine that efficiently handles complex data relations, often avoiding performance pitfalls like the "N+1 problem" more effectively.
+\subsection{Containerization and hosting: Docker and Render}
+Docker \cite{dockerwebsite} is used to containerize the NestJS backend and PostgreSQL database, packaging the applications with their exact environment configurations. This guarantees consistency between the developers' local environments and the production servers, eliminating deployment discrepancies.
 
-\section{Communication Protocols}
-To ensure seamless communication between the client, server, and IoT devices (if any), the system employs a hybrid protocol approach.
+Render \cite{renderwebsite} is selected as the cloud hosting provider for the backend services. Render is chosen over complex cloud providers (such as AWS or Google Cloud) because it provides a fully managed Platform-as-a-Service (PaaS) with integrated Git-based CI/CD. This automates the build and deployment process of the Docker containers whenever code is merged, reducing operational overhead and allowing the project to focus on feature implementation.
 
-\subsection{HTTP/HTTPS}
-Standard HTTP/HTTPS protocols are used for RESTful API communication (e.g., login, fetching campaign lists, updating user profiles). HTTPS ensures that sensitive data, such as authentication tokens and personal information, is encrypted during transmission.
+\section{Development tools}
 
-\subsection{MQTT (Message Queuing Telemetry Transport)}
-Given the requirement to operate in potentially weak network environments during disasters, MQTT is implemented for critical updates and location sharing.
+Visual Studio Code \cite{vscodewebsite} serves as the primary Integrated Development Environment (IDE) for writing, formatting, and debugging the codebase across both the frontend and backend services. It is chosen for its extensive extension ecosystem, which supports development in both Dart and TypeScript.
 
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Lightweight:} MQTT header size is minimal compared to HTTP headers, reducing bandwidth consumption.
-    \item[] \textbf{Reliability:} It supports Quality of Service (QoS) levels, ensuring message delivery even in unstable network conditions.
-    \item[] \textbf{Pub/Sub Model:} This decouples the sender and receiver, allowing for efficient real-time data distribution (e.g., broadcasting emergency alerts).
-\end{itemize}
+For version control and collaborative development, Git \cite{gitwebsite} and GitHub \cite{githubwebsite} are employed to manage repository history, track feature updates, and maintain code quality through pull request workflows. This setup ensures codebase consistency and enables seamless team collaboration.
 
-\section{MQTT Broker: EMQX Cloud}
-To facilitate highly reliable and scalable real-time data transmission, the system utilizes EMQX Cloud, a fully managed, cloud-based messaging service that implements the MQTT protocol versions 5.0, 3.1.1, and 3.1.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{High Scalability and Availability:} Built for distributed architectures, EMQX Cloud can effortlessly scale to handle massive concurrent connections. This ensures the system remains highly responsive even under heavy traffic loads, which is critical for real-time tracking and emergency coordination.
-    \item[] \textbf{Fully Managed Infrastructure:} As a cloud-native service, it eliminates the need for manual server provisioning, maintenance, and DevOps overhead. This allows the development team to focus entirely on the application logic and system features rather than infrastructure management.
-    \item[] \textbf{Advanced Rules Engine and Integration:} EMQX Cloud provides built-in, powerful data integration capabilities. It can seamlessly process, filter, and route real-time message streams directly to backend services and databases, streamlining the data flow from client devices.
-\end{itemize}
-
-\textbf{Role in the System:}
-In this project, EMQX Cloud serves as the robust central hub for the "Publish/Subscribe" mechanism. It handles critical data streams—such as continuous location coordinates and emergency alerts from the Flutter application and IoT devices—ensuring guaranteed message delivery. By leveraging a production-ready cloud broker, the system can reliably synchronize data across distributed environments and maintain seamless connectivity, even when dealing with the intermittent network conditions inherent in mobile and IoT deployments.
-
-\section{MQTT Client Implementation: Python (Paho-MQTT)}
-For the edge devices and data processing modules, the system implements the MQTT client using Python's \texttt{paho-mqtt} library. This library provides a comprehensive and highly stable client class that seamlessly connects to the EMQX Cloud broker, enabling robust "Publish/Subscribe" operations.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Event-Driven and Asynchronous Handling:} The \texttt{paho-mqtt} library is built around a robust callback architecture (e.g., \texttt{on\_connect}, \texttt{on\_message}, \texttt{on\_disconnect}). This allows the client to process incoming, high-frequency real-time data streams asynchronously without blocking the main execution thread, ensuring smooth and efficient system performance.
-    \item[] \textbf{Resilience in Unstable Networks:} Designed to handle intermittent connectivity, the library natively supports critical MQTT features such as configurable Keep-Alive intervals, automatic reconnections, and Quality of Service (QoS) levels. This guarantees that vital messages, such as emergency alerts or sensor coordinates, are successfully buffered and delivered even when network conditions fluctuate.
-    \item[] \textbf{Seamless Ecosystem Integration:} Python is the industry standard for advanced data processing, scripting, and integrating with AI/machine learning models. Utilizing \texttt{paho-mqtt} allows the system to easily bridge the gap between raw messaging protocols and complex backend logic, maintaining a clean, readable, and highly extensible codebase.
-\end{itemize}
-
-\section{Containerization: Docker}
-Docker is employed to containerize the application, packaging the code along with its dependencies into standardized units for development and deployment.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Environment Consistency:} Docker eliminates the common "it works on my machine" issue. By bundling the application with its specific runtime environment (Node.js version, OS libraries), it guarantees that the software runs exactly the same way on a developer's laptop as it does on the production server.
-    \item[] \textbf{Isolation:} The backend, database, and other services run in isolated containers. This prevents conflicts between different projects or dependency versions on the same host machine.
-    \item[] \textbf{Rapid Deployment:} Using `docker-compose`, the entire system stack (NestJS API, PostgreSQL database, ...) can be orchestrated and launched with a single command, streamlining the setup process for new developers.
-\end{itemize}
-
-\textbf{Comparison with Virtual Machines (VMs):}
-Unlike traditional Virtual Machines that require a full Operating System for each instance, Docker containers share the host system's kernel. This makes containers significantly more lightweight (occupying MBs instead of GBs) and much faster to start up (seconds vs. minutes), resulting in better resource efficiency and scalability for the application.
-
-\section{Deployment Platform: Render}
-To host the backend services efficiently without the overhead of managing underlying infrastructure, the system utilizes Render, a modern cloud application hosting platform (Platform as a Service - PaaS).
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Automated CI/CD Pipeline:} Render integrates directly with GitHub, enabling automatic deployments whenever new code is pushed to the production branch. This continuous integration accelerates the development cycle and ensures the latest features are reliably deployed.
-    \item[] \textbf{Fully Managed Environment:} By abstracting away server configuration, OS updates, and network management, Render allows the development team to focus entirely on backend business logic and API performance.
-\end{itemize}
-
-\section{Cloud Storage: Cloudinary}
-For managing dynamic media assets, such as user avatars or images uploaded during field operations, the system integrates Cloudinary as its primary cloud-based image and video management service.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{On-the-fly Transformation:} Cloudinary provides powerful URL-based APIs to resize, crop, and optimize images dynamically before they are delivered to the client. This significantly reduces payload sizes and improves application load times.
-    \item[] \textbf{Global CDN Delivery:} Assets are cached and delivered via a global Content Delivery Network (CDN), ensuring fast and reliable access for mobile clients regardless of their geographical location, while simultaneously offloading bandwidth from the main backend servers.
-\end{itemize}
-
-\section{Push Notifications: Firebase Cloud Messaging (FCM)}
-To guarantee that critical updates reach users immediately, Firebase Cloud Messaging (FCM) is employed as the push notification service bridging the backend and the Flutter mobile application.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Reliable Cross-Platform Delivery:} FCM provides a unified, robust infrastructure to send messages to both Android and iOS devices, ensuring that emergency alerts and system notifications are delivered consistently across different operating systems.
-    \item[] \textbf{Targeted Routing:} It supports topic-based subscription and device-token targeting, allowing the backend to broadcast alerts to specific groups of users or route critical updates to individual devices with minimal latency.
-\end{itemize}
-
-\section{In-Memory Caching: Redis}
-To optimize backend performance and reduce the load on the primary relational database, Redis—an advanced, open-source, in-memory data structure store—is deployed as the caching layer.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Ultra-Low Latency:} Operating entirely in RAM, Redis provides sub-millisecond read and write operations. This makes it exceptionally well-suited for high-frequency data access requirements.
-    \item[] \textbf{State Management and TTL features:} Redis is strategically used to manage temporary states, such as caching OTPs (One-Time Passwords) for authentication. Its built-in Time-To-Live (TTL) mechanism automatically expires old data, ensuring security and optimal memory utilization without manual intervention.
-\end{itemize}
-
-\section{Version Control and Collaboration: Git and GitHub}
-To maintain codebase integrity and facilitate seamless collaboration among developers, Git is used for local version control, with GitHub serving as the central remote repository.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Robust Branching and Merging:} Git's decentralized architecture allows developers to work on isolated feature branches without affecting the stable main codebase. This enables safe experimentation and parallel development of different system modules.
-    \item[] \textbf{Centralized Collaboration:} GitHub provides a comprehensive platform for code reviews, issue tracking, and repository management. It enforces quality control before merging changes and seamlessly triggers automated deployment pipelines, ensuring a highly organized and traceable development lifecycle.
-\end{itemize}
-
-\section{Third-Party Services and APIs}
-To enhance the system's functionality and user experience, the following external services and standards are integrated:
-
-\begin{itemize}
-    \item[] \textbf{OpenStreetMap (OSM):} Utilized as the primary mapping service to visualize geographic data, such as real-time locations, tracking routes, and operational maps. As an open, community-driven geographic database, OSM offers high flexibility and customization without the restrictive licensing constraints or recurring costs associated with proprietary mapping APIs, making it an ideal choice for this system.
-
-    \item[] \textbf{VietQR API:} Integrated to facilitate secure, rapid, and standardized bank transfers. By dynamically generating QR codes embedded with precise transaction details (including account information, exact transfer amount, and descriptive messages), VietQR significantly streamlines the payment process. This reduces user friction, minimizes manual entry errors, and ensures seamless financial transactions within the application.
-\end{itemize}
-
-\section{Development and Testing Tools}
-\begin{itemize}
-    \item[] \textbf{IDE: Visual Studio Code (VS Code):} Selected for its lightweight nature and vast ecosystem of extensions (for Dart, TypeScript, Docker, etc.). Its IntelliSense and debugging tools significantly enhance developer productivity.
-    \item[] \textbf{API Testing: Postman:} Used to design, document, and test API endpoints. Postman allows developers to simulate requests, inspect responses, and automate testing scenarios before integrating APIs into the frontend.
-\end{itemize}
-
-\section{Diagramming: Astah and draw.io}
-Thorough architectural planning and system design were conducted prior to implementation, utilizing a combination of Astah and draw.io to create comprehensive software blueprints.
-
-\textbf{Key Strengths:}
-\begin{itemize}
-    \item[] \textbf{Strict UML Compliance (Astah):} Astah is utilized for creating rigorous Unified Modeling Language (UML) diagrams, such as Class Diagrams and Sequence Diagrams. Its strict adherence to UML standards ensures that complex object-oriented structures and logic flows are documented accurately for the development phase.
-    \item[] \textbf{Flexible Visualization (draw.io):} For broader system architecture, deployment diagrams, and user flowcharts, draw.io offers a highly flexible and collaborative canvas. Its integration with cloud storage allows for seamless sharing and iterative refinement of the system's structural overviews.
-\end{itemize}
+Finally, Postman \cite{postmanwebsite} is used to perform API testing, allowing developers to execute, validate, and document REST API requests and responses during development. It helps verify backend route correctness before integrating them into the frontend.
 
 \end{document}

@@ -1,14 +1,63 @@
 \documentclass[../Main.tex]{subfiles}
 \begin{document}
 
-Chương này có độ dài tối thiểu 5 trang, tối đa không giới hạn.\footnote{Trong trường hợp phần này dưới 5 trang thì sinh viên nên gộp vào phần kết luận, không tách ra một chương riêng rẽ nữa.} Sinh viên cần trình bày tất cả những nội dung đóng góp mà mình thấy tâm đắc nhất trong suốt quá trình làm ĐATN. Đó có thể là một loạt các vấn đề khó khăn mà sinh viên đã từng bước giải quyết được, là giải thuật cho một bài toán cụ thể, là giải pháp tổng quát cho một lớp bài toán, hoặc là mô hình/kiến trúc hữu hiệu nào đó được sinh viên thiết kế.
+\section{Key contributions}
 
-Chương này \textbf{là cơ sở quan trọng} để các thầy cô đánh giá sinh viên. Vì vậy, sinh viên cần phát huy tính sáng tạo, khả năng phân tích, phản biện, lập luận, tổng quát hóa vấn đề và tập trung viết cho thật tốt.
-Mỗi giải pháp hoặc đóng góp của sinh viên cần được trình bày trong một mục độc lập bao gồm ba mục con: (i) dẫn dắt/giới thiệu về bài toán/vấn đề, (ii) giải pháp, và (iii) kết quả đạt được (nếu có).
+In addition to delivering a comprehensive system that supports both emergency rescue operations and charitable campaign management, this project provides two notable technical contributions that directly address critical challenges encountered in real-world deployment scenarios. The first contribution is the design and implementation of an MQTT topic architecture, together with optimized publish/subscribe communication rules specifically tailored for location sharing and rescue coordination in environments with unstable Internet connectivity. The second contribution is the modeling and management of the lifecycle states of charitable campaigns, establishing a digital governance framework that helps prevent fraudulent activities. The following sections provide a detailed analysis of these contributions.
 
-Sinh viên lưu ý \textbf{không trình bày lặp lại nội dung}. Những nội dung đã trình bày chi tiết trong các chương trước không được trình bày lại trong chương này. Vì vậy, với nội dung hay, mang tính đóng góp/giải pháp, sinh viên chỉ nên tóm lược/mô tả sơ bộ trong các chương trước, đồng thời tạo tham chiếu chéo tới đề mục tương ứng trong Chương 5 này. Chi tiết thông tin về đóng góp/giải pháp được trình bày trong mục đó.
+\subsection{MQTT topic architecture and communication mechanism for emergency rescue operations}
 
-Ví dụ, trong Chương 4, sinh viên có thiết kế được kiến trúc đáng lưu ý gì đó, là sự kết hợp của các kiến trúc MVC, MVP, SOA, v.v. Khi đó, sinh viên sẽ chỉ mô tả ngắn gọn kiến trúc đó ở Chương 4, rồi thêm các câu có dạng: ``Chi tiết về kiến trúc này sẽ được trình bày trong phần 5.1". 
+The first major technical contribution lies in the messaging architecture, which was designed to overcome the limitations of weak Internet connectivity commonly found in flood-affected areas. The diagram in the figure \ref{fig:Fig613a} illustrates the topic network developed for location-sharing functionality among connected users (e.g., friends and family members). Rather than establishing direct communication between end-user mobile devices (Client A communicating individually with Clients B, C, and D), which may result in increased packet loss and inefficient bandwidth utilization, the system employs an MQTT Client operating as an MQTT Worker within a strong Internet connection environment to serve as an intermediary coordinator. When Client A publishes its current coordinates (\textit{myCurrentLocation}) to the \texttt{current-location} topic, the MQTT Worker receives, processes, and redistributes the location data by publishing it to personalized topics for each recipient, such as \texttt{A/to\_B/last-Location} and \texttt{A/to\_C/last-Location}. A key innovation of this design is the utilization of MQTT Retained Messages for destination topics. As a result, even if Clients B, C, and D temporarily lose network connectivity, they immediately receive the latest available location of Client A upon reconnection, without waiting for the next update cycle. This mechanism ensures the continuity and reliability of location information dissemination.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/TopicNetwork/TopicForFriend.png}
+    \caption{Topic network for location sharing among friends}
+    \label{fig:Fig613a}
+\end{figure}
+
+Building upon the basic location-sharing mechanism, the topic architecture was further extended to support bidirectional coordination between Victims and Rescue Teams, as illustrated in the second diagram. When a victim (Client A) issues a distress signal (\textit{signalCommand}) through the \texttt{signal} topic, the signal is not indiscriminately broadcast across the network. Instead, it is routed directly to the MQTT Worker. The Worker synchronizes the information with the central backend system, records the incident in the database, and subsequently publishes a notification command (\textit{notificationCommand}) through the \texttt{rescuer-common} topic to the devices of rescue personnel (Rescuers B and C). Upon receiving the dispatch notification, rescue devices begin periodically publishing their current coordinates (\textit{rescuerLocation}) to the \texttt{rescuer-location} topic. On the victim side, the device only needs to subscribe to this topic to continuously receive updated rescue team locations, providing valuable situational awareness and psychological reassurance during emergency situations.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/TopicNetwork/TopicForVictimAndRescuer_OldVersion.png}
+    \caption{Topic network for location sharing between victims and rescuers}
+    \label{fig:Fig613b}
+\end{figure}
+
+Although the proposed architecture effectively establishes a closed-loop communication workflow, the current implementation (as depicted in the second diagram) still exhibits a significant limitation regarding geographical information filtering. Under the existing topic-routing model, rescue personnel receive distress notifications from all victims nationwide, regardless of their geographical proximity. This limitation is not only impractical from an operational coordination perspective but also leads to inefficient consumption of network bandwidth, which is often a scarce resource in disaster-stricken areas. To address this issue, a technical enhancement has been identified that involves restructuring the topic hierarchy through the incorporation of geographical identifiers (e.g., \texttt{ward\_id}) as topic suffixes. This approach would isolate and partition communication flows according to specific administrative regions, thereby enabling location-aware notification routing. The proposed solution is discussed in greater detail in the \textit{Future Work} section of this project.
+
+\subsection{Charity campaign lifecycle state management}
+
+While the MQTT-based communication architecture focuses on ensuring reliable rescue coordination under unstable network conditions, the second major technical contribution addresses a different challenge: establishing transparency and accountability in charitable activities. To achieve this objective, the system models each charity campaign as a finite-state machine (FSM), as illustrated in the figure \ref{fig:Fig613c}. By defining explicit states and controlled transitions, the system ensures that every campaign follows a predefined lifecycle, thereby reducing opportunities for fraud and improving operational governance.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figure/StateMachine/CharityCampaignState.png}
+    \caption{Finite state machine diagram for charity campaign}
+    \label{fig:Fig613c}
+\end{figure}
+
+The lifecycle begins with the \textit{Created} state, which is entered immediately after a beneficiary creates a new campaign. At this stage, campaign information is still editable. Once the beneficiary submits the campaign for review, the campaign transitions to the \textit{Pending} state, indicating that it is awaiting verification. If the beneficiary wishes to modify any information during the review process, the campaign can return to the \textit{Created} state for further editing and resubmission.
+
+The transition from \textit{Pending} is governed by an automated verification process. When the system determines that all required information is valid and complete, the campaign is promoted to the \textit{Approved} state. Conversely, if the submitted information is found to be invalid, incomplete, or inconsistent, the campaign transitions to the terminal \textit{Rejected} state.
+
+Once approved, the campaign progresses automatically according to predefined scheduling milestones. Upon reaching the donation start date, the campaign enters the \textit{Donating} state, during which donors are allowed to contribute funds. When the distribution date is reached, the campaign transitions to the \textit{Distributing} state, indicating that collected resources are being allocated to beneficiaries. Finally, when the campaign reaches its designated end date, it moves to the \textit{Finished} state, marking the successful completion of all fundraising and distribution activities.
+
+In addition to the normal workflow, the state model incorporates governance mechanisms to ensure campaign transparency. During the \textit{Donating} and \textit{Distributing} phases, the responsible authority is granted the ability to review campaign activities and supporting information. If irregularities, inconsistencies, or suspicious behaviors are identified during the review process, the authority may transition the campaign to the \textit{Suspended} state. This action temporarily halts all fundraising and distribution activities until the identified issues have been investigated and resolved.
+
+A notable advantage of this state-machine-based approach is that it transforms campaign management from a collection of loosely controlled operations into a structured and auditable process. Every state transition is triggered by a clearly defined business event, such as beneficiary submission, automated validation, scheduled milestones, or fraud detection. Consequently, the system establishes a digital governance framework that enhances transparency, minimizes human error, and significantly reduces the risk of fraudulent charitable campaigns.
+
+\section{Limitations of the work}
+
+Although the FloodHelper system successfully implements the major functionalities proposed in this thesis, several limitations remain.
+
+First, the current implementation supports only Android devices. Users of other mobile platforms, such as iOS, are not supported in the current version.
+
+Second, the real-time location-sharing mechanism relies on Internet connectivity and MQTT communication. When Internet access is unavailable, users cannot continuously synchronize their locations or receive real-time emergency updates.
+
+Third, the charity campaign module currently provides basic functionalities for campaign creation, donation management, and financial transparency. However, it does not support integration with online payment gateways, requiring users to perform bank transfers manually.
+
+Finally, the system has been validated through functional testing in a development environment. Comprehensive evaluations involving large-scale concurrent users, long-term system stability, and performance under disaster-scale workloads have not yet been conducted.
 
 \end{document}

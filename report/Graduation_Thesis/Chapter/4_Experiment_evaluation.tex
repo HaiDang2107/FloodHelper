@@ -8,7 +8,7 @@ To meet the complex requirements and urgency of the FloodHelper system, the proj
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SoftwareArchitecture.png}
+    \includegraphics[width=0.6\textwidth]{Figure/ArchitectureDesign/SoftwareArchitecture.png}
     \caption{Software Architecture}
     \label{fig:Fig411a}
 \end{figure}
@@ -19,7 +19,7 @@ On the server side, a Layered Architecture is utilized to organize the source co
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/LayerArchitecture.png}
+    \includegraphics[width=0.4\textwidth]{Figure/ArchitectureDesign/LayerArchitecture.png}
     \caption{Layer Architecture for Frontend and Backend}
     \label{fig:Fig411b}
 \end{figure}
@@ -28,18 +28,18 @@ On the server side, a Layered Architecture is utilized to organize the source co
 
 The overall architecture of the FloodHelper system is modeled through UML Package Diagrams, clearly demonstrating the separation of layers and strict dependency management principles. The packages are organized following a unidirectional dependency rule: the design ensures no circular dependencies, upper-layer packages depend on lower-layer packages, lower-layer packages strictly do not depend on upper ones, and the call flow does not skip layers. To provide a comprehensive view, the system design is divided into three diagrams: General Package Diagram, Package Diagram for Frontend, and Package Diagram for Backend.
 
-\subsubsection{General Package Diagram}
+\subsubsection{General package diagram}
 
 The general diagram outlines the highest-level structure of the entire system. This structure comprises three main blocks: \textit{frontend}, \textit{backend}, and \textit{client\_server}. Here, \textit{frontend} and \textit{client\_server} act as clients, maintaining a one-way dependency on the \textit{backend} for data exchange and retrieval. Internally, both the \textit{frontend} and \textit{backend} blocks are subdivided into smaller packages that adhere strictly to layered design principles.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/GeneralPackageDiagram.png}
-    \caption{General Package Diagram}
+    \includegraphics[width=0.7\textwidth]{Figure/ArchitectureDesign/GeneralPackageDiagram.png}
+    \caption{General package diagram}
     \label{fig:Fig412a}
 \end{figure}
 
-\subsubsection{Package Diagram for Backend}
+\subsubsection{Package diagram for backend}
 
 The backend architecture is designed with two distinct layers: the \textit{feature} layer (business logic) positioned at the top and the \textit{common} layer (shared infrastructure) at the bottom. The \textit{feature} layer depends on \textit{common} for resources, while \textit{common} operates entirely independently.
 
@@ -49,12 +49,12 @@ Package \textit{common}: Provides shared tools and infrastructure connections ut
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/PackageDiagramForBackend.png}
-    \caption{Package Diagram for Backend}
+    \includegraphics[width=0.8\textwidth]{Figure/ArchitectureDesign/PackageDiagramForBackend.png}
+    \caption{Package diagram for backend}
     \label{fig:Fig412b}
 \end{figure}
 
-\subsubsection{Package Diagram for Frontend}
+\subsubsection{Package diagram for frontend}
 
 This diagram illustrates the client-side architecture with three primary package blocks: \textit{ui} (user interface), \textit{data}, and \textit{common} (shared utilities). Dependency arrows clearly indicate that \textit{ui} depends on \textit{data} and \textit{common}, while \textit{data} simultaneously depends on \textit{common}.
 
@@ -64,23 +64,23 @@ Package \textit{common}: Contains constants, utility classes, or configuration c
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/PackageDiagramForFrontend.png}
-    \caption{Package Diagram for Frontend}
+    \includegraphics[width=0.8\textwidth]{Figure/ArchitectureDesign/PackageDiagramForFrontend.png}
+    \caption{Package diagram for frontend}
     \label{fig:Fig412c}
 \end{figure}
 
 \subsection{Detailed package design}
 
-To elucidate how the system handles its core business logic, this section analyzes the detailed package design diagram for the Rescue module (encompassing distress signaling and location tracking). This module spans all three architectural components: Frontend, Backend, and Client Server (Worker).
+To elucidate how the system handles its core business logic, this section analyzes the detailed package design diagram for the rescue module (encompassing distress signaling and location tracking). This module spans all three architectural components: Frontend, Backend, and Client Server (Worker).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/DetailedPackageDiagramForRescueFeature.png}
-    \caption{Package Diagram for Frontend}
+    \caption{Detailed package design diagram for rescue module}
     \label{fig:Fig413}
 \end{figure}
 
-\subsubsection{Frontend Subsystem}
+\subsubsection{Frontend subsystem}
 
 The design strictly adheres to the MVVM pattern and Clean Architecture, ensuring a unidirectional data flow.
 
@@ -88,9 +88,9 @@ Package \textit{ui.user.home}: The core of the interface is the \textit{HomeScre
 
 Package \textit{data}: To decouple the UI logic from data retrieval, the ViewModel only depends on the \textit{SignalRepository} interface. The \textit{RealSignalRepository} class provides the implementation of this interface. The \textit{RealSignalRepository} maintains an aggregation relationship with underlying services such as \textit{SignalService} (which calls APIs via \textit{ApiClient}), \textit{SosLocalStorage}, and \textit{BroadcastingSignalsLocalStorage}.
 
-To support Real-time Processing, the \textit{HomeViewModel} depends directly on the \textit{LocationTrackingService}. This service manages the background isolate/process (\textit{LocationTrackingBackground}), which in turn depends on the \textit{MqttService} to stream coordinates continuously via the MQTT protocol. Additionally, the \textit{GlobalNotificationController} in the \textit{common} package aggregates the \textit{FirebaseMessagingService} to handle global push notifications.
+To support real-time processing, the \textit{HomeViewModel} depends directly on the \textit{LocationTrackingService}. This service manages the background isolate/process (\textit{LocationTrackingBackground}), which in turn depends on the \textit{MqttService} to stream coordinates continuously via the MQTT protocol. Additionally, the \textit{GlobalNotificationController} in the \textit{common} package aggregates the \textit{FirebaseMessagingService} to handle global push notifications.
 
-\subsubsection{Backend Subsystem}
+\subsubsection{Backend subsystem}
 
 On the backend, the Layered Architecture is clearly demonstrated through the separation of responsibilities.
 
@@ -100,49 +100,61 @@ The \textit{SignalController} also depends on a set of Data Transfer Objects (\t
 
 The \textit{SignalService} encapsulates the business logic and depends on the \textit{SignalRepository}. Finally, the \textit{SignalRepository} depends on the \textit{PrismaService} (located in the \textit{common.prisma} package) to execute direct queries against the PostgreSQL database.
 
-\subsubsection{Client Server Subsystem}
+\subsubsection{Client server subsystem}
 
-To offload processing from the main Backend API, the system employs an independent Worker.
+To offload processing from the main backend API, the system employs an independent Worker.
 
-The \textit{MqttWorker} class has an aggregation relationship with \textit{BackendApiClient} and \textit{Settings}. This class acts as a Subscriber, listening to coordinate data streams over MQTT, and depends on the Backend infrastructure to update rescue data in real-time without disrupting the primary HTTP traffic flow.
+The \textit{MqttWorker} class has an aggregation relationship with \textit{BackendApiClient} and \textit{Settings}. This class acts as a subscriber, listening to coordinate data streams over MQTT, and depends on the backend infrastructure to update rescue data in real-time without disrupting the primary HTTP traffic flow.
 
 \section{Detailed design}
 \subsection{User interface design}
-\subsubsection{Target Device Specifications}
+\subsubsection{Target device specifications}
 
-The FloodHelper project is designed to serve two main target groups with two distinct platforms: a Mobile App for citizens and a Web App for Authorities and Admins. Detailed specifications for each platform are described in the table \ref{table:device_spec}.
+The FloodHelper project is designed to serve two main target groups with two distinct platforms: a mobile app for citizens and a web app for Authorities and Admins. Detailed specifications for each platform are described in the table \ref{table:device_spec}.
 
-\begin{table}[H]
-    \centering
-    \caption{Target Device Specifications}
-    \label{table:device_spec}
-    \renewcommand{\arraystretch}{1.3} % Tăng khoảng cách các dòng để bảng nhìn thoáng hơn
-    \begin{tabularx}{\textwidth}{|l|X|X|}
-        \hline
-        \textbf{Feature}     & \textbf{Mobile App}                                                                                                                                                                                                            & \textbf{Web App}                                                                                                                                                                             \\
-        \hline
-        Target Screen Size   & Supports sizes from 4.7 inches to 6.9 inches (Common aspect ratios: 16:9, 18:9, 19.5:9, and 20:9)                                                                                                                              & Laptop/Desktop screens from 13 inches up to 27 inches and above.                                                                                                                             \\
-        \hline
-        Screen Resolution    & Minimum: 720 x 1280 pixels (HD). Standard \& Optimal: 1080 x 1920 pixels (FHD) up to 1440 x 3200 pixels (QHD+).                                                                                                                & Minimum: 1024 x 768 pixels (Supports horizontal/vertical scrolling for older devices). Recommended \& Optimal: 1366 x 768 pixels (Standard laptops), 1920 x 1080 pixels (Full HD) and above. \\
-        \hline
-        Color Support        & Supports standard sRGB color gamut and DCI-P3 (for high-end devices) with 16 million colors (24-bit color depth), ensuring that warning icons and color-coded maps remain clearly visible even under bright outdoor lighting.  & Supports True Color (24-bit) or 32-bit. High color contrast must be ensured to facilitate the distinction of terrain layers and flooded areas on satellite maps.                             \\
-        \hline
-        Touch \& Interaction & Supports Multi-touch. Optimizes tap target sizes to a minimum of 44x44 pt according to Apple and Google accessibility standards, ensuring users can interact effortlessly during panicky situations or when the screen is wet. & No                                                                                                                                                                                           \\
-        \hline
-        Input Devices        & No                                                                                                                                                                                                                             & Optimized for Mouse and Keyboard operations. Supports shortcuts to help dispatchers execute actions rapidly.                                                                                 \\
-        \hline
-    \end{tabularx}
-\end{table}
+\renewcommand{\arraystretch}{1.3} % Tăng khoảng cách các dòng để bảng nhìn thoáng hơn
+\begin{xltabular}{\textwidth}{|l|X|X|}
+    \caption{Target device specifications}
+    \label{table:device_spec} \\
+    \hline
+    \textbf{Feature}     & \textbf{Mobile app}                                                                                                                                                                                                            & \textbf{Web app}                                                                                                                                                                             \\
+    \hline
+    \endfirsthead
 
-\subsubsection{UI Conventions}
+    \multicolumn{3}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \textbf{Feature}     & \textbf{Mobile app}                                                                                                                                                                                                            & \textbf{Web app}                                                                                                                                                                             \\
+    \hline
+    \endhead
 
-The user interface design system of FloodHelper is built upon three core criteria: Clarity, Speed, and Safety. Regarding the color palette, the project utilizes dark blue as the primary color to convey reliability, combined with a light background for the Web platform and Dark Mode for Mobile to optimize battery life during power outages. A crucial emphasis is placed on the strictly regulated semantic color system: red is exclusively used for emergencies (SOS), orange for risk warnings, and green indicates safety or a successful status. To ensure optimal legibility across all devices, the system employs modern sans-serif fonts such as Inter or Roboto, featuring a clear size hierarchy ranging from large headings (24-32px) to caption text (12px).
+    \hline
+    \multicolumn{3}{r}{\textit{Continued on next page}} \\
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    Target screen size   & Supports sizes from 4.7 inches to 6.9 inches (Common aspect ratios: 16:9, 18:9, 19.5:9, and 20:9)                                                                                                                              & Laptop/Desktop screens from 13 inches up to 27 inches and above.                                                                                                                             \\
+    \hline
+    Screen resolution    & Minimum: 720 x 1280 pixels (HD). Standard \& Optimal: 1080 x 1920 pixels (FHD) up to 1440 x 3200 pixels (QHD+).                                                                                                                & Minimum: 1024 x 768 pixels (Supports horizontal/vertical scrolling for older devices). Recommended \& Optimal: 1366 x 768 pixels (Standard laptops), 1920 x 1080 pixels (Full HD) and above. \\
+    \hline
+    Color support        & Supports standard sRGB color gamut and DCI-P3 (for high-end devices) with 16 million colors (24-bit color depth), ensuring that warning icons and color-coded maps remain clearly visible even under bright outdoor lighting.  & Supports True Color (24-bit) or 32-bit. High color contrast must be ensured to facilitate the distinction of terrain layers and flooded areas on satellite maps.                             \\
+    \hline
+    Touch \& interaction & Supports Multi-touch. Optimizes tap target sizes to a minimum of 44x44 pt according to Apple and Google accessibility standards, ensuring users can interact effortlessly during panicky situations or when the screen is wet. & No                                                                                                                                                                                           \\
+    \hline
+    Input devices        & No                                                                                                                                                                                                                             & Optimized for Mouse and Keyboard operations. Supports shortcuts to help dispatchers execute actions rapidly.                                                                                 \\
+    \hline
+\end{xltabular}
+
+\subsubsection{UI conventions}
+
+The user interface design system of FloodHelper is built upon three core criteria: clarity, speed, and safety. Regarding the color palette, the project utilizes dark blue as the primary color to convey reliability, combined with a light background for the web platform and dark mode for mobile to optimize battery life during power outages. A crucial emphasis is placed on the strictly regulated semantic color system: red is exclusively used for emergencies (SOS), orange for risk warnings, and green indicates safety or a successful status. To ensure optimal legibility across all devices, the system employs modern sans-serif fonts such as Inter or Roboto, featuring a clear size hierarchy ranging from large headings (24-32px) to caption text (12px).
 
 Interactive components, such as buttons and input fields, are designed with a transparent visual hierarchy to guide the user. Primary action buttons consistently stand out with a solid background color and rounded corners (8px on Web and 12-16px on Mobile for easy tapping), whereas secondary or text buttons feature a more minimalist design with outlines or no borders. Input fields and controls (checkboxes, radio buttons, toggles) are all mandated to have a minimum touch target size (e.g., 44px on Mobile) and display a blue border effect when focused. All user interactions, including pressing, hovering, or disabled states, provide synchronized visual feedback to simulate a realistic tactile feel.
 
-In terms of spatial organization and navigation, the Web interface utilizes a 12-column grid system with a left sidebar to accommodate a spacious administrative workspace, while the Mobile platform optimizes a 4-column grid combined with Bottom and Right Navigation bar for thumb-friendly reachability. The feedback messaging system is layered by priority: quick notifications (Toasts) appear at the bottom edge on Mobile or the top corner on Web, input errors are highlighted in red in real-time (Inline Validation), and critical decisions require a centralized Modal dialog with a dimmed background overlay. Finally, all icons within the system adhere to a unified stroke style, with a strict mandatory rule: life-or-death functions like SOS or location sharing must always be accompanied by text labels and absolutely never stand alone to prevent any misinterpretation during moments of user panic.
+In terms of spatial organization and navigation, the web interface utilizes a 12-column grid system with a left sidebar to accommodate a spacious administrative workspace, while the mobile platform optimizes a 4-column grid combined with bottom and right navigation bar for thumb-friendly reachability. The feedback messaging system is layered by priority: quick notifications (Toasts) appear at the bottom edge on mobile or the top corner on web, input errors are highlighted in red in real-time (Inline Validation), and critical decisions require a centralized modal dialog with a dimmed background overlay. Finally, all icons within the system adhere to a unified stroke style, with a strict mandatory rule: life-or-death functions like SOS or location sharing must always be accompanied by text labels and absolutely never stand alone to prevent any misinterpretation during moments of user panic.
 
-\subsubsection{Key Features Interface Mockups}
+\subsubsection{Key features interface mockups}
 
 For the rescue feature, these mockups in figure \ref{fig:Fig421a} illustrate the primary home screen of the mobile application and its interactive state, featuring a comprehensive, full-screen map layout. The design utilizes a light theme to maximize the contrast of semantic color-coded status markers, where red pins with radiating rings denote active distress signals ("BROADCASTING") and green pins represent active rescue personnel or safe individuals. The base interface includes a bottom navigation bar, a top toggle control for filtering map data layers like "Transport" and "Weather," and a right-aligned vertical toolbar culminating in a prominent, solid blue "SOS" button for immediate emergency reporting. Upon specific user interaction, an "Active Distress Signals" Bottom Sheet slides up over a dimmed map overlay, maintaining spatial context while displaying a card-based list of ongoing emergencies. Each card prioritizes critical victim data—such as name, contact information, and essential survival metrics (number of trapped individuals, vulnerable demographics, and resource availability) displayed via intuitive pill-shaped tags—alongside a solid dark blue "Locate" button to guide the rescuer's immediate response.
 
@@ -411,16 +423,16 @@ The following tables are the detailed class specifications for three key classes
     17 & \texttt{count} & \texttt{Promise\-$<$number$>$} & - & Returns the total count of distress signal records currently in the database. \\
 \end{xltabular}
 
-\subsubsection{Design Illustration}
+\subsubsection{Sequence Diagram}
 
-To further illustrate the dynamic interactions between the designed classes, the following sequence diagrams detail the execution flow of two core use cases: Creating a Signal and Handling a Signal. These diagrams map out the exact sequence of method calls across the Controller, Service, and Repository layers.
+To further illustrate the dynamic interactions between the designed classes, the following sequence diagrams detail the execution flow of two core use cases in server side: Broadcast Signal and Handle Signal. These diagrams map out the exact sequence of method calls across the Controller, Service, and Repository layers.
 
 The sequence diagram in figure \ref{fig:Fig422a} demonstrates the execution flow when a user initiates a new distress signal. The process begins with the \texttt{SignalController} receiving the creation request and delegating it to the \texttt{SignalService}. First, the service queries the \texttt{SignalRepository} to ensure the user does not already have an actively broadcasting signal. Once validated, the system persists the new signal entity in the database. To alert the appropriate personnel, the service retrieves the creator's profile via the \texttt{UserRepository} to identify their specific ward and subsequently fetches a list of available rescuers within that area. Finally, the \texttt{FirebaseService} dispatches a multicast push notification to these designated rescuers, while the system iteratively logs a formal system announcement for each rescuer through the \texttt{AnnouncementRepository}.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SD_CreateSignal.png}
-    \caption{Sequence Diagram for Usecase "Create Signal" on the server side}
+    \caption{Sequence diagram for use case "Broadcast signal" on the server side}
     \label{fig:Fig422a}
 \end{figure}
 
@@ -429,39 +441,40 @@ Next, this sequence diagram in figure \ref{fig:Fig422b} illustrates the backend 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/ArchitectureDesign/SD_HandleSignal.png}
-    \caption{Sequence Diagram for Usecase "Handle Signal" on the server side}
+    \caption{Sequence diagram for use case "Handle signal" on the server side}
     \label{fig:Fig422b}
 \end{figure}
 
 \subsection{Database design}
 
-The Entity-Relationship Diagram (ERD) of the system in figure \ref{fig:Fig423a} is designed to encompass a multi-functional platform that integrates social networking, emergency rescue support, and charity campaign management. At the core of the system is the user and authentication module, where the \texttt{User} entity plays a central role. Each \texttt{User} is linked to a single \texttt{Account} to manage login credentials in a one-to-one relationship, while simultaneously possessing multiple \texttt{Profile} entities to record personal profile modification history in a one-to-many relationship. The system also manages active sessions through the \texttt{Session} entity and supports third-party authentication via \texttt{Provider}. Expanding from this core is the social network module, allowing users to create \texttt{Post} entries, leave \texttt{Comment} records, and drop \texttt{Like} reactions. Social interactions are further strengthened through the \texttt{Friendship} entity, and the friend-making process is managed by the \texttt{FriendMakingRequest} entity.
+The FloodHelper database is designed to support the system's core functionalities, including user management, social networking, emergency rescue coordination, charity campaign management, and real-time communication. The database follows a relational model implemented using PostgreSQL, providing a structured and consistent mechanism for storing application data.
+
+As illustrated in Figure \ref{fig:Fig423a}, the database schema is organized into several functional modules. The user management module is centered around the User entity, which stores user information and is associated with entities such as Account, Profile, Session, and Provider to support authentication, profile management, and session tracking. Social networking functionalities are implemented through entities including Friendship, FriendMakingRequest, Post, Comment, and Like, enabling users to establish relationships and interact with shared content.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/DatabaseDesign/ERD.png}
-    \caption{Entity-Relationship Diagram}
+    \caption{Entity-relationship diagram}
     \label{fig:Fig423a}
 \end{figure}
 
-In addition to social features, the charity and rescue modules are crucial highlights of the system. The \texttt{CharityCampaign} entity represents philanthropic campaigns organized by a \texttt{User}, which is closely linked to \texttt{Transaction} entities for donation management, \texttt{Supply} for relief items, \texttt{FinancialSupport} for direct financial aid, and \texttt{AnnouncementFromBenefactor} for posting updates. The transparency of cash flow is ensured through links with the \texttt{Bank} and \texttt{BankAccount} entities. In emergency situations, the rescue module allows victims to generate \texttt{Signal} entities containing information about trapped individuals and necessary supplies, directly connecting them with other \texttt{User} entities acting as rescuers for timely assistance. Finally, the system integrates a messaging module featuring \texttt{ChatRoom}, \texttt{Message}, and the intermediary \texttt{RoomMember} entity, along with system-level entities such as \texttt{Province} and \texttt{Ward} for geographical standardization, and \texttt{WeatherMap} to provide weather data for rescue operations.
+The charity campaign module manages fundraising activities through entities such as CharityCampaign, Transaction, Supply, FinancialSupport, and AnnouncementFromBenefactor. These entities record campaign information, donation transactions, relief item distribution, and campaign announcements, while Bank and BankAccount provide the information required for donation processing and financial transparency.
 
-The logical database design process, specifically the transition from the ERD to the PostgreSQL database management system, is strictly executed based on standard mapping rules. Initially, strong entities in the ERD are directly converted into corresponding tables, with their identifying attributes becoming primary keys. To ensure uniqueness in a distributed environment, the majority of primary keys utilize PostgreSQL's specific \texttt{UUID} data type rather than auto-incrementing integers, whereas simple attributes are mapped to appropriate data types such as \texttt{VARCHAR}, \texttt{TIMESTAMP}, or \texttt{DECIMAL}. For one-to-one relationships, such as the one between \texttt{User} and \texttt{Account}, the primary key of the \texttt{User} table is embedded into the \texttt{Account} table as a foreign key accompanied by a \texttt{UNIQUE} constraint. Similarly, for the highly prevalent one-to-many relationships within the system, the primary key of the "one" side is added to the "many" side as a foreign key; for instance, the \texttt{province\_code} column in the \texttt{Ward} table references the \texttt{Province} table, or the \texttt{created\_by} column in the \texttt{Post} table references the \texttt{User} table.
+Emergency rescue operations are supported by the Signal entity, which stores distress requests submitted by victims and the associated rescue information. In addition, communication between users is facilitated through ChatRoom, RoomMember, and Message, while geographical reference data are maintained using the Province and Ward entities. The WeatherMap entity stores weather information that supports rescue-related functionalities.
 
-The handling of more complex data structures is also flexibly applied according to the specific characteristics of PostgreSQL. For many-to-many relationships, the system resolves them by establishing intermediate junction tables, such as the \texttt{Like} table for post interactions or the \texttt{RoomMember} table for chat rooms, where the primary key is typically a composite key combining the foreign keys of the two original tables. A distinctive feature of this design is the treatment of multivalued attributes; rather than separating them into distinct tables per traditional First Normal Form (1NF) standards, the system directly leverages PostgreSQL's \texttt{Array} data type, as seen with the \texttt{role} string array in the \texttt{User} table, to optimize data query performance. Derived attributes, typically exemplified by the member count in a chat room, are also materialized into actual columns—such as \texttt{member\_count}—rather than being recalculated during each query to enhance the system's read speed. Lastly, recursive relationships are addressed by using the table's own primary key as a foreign key within the same table, illustrated by an \texttt{Account} creating another \texttt{Account} or a \texttt{User} sending a friend request to another \texttt{User}.
-
-The resulting database schema is illustrated in the figure \ref{fig:Fig423b}.
+The relational database schema is derived from the conceptual design by defining primary keys, foreign keys, and integrity constraints to preserve data consistency and relationships among entities. UUID is adopted as the primary key type for most entities to provide globally unique identifiers suitable for distributed applications. Figure \ref{fig:Fig423b} presents the resulting relational database schema implemented in PostgreSQL.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/DatabaseDesign/tables_drawio.png}
-    \caption{Database Schema}
+    \caption{Database schema}
     \label{fig:Fig423b}
 \end{figure}
 
-\section{Application Building}
-\subsection{Libraries and Tools}
-Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư viện, IDE, công cụ kiểm thử, v.v. mà mình sử dụng để phát triển ứng dụng. Mỗi công cụ phải được chỉ rõ phiên bản sử dụng. SV nên kẻ bảng mô tả tương tự như Bảng \ref{table:my_label}. Nếu có nhiều nội dung trình bày, sinh viên cần xoay ngang bảng.
+\section{Application building}
+\subsection{Libraries and tools}
+
+Table \ref{table:tools_libraries_versions} lists the programming languages, software development kits, key libraries, APIs, and development tools utilized to build the various modules of the FloodHelper system, along with their respective versions and official resources.
 
 \renewcommand{\arraystretch}{1.2}
 \begin{longtable}{ p{0.28\textwidth} p{0.22\textwidth} p{0.15\textwidth} p{0.25\textwidth} }
@@ -486,7 +499,7 @@ Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư việ
     \endlastfoot
 
     % --- TABLE DATA ---
-    \multicolumn{4}{l}{\textbf{1. Frontend Module (Mobile \& Web App - Flutter/Dart)}}                                                                           \\ \hline
+    \multicolumn{4}{l}{\textbf{1. Frontend module}}                                                                           \\ \hline
     Programming language            & Dart SDK                              & >=3.10.1 <4.0.0  & \url{https://dart.dev/}                                         \\
     Development framework           & Flutter SDK                           & >=3.38.1         & \url{https://flutter.dev/}                                      \\
     State management                & flutter\_riverpod                     & 2.6.1            & \url{https://pub.dev/packages/flutter_riverpod}                 \\
@@ -507,7 +520,7 @@ Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư việ
     Image display \& zoom           & photo\_view                           & 0.14.0           & \url{https://pub.dev/packages/photo_view}                       \\
     SVG vector image display        & flutter\_svg                          & 2.2.3            & \url{https://pub.dev/packages/flutter_svg}                      \\ \hline
 
-    \multicolumn{4}{l}{\textbf{2. Backend Module (NestJS/Node.js Application Server)}}                                                                           \\ \hline
+    \multicolumn{4}{l}{\textbf{2. Backend module}}                                                                           \\ \hline
     Programming language            & TypeScript                            & 5.9.3            & \url{https://www.typescriptlang.org/}                           \\
     Server runtime environment      & Node.js                               & >= 20.x          & \url{https://nodejs.org/}                                       \\
     Core development framework      & NestJS (@nestjs/core)                 & 11.1.9           & \url{https://nestjs.com/}                                       \\
@@ -526,14 +539,14 @@ Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư việ
     DTO validation                  & class-validator                       & 0.14.3           & \url{https://github.com/typestack/class-validator}              \\
     Environment variable loader     & dotenv                                & 17.2.3           & \url{https://github.com/motdotla/dotenv}                        \\ \hline
 
-    \multicolumn{4}{l}{\textbf{3. MqttClient Module (MQTT Communication - Python)}}                                                                              \\ \hline
+    \multicolumn{4}{l}{\textbf{3. MqttClient module}}                                                                              \\ \hline
     Programming language            & Python                                & 3.x              & \url{https://www.python.org/}                                   \\
     API Client building             & FastAPI                               & >= 0.100.0       & \url{https://fastapi.tiangolo.com/}                             \\
     API execution server (ASGI)     & Uvicorn                               & >= 0.23.0        & \url{https://www.uvicorn.org/}                                  \\
     MQTT Broker connection          & paho-mqtt                             & >= 1.6.1         & \url{https://pypi.org/project/paho-mqtt/}                       \\
     HTTP communication to Backend   & requests                              & >= 2.31.0        & \url{https://requests.readthedocs.io/}                          \\ \hline
 
-    \multicolumn{4}{l}{\textbf{4. IDE, Testing, Code Standards \& Deployment}}                                                                                   \\ \hline
+    \multicolumn{4}{l}{\textbf{4. IDE, testing, code standards \& deployment}}                                                                                   \\ \hline
     Programming IDE                 & Visual Studio Code                    & Latest           & \url{https://code.visualstudio.com/}                            \\
     Source code version control     & Git                                   & Latest           & \url{https://git-scm.com/}                                      \\
     Virtualization environment      & Docker                                & Latest           & \url{https://www.docker.com/}                                   \\
@@ -546,22 +559,22 @@ Sinh viên liệt kê các công cụ, ngôn ngữ lập trình, API, thư việ
 
 The primary achievement of the FloodHelper project is the successful design, implementation, and packaging of a comprehensive, multi-platform software ecosystem designed to facilitate disaster response and charity coordination activities. The system has been fully built, packaged, and verified through local deployments, comprising three distinct packaged products operating concurrently on a unified relational database.
 
-\subsubsection{Packaged Software Products and Component Details}
+\subsubsection{Packaged software products and component details}
 
 This section describes the delivery package formats, key components, and architectural roles of each product within the FloodHelper ecosystem. For clarity, these details are summarized in Table \ref{table:packaged_products_details}.
 
 \renewcommand{\arraystretch}{1.4}
 \begin{xltabular}{\textwidth}{|P{2.8cm}|P{3.6cm}|X|X|}
-    \caption{Details of Packaged Software Products}
+    \caption{Details of packaged software products}
     \label{table:packaged_products_details} \\
     \hline
-    \textbf{Product / Module} & \textbf{Delivery Package} & \textbf{Key Components} & \textbf{Significance and Role} \\
+    \textbf{Product / Module} & \textbf{Delivery package} & \textbf{Key components} & \textbf{Significance and role} \\
     \hline
     \endfirsthead
 
     \multicolumn{4}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
     \hline
-    \textbf{Product / Module} & \textbf{Delivery Package} & \textbf{Key Components} & \textbf{Significance and Role} \\
+    \textbf{Product / Module} & \textbf{Delivery package} & \textbf{Key components} & \textbf{Significance and role} \\
     \hline
     \endhead
 
@@ -572,35 +585,35 @@ This section describes the delivery package formats, key components, and archite
     \hline
     \endlastfoot
 
-    \textbf{Frontend Client} (Mobile App \& Web Admin Desk) &
+    \textbf{Frontend client} (Mobile app \& Web admin desk) &
     Compiled Android APK (\texttt{app-debug.apk}: 106.49 MB, \texttt{app-release.apk}: $\approx$ 22 MB) and compiled static HTML/JS assets. &
     Flutter layout widgets (\texttt{HomeScreen} map dashboard, \texttt{DistressSignalSheet}, \texttt{Charity} transaction cards, authority views), state providers (\texttt{Riverpod}), and client communication integrations (\texttt{Dio}, \texttt{Geolocator}, \texttt{MqttClient}). &
     Serves as the interactive touchpoint. The mobile app lets users stream real-time coordinate changes via MQTT and dispatch SOS signals. The web app acts as the dispatch dashboard for rescue organizations to coordinate operations and approve charity requests. \\
     \hline
-    \textbf{Backend Server} (NestJS API App) &
+    \textbf{Backend server} (NestJS app) &
     Self-contained Docker Image (\texttt{floodhelper-backend:latest} $\approx$ 320 MB) containing NestJS compiled JavaScript in \texttt{dist/} folder (1.60 MB, 430 files). &
     REST Controllers mapping API routes, NestJS services for SOS validation and auth filters, Prisma database clients, and third-party integrations (Firebase Admin SDK, VietQR integration, Cloudinary API). &
     Acts as the central business engine of the system, verifying accounts, securing data access boundaries, checking DTO inputs, managing notification triggers, and handling transactional email dispatches. \\
     \hline
-    \textbf{MQTT Worker} (Data Coordinator) &
+    \textbf{MQTT worker} (Data coordinator) &
     Lightweight Docker Image (\texttt{floodhelper-mqtt-worker:latest} $\approx$ 120 MB) running Python 3 and FastAPI. &
     Persistent Paho-MQTT connection client, temporary background message queue handlers, and API request forwarding dispatcher. &
     Acts as a real-time data coordinator. It subscribes to high-frequency MQTT coordinate streams from active devices. Instead of writing directly to the database, it processes and forwards coordinate payloads to main NestJS server REST endpoints to offload HTTP connection traffic and preserve architecture layers. \\
     \hline
-    \textbf{Database Schema} (PostgreSQL) &
+    \textbf{Database schema} (PostgreSQL) &
     Database initialization scripts and migration files generated via \texttt{prisma/schema.\newline prisma}. &
     Structured tables (\texttt{User}, \texttt{Account}, \texttt{Profile}, \texttt{Signal}, \texttt{Friendship}, \texttt{CharityCampaign}, \texttt{Transaction}, geocoded tables for \texttt{Province} and \texttt{Ward}). &
     Provides persistent storage with transactional integrity, enforcing one-to-one mapping for accounts, one-to-many associations for tracking history, and multi-relational structures for volunteer messaging and spatial tracking. \\
     \hline
 \end{xltabular}
 
-\subsubsection{Source Code and Package Metrics}
+\subsubsection{Source code and package metrics}
 
 To evaluate the engineering scope of the system, a static code analysis was conducted across all active repositories. Excluded from this assessment are third-party libraries (\texttt{node\_modules}, generated Flutter assets in \texttt{.dart\_tool}, test cache files, and report documents). Table \ref{table:code_statistics} details the breakdown of source files, package modules, class counts, source lines of code (SLOC), and physical sizes.
 
 \begin{table}[H]
     \centering
-    \caption{Summary of Source Code and Packaged Product Statistics}
+    \caption{Summary of source code and packaged product statistics}
     \label{table:code_statistics}
     \renewcommand{\arraystretch}{1.3} % Tighten row margins for legibility
 
@@ -629,8 +642,8 @@ This section highlights the core interfaces of the application, detailing the mo
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ScreenShot/Home.png}
-    \caption{Home Screen}
+    \includegraphics[width=0.6\textwidth]{Figure/ScreenShot/Home.png}
+    \caption{Home screen}
     \label{fig:Fig433a}
 \end{figure}
 
@@ -643,7 +656,7 @@ Following the SOS broadcast feature introduced on the Home screen, the applicati
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/ScreenShot/BroadcastSignal.png}
-    \caption{Broadcast Signal for User}
+    \caption{Broadcast signal for user}
     \label{fig:Fig433b}
 \end{figure}
 
@@ -652,7 +665,7 @@ Conversely, the system equips authorized responders with specialized tools to tr
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/ScreenShot/BroadcastSignal.png}
-    \caption{Signal List for Rescuer}
+    \caption{Signal list for rescuer}
     \label{fig:Fig433c}
 \end{figure}
 
@@ -660,7 +673,7 @@ Following the critical emergency response features, the application also facilit
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figure/ScreenShot/CampaignForEveryone.png}
+    \includegraphics[width=0.5\textwidth]{Figure/ScreenShot/CampaignForEveryone.png}
     \caption{View campaigns for everyone}
     \label{fig:Fig433d}
 \end{figure}
@@ -670,7 +683,7 @@ Transitioning to the administrative side of these relief efforts, the figure \re
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Figure/ScreenShot/CampaignForBenefactor.png}
-    \caption{Campaign Management for benefactor}
+    \caption{Campaign management for benefactor}
     \label{fig:Fig433e}
 \end{figure}
 
@@ -678,37 +691,37 @@ Transitioning to the administrative side of these relief efforts, the figure \re
 
 To verify that the FloodHelper ecosystem operates reliably under field conditions, a multi-layered testing strategy was implemented. The testing workflow covers individual components, data pipelines, real-time protocols, and interactive user journeys.
 
-\subsection{Testing Methodology and Techniques}
+\subsection{Testing methodology and techniques}
 
 The system quality assurance process was conducted across three distinct testing levels:
 \begin{itemize}
-    \item \textbf{Unit Testing:} Implemented on the NestJS backend (using Jest) to test services, and on the Flutter frontend (using Flutter Test) to verify Riverpod view models and business validation logic.
-    \item \textbf{Integration and E2E Testing:} Focused on data transfers between the mobile client, the Python MQTT Worker, the NestJS server, and the database. Payment callbacks (VietQR hook) were also validated.
-    \item \textbf{UI and Widget Testing:} Performed UI verification using Flutter's widget testing framework. This includes golden image rendering tests to ensure map pins and role badges render consistently across varied resolutions.
+    \item Unit testing: Implemented on the NestJS backend (using Jest) to test services, and on the Flutter frontend (using Flutter Test) to verify Riverpod view models and business validation logic.
+    \item Integration and E2E testing: Focused on data transfers between the mobile client, the Python MQTT Worker, the NestJS server, and the database. Payment callbacks (VietQR hook) were also validated.
+    \item UI and widget testing: Performed UI verification using Flutter's widget testing framework. This includes golden image rendering tests to ensure map pins and role badges render consistently across varied resolutions.
 \end{itemize}
 
 The test cases were designed using the following techniques:
 \begin{itemize}
-    \item \textbf{State Transition Testing:} Used to verify status transitions for SOS signals (\texttt{BROADCASTING} $\rightarrow$ \texttt{HANDLED} $\rightarrow$ \texttt{STOPPED}) and charity campaigns (\texttt{Pending} $\rightarrow$ \texttt{Approved}/\texttt{Rejected} $\rightarrow$ \texttt{Finished}) without deadlock.
-    \item \textbf{Equivalence Partitioning (EP) and Boundary Value Analysis (BVA):} Utilized to define validation boundaries for geographic coordinates, integer limits (such as trapped victims count), and payment limits.
-    \item \textbf{Use Case Testing:} Developed based on user stories representing critical field actions to verify collaboration across multiple systems.
+    \item State transition testing: Used to verify status transitions for SOS signals (\texttt{BROADCASTING} $\rightarrow$ \texttt{HANDLED} $\rightarrow$ \texttt{STOPPED}) and charity campaigns (\texttt{Pending} $\rightarrow$ \texttt{Approved}/\texttt{Rejected} $\rightarrow$ \texttt{Finished}) without deadlock.
+    \item Equivalence partitioning (EP) and boundary value analysis (BVA): Utilized to define validation boundaries for geographic coordinates, integer limits (such as trapped victims count), and payment limits.
+    \item Use case testing: Developed based on user stories representing critical field actions to verify collaboration across multiple systems.
 \end{itemize}
 
-\subsection{Test Case Design for Core Functions}
+\subsection{Test case design for core functions}
 
 Testing was focused on three core functionalities: Distress Signaling, Real-time Location Tracking, and Charity Campaign Management. Representative test cases highlighting these core features are summarized in Table \ref{table:representative_test_cases}.
 
 \renewcommand{\arraystretch}{1.3}
 \begin{xltabular}{\textwidth}{|l|l|X|c|}
-    \caption{Representative Core Test Cases Summary}
+    \caption{Representative core test cases summary}
     \label{table:representative_test_cases} \\
     \hline
-    \textbf{Test ID} & \textbf{Feature} & \textbf{Key Action \& Expected Outcome} & \textbf{Status} \\
+    \textbf{Test ID} & \textbf{Feature} & \textbf{Key action \& expected outcome} & \textbf{Status} \\
     \hline
     \endfirsthead
     \multicolumn{4}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
     \hline
-    \textbf{Test ID} & \textbf{Feature} & \textbf{Key Action \& Expected Outcome} & \textbf{Status} \\
+    \textbf{Test ID} & \textbf{Feature} & \textbf{Key action \& expected outcome} & \textbf{Status} \\
     \hline
     \endhead
     \hline \multicolumn{4}{r}{\textit{Continued on next page}} \\
@@ -724,14 +737,14 @@ Testing was focused on three core functionalities: Distress Signaling, Real-time
     TC-CHA-003 & Charity Campaign & Bank payment callback matches transaction ID; system automatically updates campaign funds. & Pass \\ \hline
 \end{xltabular}
 
-\subsection{Summary of Test Results}
+\subsection{Summary of test results}
 
 A total of 85 automated and manual test cases were executed across different system modules. The distribution of test counts, testing frameworks, and execution results are summarized in Table \ref{table:testing_summary}.
 
 \renewcommand{\arraystretch}{1.3}
 \begin{table}[H]
     \centering
-    \caption{Summary of Test Executions and Pass Rates}
+    \caption{Summary of test executions and pass rates}
     \label{table:testing_summary}
     \begin{tabularx}{\textwidth}{|l|X|c|c|c|}
         \hline
@@ -752,13 +765,13 @@ A total of 85 automated and manual test cases were executed across different sys
     \end{tabularx}
 \end{table}
 
-\subsection{Retrospective: Failure Analysis and Resolutions}
+\subsection{Retrospective: failure analysis and resolutions}
 
 During development testing cycles, several test runs initially failed. A retrospective analysis details the root causes and the engineering solutions implemented:
 
 \begin{itemize}
-    \item \textbf{Background Location Tracking Failures:} Android OS power-saving routines put the background location collection to sleep after 10 minutes. This was resolved by wrapping the background isolate inside a native foreground service using the \texttt{flutter\_background\_service} plugin and showing a persistent notification.
-    \item \textbf{State Synchronization Delay in SOS Handling:} When a rescuer accepts a victim's request, a handling confirmation message is sent to the MQTT worker. However, due to network transit time, the victim's device may not receive this confirmation immediately and continues to broadcast active SOS signals. As a result, the victim's distress pin fails to disappear from the rescuers' map interfaces. This was resolved by implementing a short-term caching mechanism on the MQTT worker: when a "handled" event for Victim X is processed, their ID is temporarily cached for 10 seconds. If any further SOS packets are received from Victim X during this time window, the worker intercepts the packet and mutates the \texttt{sos} status flag to \texttt{false} before forwarding it, ensuring consistent map UI updates across all clients.
+    \item Background location tracking failures: Android OS power-saving routines put the background location collection to sleep after 10 minutes. This was resolved by wrapping the background isolate inside a native foreground service using the \texttt{flutter\_background\_service} plugin and showing a persistent notification.
+    \item State synchronization delay in SOS handling: When a rescuer accepts a victim's request, a handling confirmation message is sent to the MQTT worker. However, due to network transit time, the victim's device may not receive this confirmation immediately and continues to broadcast active SOS signals. As a result, the victim's distress pin fails to disappear from the rescuers' map interfaces. This was resolved by implementing a short-term caching mechanism on the MQTT worker: when a "handled" event for Victim X is processed, their ID is temporarily cached for 10 seconds. If any further SOS packets are received from Victim X during this time window, the worker intercepts the packet and mutates the \texttt{sos} status flag to \texttt{false} before forwarding it, ensuring consistent map UI updates across all clients.
 \end{itemize}
 
 \end{document}

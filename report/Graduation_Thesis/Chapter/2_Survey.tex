@@ -14,20 +14,18 @@ A thorough survey of the current landscape is essential to identify the precise 
 
 % Concurrently, an analysis of public sentiment regarding post-disaster relief operations highlights a severe crisis of trust in charity management. Following several high-profile controversies where tens of billions of VND in relief funds were mismanaged or lacked independent auditing, the community has articulated a strict demand for absolute financial transparency. Currently, donors encounter significant difficulties in verifying whether their financial contributions actually reach the intended recipients, as traditional methods of posting unstructured bank statements on social media are highly susceptible to manipulation and lack traceability. There is a clear, practical requirement from the community for a centralized, tamper-proof platform that standardizes the charity lifecycle. Donors and authorities require a system that not only publicly records financial transactions but also visually tracks the physical distribution of relief goods. This dual practical context—the need for resilient emergency communication and the demand for absolute charity transparency—directly dictates the core functional requirements of the proposed system.
 
-\subsection{Analysis of Existing Systems and Similar Applications}
+\subsection{Analysis of existing systems and similar applications}
 \label{subsection:2.1.1}
 
-Currently, several applications are utilized by the community during emergencies; however, they exhibit fundamental architectural and functional gaps when applied to severe flood scenarios and post-disaster relief.
+To identify the functional requirements of the proposed system, several existing applications related to communication, location sharing, emergency rescue, and charity management were studied. The selected systems include Zalo~\cite{zaloapp}, a web-based SOS platform~\cite{antoanmualu}, and Whoo~\cite{whooapp}, as they represent different approaches to location sharing and emergency support.
 
-\textbf{Zalo / Instant Messaging Applications:} Zalo is the most popular communication tool in Vietnam. Users can share their live location with contacts; however, this feature is strictly session-based and requires manual activation within a specific chat box. Crucially, it lacks continuous background tracking and entirely fails when the Internet connection drops. It also does not provide a centralized mechanism to broadcast SOS signals directly to authorized rescue teams.
+Zalo - instant messaging application: Zalo~\cite{zaloapp} is the most popular communication tool in Vietnam. Users can share their live location with contacts. However, this feature is strictly session-based and requires manual activation within a specific chat box. Crucially, it lacks continuous background tracking and entirely fails when the Internet connection drops. It also does not provide a centralized mechanism to broadcast SOS signals directly to authorized rescue teams.
 
-\textbf{Web-based SOS Platforms (An toàn cứu hộ):} These are dedicated platforms designed to transmit distress signals. While directly connected to rescue operations, their primary limitation is their reliance on web browsers, meaning they operate strictly online. If a victim loses network connectivity, the system immediately drops the connection, preventing any signal transmission. Furthermore, these platforms often lack features for victims to share their status with family members.
+"An toàn cứu hộ" - web-based SOS platform: It is dedicated platforms designed to transmit distress signals. While directly connected to rescue operations, its primary limitation is their reliance on web browsers, meaning they operate strictly online. If a victim loses network connectivity, the system immediately drops the connection, preventing any signal transmission. Furthermore, these platforms often lack features for victims to share their status with family members.
 
-\textbf{"Whoo" and Social Location Apps:} "Whoo" is a mobile application designed for sharing locations among friends. It successfully implements a mechanism to save the user's last known location (last-location caching). However, it is primarily built for social networking rather than emergency response, meaning it cannot link victims with professional rescue units. Additionally, the application has been reported to suffer from synchronization instability.
+Whoo - social location app: Whoo~\cite{whooapp} is a mobile application designed for sharing locations among friends. It successfully implements a mechanism to save the user's last known location (last-location caching). However, it is primarily built for social networking rather than emergency response, meaning it cannot link victims with professional rescue units. Additionally, the application has been reported to suffer from synchronization instability.
 
-None of the aforementioned systems incorporate functionalities to manage post-disaster charity campaigns, leaving the transparency of relief distribution entirely unaddressed.
-
-To provide a clearer perspective, Table 2.1 summarizes the comparison between existing applications and the proposed FloodHelper system.
+Table \ref{table:2.1} summarizes the comparison between these existing systems and the proposed FloodHelper application. The comparison shows that existing systems typically focus on only one aspect of disaster support. Messaging applications mainly provide communication functions, while emergency platforms emphasize incident reporting. None of the surveyed systems integrates emergency rescue coordination with charity campaign management into a unified platform. Therefore, this graduation project proposes an integrated system that combines these functions to better support flood disaster response and post-disaster relief activities.
 
 \begin{table}[htpb]
     \centering
@@ -36,70 +34,56 @@ To provide a clearer perspective, Table 2.1 summarizes the comparison between ex
     \renewcommand{\arraystretch}{1.3} % Tăng khoảng cách các dòng để bảng nhìn thoáng hơn
     \begin{tabular}{|l|c|c|c|c|}
         \hline
-        \textbf{Feature} & \textbf{Zalo} & \textbf{Web SOS} & \textbf{Whoo} & \textbf{Proposed System} \\
+        \textbf{Feature}               & \textbf{Zalo} & \textbf{Web SOS} & \textbf{Whoo} & \textbf{Proposed System} \\
         \hline
-        Platform & Mobile / PC & Web & Mobile & Mobile \& Web \\
+        Platform                       & Mobile / PC   & Web              & Mobile        & Mobile \& Web            \\
         \hline
-        Offline Last-Location Saving & No & No & Yes & Yes \\
+        Offline Last-Location Saving   & No            & No               & Yes           & Yes                      \\
         \hline
-        Continuous Background Tracking & No & No & Yes & Yes \\
+        Continuous Background Tracking & No            & No               & Yes           & Yes                      \\
         \hline
-        Direct Rescue Team Integration & No & Yes & No & Yes \\
+        Direct Rescue Team Integration & No            & Yes              & No            & Yes                      \\
         \hline
-        Transparent Charity Management & No & No & No & Yes \\
+        Transparent Charity Management & No            & No               & No            & Yes                      \\
         \hline
     \end{tabular}
 \end{table}
 
-\subsection{Essential software features to be developed}
+\subsection{Functional requirements of the proposed system}
 \label{subsection:2.1.2}
 
-Derived from the critical analysis of existing solutions and the specific demands of flood rescue operations, the proposed FloodHelper system must integrate a comprehensive suite of functionalities. These essential features are categorized into four primary subsystems:
+Based on the survey of existing applications and the practical requirements of flood disaster response, the proposed FloodHelper system is designed to provide an integrated platform that supports emergency communication, rescue coordination, and charity campaign management. The major software features to be developed are described as follows.
 
-\subsubsection{Rescue and Location Tracking Subsystem (Mobile Application)}
-\label{subsubsection:a.}
+\subsubsection{User and role management}
+\label{subsubsection:user_role_management}
+The system provides user registration, authentication, and profile management for different types of users, including Normal Users, Benefactors, Rescuers, Authorities, and Administrators. Depending on the assigned role, users are granted different permissions to access the corresponding system functions. The system also supports role application and profile verification workflows to ensure that privileged roles are approved by the responsible authorities before becoming active.
 
-\textbf{Background Synchronization and Privacy Control:} The application must maintain a persistent background isolate to periodically capture and push GPS coordinates. Crucially, the user's real-time online/offline status is continuously embedded directly within this location data payload. Users can share this comprehensive real-time data with connected friends. Additionally, a "freeze" mechanism is implemented, allowing users to pause live tracking for specific friends, who will then only have access to the user's last known location and status.
+\subsubsection{Friend connection and location sharing}
+\label{subsubsection:friend_location_sharing}
+The application enables users to establish friend connections and periodically share their current locations with connected friends while the application is running. Besides geographical coordinates, the shared information also reflects the user's current availability status, allowing friends to know whether the user is currently online or offline. To provide greater control over personal privacy, users can temporarily suspend location updates for selected friends, who will then only be able to view the user's last shared location until sharing is resumed.
 
-\textbf{MQTT-Driven SOS Broadcasting:} Victims can trigger distress signals encompassing their current coordinates and specific physical conditions. To guarantee low latency and high transmission success rates in intermittent networks, all location sharing and SOS broadcasting strictly utilize the MQTT protocol.
+\subsubsection{Emergency rescue support}
+\label{subsubsection:emergency_rescue_support}
+The system provides emergency communication functions that allow users to broadcast distress signals together with their current locations during flood situations. Rescue personnel can monitor active emergency requests, identify victims on a digital map, and update the handling status of each rescue request. Throughout the rescue process, location information is periodically synchronized so that both victims and rescuers can track rescue progress more effectively.
 
-\textbf{Rescue Coordination and Visualization:} Rescuers can retrieve a dynamically updated list of active SOS signals, automatically sorted by severity to prioritize urgent cases. During an active rescue, victims can view the rescuer's live location on their screen. Once a victim is successfully rescued, the system immediately halts the specific SOS broadcast, notifying all other rescuers to prevent redundant deployment.
+\subsubsection{Charity campaign management}
+\label{subsubsection:charity_campaign_management}
+The system supports the complete lifecycle of charity campaigns, from campaign creation and approval to donation collection, relief distribution, and financial reporting. Benefactors can organize charity campaigns, while authorities review submitted campaigns before publication. During campaign execution, donors are able to monitor campaign progress, distribution activities, and financial statements to improve transparency.
 
-\textbf{Inter-Rescuer Collaboration:} Rescuers operating within the same administrative ward can share live locations with each other to orchestrate joint operations. Furthermore, a dedicated distress feature allows rescuers to broadcast their own SOS signals to peer rescuers in case of secondary emergencies.
+\subsubsection{Public information and notification}
+\label{subsubsection:public_information_notification}
+Authorities can publish public announcements regarding weather conditions, emergency instructions, evacuation guidance, or other disaster-related information. The application delivers these announcements to users located in the affected areas, allowing important information to be disseminated promptly. In addition, the system generates notifications for rescue activities, charity campaigns, and account-related events to keep users informed of important updates.
 
-\textbf{Offline Tracking and Perimeter Establishment:} In scenarios involving complete network disconnection, Rescuers can securely query the MQTT broker to retrieve a victim's last recorded coordinates along with their last known connection status. This allows rescue teams to establish a reliable search perimeter even when the victim is entirely offline.
+\subsubsection{Administrative management}
+\label{subsubsection:administrative_management}
+Administrative functions are provided to support overall system operation and supervision. Administrators can manage user accounts, while authorities review role applications, profile update requests, and charity campaign requests. These management functions help ensure that the platform operates in accordance with the defined policies and maintains the integrity of system data.
 
-\subsubsection{Transparent Charity Management Subsystem (Mobile Application)}
-\label{subsubsection:b.}
-
-\textbf{Campaign Lifecycle and Spatial Tracking:} The system manages the strict state transitions of a charity campaign. During the distribution phase, the system visually marks the Benefactor's real-time geographical positions on the map, providing spatial proof of relief delivery.
-
-\textbf{Donation Processing and Traceability:} The application integrates the VietQR API to automatically generate payment QR codes for donors. Users can seamlessly donate and track the detailed transaction flow, ensuring financial transparency.
-
-\textbf{Campaign Announcements:} Benefactors are equipped with tools to publish official announcements, keeping donors updated on the campaign's progress and relief distribution.
-
-\subsubsection{Administration and Moderation Subsystem (Web Platform)}
-\label{subsubsection:c.}
-
-\textbf{Role Verification and Campaign Moderation:} A dedicated web dashboard empowers Authorities to rigorously verify the credentials of registered Rescuers and Benefactors. Authorities govern campaign lifecycles by approving activations, monitoring ongoing states, and executing immediate suspensions if fraudulent activities are detected.
-
-\textbf{Regional Broadcast Notifications:} Authorities have the capability to publish official warnings, weather updates, or emergency directives to all users residing within their specific administrative jurisdictions.
-
-\textbf{System Administration:} A high-level Admin role is established to manage the overall user base, specifically focusing on creating, assigning, and updating Authority accounts.
-
-\subsubsection{Social Connectivity Subsystem (Mobile Application)}
-\label{subsubsection:d.}
-
-\textbf{Network Establishment:} To facilitate the foundational location-sharing feature among peers, the application allows users to establish connections and add friends via email addresses securely.
-
-\section{Functional Overview}
+\section{Functional overview}
 \label{section:2.2}
 \subsection{General use case diagram}
 \label{subsection:2.2.1}
 
-The general use case diagram of the FloodHelper system, as illustrated in Figure \ref{fig:Fig221}, delineates the primary interactions between the participating actors and the system's core functionalities. The architecture incorporates five distinct actors, each assigned specific roles and operational permissions. The Normal User acts as the base actor, representing any registered individual within the system, typically residents in flood-prone areas seeking connection and location sharing. Two specialized actors, the Rescuer and the Benefactor, structurally inherit all properties and use cases from the Normal User. The Rescuer represents authorized personnel or volunteers actively conducting emergency rescue operations, whereas the Benefactor denotes individuals or organizations initiating and managing charity campaigns. On the management side, the Authority acts as a verified official responsible for overseeing regional operations, validating user credentials, and ensuring charity transparency within a specific jurisdiction. Finally, the Admin serves as the overarching system administrator tasked with centralized user management.
-
-The system encompasses several main use cases to fulfill its dual objectives of rescue coordination and relief management. Core security and maintenance operations, specifically authenticate and manage my account, are universally accessible to all actors. For general engagement, the Normal User is authorized to interact with map, make friend, and view public announcements, establishing a foundational network for location tracking. Crucially, the Normal User is also directly linked to the manage distress signal use case, empowering victims to actively broadcast SOS alerts and share their critical conditions during emergencies. Concurrently, the Rescuer interacts with this same use case to receive, track, and resolve these broadcasted emergency alerts. The manage charity campaign use case is collaboratively operated; Benefactors utilize it to initiate and update relief funds, while Authorities interact with the same use case to monitor, approve, or suspend these campaigns. Furthermore, Authorities manage regional communications through the CRD public announcements use case and ensure operational integrity by executing the review role requests and review profile-updating requests use cases. Lastly, the Admin solely performs the manage user use case to control high-level account assignments and system configurations.
+Figure \ref{fig:Fig221} presents the overall use case diagram of the FloodHelper system. In details, the system involves five primary actors, each responsible for different operational tasks.
 
 \begin{figure}[H]
     \centering
@@ -108,10 +92,20 @@ The system encompasses several main use cases to fulfill its dual objectives of 
     \label{fig:Fig221}
 \end{figure}
 
-\subsection{Manage my account}
+Normal user is the primary user of the mobile application. A normal user can manage personal information, connect with friends, share locations, broadcast emergency distress signals, participate in charity campaigns, and receive public announcements.
+
+Benefactor represents individuals or organizations responsible for organizing charity campaigns. In addition to the functions available to normal users, benefactors can create, manage, and update charity campaigns.
+
+Rescuer is responsible for monitoring emergency requests and coordinating rescue activities. Rescuers receive distress signals, locate victims, and update rescue statuses during emergency operations.
+
+Authority supervises rescue and charity activities. Authorities review campaign requests, approve user role applications, verify profile updates, and publish public announcements.
+
+Administrator manages system operation by maintaining user accounts and administrative data to ensure stable platform operation.
+
+\subsection{Decompose use case "manage my account"}
 \label{subsection:2.2.2}
 
-The "manage my account" use case group in Figure \ref{fig:Fig222} delineates the specific access rights and account management capabilities assigned to each actor within the FloodHelper system. The Normal User is granted fundamental account operations, which include viewing and editing their personal profile, changing or recovering forgotten passwords, creating a new account, and managing role update requests (CRD role request). The Benefactor and Rescuer actors are specifically authorized to execute profile-updating requests (CRD profile-updating request). Furthermore, the Authority actor is permitted to view their profile and securely change their password, while the Admin actor is solely linked to the profile viewing functionality within this particular module to oversee account statuses.
+Figure \ref{fig:Fig222} presents the account management module of the FloodHelper system. The module provides common account functions, including registration, profile management, password management, and role application. While all users can manage their personal accounts, users with specialized roles are required to submit profile update requests for verification before changes are applied. This mechanism helps maintain the reliability of verified user information throughout the system.
 
 \begin{figure}[H]
     \centering
@@ -120,10 +114,10 @@ The "manage my account" use case group in Figure \ref{fig:Fig222} delineates the
     \label{fig:Fig222}
 \end{figure}
 
-\subsection{Interact with map}
+\subsection{Decompose use case "interact with map"}
 \label{subsection:2.2.3}
 
-The "interact with map" subsystem in Figure \ref{fig:Fig223} is exclusively designed for the Normal User, providing comprehensive spatial awareness and privacy control mechanisms. To manage location-sharing visibility, users can seamlessly execute the "freeze friend" or "unfreeze friend" use cases, and they possess the ability to declutter their interface by hiding specific charity campaign map pins. For geographical navigation and situational awareness during emergencies, users can access the transportation map and the weather map. Notably, both of these viewing actions possess an <<include>> relationship with the "view map pin" use case, guaranteeing that critical spatial markers are consistently rendered on the visual interface. Additionally, the system empowers users to dynamically adjust their viewport by focusing the map directly on their current GPS location or by tracking a specific friend's geographical coordinates.
+Figure \ref{fig:Fig223} illustrates the use cases related to map interaction, which are available to the Normal User.  This module provides functionalities for map navigation, location visualization, and privacy management.
 
 \begin{figure}[H]
     \centering
@@ -132,10 +126,14 @@ The "interact with map" subsystem in Figure \ref{fig:Fig223} is exclusively desi
     \label{fig:Fig223}
 \end{figure}
 
-\subsection{Make friend}
+Users can access both the "View transportation map" and the "View weather map" to obtain geographical and environmental information. In both cases, the corresponding map pins are displayed to present relevant locations and events on the map.
+
+To support navigation, users can focus the map on their current location or on the location of a selected friend. The system also allows users to manage the visibility of shared information by freezing or unfreezing location sharing for specific friends. In addition, users may hide charity campaign map pins to reduce visual clutter and improve the readability of the map interface.
+
+\subsection{Decompose use case "make friend"}
 \label{subsection:2.2.4}
 
-The "make friend" use case group in Figure \ref{fig:Fig224} delencapsulates the foundational social connectivity features tailored for the Normal User to establish and manage their secure communication network. Within this module, individuals can perform Create, Read, and Delete (CRD) operations on friend requests, as well as review a comprehensive history of the requests they have previously dispatched. Upon receiving a connection invitation from another individual, the user possesses the definitive authority to execute either the "accept friend request" or "reject friend request" use case. This strictly grants users complete autonomy in curating their personal location-sharing network, ensuring privacy and security before engaging in any background data synchronization.
+Figure \ref{fig:Fig224} presents the use cases related to friend management for the Normal User. This module enables users to establish and maintain friend relationships within the FloodHelper system.
 
 \begin{figure}[H]
     \centering
@@ -144,11 +142,14 @@ The "make friend" use case group in Figure \ref{fig:Fig224} delencapsulates the 
     \label{fig:Fig224}
 \end{figure}
 
+Users can search for other users and send friend requests to initiate a connection. The system also allows users to view pending and previously sent friend requests, as well as cancel requests that have not yet been processed. When receiving a friend request, users may either accept or reject the request. In addition, existing friendships can be removed when users no longer wish to share information with each other.
 
-\subsection{Manage charity campaign}
+These functionalities establish the social network required for subsequent features such as location sharing, emergency communication, and rescue coordination.
+
+\subsection{Decompose use case "manage charity campaign"}
 \label{subsection:2.2.5}
 
-The "manage charity campaign" subsystem in Figure \ref{fig:Fig225} orchestrates the comprehensive and transparent lifecycle of relief funding, establishing clear interactions among Benefactors, Normal Users, and Authorities. The Benefactor initiates and manages the core data of the fund through the "CUD charity campaign" and "CD campaign request" use cases. During the operational phases, Benefactors are responsible for executing the "CRUD distribution items" and "CD campaign announcement" use cases to maintain public awareness, ultimately concluding the lifecycle by triggering the "upload bank statement" use case for final verification. Conversely, the Normal User participates as an active donor and public auditor, utilizing a suite of read-only functionalities—including "view charity campaign," "view campaign announcements," "view transaction list," "view distribution items," and "view/download bank statement"—to ensure complete financial traceability. Normal Users can also actively "donate" and execute the "focus campaign location in map" action to track the physical distribution of relief goods. To enforce regulatory compliance, the Authority actor interacts with the system to evaluate initial submissions via the "view charity campaign request" use case, subsequently executing either the "approve campaign request" or "reject campaign request" use case. Furthermore, Authorities retain the critical administrative power to execute the "suspend campaign" use case, allowing them to immediately halt any operation if fraudulent activities are suspected.
+Figure \ref{fig:Fig225} illustrates the use cases related to charity campaign management, involving three primary actors: Benefactor, Normal User, and Authority.
 
 \begin{figure}[H]
     \centering
@@ -157,11 +158,16 @@ The "manage charity campaign" subsystem in Figure \ref{fig:Fig225} orchestrates 
     \label{fig:Fig225}
 \end{figure}
 
+The Benefactor is responsible for organizing and managing charity campaigns. Benefactors can create, update, and delete campaign information, submit campaign requests for approval, publish campaign announcements, manage distribution items, and upload bank statements after the campaign is completed. These functions support the management of a charity campaign throughout its lifecycle.
 
-\subsection{Manage distress signal}
+The Normal User participates as a donor and can access campaign information through various viewing functions, including campaign details, announcements, distribution records, transaction history, and bank statements. Users can also donate to active campaigns and view campaign locations on the map to better understand the distribution of relief activities.
+
+The Authority supervises charity campaigns by reviewing submitted campaign requests before publication. Authorities can approve or reject campaign requests and suspend active campaigns when necessary to ensure that charity activities comply with the platform's management policies.
+
+\subsection{Decompose use case "manage distress signal"}
 \label{subsection:2.2.6}
 
-The "manage distress signal" use case group in Figure \ref{fig:Fig226} dictates the critical emergency response workflows between victims and rescue personnel. The Normal User, acting as a victim in distress, is empowered to generate, track, and modify emergency alerts through the "CRU signal" use case. This primary action structurally incorporates an <<include>> relationship with the "fill signal information" use case, ensuring that vital context, such as physical condition and precise coordinates, is invariably captured before transmission. Additionally, the Normal User can execute the "revoke signal" use case to cancel the alert if the situation is independently resolved. Expanding upon these base capabilities, the Rescuer actor utilizes a specialized suite of tools to orchestrate relief efforts. Rescuers can execute the "view broadcasting signals" and "sort broadcasting signals" use cases to monitor and prioritize active emergencies based on urgency. To facilitate physical interception, they trigger the "focus victim location in map" use case for precise geographical tracking. Ultimately, the Rescuer performs the "handle signal" use case to officially claim and resolve the distress call, which subsequently updates the system's global emergency state and notifies peers.
+Figure \ref{fig:Fig226} presents the use cases related to emergency distress signal management, involving two primary actors: the Normal User and the Rescuer.
 
 \begin{figure}[H]
     \centering
@@ -170,11 +176,14 @@ The "manage distress signal" use case group in Figure \ref{fig:Fig226} dictates 
     \label{fig:Fig226}
 \end{figure}
 
+The Normal User can create, view, and update distress signals when emergency assistance is required. During signal creation, users provide essential information describing the emergency situation and their current location to facilitate rescue operations. If assistance is no longer needed, users may revoke an active distress signal before it is handled by a rescuer.
 
-\subsection{Manage user}
+The Rescuer is responsible for monitoring and responding to active distress signals. Rescuers can view and sort broadcasting signals to identify and prioritize emergency requests, locate victims on the map, and handle selected distress signals throughout the rescue process. These functions support effective rescue coordination by enabling rescuers to monitor ongoing incidents and respond to emergency requests in a timely manner.
+
+\subsection{Decompose use case "manage user"}
 \label{subsection:2.2.7}
 
-The "manage user" use case group in Figure \ref{fig:Fig227} delineates the centralized administrative controls granted exclusively to the Admin actor to govern overarching system access and maintain platform integrity. Within this module, the Admin can execute the "search user by email" use case to precisely locate specific accounts within the system's database. To enforce security policies and moderate the community, the Admin is fully authorized to perform the "ban user" and "unban user" use cases, effectively suspending or restoring system access for any registered individual. Furthermore, the Admin holds the sole responsibility for establishing the system's moderation hierarchy by executing the "CRU authority account" use case, empowering them to create, read, and update the authoritative credentials of regional officials.
+Figure \ref{fig:Fig227} presents the use cases related to user management, which are performed exclusively by the Admin. This module provides administrative functions for managing user accounts and maintaining system operation.
 
 \begin{figure}[H]
     \centering
@@ -183,11 +192,12 @@ The "manage user" use case group in Figure \ref{fig:Fig227} delineates the centr
     \label{fig:Fig227}
 \end{figure}
 
+The Admin can search for users by email to quickly locate specific accounts within the system. To enforce platform policies and manage inappropriate user activities, the Admin is authorized to ban or unban user accounts when necessary. In addition, the Admin is responsible for managing Authority accounts by creating, viewing, and updating their information. These functions support the administration of user access and ensure that authorized personnel are properly maintained within the system.
 
-\subsection{Review role requests}
+\subsection{Decompose use case "review role requests"}
 \label{subsection:2.2.8}
 
-The "review role request" use case group in Figure \ref{fig:Fig228} defines the administrative workflow for the Authority actor to strictly manage user role escalations within the system. To ensure that only verified and qualified individuals are granted specialized privileges, such as becoming a Rescuer or a Benefactor, the Authority executes the "view role requests based on state" use case. This allows the official to systematically filter, retrieve, and monitor applications according to their current processing status. Upon thoroughly evaluating a pending submission, the Authority exercises their administrative discretion by executing either the "approve pending role request" use case to officially grant the specialized role, or the "reject pending role request" use case to deny the application. This centralized moderation mechanism is vital for maintaining the system's operational integrity and security hierarchy.
+Figure \ref{fig:Fig228} presents the use cases related to role request management, which are performed by the Authority. This module enables the Authority to review requests submitted by users who wish to obtain specialized roles within the FloodHelper system.
 
 \begin{figure}[H]
     \centering
@@ -196,11 +206,14 @@ The "review role request" use case group in Figure \ref{fig:Fig228} defines the 
     \label{fig:Fig228}
 \end{figure}
 
+The Authority can view role requests based on their current processing status to facilitate the review process. After evaluating each request, the Authority may either approve or reject the pending role request. An approved request grants the applicant the corresponding system role, while a rejected request prevents the requested role from being assigned.
 
-\subsection{Review updating-profile requests}
+These functions ensure that specialized roles, such as Benefactor and Rescuer, are assigned only after verification by the responsible authority.
+
+\subsection{Decompose use case "review updating-profile requests"}
 \label{subsection:2.2.9}
 
-Similarly, the "review profile-updating request" subsystem in Figure \ref{fig:Fig229} empowers the Authority actor to oversee and validate critical modifications made to the profiles of specialized users. This moderation workflow guarantees that any alterations to verified credentials, contact details, or public-facing organizational information remain authentic and compliant with platform standards. The Authority initiates this process by utilizing the "view profile-updating requests based on state" use case to categorize and inspect submitted modifications. Subsequently, the official processes these submissions by performing the "approve pending profile-updating request" action to authorize and permanently apply the verified changes to the user's public profile, or the "reject pending profile-updating request" action to dismiss any unauthorized, incomplete, or invalid profile alterations.
+Figure \ref{fig:Fig229} presents the use cases related to profile-updating request management, which are performed by the Authority. This module enables the Authority to review profile modification requests submitted by users with specialized roles, such as Benefactors and Rescuers.
 
 \begin{figure}[H]
     \centering
@@ -209,42 +222,46 @@ Similarly, the "review profile-updating request" subsystem in Figure \ref{fig:Fi
     \label{fig:Fig229}
 \end{figure}
 
+The Authority can view profile-updating requests based on their current processing status to facilitate the review process. After examining the submitted information, the Authority may either approve or reject each pending request. Approved requests update the corresponding user profile with the verified information, while rejected requests leave the existing profile unchanged.
+
+These functions help ensure that the information displayed for specialized users remains accurate and verified before being made available within the system.
+
 \subsection{Business process}
 \label{subsection:2.2.10}
 
-This section outlines the core operational workflows of the application, illustrating the interactions between system actors (Benefactors, Rescuers, Users, and Authorities) and the platform. The business processes are designed to ensure transparency in charity campaigns, accuracy in financial tracking, and efficiency in emergency rescue coordination. The following subsections detail the logic and sequential steps for the primary modules: Update Personal Information, Broadcast signal and Rescue victim, Create and Manage Charity Campaign.
+The FloodHelper system includes several core business processes that involve interactions among multiple actors to accomplish major system functionalities. These processes describe the sequence of activities performed by users and the system in typical operational scenarios, providing a high-level view of how different functional modules collaborate to achieve the intended objectives.
 
-\subsubsection{Update Personal Information}
+To illustrate these workflows, business process diagrams are used to represent the interactions between actors and the system. In this project, three representative business processes are presented: Update Personal Information, Broadcast Signal and Rescue Victim, and Create and Manage Charity Campaign. These processes cover the key operational scenarios of user profile management, emergency rescue coordination, and charity campaign management within the FloodHelper system.
 
-The business process for updating personal information, as illustrated in Figure \ref{fig:Fig2210a}, outlines the structured workflow for users to modify their data or request a role escalation. Upon viewing their profile, users can either initiate a role request if their profile is already complete, or proceed to edit their personal information. When editing, standard users can apply updates to their profiles directly. However, if the user holds a specialized role, such as a Rescuer or Benefactor, the system mandates the creation of a formal profile-updating request rather than applying the changes instantaneously.
+The following subsections describe each business process in detail.
 
-Once a profile-updating request or a role request is generated, it enters a pending state. During this phase, the initiating user retains the autonomy to revoke their request at any time, which immediately terminates the process. If the request remains active, it is forwarded to the Authority for official moderation. The Authority evaluates the submitted credentials and makes a definitive decision to either approve or reject the profile modifications or role escalations based on the reliability of the provided information. This authoritative action ultimately resolves the request and concludes the business process.
+\subsubsection{Update personal information}
+
+Figure \ref{fig:Fig2210a} illustrates the business process for updating personal information. The process begins when a user submits a request to modify their profile information. Depending on the user's role, the submitted information may be updated directly or require verification by the Authority before the changes are applied. This process ensures that profile information remains accurate while maintaining the reliability of verified user accounts.
 
 \begin{center}
     \includegraphics[width=1.0\linewidth]{Figure/BusinessProcess/BusinessProcess_UpdatePersonalInformation.png}
-    \captionof{figure}{Business process: Update Personal Information} 
+    \captionof{figure}{Business process "Update personal information"}
     \label{fig:Fig2210a}
 \end{center}
 
-\subsubsection{Broadcast signal and Rescue victim}
+\subsubsection{Broadcast signal and rescue victim}
 
-The business process for broadcasting a distress signal and coordinating a rescue, as illustrated in Figure \ref{fig:Fig2210b}, delineates the critical emergency response workflow between a Normal User and a Rescuer. The sequence initiates when a Normal User broadcasts an emergency signal. Following this initial activation, the user actively manages the alert through a decision node; they can choose to continuously update the signal with new contextual information or completely revoke the signal, with the latter action immediately terminating the workflow. Concurrently, the broadcasted and subsequently updated signals are transmitted to the Rescuer's interface. In their operational partition, the Rescuer views the active broadcasting signals and sorts them to efficiently prioritize the emergency response. After identifying a target, the Rescuer focuses on the specific victim's location on the map to establish a spatial reference. The workflow officially concludes when the Rescuer executes the action to handle the signal, signifying that the emergency request has been acknowledged and the rescue operation is underway.
+Figure \ref{fig:Fig2210b} presents the business process for emergency rescue coordination. The workflow starts when a user broadcasts a distress signal containing the required emergency information and current location. The system makes the distress signal available to rescuers, who can monitor active requests, locate the victim, and handle the assigned rescue task. The process concludes when the rescue request is completed or the distress signal is revoked.
 
 \begin{center}
     \includegraphics[width=1.0\linewidth]{Figure/BusinessProcess/BusinessProcess_BroadcastSignalAndRescueVictim.png}
-    \captionof{figure}{Bussiness process: Broadcast signal and Rescue victim} 
+    \captionof{figure}{Bussiness process "Broadcast signal and rescue victim"}
     \label{fig:Fig2210b}
 \end{center}
 
-\subsubsection{Create and Manage Charity Campaign}
+\subsubsection{Create and manage charity campaign}
 
-The business process for creating and managing a charity campaign, as depicted in Figure \ref{fig:Fig2210c}, orchestrates a comprehensive, multi-actor workflow involving the Benefactor, Authority, the FloodHelper system, and the Normal User. The process initiates when a Benefactor creates a new campaign. Before official submission, the Benefactor can iteratively update the campaign details. Once the campaign request is sent, it enters a pending decision state where the Benefactor retains the autonomy to revoke the request, thereby immediately terminating the process. If the request is not revoked, it is forwarded to the Authority for formal moderation. The Authority evaluates the submission and exercises administrative discretion to either reject the request, which concludes the workflow, or approve it to advance the campaign.
-
-Upon approval, the FloodHelper system automatically executes the "start donation" state, thereby authorizing Normal Users to proceed and donate to the campaign. Following this active contribution phase, the system registers a "finish donation" action and systematically initiates the "start distribution" phase. This systemic transition mandates the Benefactor to actively add detailed information regarding the distribution items. Subsequently, the system logs a secondary completion state, which acts as a trigger requiring the Benefactor to upload the official bank statement. The campaign lifecycle officially concludes when the Normal User is granted the capability to download this bank statement, thereby ensuring complete financial transparency and accountability throughout the entire process.
+Figure \ref{fig:Fig2210c} illustrates the business process for charity campaign management. The workflow begins with a Benefactor creating a charity campaign and submitting it for approval. After the campaign is approved by the Authority, it becomes available for public donations. Throughout the campaign, the Benefactor manages announcements, distribution activities, and financial reports, while donors can contribute to the campaign and monitor its progress until the campaign is completed.
 
 \begin{center}
     \includegraphics[width=1.0\linewidth]{Figure/BusinessProcess/BusinessProcess_CreateAndManageCharityCampaign.png}
-    \captionof{figure}{Business process: Create and Manage Charity Campaign} 
+    \captionof{figure}{Business process "Create and manage charity campaign"}
     \label{fig:Fig2210c}
 \end{center}
 
@@ -254,302 +271,213 @@ Upon approval, the FloodHelper system automatically executes the "start donation
 \subsection{Description of use case "Broadcast signal"}
 \label{section:2.3.1}
 
-\subsubsection{Use Case Name}
-UC001-BS
+Table \ref{table:uc_broadcast_signal} presents the detailed specification of the use case "broadcast signal".
 
-\subsubsection{Pre-condition}
-\begin{enumerate}
-    \item Normal User, Rescuer and Friend do not lose Internet completely. Besides, they are logged into the application.
-    \item Background service in user app operates normally.
-    \item MQTT Client subscribed topics "current-location" and "signal" before.
-    \item Rescuer subscribed topic "rescuer/common/<ward\_id>", "rescuer-location/<ward\_id>" before.
-\end{enumerate}
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|p{3.5cm}|X|}
+    \caption{Use case specification for "Broadcast signal"}
+    \label{table:uc_broadcast_signal} \\
+    \hline
+    \endfirsthead
 
-\subsubsection{Main Flow}
-\begin{enumerate}
-    \item User fills in the signal information and clicks "broadcast signal".
-    \item User Frontend subscribes to the topic current-ward/<user\_id>.
-    \item User Frontend triggers two parallel processes:
-    \begin{itemize}
-        \item Sends location (with isSos == true) to the topic current-location.
-        \item Sends a signal creation message to the topic "signal".
-    \end{itemize}
+    \multicolumn{2}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \endhead
 
-    \vspace{1em}
-    \item[] \textbf{Parallel Process A:} Signal Creation Handling
-    \item MQTT Broker forwards the signal message to the MQTT Client.
-    \item MQTT Client receives the message and attempts to get ward\_id in the cache based on user\_id.
-    \begin{itemize}
-        \item Sub-step: If ward\_id does not exist in the cache or is expired, it gets the ward based on the location and caches ward\_id with key = user\_id.
-    \end{itemize}
-    \item MQTT Client sends the signal data and ward\_id to the Backend.
-    \item Backend receives the signal creation request and checks for the existence of the user's broadcasting signal.
-    \item Assuming no broadcasting signal ([== null]), Backend:
-    \begin{itemize}
-        \item Saves data to the database.
-        \item Gets the relevant rescuer list.
-        \item Sends push notifications to rescuers.
-        \item Creates daily announcements for rescuers.
-        \item Sends a response: "create successfully" and data back to the User Frontend.
-    \end{itemize}
+    \hline
+    \multicolumn{2}{r}{\textit{Continued on next page}} \\
+    \endfoot
 
-    \vspace{1em}
-    \item[] \textbf{Parallel Process B:} Location Broadcast Handling
-    \item MQTT Broker forwards the location message to the MQTT Client.
-    \item MQTT Client receives the message and performs two parallel tasks:
-    \begin{itemize}
-        \item Task 1 (To Friends): Publishes the location to the topic "<user\_id>/<friend\_id>/last-location". MQTT Broker forwards the message to the Friend Frontend.
-        \item Task 2 (To Rescuers/System): Gets ward\_id in the cache based on user\_id (handling cache miss/expiration similarly to step 5).
-    \end{itemize}
-    \item MQTT Client checks if the ward has changed. If [old ward != new ward], it publishes the ward ID to the topic "current-ward/<user\_id>".
-    \begin{itemize}
-        \item MQTT Broker forwards it to the User Frontend.
-        \item User Frontend receives ward data and subscribes to the topic rescuer-location/<new\_ward\_id> (if not subscribed yet).
-    \end{itemize}
-    \item MQTT Client checks the user's role. Since [user is not rescuer], it publishes the location to the topic "rescuer/common/<ward\_id>".
-    \item MQTT Broker forwards this location to rescuers.
-    \item Rescuer Frontend receives the location data, unifies pins, and displays them on the map.
-    \item All parallel processes converge, and the activity terminates.
-\end{enumerate}
+    \hline
+    \endlastfoot
 
-\subsubsection{Alternative / Exception Flows}
-\textbf{Alternative Flow 1: When User is a Rescuer} \par
-This flow is identical to the Main Flow up to Step 11. The divergence happens at Step 12 when checking the role.
-\begin{enumerate}
-    \item MQTT Client checks the user's role. Since [user is rescuer], it publishes the location to the topic "rescuer-location/<ward\_id>".
-    \item MQTT Broker forwards the location to other rescuers and the victim.
-    \item Rescuer Frontend receives the location data, unifies pins, and displays them on the map.
-    \item User Frontend (acting as the victim tracking the rescuer) receives location data from the rescuer, unifies pins, and displays them on the map.
-\end{enumerate}
-
-\vspace{0.5em}
-\textbf{Alternative Flow 2: Signal Already Exists (Broadcasting Signal != null)} \par
-This exception occurs in the Backend during the Signal Creation Handling (Step 7 of Main Flow).
-\begin{enumerate}
-    \item Backend checks the existence of the user's broadcasting signal.
-    \item The condition [!= null] is met (meaning the user already has an active signal).
-    \item Backend skips saving data and notifying rescuers.
-    \item Backend immediately sends the response: "Stop/Update signal, please".
-\end{enumerate}
-
-\subsubsection{Post-condition}
-\begin{enumerate}
-    \item On Success (Normal User): A new emergency signal is saved in the database. Notifications and announcements are sent to relevant rescuers. The user's location is successfully broadcasted and displayed on the maps of their friends and local rescuers. The User Frontend is subscribed to the appropriate ward topics.
-    \item On Success (Rescuer): Similar to the Normal User, but the rescuer's live location is specifically broadcasted to and displayed on the maps of other rescuers and the victims.
-    \item On Failure/Exception (Signal Already Exists): No new signal is created in the database. No new notifications are sent to rescuers. The user is prompted to stop or update their current active signal.
-\end{enumerate}
-
-\subsubsection{Activity Diagram}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_BroadcastSignal.png}
-    \caption{Activity Diagram "Broadcast signal"}
-    \label{fig:Fig231}
-\end{figure}
+    Use case name & Broadcast signal \\
+    \hline
+    Use case ID & UC001-BS \\
+    \hline
+    Actors & Normal user, Rescuer \\
+    \hline
+    Pre-conditions &
+    - The user has successfully logged into the system. \newline
+    - The user's location service is available. \newline
+    - The user has not created another active distress signal. \\
+    \hline
+    Main flow &
+    1. The user selects the Broadcast Distress Signal function. \newline
+    2. The system displays the distress signal form. \newline
+    3. The user enters the required emergency information. \newline
+    4. The user submits the distress signal. \newline
+    5. The system validates the submitted information. \newline
+    6. The system creates a new distress signal and records its information. \\
+    \hline
+    Alternative and exception flows &
+    -Alternative flow 3.1: At Step 3, the user does not enter any emergency information. The system applies default values for the distress signal and continues with Step 4. \newline
+    -Alternative flow 4.1: At any time before Step 4, the user cancels the operation. The system discards the entered information and returns to the previous screen. \\
+    \hline
+    Post-conditions &
+    - A new distress signal is successfully created. \newline
+    - The distress signal is available for rescuers to monitor. \newline
+    - The user can track the status of the submitted distress signal. \\
+    \hline
+\end{xltabular}
 
 \subsection{Description of use case "Handle signal"}
 \label{section:2.3.2}
 
-\subsubsection{Use Case Name}
-UC002-HS
+Table \ref{table:uc_handle_signal} presents the detailed specification of the use case "handle signal".
 
-\subsubsection{Pre-condition}
-\begin{enumerate}
-    \item The Rescuer is logged into the application and is viewing the map with active emergency pins.
-    \item The Victim (User) has an active broadcasting signal.
-    \item Required topic subscriptions:
-    \begin{itemize}
-        \item Victim Frontend must be currently subscribed to "<user\_id>/rescuer-reply" to listen for incoming rescue confirmations.
-        \item Rescuer Frontends (both the acting Rescuer and Other Rescuers) must be subscribed to "rescuer/common/<ward\_id>" to listen for global state changes of emergency signals in their area.
-    \end{itemize}
-\end{enumerate}
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|p{3.5cm}|X|}
+    \caption{Use case specification for "Handle signal"}
+    \label{table:uc_handle_signal} \\
+    \hline
+    \endfirsthead
 
-\subsubsection{Main Flow}
-\begin{enumerate}
-    \item Rescuer clicks a user's emergency pin on the map.
-    \item Rescuer Frontend displays a bubble speech containing the signal's details.
-    \item Rescuer clicks the "handle" button within the bubble speech.
-    \item Rescuer Frontend publishes a signal handling message to the MQTT topic "rescuer/handle/<ward\_id>".
-    \item MQTT Broker forwards this message to the MQTT Client.
-    \item MQTT Client receives the message and sends a request to the Backend to handle the signal.
-    \item Backend processes the request by executing the following actions sequentially:
-    \begin{itemize}
-        \item Updates the signal state in the database
-        \item Sends a push notification to the Victim.
-        \item Creates a daily announcement for the Victim.
-        \item Returns a success response back to the MQTT Client.
-    \end{itemize}
-    \item MQTT Client receives the response and triggers two parallel broadcasting processes:
-    \begin{itemize}
-        \item Parallel Process A (Notify Victim):
-        \begin{enumerate}
-            \item Publishes a handling message to the topic "<user\_id>/rescuer-reply".
-            \item MQTT Broker forwards this message to the Victim Frontend.
-            \item Victim Frontend receives the handling message, unsubscribes from the topics "rescuer-location/<ward\_id>" and "current-ward/<user\_id>", set isSos = false in each message published to MQTT Broker, and updates the UI (remove rescuer pin, update button state).
-        \end{enumerate}
-        \item Parallel Process B (Notify Rescuers):
-        \begin{enumerate}
-            \item Publishes a handling message to the topic "rescuer/common/<ward\_id>".
-            \item MQTT Broker forwards this message to the rescuers in that ward.
-            \item Both the acting Rescuer Frontend and the Other Rescuer Frontend receive the handling message and update their respective UIs
-        \end{enumerate}
-    \end{itemize}
-    \item The activity converges and terminates after all respective frontends have successfully updated their UIs.
-\end{enumerate}
+    \multicolumn{2}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \endhead
 
-\subsubsection{Alternative / Exception Flows}
-\textbf{Alternative Flow 1: When Victim is a Rescuer} \par
-\begin{enumerate}
-    \item The flow executes identically to the Main Flow from Step 1 to Step 8.
-    \item In Parallel Process A, the Victim Frontend receives the handling message from "<user\_id>/rescuer-reply".
-    \item Because the Victim is also an active Rescuer, they must maintain operational awareness of the area. Therefore, the Victim Frontend skips unsubscribing from "rescuer-location/<ward\_id>". It only unsubscribes from "current-ward/<user\_id>" and updates the UI to reflect that their personal distress signal is being handled.
-\end{enumerate}
+    \hline
+    \multicolumn{2}{r}{\textit{Continued on next page}} \\
+    \endfoot
 
-\subsubsection{Post-condition}
-\begin{enumerate}
-    \item Database State: The specific emergency signal's state is successfully updated in the database to reflect that it has been acknowledged and is being handled.
-    \item Victim State: The Victim is successfully informed via push notifications, daily announcements, and real-time UI updates that a rescuer is responding to their signal. The Victim's app (if a Normal User) disconnects from unnecessary location topics to save bandwidth and processing.
-    \item System UI State: All rescuer applications in the designated ward are synchronized; their maps are updated to show that the specific distress signal is currently being handled, preventing duplicated rescue efforts.
-\end{enumerate}
+    \hline
+    \endlastfoot
 
-\subsubsection{Activity Diagram}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_HandleSignal.png}
-    \caption{Activity Diagram "Handle signal"}
-    \label{fig:Fig232}
-\end{figure}
+    Use case name & Handle signal \\
+    \hline
+    Use case ID & UC002-HS \\
+    \hline
+    Actors & Rescuer \\
+    \hline
+    Pre-conditions &
+    - The Rescuer has successfully logged into the system. \newline
+    - The Rescuer is viewing the map with active distress signals. \newline
+    - A victim has broadcasted an active distress signal. \\
+    \hline
+    Main flow &
+    1. The Rescuer selects an active distress signal on the map. \newline
+    2. The system displays the details of the selected distress signal. \newline
+    3. The Rescuer confirms handling the distress signal. \newline
+    4. The system validates the request and updates the status of the distress signal to "Being handled". \newline
+    5. The system notifies the victim that their distress signal is being handled. \newline
+    6. The system updates the map view for other rescuers to show that the signal is being handled. \\
+    \hline
+    Alternative and exception flows &
+    -Alternative flow 3.1: At Step 3, the Rescuer decides not to handle the signal and cancels the operation. The system returns to the map view. \newline
+    -Alternative flow 5.1: At Step 5, if the victim is also registered as a rescuer, the system updates their personal signal status while maintaining their access to the rescue coordination map. \\
+    \hline
+    Post-conditions &
+    - The distress signal status is successfully updated to "Being handled". \newline
+    - The victim is notified of the rescue progress. \newline
+    - Other rescuers are updated to avoid duplicate rescue deployments. \\
+    \hline
+\end{xltabular}
 
 \subsection{Description of use case "Revoke signal"}
 \label{section:2.3.3}
 
-\subsubsection{Use Case Name}
-UC003-RS
+Table \ref{table:uc_revoke_signal} presents the detailed specification of the use case "revoke signal".
 
-\subsubsection{Pre-condition}
-\begin{enumerate}
-    \item The Victim is logged into the application and currently has an active broadcasting emergency signal.
-    \item Required topic subscriptions:
-    \begin{itemize}
-        \item Rescuer Frontends in the affected area must be actively subscribed to "rescuer/common/<ward\_id>" to listen for real-time updates regarding signal cancellations or status changes.
-    \end{itemize}
-\end{enumerate}
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|p{3.5cm}|X|}
+    \caption{Use case specification for "Revoke signal"}
+    \label{table:uc_revoke_signal} \\
+    \hline
+    \endfirsthead
 
-\subsubsection{Main Flow}
-\begin{enumerate}
-    \item Victim clicks the "revoke signal" button on their interface.
-    \item Victim Frontend publishes a signal revoking message to the MQTT topic "signal".
-    \item The flow then splits into two parallel processes that execute concurrently:
-    \begin{itemize}
-        \item Parallel Process A (Local and UI Update):
-        \begin{enumerate}
-            \item Victim Frontend updates the signal state on its local storage.
-            \item Victim Frontend sets the flag isSos = false in each subsequent message published to the MQTT Broker (ensuring future location updates are no longer treated as emergency signals).
-            \item Victim Frontend updates the UI to reflect that the signal has been successfully revoked.
-        \end{enumerate}
-        \item Parallel Process B (Backend and Rescuer Notification):
-        \begin{enumerate}
-            \item MQTT Broker forwards the signal revoking message to the MQTT Client.
-            \item MQTT Client receives the message and sends a request to the Backend to update the signal state.
-            \item Backend receives the request, updates the signal state in the database (marking it as canceled/revoked), and sends a response back.
-            \item Upon receiving the response, the MQTT Client publishes a signal revoking message to the topic "rescuer/common/<ward\_id>".
-            \item MQTT Broker forwards this message to the related rescuers in that ward.
-            \item Rescuer Frontend receives the message and updates its UI
-        \end{enumerate}
-    \end{itemize}
-    \item Both parallel processes converge, and the activity successfully terminates.
-\end{enumerate}
+    \multicolumn{2}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \endhead
 
-\subsubsection{Alternative / Exception Flows}
-\textbf{Exception 1: Network Failure / MQTT Broker Unreachable} \par
-This exception occurs if the Victim's device loses internet connection right after clicking the button.
-\begin{enumerate}
-    \item Victim Frontend successfully executes Parallel Process A (updates local storage, sets isSos = false, and updates local UI).
-    \item The publish action to the topic "signal" fails to reach the MQTT Broker.
-    \item Backend and Rescuer Frontends are not notified immediately.
-    \item System behavior: The system must rely on MQTT Quality of Service (QoS) configurations to queue the message and retry publishing once the connection is restored, ensuring eventual consistency between the local state and the Backend.
-\end{enumerate}
+    \hline
+    \multicolumn{2}{r}{\textit{Continued on next page}} \\
+    \endfoot
 
-\vspace{0.5em}
-\textbf{Exception 2: Backend Update Failure} \par
-This exception occurs in Parallel Process B (Backend lane).
-\begin{enumerate}
-    \item MQTT Client requests the Backend to update the signal state.
-    \item Backend encounters a database error or validation issue and fails to update the signal state.
-    \item Backend returns an error response to the MQTT Client.
-    \item MQTT Client aborts publishing the revocation message to the "rescuer/common/<ward\_id>" topic.
-    \item The Rescuer Frontend continues to display the signal as active until the issue is resolved or manually synced.
-\end{enumerate}
+    \hline
+    \endlastfoot
 
-\subsubsection{Post-condition}
-\begin{enumerate}
-    \item Database State: The user's emergency signal is marked as inactive/revoked in the backend system.
-    \item Local State: The victim's local device recognizes the signal as revoked, and all future location broadcasts operate in normal mode (isSos = false).
-    \item System UI State: All related rescuer applications in the designated ward have their maps updated, clearing the revoked distress signal to prevent unnecessary deployment.
-\end{enumerate}
+    Use case name & Revoke signal \\
+    \hline
+    Use case ID & UC003-RS \\
+    \hline
+    Actors & Normal user, Rescuer \\
+    \hline
+    Pre-conditions &
+    - The user has successfully logged into the system. \newline
+    - The user has an active distress signal. \\
+    \hline
+    Main flow &
+    1. The user selects the option to revoke their active distress signal. \newline
+    2. The system requests confirmation from the user. \newline
+    3. The user confirms the revocation. \newline
+    4. The system validates the request and marks the distress signal as inactive. \newline
+    5. The system stops broadcasting the distress signal. \newline
+    6. The system notifies rescuers in the area that the distress signal is no longer active. \\
+    \hline
+    Alternative and exception flows &
+    -Alternative flow 3.1: At Step 3, the user decides to cancel the revocation. The system returns the user to the active signal details view. \\
+    \hline
+    Post-conditions &
+    - The distress signal status is successfully marked as inactive. \newline
+    - Rescuers in the area are updated, and the distress signal is cleared from their coordination maps. \\
+    \hline
+\end{xltabular}
 
-\subsubsection{Activity Diagram}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_RevokeSignal.png}
-    \caption{Activity Diagram "Revoke signal"}
-    \label{fig:Fig233}
-\end{figure}
 
 
 \subsection{Description of use case "Publish public announcement"}
 \label{section:2.3.4}
 
-\subsubsection{Use Case Name}
-UC004-PAP
+Table \ref{table:uc_publish_announcement} presents the detailed specification of the use case "publish public announcement".
 
-\subsubsection{Pre-condition}
-\begin{enumerate}
-    \item The Authority user is authenticated and logged into the system (Authority Frontend).
-    \item The Authority has the appropriate administrative privileges to create and broadcast announcements to their designated ward.
-\end{enumerate}
+\renewcommand{\arraystretch}{1.3}
+\begin{xltabular}{\textwidth}{|p{3.5cm}|X|}
+    \caption{Use case specification for "Publish public announcement"}
+    \label{table:uc_publish_announcement} \\
+    \hline
+    \endfirsthead
 
-\subsubsection{Main Flow}
-\begin{enumerate}
-    \item Authority clicks the "Create Announcements" button.
-    \item Authority Frontend displays the announcement creation form.
-    \item Authority enters the title and caption for the announcement.
-    \item Assuming the authority does not want to add a file, the Authority Frontend sends the form directly to the Backend.
-    \item Backend receives the request.
-    \item Backend inserts the new announcement into the database with the default state fileUrl = NULL.
-    \item Backend checks if a file is attached to the request. Since there is no file, it skips the cloud upload process.
-    \item Backend sends a push notification to users residing in the same ward.
-    \item Backend sends a success response back to the Authority Frontend.
-    \item Authority Frontend updates the UI to reflect the newly published announcement, and the activity terminates.
-\end{enumerate}
+    \multicolumn{2}{c}{{\tablename\ \thetable\ -- Continued from previous page}} \\
+    \hline
+    \endhead
 
-\subsubsection{Alternative / Exception Flows}
-\textbf{Exception 1: Database Insert Failure} \par
-\begin{enumerate}
-    \item If the Backend fails to insert the new announcement into the database (e.g., due to a database connection error or schema validation failure), the flow is interrupted. The Backend returns an error response, and the Authority Frontend displays an error message without updating the active announcements list.
-\end{enumerate}
+    \hline
+    \multicolumn{2}{r}{\textit{Continued on next page}} \\
+    \endfoot
 
-\vspace{0.5em}
-\textbf{Exception 2: Cloud Upload Failure } \par
-\begin{enumerate}
-    \item If the condition [file is attached to request] is met but the Backend fails to upload the file to the cloud service, the system should ideally catch this exception, return an error response to the Authority Frontend, and halt the push notification process to avoid broadcasting an incomplete announcement.
-\end{enumerate}
+    \hline
+    \endlastfoot
 
-\subsubsection{Post-condition}
-\begin{enumerate}
-    \item Database State: A new public announcement record is successfully created and persisted in the database.
-    \item System/Cloud State: If an attachment was included, the file is successfully stored in the cloud storage provider.
-    \item User State: Citizens/Users located in the authority's ward have received a push notification alerting them of the new announcement.
-    \item UI State: The Authority's frontend dashboard is refreshed and displays the newly published announcement.
-\end{enumerate}
-
-\subsubsection{Activity Diagram}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\linewidth]{Figure/ActivityDiagram/AD_PublishPublicAnnouncement.png}
-    \caption{Activity Diagram "Publish public announcement"}
-    \label{fig:Fig234}
-\end{figure}
+    Use case name & Publish public announcement \\
+    \hline
+    Use case ID & UC004-PAP \\
+    \hline
+    Actors & Authority \\
+    \hline
+    Pre-conditions &
+    - The Authority is logged into the system. \newline
+    - The Authority has the permissions to publish announcements. \\
+    \hline
+    Main flow &
+    1. The Authority selects the option to create a public announcement. \newline
+    2. The system displays the announcement creation form. \newline
+    3. The Authority enters the announcement details (such as title, content, and optional file attachments) and submits the form. \newline
+    4. The system validates the input. \newline
+    5. The system saves the public announcement. \newline
+    6. The system notifies all users in the Authority's ward of the new announcement. \newline
+    7. The system displays a confirmation message to the Authority and refreshes the announcements list. \\
+    \hline
+    Alternative and exception flows &
+    -Alternative flow 3.1: At Step 3, the Authority decides to cancel the creation. The system discards the input and returns to the previous screen. \newline
+    -Alternative flow 3.2: At Step 3, if the Authority attaches files, the system uploads and stores the files associated with the announcement. \\
+    \hline
+    Post-conditions &
+    - The public announcement is successfully published and stored. \newline
+    - Users in the designated ward are notified. \newline
+    - The announcement list is updated for the Authority and users. \\
+    \hline
+\end{xltabular}
 
 \section{Non-functional requirement}
 \label{section:2.4}
@@ -559,7 +487,7 @@ Reliability (Network Resilience): The mobile application must utilize delay-tole
 
 Scalability (Concurrency): The containerized backend infrastructure must be capable of automatically scaling to handle sudden, massive spikes in concurrent connections and API requests during widespread emergency events without system degradation.
 
-Maintainability (Architecture): The system's codebase must strictly adhere to clean architecture principles (such as the MVVM pattern for the frontend) to ensure straightforward unit testing, predictable state management, and the seamless integration of future communication protocols.
+Maintainability (Architecture): The system's codebase must strictly adhere to clean architecture principles (such as the Model-View-ViewModel (MVVM) pattern for the frontend) to ensure straightforward unit testing, predictable state management, and the seamless integration of future communication protocols.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
