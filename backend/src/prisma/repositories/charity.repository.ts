@@ -112,7 +112,7 @@ export class CharityRepository extends BaseRepository<any> {
             bankId: true,
             bankAccountNumber: true,
             bank: {
-              select: { id: true, name: true, code: true, shortName: true },
+              select: { id: true, name: true, code: true, shortName: true, bin: true },
             },
           },
         },
