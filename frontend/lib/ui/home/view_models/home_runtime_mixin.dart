@@ -251,20 +251,20 @@ mixin HomeRuntimeMixin on _HomeViewModelBase {
 
       final currentUser = ref.read(currentUserProvider);
       if (currentUser != null) {
-        for (final friend in state.friendsWithMapMode) {
-          _mqttService.unsubscribeFriendLocation(friend.userId, currentUser.id);
-        }
-
         if (visibility == 'NO_ONE') {
+          final seeMeFriendIds = state.friendsWithMapMode
+              .where((f) => f.friendMapMode)
+              .map((f) => f.userId)
+              .toList();
+
+          if (seeMeFriendIds.isNotEmpty) {
+            _locationTrackingService.publishFreezeLocation(seeMeFriendIds);
+          }
+
           _locationTrackingService.updateAllowedFriends([]);
-          state = state.copyWith(friendLocations: {});
         } else {
           final allowedIds = _computeAllowedFriends();
           _locationTrackingService.updateAllowedFriends(allowedIds);
-
-          for (final friend in state.friendsWithMapMode) {
-            _mqttService.subscribeFriendLocation(friend.userId, currentUser.id);
-          }
         }
       }
 

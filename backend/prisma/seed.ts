@@ -328,28 +328,28 @@ async function main() {
   const now = new Date();
   const daysAgo = (num: number) => new Date(now.getTime() - num * 24 * 60 * 60 * 1000);
 
-  // Campaign 1: Quyên góp hỗ trợ đồng bào (Trạng thái DONATING)
-  await prisma.charityCampaign.create({
-    data: {
-      organizedBy: adminUser.userId,
-      bankAccountId: bankAccountId,
-      campaignName: 'Ủng hộ đồng bào lũ lụt miền Bắc',
-      purpose: 'Quyên góp nhu yếu phẩm và tiền mặt hỗ trợ vùng lũ.',
-      destinationProvinceCode: 1,
-      destinationWardCode: 70, // Phường Hoàn Kiếm
-      destinationDetail: 'UBND Phường Hoàn Kiếm, Hà Nội',
-      campaignLatitude: new Prisma.Decimal(21.0285),
-      campaignLongitude: new Prisma.Decimal(105.8542),
-      charityObject: 'Người dân chịu ảnh hưởng lũ lụt tại miền Bắc',
-      state: 'DONATING',
-      requestedAt: daysAgo(4),
-      respondedAt: daysAgo(3),
-      startedDonationAt: daysAgo(3),
-      finishedDonationAt: null,
-      startedDistributionAt: null,
-      finishedDistributionAt: null,
-    }
-  });
+  // // Campaign 1: Quyên góp hỗ trợ đồng bào (Trạng thái DONATING)
+  // await prisma.charityCampaign.create({
+  //   data: {
+  //     organizedBy: adminUser.userId,
+  //     bankAccountId: bankAccountId,
+  //     campaignName: 'Ủng hộ đồng bào lũ lụt miền Bắc',
+  //     purpose: 'Quyên góp nhu yếu phẩm và tiền mặt hỗ trợ vùng lũ.',
+  //     destinationProvinceCode: 1,
+  //     destinationWardCode: 70, // Phường Hoàn Kiếm
+  //     destinationDetail: 'UBND Phường Hoàn Kiếm, Hà Nội',
+  //     campaignLatitude: new Prisma.Decimal(21.0285),
+  //     campaignLongitude: new Prisma.Decimal(105.8542),
+  //     charityObject: 'Người dân chịu ảnh hưởng lũ lụt tại miền Bắc',
+  //     state: 'DONATING',
+  //     requestedAt: daysAgo(4),
+  //     respondedAt: daysAgo(3),
+  //     startedDonationAt: daysAgo(3),
+  //     finishedDonationAt: null,
+  //     startedDistributionAt: null,
+  //     finishedDistributionAt: null,
+  //   }
+  // });
 
   // Campaign 2: Được tạo bởi User bình thường, đang cứu trợ (Trạng thái DISTRIBUTING)
   await prisma.charityCampaign.create({
