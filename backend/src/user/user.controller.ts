@@ -16,7 +16,7 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { UserService } from './user.service';
-import { UpdateUserDto, UpdateLocationDto, UpdateVisibilityDto } from './dto';
+import { UpdateUserDto, UpdateLocationDto, UpdateVisibilityDto, UpdateShowCampaignLocationsDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { UploadedFilePayload } from '../common/uploaded-file.type';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -55,7 +55,7 @@ export class UserController {
       ],
       {
       storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      limits: { fileSize: 50 * 1024 * 1024 }, // 5MB
       fileFilter: (_req, file, cb) => {
         const imageFields = ['avatar', 'citizenFront', 'citizenBack'];
         const allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
@@ -122,7 +122,7 @@ export class UserController {
       ],
       {
         storage: memoryStorage(),
-        limits: { fileSize: 5 * 1024 * 1024 },
+        limits: { fileSize: 50 * 1024 * 1024 },
         fileFilter: (_req, file, cb) => {
           const imageFields = ['avatar', 'citizenFront', 'citizenBack'];
           const allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
@@ -349,6 +349,28 @@ export class UserController {
     return {
       success: true,
       message: 'Visibility updated',
+      data: result,
+    };
+  }
+
+  /**
+   * Update show charity campaign locations preference
+   * PATCH /user/show-campaign-locations
+   */
+  @UseGuards(JwtAuthGuard)
+  @Patch('show-campaign-locations')
+  async updateShowCampaignLocations(
+    @Request() req,
+    @Body() dto: UpdateShowCampaignLocationsDto,
+  ) {
+    const result = await this.userService.updateShowCampaignLocations(
+      req.user.userId,
+      dto,
+    );
+
+    return {
+      success: true,
+      message: 'Show charity campaign locations preference updated',
       data: result,
     };
   }

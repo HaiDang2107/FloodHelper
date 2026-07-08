@@ -75,7 +75,7 @@ class UserService {
   Future<void> updateShowCharityCampaignLocations(bool value) async {
     try {
       await _apiClient.patch(
-        '/user/profile',
+        '/user/show-campaign-locations',
         data: {'showCharityCampaignLocations': value},
       );
     } on DioException catch (e) {

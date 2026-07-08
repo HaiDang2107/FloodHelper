@@ -10,6 +10,7 @@ import {
   UpdateUserDto,
   UpdateLocationDto,
   UpdateVisibilityDto,
+  UpdateShowCampaignLocationsDto,
 } from './dto';
 import {
   UserRepository,
@@ -878,5 +879,21 @@ export class UserService {
    */
   async updateFcmToken(userId: string, fcmToken: string) {
     return this.userRepository.updateFcmToken(userId, fcmToken);
+  }
+
+  /**
+   * Update show charity campaign locations preference.
+   */
+  async updateShowCampaignLocations(
+    userId: string,
+    dto: UpdateShowCampaignLocationsDto,
+  ) {
+    await this.userRepository.updateUserFields(userId, {
+      showCharityCampaignLocations: dto.showCharityCampaignLocations,
+    });
+
+    return {
+      showCharityCampaignLocations: dto.showCharityCampaignLocations,
+    };
   }
 }
