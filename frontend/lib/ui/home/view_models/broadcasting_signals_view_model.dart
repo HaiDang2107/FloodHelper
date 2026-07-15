@@ -7,6 +7,8 @@ import '../../../domain/models/broadcasting_signal.dart';
 
 part 'broadcasting_signals_view_model.g.dart';
 
+// Sort signals
+
 class BroadcastingSignalsState {
   final bool isLoading;
   final List<BroadcastingSignal> signals;
@@ -77,7 +79,7 @@ class BroadcastingSignalsViewModel
     }
   }
 
-  Future<void> applySortCriteria( // call sort
+  Future<void> applySortCriteria( // Lưu cấu hinhf sắp xếp
     List<BroadcastingSignalsSortCriterion> criteria,
   ) async {
     if (criteria.isEmpty) {
@@ -111,14 +113,15 @@ class BroadcastingSignalsViewModel
     state = state.copyWith(clearError: true);
   }
 
-  List<BroadcastingSignal> _sortSignals(
+  List<BroadcastingSignal> _sortSignals( // Sắp xếp signal
     List<BroadcastingSignal> input,
     List<BroadcastingSignalsSortCriterion> criteria,
   ) {
     final sorted = input.toList(growable: false);
 
     sorted.sort((a, b) {
-      // Với mỗi signal, phải chạy 1 vòng lặp
+      // Để so sánh 2 signal, cần chạy 1 vòng lặp để duyệt qua các criterion
+      // criterion được duyệt trước nghĩa là criterion được ưu tiên ==> != 0 là trả về luôn
       for (final criterion in criteria) {
         final compare = _compareByCriterion(a, b, criterion);
         if (compare != 0) {

@@ -96,7 +96,7 @@ class ApiClient {
   }
 
   Future<String?> refreshAccessToken() async {
-    if (_refreshFuture != null) {
+    if (_refreshFuture != null) { // Khi đang refresh, nếu tiếp tục có lỗi 401 thì bỏ qua
       return _refreshFuture;
     }
 

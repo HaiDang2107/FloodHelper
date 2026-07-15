@@ -43,19 +43,19 @@ class FirebaseMessagingService {
       : _apiClient = apiClient;
 
   /// Initialize Firebase Messaging and request permissions
-  Future<String?> initialize() async {
+  Future<String?> initialize() async { // Được gọi khi thực hiện đăng nhập (Get started)
     try {
       // 0. Tạo các Channel cho Android TRƯỚC KHI xin quyền FCM
       await _setupAndroidNotificationChannels();
 
-      final settings = await _messaging.requestPermission(
+      final settings = await _messaging.requestPermission( // yêu cầu quyền từ nguười dùng 
         alert: true,
         badge: true,
         sound: true,
       );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional) {
+          settings.authorizationStatus == AuthorizationStatus.provisional) { // Người dùng đã cấp quyền
             
         // 1. Lấy token mới nhất
         final token = await _messaging.getToken();
